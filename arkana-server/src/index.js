@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
@@ -20,13 +21,18 @@ app.use("/images", express.static(path.join(__dirname, "..", "public", "images")
 
 // Mobile APK Download Landing Page
 app.get("/download", (req, res) => {
+  const apkPath = path.join(__dirname, "..", "public", "arkana.apk");
+  const isReady = fs.existsSync(apkPath);
+  const apkSize = isReady ? (fs.statSync(apkPath).size / (1024 * 1024)).toFixed(1) + " MB" : null;
+
   res.send(`
     <!DOCTYPE html>
     <html lang="ru">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Arkana — Solana Mobile APK Download</title>
+      ${!isReady ? '<meta http-equiv="refresh" content="10">' : ''}
+      <title>Arkana — Solana Mobile APK</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -94,6 +100,14 @@ app.get("/download", (req, res) => {
           color: #b8a6ff;
           border: 1px solid #362e66;
         }
+        .building-box {
+          background: rgba(153,69,255,0.12);
+          border: 1px solid rgba(153,69,255,0.3);
+          border-radius: 12px;
+          padding: 20px 16px;
+          margin: 20px 0;
+          text-align: center;
+        }
         .features {
           text-align: left;
           background: #0b0918;
@@ -118,13 +132,25 @@ app.get("/download", (req, res) => {
         <h1>🔮 Arkana v1.0.0-beta</h1>
         <p class="sub">Децентрализованный крипто-оракул для Solana Mobile & Seeker с поддержкой MWA и Seed Vault.</p>
         
-        <a class="btn" href="/arkana.apk" download>⚡ Скачать APK (301 MB)</a>
-        <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana" target="_blank">🌐 GitHub Repository</a>
+        ${isReady ? `
+          <a class="btn" href="/arkana.apk" download>⚡ Скачать APK (${apkSize})</a>
+          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
-        <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
-          <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Сканируй камерой телефона</p>
-        </div>
+          <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
+            <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Сканируй камерой телефона</p>
+          </div>
+        ` : `
+          <div class="building-box">
+            <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
+            <p style="font-weight: 700; color: #fff; margin-bottom: 6px;">Компиляция автономного Release APK</p>
+            <p style="font-size: 12px; color: #a5a0c2; line-height: 1.5; margin-bottom: 12px;">
+              GitHub Actions прямо сейчас собирает чистый релизный APK (с удаленным dev-клиентом и оффлайн-бандлом).
+            </p>
+            <p style="font-size: 11px; color: #14F195;">🔄 Страница автоматически обновляется каждые 10 секунд...</p>
+          </div>
+          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/actions" target="_blank">🔍 Смотреть статус в GitHub Actions</a>
+        `}
 
         <div class="features">
           <p style="font-weight:600; color:#fff; margin-bottom:8px;">Что внутри сборки:</p>
