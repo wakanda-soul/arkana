@@ -13,9 +13,136 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve static card images and logos
+// Serve static files (card images, logos, APKs)
+app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/cards", express.static(path.join(__dirname, "..", "public", "cards")));
 app.use("/images", express.static(path.join(__dirname, "..", "public", "images")));
+
+// Mobile APK Download Landing Page
+app.get("/download", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Arkana — Solana Mobile APK Download</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          background: #080711;
+          color: #f0f0f8;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 24px;
+        }
+        .card {
+          background: #121024;
+          border: 1px solid #2a2254;
+          border-radius: 20px;
+          max-width: 480px;
+          width: 100%;
+          padding: 32px 24px;
+          text-align: center;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 80px rgba(153,69,255,0.15);
+        }
+        .badge {
+          display: inline-block;
+          background: rgba(20, 241, 149, 0.15);
+          color: #14F195;
+          border: 1px solid rgba(20, 241, 149, 0.3);
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 1px;
+          margin-bottom: 16px;
+        }
+        h1 {
+          font-size: 28px;
+          font-weight: 800;
+          margin-bottom: 8px;
+          background: linear-gradient(135deg, #fff, #b8a6ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        p.sub {
+          color: #8f8ba8;
+          font-size: 14px;
+          line-height: 1.5;
+          margin-bottom: 24px;
+        }
+        .btn {
+          display: block;
+          width: 100%;
+          background: linear-gradient(135deg, #9945FF, #14F195);
+          color: #000;
+          font-weight: 700;
+          font-size: 16px;
+          padding: 16px;
+          border-radius: 12px;
+          text-decoration: none;
+          margin-bottom: 12px;
+          transition: transform 0.1s ease;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-sec {
+          background: #1c1836;
+          color: #b8a6ff;
+          border: 1px solid #362e66;
+        }
+        .features {
+          text-align: left;
+          background: #0b0918;
+          border-radius: 12px;
+          padding: 16px;
+          margin: 20px 0;
+          font-size: 13px;
+          color: #a5a0c2;
+        }
+        .features li { margin-left: 20px; margin-bottom: 6px; }
+        .note {
+          font-size: 11px;
+          color: #6d688a;
+          line-height: 1.4;
+          margin-top: 16px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
+        <h1>🔮 Arkana v1.0.0-beta</h1>
+        <p class="sub">Децентрализованный крипто-оракул для Solana Mobile & Seeker с поддержкой MWA и Seed Vault.</p>
+        
+        <a class="btn" href="/arkana.apk" download>⚡ Скачать APK (301 MB)</a>
+        <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana" target="_blank">🌐 GitHub Repository</a>
+
+        <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62:3001/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
+          <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Сканируй камерой телефона</p>
+        </div>
+
+        <div class="features">
+          <p style="font-weight:600; color:#fff; margin-bottom:8px;">Что внутри сборки:</p>
+          <ul>
+            <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare)</li>
+            <li>⏰ Daily Clock-In (+5 SKR ритуал и учет стриков)</li>
+            <li>🃏 78 карт Арканов с 3D flip анимациями</li>
+            <li>🧠 7-битный синтез пророчеств (AI Engine)</li>
+            <li>💬 Диалоговый чат с Оракулом</li>
+          </ul>
+        </div>
+
+        <p class="note">⚠️ Для установки на Android: откройте скачанный .apk файл и разрешите установку приложений из этого источника (Settings &rarr; Install unknown apps).</p>
+      </div>
+    </body>
+    </html>
+  `);
+});
 
 // Health check
 app.get("/api/health", (req, res) => {
