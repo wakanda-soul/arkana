@@ -7,6 +7,8 @@ export interface AuthState {
   isAuthenticated: boolean
   signIn: () => Promise<SignInOutput>
   signOut: () => Promise<void>
+  account: any
+  isLoading: boolean
 }
 
 const Context = createContext<AuthState>({} as AuthState)
@@ -40,6 +42,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signIn: async () => await signInMutation.mutateAsync(),
       signOut: async () => await disconnect(),
       isAuthenticated: (accounts?.length ?? 0) > 0,
+      account: accounts?.[0] ?? null,
       isLoading: signInMutation.isPending,
     }),
     [accounts, disconnect, signInMutation],
