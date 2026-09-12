@@ -51,7 +51,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={[styles.beatCard, styles.storyBorder]}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>📜</Text>
-            <Text style={styles.beatTitle}>ИСТОРИЯ (THE STORY)</Text>
+            <Text style={styles.beatTitle}>THE NARRATIVE SYNTHESIS</Text>
           </View>
           <Text style={styles.beatContent}>{beats.story}</Text>
         </View>
@@ -62,7 +62,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={styles.beatCard}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>👁️</Text>
-            <Text style={styles.beatTitle}>СКРЫТЫЕ СИЛЫ В МЕМПУЛЕ</Text>
+            <Text style={styles.beatTitle}>HIDDEN MEMPOOL FORCES</Text>
           </View>
           <Text style={styles.beatContent}>{beats.hiddenForces}</Text>
         </View>
@@ -74,7 +74,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
           <View style={[styles.beatCard, styles.halfCard, styles.successBorder]}>
             <View style={styles.beatHeader}>
               <Text style={styles.beatIcon}>⚡</Text>
-              <Text style={styles.beatTitleSmall}>ЧТО УСИЛИВАЕТ</Text>
+              <Text style={styles.beatTitleSmall}>CONSENSUS TAILWINDS</Text>
             </View>
             <Text style={styles.beatContentSmall}>{beats.strengthens}</Text>
           </View>
@@ -83,7 +83,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
           <View style={[styles.beatCard, styles.halfCard, styles.dangerBorder]}>
             <View style={styles.beatHeader}>
               <Text style={styles.beatIcon}>🛡️</Text>
-              <Text style={styles.beatTitleSmall}>ЧТО ОСЛАБЛЯЕТ</Text>
+              <Text style={styles.beatTitleSmall}>LIQUIDITY FRICTION</Text>
             </View>
             <Text style={styles.beatContentSmall}>{beats.weakens}</Text>
           </View>
@@ -95,7 +95,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={[styles.beatCard, styles.adviceBorder]}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>🔮</Text>
-            <Text style={[styles.beatTitle, { color: '#14F195' }]}>СОВЕТ ОРАКУЛА</Text>
+            <Text style={[styles.beatTitle, { color: '#14F195' }]}>ORACLE DIRECTIVE</Text>
           </View>
           <Text style={styles.beatContent}>{beats.oracleAdvice}</Text>
         </View>
@@ -106,7 +106,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={[styles.beatCard, styles.warningBorder]}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>⚠️</Text>
-            <Text style={[styles.beatTitle, { color: '#FFB800' }]}>ПРЕДОСТЕРЕЖЕНИЕ (FORK RISK)</Text>
+            <Text style={[styles.beatTitle, { color: '#FFB800' }]}>WARNING (HARD-FORK RISK)</Text>
           </View>
           <Text style={styles.beatContent}>{beats.warning}</Text>
         </View>
@@ -115,7 +115,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
       {/* Beat 7: Final Omen */}
       {beats.finalOmen && (
         <View style={[styles.beatCard, styles.omenCard]}>
-          <Text style={styles.omenBadge}>ФИНАЛЬНОЕ ЗНАМЕНИЕ</Text>
+          <Text style={styles.omenBadge}>FINAL IMMUTABLE OMEN</Text>
           <Text style={styles.omenQuote}>« {beats.finalOmen} »</Text>
         </View>
       )}

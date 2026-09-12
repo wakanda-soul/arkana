@@ -22,18 +22,18 @@ interface ChatMessage {
 }
 
 const PRESETS = [
-  'Стоит ли покупать токен на пампе?',
-  'Оцени рыночный сантимент и ликвидность',
-  'Как справиться с FUD в этом цикле?',
-  'Что говорит блокчейн о моем стартапе?',
+  'Should I enter this token breakout?',
+  'Assess market sentiment and liquidity flow',
+  'How to counter FUD in this cycle?',
+  'What does consensus signal about my protocol venture?',
 ];
 
-export default function OracleChatScreen() {
+export default function OracleScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       sender: 'oracle',
-      text: 'Сеть помнит каждый блок. Карты помнят каждый паттерн. Я — Аркана, Оракул Блокчейна. Задайте ваш вопрос в свободной форме — консенсус ответит на него.',
+      text: 'The network remembers every block. The deck reflects every market cycle. I am Arkana, the Blockchain Oracle. Inscribe your question — consensus shall respond.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -68,7 +68,7 @@ export default function OracleChatScreen() {
         body: JSON.stringify({ message: query.trim() }),
       });
 
-      let replyText = 'Сеть обрабатывает транзакцию намерений. Консенсус формируется вокруг взвешенного риск-менеджмента.';
+      let replyText = 'The network processes your transaction of intent. Consensus is forming around calculated risk management.';
       if (res.ok) {
         const data = await res.json();
         replyText = data.reply || replyText;
@@ -90,7 +90,7 @@ export default function OracleChatScreen() {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'oracle',
-        text: 'Мемпул временно перегружен. Но Оракул напоминает: хладнокровие валидатора побеждает рыночную суету.',
+        text: 'The mempool is momentarily congested. But the Oracle reminds: validator stoicism prevails over market turbulence.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -144,13 +144,13 @@ export default function OracleChatScreen() {
           {isTyping && (
             <View style={[styles.messageBubble, styles.oracleBubble, styles.typingBubble]}>
               <ActivityIndicator size="small" color="#14F195" />
-              <Text style={styles.typingText}>Оракул читает состояние сети...</Text>
+              <Text style={styles.typingText}>The Oracle is inspecting network state...</Text>
             </View>
           )}
 
           {/* Prompt Presets */}
           <View style={styles.presetsWrap}>
-            <Text style={styles.presetsLabel}>БЫСТРЫЕ ВОПРОСЫ ОРАКУЛУ:</Text>
+            <Text style={styles.presetsLabel}>QUICK PROMPTS FOR THE ORACLE:</Text>
             <View style={styles.presetsGrid}>
               {PRESETS.map((p, i) => (
                 <Pressable
@@ -169,7 +169,7 @@ export default function OracleChatScreen() {
         <View style={styles.inputBar}>
           <TextInput
             style={styles.textInput}
-            placeholder="Спросите Оракула о сделке, проекте или жизни..."
+            placeholder="Ask the Oracle about a trade, protocol, or venture..."
             placeholderTextColor="#6B7280"
             value={input}
             onChangeText={setInput}

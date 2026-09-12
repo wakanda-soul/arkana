@@ -105,19 +105,19 @@ export function generateLocalReading(spreadKey: string, question: string = ''): 
     engine_metrics: {
       majors_count: majorsCount,
       structural: majorsCount >= Math.ceil(positions.length / 2),
-      arcana_note: majorsCount === 0 ? 'Тактические решения в руках создателя' : 'Влияние макро-архетипов сети',
+      arcana_note: majorsCount === 0 ? 'Tactical decisions resting with the builder' : 'Network-scale macro archetypes in motion',
       dominant_suit: lead.suit,
       dominant_energy: lead.energy,
     },
     cards: resolvedCards,
     prose: {
-      story: `Сеть зафиксировала консенсус для вашего вопроса. Карты ${resolvedCards.map(c => `${c.crypto_name} (${c.orientation === 'reversed' ? 'перевернутая' : 'прямая'})`).join(', ')} формируют вектор от ${lead.crypto_name} к ${last.crypto_name}.`,
-      hiddenForces: `Мемпул несет скрытую энергию карты ${lead.crypto_name}. Подтверждения следуют за вашим намерением.`,
-      strengthens: `Ваша позиция укреплена картой ${lead.crypto_name}: ${lead.advice || 'сохраняйте хладнокровие валидатора'}.`,
-      weakens: `Потенциальная уязвимость протокола: ${last.shadow || 'избыточная спекуляция без риск-менеджмента'}.`,
-      oracleAdvice: lead.advice || 'Действуйте в гармонии с консенсусом сети.',
-      warning: 'Ошибочный расчет газа и эмоции в мемпуле ведут к ненужному форку.',
-      finalOmen: 'Неизменяемость реестра — основа вашей будущей ликвидности.',
+      story: `The network has committed consensus for your inquiry. The cards ${resolvedCards.map(c => `${c.crypto_name} (${c.orientation === 'reversed' ? 'reversed' : 'upright'})`).join(', ')} establish a trajectory from ${lead.crypto_name} to ${last.crypto_name}.`,
+      hiddenForces: `The mempool channels the latent energy of ${lead.crypto_name}. Confirmations crystallize in the wake of your intent.`,
+      strengthens: `Your position is solidified by ${lead.crypto_name}: ${lead.advice || 'maintain validator composure amidst volatility'}.`,
+      weakens: `Protocol vulnerability vector: ${last.shadow || 'unhedged speculation lacking disciplined risk parameters'}.`,
+      oracleAdvice: lead.advice || 'Execute in alignment with the underlying network consensus.',
+      warning: 'Emotional transaction velocity and mispriced priority fees lead to preventable state forks.',
+      finalOmen: 'The immutability of the ledger anchors your future liquidity.',
     },
   };
 }
