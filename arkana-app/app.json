@@ -23,13 +23,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      [
-        "expo-dev-client",
-        {
-          "showMenuAtLaunch": false,
-          "skipOnboarding": true
-        }
-      ],
       "expo-font",
       "expo-image",
       "expo-router",
