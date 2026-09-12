@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { fetchReading, ReadingResponse } from '@/services/oracleApi';
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
+import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function SpreadScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [reading, setReading] = useState<ReadingResponse | null>(null);
   const [revealedMap, setRevealedMap] = useState<Record<number, boolean>>({});
+  const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
 
   const handleDraw = async () => {
     try {
@@ -46,6 +48,18 @@ export default function SpreadScreen() {
 
   const flipCard = (index: number) => {
     setRevealedMap(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleCardPress = (index: number) => {
+    if (!reading) return;
+    if (!revealedMap[index]) {
+      flipCard(index);
+    } else {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {}
+      setZoomedCard(reading.cards[index]);
+    }
   };
 
   const revealAll = () => {
@@ -109,8 +123,8 @@ export default function SpreadScreen() {
             <View style={styles.instructionBanner}>
               <Text style={styles.instructionText}>
                 {isAllRevealed
-                  ? '✓ ALL CARDS VERIFIED — READ THE ORACLE SYNTHESIS BELOW'
-                  : 'TAP CARDS TO FLIP & VALIDATE CONSENSUS'}
+                  ? '✓ ALL CARDS VERIFIED — TAP ANY CARD TO ZOOM & INSPECT'
+                  : 'TAP TO FLIP & VALIDATE · TAP REVEALED TO ZOOM'}
               </Text>
               {!isAllRevealed && (
                 <Pressable onPress={revealAll} style={styles.revealAllBtn}>
@@ -133,7 +147,7 @@ export default function SpreadScreen() {
                   isReversed={card.orientation === 'reversed'}
                   isRevealed={!!revealedMap[idx]}
                   positionName={card.position}
-                  onPress={() => flipCard(idx)}
+                  onPress={() => handleCardPress(idx)}
                   width={150}
                   height={250}
                 />
@@ -161,6 +175,12 @@ export default function SpreadScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Zoom Modal for inspecting card up close */}
+      <CardZoomModal
+        card={zoomedCard}
+        onClose={() => setZoomedCard(null)}
+      />
     </SafeAreaView>
   );
 }

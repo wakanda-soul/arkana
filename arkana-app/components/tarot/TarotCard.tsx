@@ -86,6 +86,9 @@ export function TarotCard({
               <Text style={styles.reversedText}>REVERSED</Text>
             </View>
           )}
+          <View style={styles.zoomAffordance}>
+            <Text style={styles.zoomAffordanceText}>🔍</Text>
+          </View>
         </Animated.View>
 
         {/* Card Back */}
@@ -105,7 +108,7 @@ export function TarotCard({
             {name}
           </Text>
           <Text style={styles.cardMeta}>
-            {isReversed ? '▼ Reversed' : '▲ Upright'}
+            {isReversed ? '▼ Reversed' : '▲ Upright'} · 🔍 Zoom
           </Text>
         </View>
       )}
@@ -217,5 +220,21 @@ const styles = StyleSheet.create({
     color: '#8B949E',
     fontSize: 10,
     marginTop: 2,
+  },
+  zoomAffordance: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(14, 16, 29, 0.85)',
+    borderColor: '#9945FF',
+    borderWidth: 1,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomAffordanceText: {
+    fontSize: 11,
   },
 });

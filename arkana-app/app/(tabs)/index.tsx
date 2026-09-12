@@ -15,6 +15,7 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { fetchClockInStatus, executeClockIn, ClockInResult, ReadingResponse } from '@/services/oracleApi';
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
+import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function AltarScreen() {
   const [isClockingIn, setIsClockingIn] = useState(false);
   const [dailyReading, setDailyReading] = useState<ReadingResponse | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
 
   useEffect(() => {
     fetchClockInStatus(walletAddress).then(setClockInState);
@@ -204,6 +206,7 @@ export default function AltarScreen() {
                   isReversed={dailyReading.cards[0].orientation === 'reversed'}
                   isRevealed={true}
                   positionName="TODAY'S CONSENSUS"
+                  onPress={() => setZoomedCard(dailyReading.cards[0])}
                   width={200}
                   height={320}
                 />
@@ -226,6 +229,12 @@ export default function AltarScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Card Zoom Modal */}
+      <CardZoomModal
+        card={zoomedCard}
+        onClose={() => setZoomedCard(null)}
+      />
     </SafeAreaView>
   );
 }
