@@ -22,11 +22,11 @@ Most tarot apps run generic fortune-cookie scripts in a webview. Arkana runs a n
 
 ## In-App Economy & SKR Tokenomics
 
-Arkana avoids runaway token inflation by pairing free daily usage with micro-rewards:
+Arkana avoids token inflation by pairing a free daily allowance with streak progression rather than token handouts:
 
 | Action | Cost / Reward | Quota Impact |
 | :--- | :--- | :--- |
-| Daily Clock-In | +0.10 SKR (or +1.0 SKR every 7 days) | Refills free daily spread allowance |
+| Daily Clock-In | Free (0 SKR emission) | Refills daily allowance and builds streak tier |
 | Daily free spreads | Free | 3 spreads/day (up to 5/day for 7+ day streaks) |
 | Extra spread | 5 SKR | Deducted once daily free allowance runs out |
 | Codex & Card inspection | Free | Always available offline |

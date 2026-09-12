@@ -3,7 +3,7 @@
  * Implements sustainable daily retention, tiered streak bonuses, and fee mechanics:
  * - 3 Free Spreads per day for every user (up to 5/day for active streaks)
  * - Additional spreads cost 5 SKR
- * - Daily Clock-In grants +0.1 SKR (and +1.0 SKR for 7-day milestone)
+ * - Daily Clock-In refills spread allowance and tracks streaks (zero token payouts)
  */
 
 const fs = require("fs");
@@ -90,8 +90,8 @@ function getClockInStatus(walletAddress) {
 
 /**
  * Record Daily Clock-In:
- * - Grants fractional +0.1 SKR (+1.0 SKR for 7-day milestone)
- * - Refills daily spread allowance
+ * - Refills daily spread allowance and updates on-chain streak
+ * - Zero token emission
  */
 function recordClockIn(walletAddress, drawnCard) {
   const users = loadUsers();
@@ -113,10 +113,8 @@ function recordClockIn(walletAddress, drawnCard) {
   user.lastClockIn = now.toISOString();
   user.totalReadings = (user.totalReadings || 0) + 1;
 
-  // Sustainable reward: +0.1 SKR base, +1.0 SKR milestone every 7 days
-  const isMilestone = user.streak % 7 === 0;
-  const rewardSkr = isMilestone ? 1.0 : 0.1;
-  user.skrBalance = Number(((user.skrBalance || 0) + rewardSkr).toFixed(2));
+  // Zero emission mode: no token payouts on check-in
+  const rewardSkr = 0;
 
   user.history = user.history || [];
   user.history.unshift({

@@ -21,7 +21,7 @@ Node.js service powering the Arkana deck engine, AI oracle proxy, and SKR retent
 | `GET` | `/api/deck` | Returns all 78 card passports with symbolic attributes |
 | `GET` | `/api/spreads` | Returns available spread layouts (Network Scan, Validator Cross, Crypto Compass) |
 | `GET` | `/api/clock-in/:wallet` | Checks daily clock-in status, streak count, and remaining free spreads |
-| `POST` | `/api/clock-in` | Executes daily block draw, updates streak, and grants +0.1 SKR reward |
+| `POST` | `/api/clock-in` | Executes daily block draw, updates streak, and refills daily spread quota |
 | `POST` | `/api/spread/consume` | Deducts from daily free allowance or charges 5 SKR fee |
 | `POST` | `/api/reading` | Validates quota, draws cards, and generates 7-beat interpretation |
 | `POST` | `/api/chat` | Interactive conversational query with Oracle AI |
