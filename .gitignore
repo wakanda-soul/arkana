@@ -30,3 +30,26 @@ hackathon_info.txt
 .DS_Store
 Thumbs.db
 temp/
+
+# Secrets & Keys (STRICT FOR PUBLIC REPO)
+*.pem
+*.key
+*.priv
+*.pkcs12
+*id_rsa*
+*id_ed25519*
+*id_ecdsa*
+*.keystore
+*.jks
+*secret*
+*credentials*
+*private_key*
+*privatekey*
+*seed*
+*.seed
+*.env
+*.env.*
+*.env.local
+*wallet*.json
+*keypair*.json
+temp/
