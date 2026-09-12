@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
 const { generateReadingProse, generateOracleChatReply } = require("./ai/oracleService");
-const { getClockInStatus, recordClockIn } = require("./solana/skrService");
+const { getClockInStatus, recordClockIn, consumeSpread } = require("./solana/skrService");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,7 +27,7 @@ app.get("/download", (req, res) => {
 
   res.send(`
     <!DOCTYPE html>
-    <html lang="ru">
+    <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -157,7 +157,7 @@ app.get("/download", (req, res) => {
           <p style="font-weight:600; color:#fff; margin-bottom:8px;">What's inside this build:</p>
           <ul>
             <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare)</li>
-            <li>⏰ Daily Clock-In (+5 SKR ritual & streak counter)</li>
+            <li>⏰ Daily Clock-In (+0.1 SKR reward, free spreads refill & streak counter)</li>
             <li>🃏 78 Tarot Arcana cards with 3D flip animations</li>
             <li>🧠 7-Beat Oracle Synthesis (AI Engine)</li>
             <li>💬 Interactive Oracle Chat</li>
@@ -207,10 +207,24 @@ app.get("/api/clock-in/:wallet", (req, res) => {
   }
 });
 
+// Check and consume spread quota or deduct 5 SKR fee
+app.post("/api/spread/consume", (req, res) => {
+  try {
+    const { wallet } = req.body;
+    const result = consumeSpread(wallet);
+    if (!result.allowed) {
+      return res.status(402).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Perform Daily Clock In (1 card draw)
 app.post("/api/clock-in", async (req, res) => {
   try {
-    const { wallet, language = "ru" } = req.body;
+    const { wallet, language = "en" } = req.body;
     const reading = getReading({ spread: "daily-block", category: "crypto" });
     const prose = await generateReadingProse(reading, "Daily Consensus Clock-In", language);
 
@@ -238,10 +252,23 @@ app.post("/api/reading", async (req, res) => {
       category = "crypto",
       question = "",
       wallet = null,
-      language = "ru",
+      language = "en",
       cards = null,
       seed = null
     } = req.body;
+
+    // Check & consume quota if wallet provided
+    let quotaResult = null;
+    if (wallet) {
+      quotaResult = consumeSpread(wallet);
+      if (!quotaResult.allowed) {
+        return res.status(402).json({
+          success: false,
+          error: quotaResult.error,
+          quota: quotaResult
+        });
+      }
+    }
 
     const reading = getReading({
       spread,
@@ -259,6 +286,7 @@ app.post("/api/reading", async (req, res) => {
       spread_name: reading.spread_name,
       spread_key: reading.spread_key,
       category: reading.category,
+      quota: quotaResult,
       engine_metrics: {
         majors_count: reading.majors_count,
         structural: reading.structural,

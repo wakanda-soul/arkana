@@ -10,6 +10,18 @@ export interface ClockInResult {
   totalReadings: number;
   skrBalance: number;
   isSeekerHolder: boolean;
+  freeSpreadsRemaining?: number;
+  freeSpreadsMax?: number;
+  extraSpreadCostSkr?: number;
+}
+
+export interface QuotaConsumeResult {
+  allowed: boolean;
+  isFree: boolean;
+  cost: number;
+  remainingFree: number;
+  balance: number;
+  error?: string;
 }
 
 export interface ReadingResponse {
@@ -18,6 +30,7 @@ export interface ReadingResponse {
   spread_name: string;
   spread_key: string;
   category: string;
+  quota?: QuotaConsumeResult;
   cards: Array<{
     position: string;
     position_hint: string;
@@ -184,12 +197,37 @@ export async function fetchReading(spread: string, question: string = '', wallet
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spread, question, wallet }),
     });
+    if (res.status === 402) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Daily free spread allowance reached. 5 SKR required to cast an additional spread.');
+    }
     if (res.ok) {
       return await res.json();
     }
-  } catch (e) {
+  } catch (e: any) {
+    if (e.message && e.message.includes('5 SKR')) {
+      throw e;
+    }
     console.warn('Backend reading fetch error, falling back to local engine:', e);
   }
 
   return generateLocalReading(spread, question);
+}
+
+export async function consumeSpreadQuota(wallet?: string): Promise<QuotaConsumeResult> {
+  if (!wallet) {
+    return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
+  }
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/spread/consume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.warn('API error consuming spread quota:', e);
+    return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
+  }
 }

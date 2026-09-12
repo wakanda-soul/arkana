@@ -11,7 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchReading, ReadingResponse } from '@/services/oracleApi';
+import { useAuth } from '@/components/auth/auth-provider';
+import { fetchReading, fetchClockInStatus, ClockInResult, ReadingResponse } from '@/services/oracleApi';
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
 import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
@@ -22,26 +23,47 @@ export default function SpreadScreen() {
   const router = useRouter();
   const spreadKey = id || 'network-scan';
 
+  const { account } = useAuth();
+  const walletAddress = account?.publicKey?.toString() || 'SeekerDemoWallet1111111111111111111';
+
   const [question, setQuestion] = useState('');
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [reading, setReading] = useState<ReadingResponse | null>(null);
   const [revealedMap, setRevealedMap] = useState<Record<number, boolean>>({});
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
+  const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchClockInStatus(walletAddress).then(setQuotaInfo);
+  }, [walletAddress]);
 
   const handleDraw = async () => {
+    setQuotaError(null);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
 
     setIsLoading(true);
     try {
-      const res = await fetchReading(spreadKey, question);
+      const res = await fetchReading(spreadKey, question, walletAddress);
       setReading(res);
       setHasDrawn(true);
       setRevealedMap({});
-    } catch (e) {
+      if (res.quota) {
+        setQuotaInfo(prev => prev ? {
+          ...prev,
+          freeSpreadsRemaining: res.quota!.remainingFree,
+          skrBalance: res.quota!.balance,
+        } : null);
+      }
+    } catch (e: any) {
       console.warn('Draw error:', e);
+      setQuotaError(e.message || 'Failed to cast spread');
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } catch {}
     } finally {
       setIsLoading(false);
     }
@@ -104,17 +126,65 @@ export default function SpreadScreen() {
               numberOfLines={3}
             />
 
-            <Pressable
-              style={({ pressed }) => [styles.drawButton, pressed && styles.buttonPressed]}
-              onPress={handleDraw}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#0E101A" />
-              ) : (
-                <Text style={styles.drawButtonText}>🔮 SHUFFLE & DRAW CARDS</Text>
-              )}
-            </Pressable>
+            {/* Daily Spread Quota & Fee Verification */}
+            {(() => {
+              const freeRemaining = quotaInfo?.freeSpreadsRemaining ?? 3;
+              const freeMax = quotaInfo?.freeSpreadsMax ?? 3;
+              const isFree = freeRemaining > 0;
+              const balance = quotaInfo?.skrBalance ?? 25;
+              const canAfford = isFree || balance >= 5;
+
+              return (
+                <View style={styles.quotaBox}>
+                  <View style={styles.quotaRow}>
+                    <View style={styles.quotaBadge}>
+                      <Text style={styles.quotaIcon}>{isFree ? '✨' : '⚡'}</Text>
+                      <Text style={styles.quotaTitle}>
+                        {isFree
+                          ? `${freeRemaining}/${freeMax} FREE SPREADS TODAY`
+                          : '5 SKR FEE PER SPREAD'}
+                      </Text>
+                    </View>
+                    <Text style={styles.balanceText}>{balance} SKR</Text>
+                  </View>
+
+                  {!canAfford && (
+                    <Text style={styles.warningText}>
+                      ⚠️ Daily free allowance exhausted (0/{freeMax}) and insufficient balance (&lt;5 SKR). Clock in daily to earn SKR or refill allowance.
+                    </Text>
+                  )}
+
+                  {quotaError && (
+                    <View style={styles.errorBox}>
+                      <Text style={styles.errorText}>⚠️ {quotaError}</Text>
+                    </View>
+                  )}
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.drawButton,
+                      !isFree && styles.paidDrawButton,
+                      (!canAfford || isLoading) && styles.drawButtonDisabled,
+                      pressed && canAfford && styles.buttonPressed,
+                    ]}
+                    onPress={handleDraw}
+                    disabled={isLoading || !canAfford}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#0E101A" />
+                    ) : (
+                      <Text style={styles.drawButtonText}>
+                        {!canAfford
+                          ? 'INSUFFICIENT SKR (5 SKR REQUIRED)'
+                          : isFree
+                          ? '🔮 SHUFFLE & DRAW (FREE)'
+                          : '⚡ APPROVE 5 SKR & DRAW'}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              );
+            })()}
           </View>
         )}
 
@@ -238,11 +308,76 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 16,
   },
+  quotaBox: {
+    marginBottom: 8,
+  },
+  quotaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0B0C12',
+    borderColor: '#261F42',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  quotaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quotaIcon: {
+    fontSize: 12,
+  },
+  quotaTitle: {
+    color: '#14F195',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  balanceText: {
+    color: '#F5D061',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  warningText: {
+    color: '#FF7B72',
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 14,
+    backgroundColor: 'rgba(255, 123, 114, 0.12)',
+    borderColor: 'rgba(255, 123, 114, 0.3)',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(255, 123, 114, 0.15)',
+    borderColor: '#FF7B72',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 14,
+  },
+  errorText: {
+    color: '#FF7B72',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   drawButton: {
     backgroundColor: '#14F195',
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  paidDrawButton: {
+    backgroundColor: '#9945FF',
+  },
+  drawButtonDisabled: {
+    backgroundColor: '#232938',
+    opacity: 0.6,
   },
   buttonPressed: {
     opacity: 0.85,

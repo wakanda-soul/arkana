@@ -27,7 +27,10 @@ export default function AltarScreen() {
     streak: 1,
     lastClockIn: null,
     totalReadings: 1,
-    skrBalance: 100,
+    skrBalance: 25,
+    freeSpreadsRemaining: 3,
+    freeSpreadsMax: 3,
+    extraSpreadCostSkr: 5,
     isSeekerHolder: true,
   });
 
@@ -49,11 +52,14 @@ export default function AltarScreen() {
     try {
       const res = await executeClockIn(walletAddress);
       setDailyReading(res.reading);
+      const isMilestone = (res.streak % 7 === 0);
+      const reward = isMilestone ? 1.0 : 0.1;
       setClockInState(prev => ({
         ...prev,
         canClockIn: false,
         streak: res.streak,
-        skrBalance: prev.skrBalance + 5,
+        skrBalance: Number((prev.skrBalance + reward).toFixed(2)),
+        freeSpreadsRemaining: prev.freeSpreadsMax ?? 3,
       }));
       setIsModalVisible(true);
       try {
@@ -98,13 +104,26 @@ export default function AltarScreen() {
             <View style={styles.streakTag}>
               <Text style={styles.streakText}>STREAK: {clockInState.streak} DAYS</Text>
             </View>
-            <Text style={styles.rewardText}>+5 SKR REWARD</Text>
+            <Text style={styles.rewardText}>
+              {clockInState.streak % 7 === 6 ? '+1.0 SKR MILESTONE' : '+0.1 SKR / DAY'}
+            </Text>
           </View>
 
           <Text style={styles.bannerTitle}>Daily Block Consensus</Text>
           <Text style={styles.bannerSubtitle}>
-            Clock in daily to validate your mindset, receive today's oracle omen, and earn SKR.
+            Clock in daily to validate your mindset, refill your daily free spread allowance, and build your on-chain streak.
           </Text>
+
+          {/* Daily Quota Indicator */}
+          <View style={styles.quotaRow}>
+            <View style={styles.quotaPill}>
+              <Text style={styles.quotaIcon}>✨</Text>
+              <Text style={styles.quotaText}>
+                {clockInState.freeSpreadsRemaining ?? 3}/{clockInState.freeSpreadsMax ?? 3} FREE SPREADS TODAY
+              </Text>
+            </View>
+            <Text style={styles.quotaSub}>Extra spreads: 5 SKR</Text>
+          </View>
 
           <Pressable
             style={({ pressed }) => [
@@ -339,7 +358,38 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 13,
     lineHeight: 19,
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  quotaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0C0D17',
+    borderColor: '#261F42',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  quotaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quotaIcon: {
+    fontSize: 12,
+  },
+  quotaText: {
+    color: '#14F195',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  quotaSub: {
+    color: '#8F8BA8',
+    fontSize: 11,
+    fontWeight: '600',
   },
   clockInButton: {
     backgroundColor: '#14F195',
