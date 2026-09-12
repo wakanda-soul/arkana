@@ -10,8 +10,12 @@ import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native'
  */
 const MAPPING = {
   'gearshape.fill': 'settings',
-  'wallet.pass.fill': 'wallet',
+  'wallet.pass.fill': 'account-balance-wallet',
   'ladybug.fill': 'bug-report',
+  'sparkles': 'auto-awesome',
+  'bubble.left.and.bubble.right.fill': 'chat',
+  'book.closed.fill': 'menu-book',
+  'flame.fill': 'whatshot',
 } as const satisfies Record<string, ComponentProps<typeof MaterialIcons>['name']>
 
 export type UiIconSymbolName = keyof typeof MAPPING

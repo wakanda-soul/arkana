@@ -4,30 +4,58 @@ import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      {/* The index redirects to the account screen */}
-      <Tabs.Screen name="index" options={{ tabBarItemStyle: { display: 'none' } }} />
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#0E101A',
+          borderTopColor: '#1F2338',
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        tabBarActiveTintColor: '#14F195',
+        tabBarInactiveTintColor: '#6E7681',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+      }}
+    >
       <Tabs.Screen
-        name="account"
+        name="index"
         options={{
-          title: 'Account',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={28} name="wallet.pass.fill" color={color} />,
+          title: 'Altar',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="sparkles" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="oracle"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={28} name="gearshape.fill" color={color} />,
+          title: 'Oracle AI',
+          tabBarIcon: ({ color }) => (
+            <UiIconSymbol size={24} name="bubble.left.and.bubble.right.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="demo"
+        name="codex"
         options={{
-          title: 'Demo',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={28} name="ladybug.fill" color={color} />,
+          title: 'Codex',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="book.closed.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: 'Seeker',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="wallet.pass.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen name="account" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="demo" options={{ href: null }} />
     </Tabs>
   )
 }
