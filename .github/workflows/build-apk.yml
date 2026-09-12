@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Solana Mobile APK
@@ -38,15 +41,33 @@ jobs:
         working-directory: ./arkana-app
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build Android APK (Debug / Release)
+      - name: Build Android APK (Debug)
         working-directory: ./arkana-app/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK Artifact
+      - name: Rename APK for Release
+        run: |
+          cp arkana-app/android/app/build/outputs/apk/debug/app-debug.apk arkana-v1.0.0-beta.apk
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: arkana-solana-mobile-apk
-          path: arkana-app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: arkana-v1.0.0-beta.apk
           retention-days: 30
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-beta
+          name: "Arkana v1.0.0-beta — Solana Mobile Build"
+          body: |
+            ### 🔮 Arkana — The Blockchain Oracle (Mobile Test Build)
+            - Built for **Solana Mobile & Seeker**
+            - Includes **Mobile Wallet Adapter (MWA)**, **Seed Vault** security, 78-card deck, and **Daily Clock-In** (+5 SKR).
+            - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Seeker emulator.
+          files: arkana-v1.0.0-beta.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
