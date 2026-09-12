@@ -108,10 +108,7 @@ function generateOracleChatReply(message, history = []) {
       (err, stdout) => {
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI] agy fallback triggered:", err ? err.message : "empty response");
-          const isRu = /[а-яё]/i.test(message);
-          const fallback = isRu
-            ? `Оракул наблюдает движение ваших транзакций в мемпуле. Касательно «${message}»: сеть подтверждает, что блоки формируются в соответствии с вашими решениями. Сохраняйте хладнокровие валидатора.`
-            : `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
+          const fallback = `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
           return resolve(fallback);
         }
 
