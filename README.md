@@ -1,39 +1,39 @@
 # 🔮 Arkana — The Blockchain Oracle
-### Built for *Clock In — A Solana Mobile Hackathon* (Radiants & Solana Mobile)
+### Mobile-native crypto tarot & AI oracle for Solana Mobile & Seeker
 
-> **"The Chain remembers every block. The cards remember every pattern."**
+> *"The Chain remembers every block. The cards remember every pattern."*
 
-Arkana is an AI-powered blockchain oracle and cyber-tarot application designed natively for **Solana Mobile** and the **Seeker** ecosystem. It merges handcrafted cryptographic archetypes, fair on-chain-grade RNG draws, a 500+ card interaction engine, and an AI narrative synthesizer into a daily ritual for crypto natives.
+Arkana is an AI-powered blockchain oracle and cyber-tarot application built natively for **Solana Mobile** and the **Seeker** ecosystem. It merges a handcrafted 78-card blockchain deck, fair RNG draws, a 500+ card interaction engine, and an AI narrative synthesizer into a daily ritual for crypto natives, builders, and traders.
 
 ---
 
-## 🌟 Core Pillars & Hackathon Alignment
+## ⚡ Key Features
 
-1. **AI Oracle Agent (20% Scoring Weight):**
-   - Deep 78-card blockchain oracle deck (22 Major Arcana + 56 Minor Arcana across Protocols, Liquidity, Nodes, and Assets).
-   - 500+ curated archetype combinations and elemental balancing algorithms.
-   - Structured **7-beat narrative generation**:
-     1. *The Story (История)* — holistic synthesis of the spread.
-     2. *Hidden Forces (Скрытые силы)* — undercurrents and mempool friction.
-     3. *What Strengthens You (Что усиливает)* — validator consensus behind you.
-     4. *What Weakens You (Что ослабляет)* — attack vectors and liquidity leaks.
-     5. *Oracle Advice (Совет Оракула)* — stoic, pragmatic blockchain wisdom.
-     6. *Warning (Предостережение)* — hard-fork risk if unhedged.
-     7. *Final Omen (Финальное знамение)* — an immutable closing truth.
+### 🎴 Handcrafted 78-Card Blockchain Deck
+* **22 Major Arcana:** Foundational crypto archetypes (*The Genesis Block*, *The Smart Contract Architect*, *The Validator*, *The Hard Fork*, *The Rug Pull*, *Liquidation*, *ATH*).
+* **56 Minor Arcana:** Four elemental suits mapping to blockchain reality:
+  * ⚡ **Nodes (Fire):** Building, execution, startups, dev energy.
+  * 💧 **Liquidity (Water):** Sentiment, community, capital flow, trust.
+  * ⚔️ **Protocols (Air):** Logic, smart contracts, security, exploits.
+  * 🪙 **Assets (Earth):** Value, long-term holdings, staking, treasury.
+* **500+ Curated Combinations:** Unique multi-card synergy engine resolving macro forces and elemental balance.
 
-2. **SKR Token & Daily Clock-In (20% Scoring Weight):**
-   - **Daily Clock-In Ritual:** Seeker users clock in every 24 hours to draw their *Daily Block* omen and earn SKR rewards.
-   - **Streak Tracking:** Multi-day engagement multiplier rewarding consistent builders and traders.
-   - **SKR Utility:** Micro-burn / payment of SKR for advanced 5-card spreads (*Validator Cross*, *Crypto Compass*) and deep AI clarification queries.
+### 🧠 Seven-Beat Narrative Synthesis
+Every reading delivers a structured story in the language of the chain:
+1. **The Story (История):** Holistic synthesis of all drawn cards into one cohesive narrative.
+2. **Hidden Forces (Скрытые силы):** Sub-surface mempool currents and reversed card dynamics.
+3. **What Strengthens You (Что усиливает):** Supportive validator consensus and momentum.
+4. **What Weakens You (Что ослабляет):** Protocol vulnerabilities, liquidity leaks, and shadows to manage.
+5. **Oracle Advice (Совет Оракула):** Pragmatic, stoic blockchain guidance.
+6. **Warning (Предостережение):** Hard-fork risk if navigating unhedged.
+7. **Final Omen (Финальное знамение):** An immutable cryptographic aphorism.
 
-3. **Mobile-First UX/UI (30% Scoring Weight):**
-   - Built on React Native & Expo with native Android compilation.
-   - Powered by `@wallet-ui/react-native-web3js` and official **Solana Mobile Wallet Adapter (MWA)**.
-   - Haptic feedback on Android devices (`expo-haptics`) simulating physical card shuffles and draws.
-   - 60/120fps fluid card flip animations via `react-native-reanimated`.
-
-4. **Innovation & Community Engagement (30% Scoring Weight):**
-   - Bridges the rich subculture of crypto horoscopes and sentiment analysis with actual Solana network mechanics.
+### 📱 Built for Solana Mobile & Seeker
+* **Mobile Wallet Adapter (MWA):** Native connection to Seeker hardware **Seed Vault**, Phantom, or Solflare.
+* **Tactile Haptic Feedback:** Physical card shuffling and draw sensations via `expo-haptics`.
+* **Fluid 3D Animations:** 60/120fps card flip and reveal physics powered by `react-native-reanimated`.
+* **Daily Clock-In Ritual:** Daily 1-card draw (*The Daily Block*) with multi-day streak tracking and SKR reward rewards.
+* **SKR Ecosystem Utility:** Micro-burn and staking perks for unlocking deep 5-card spreads (*The Validator Cross*, *The Crypto Compass*) and interactive Oracle AI chats.
 
 ---
 
@@ -41,10 +41,11 @@ Arkana is an AI-powered blockchain oracle and cyber-tarot application designed n
 
 ```
 ├── arkana-app/              # Native Solana Mobile Application (React Native / Expo / MWA)
-│   ├── app/                 # Expo Router screens (Altar, Spreads, Chat, Codex, Wallet)
+│   ├── app/                 # Expo Router screens (Altar, Spreads, Oracle AI, Codex, Seeker Wallet)
 │   ├── android/             # Prebuilt native Android project with Gradle & MWA bindings
 │   ├── assets/cards/        # 78 optimized WebP card artworks (00-77)
-│   └── components/          # Reanimated card components, wallet adapters, haptic buttons
+│   ├── components/tarot/    # 3D Reanimated Tarot Cards & SevenBeatsView components
+│   └── services/            # Dual-mode Oracle API & offline fallback engine
 │
 ├── arkana-server/           # AI Oracle Engine & Backend API
 │   ├── src/
@@ -72,13 +73,15 @@ npm start
 ```bash
 cd arkana-app
 npm install
-# Start development server:
+
+# Run development server:
 npx expo start
-# Or build Android APK locally:
-npm run android:build
+
+# Run on connected Android / Seeker device:
+npx expo run:android
 ```
 
 ---
 
 ## 📜 License
-MIT License. Built with passion for Solana Mobile & Seeker.
+MIT License. Built for the Solana Mobile & Seeker ecosystem.
