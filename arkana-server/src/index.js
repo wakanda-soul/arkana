@@ -122,7 +122,7 @@ app.get("/download", (req, res) => {
         <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana" target="_blank">🌐 GitHub Repository</a>
 
         <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62:3001/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
           <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Сканируй камерой телефона</p>
         </div>
 
@@ -268,6 +268,16 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔮 Arkana Oracle Server is running on http://0.0.0.0:${PORT}`);
 });
+
+// Also bind standard HTTP port 80 for frictionless mobile downloads
+try {
+  const http = require("http");
+  http.createServer(app).listen(80, "0.0.0.0", () => {
+    console.log(`🔮 Arkana HTTP download listener running on http://0.0.0.0:80`);
+  });
+} catch (err) {
+  console.warn("Could not bind port 80:", err.message);
+}
