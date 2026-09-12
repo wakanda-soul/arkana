@@ -1,50 +1,62 @@
-# Welcome to your Expo app 👋
+# Arkana Mobile Client
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Native Android application for Arkana, built with React Native, Expo, and the Solana Mobile Wallet Adapter (MWA). Designed for the Solana Seeker phone and standard Android devices running Android 10+.
 
-## Get started
+---
 
-1. Install dependencies
+## App Screens & Structure
 
-   ```bash
-   npm install
-   ```
+The client runs on Expo Router with tab navigation:
 
-2. Start the app
+- `app/(tabs)/index.tsx`: The Altar. Features the Daily Block Clock-In, current streak counter, daily free spread allowance, and shortcuts to full spread layouts.
+- `app/spread/[id].tsx`: Interactive spread altar. Lays out cards in authentic Tarot Cross and Compass geometries, manages 3D card flips, checks SKR quota, and displays the 7-beat reading.
+- `app/(tabs)/oracle.tsx`: Live conversational terminal with Arkana Oracle, proxied through a low-latency Gemini Flash backend.
+- `app/(tabs)/codex.tsx`: Complete index of all 78 Arcana cards. Tap any card to open the inspection modal with upright and reversed interpretations.
+- `app/(tabs)/wallet.tsx`: Seeker identity hub. Connects to Phantom, Solflare, or Seed Vault, tracks SKR balances, and manages on-chain sessions.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Key Dependencies
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- `@solana-mobile/mobile-wallet-adapter-protocol`: Native MWA authorization and transaction signing on Android.
+- `react-native-reanimated`: 60/120fps card flip physics and spring animations.
+- `expo-haptics`: Tactile feedback for shuffling, reveals, and check-in confirmation.
+- `react-native-safe-area-context`: Dynamic padding for Android 3-button and gesture navigation bars.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Development Setup
 
-When you're ready, run:
+### 1. Install Dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Start Expo Dev Server
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Run on Device
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+To test MWA and Seed Vault, connect a physical Android device or Seeker developer phone with USB debugging enabled:
 
-## Join the community
+```bash
+npx expo run:android
+```
 
-Join our community of developers creating universal apps.
+### 4. TypeScript Validation
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Verify types across the app:
+
+```bash
+npx tsc --noEmit
+```
+
+---
+
+## Offline Support
+
+If the backend server is unreachable, `services/oracleApi.ts` automatically switches to the client-side deterministic engine. All 78 card passports and combination rules run offline without crashing or stalling the user experience.

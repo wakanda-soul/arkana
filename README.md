@@ -1,87 +1,99 @@
-# 🔮 Arkana — The Blockchain Oracle
-### Mobile-native crypto tarot & AI oracle for Solana Mobile & Seeker
+# Arkana: The Blockchain Oracle
 
-> *"The Chain remembers every block. The cards remember every pattern."*
+Crypto tarot and daily block consensus built for Solana Mobile and the Seeker ecosystem.
 
-Arkana is an AI-powered blockchain oracle and cyber-tarot application built natively for **Solana Mobile** and the **Seeker** ecosystem. It merges a handcrafted 78-card blockchain deck, fair RNG draws, a 500+ card interaction engine, and an AI narrative synthesizer into a daily ritual for crypto natives, builders, and traders.
+Arkana turns blockchain mechanics into a 78-card symbolic oracle. It connects to your hardware Seed Vault via Mobile Wallet Adapter (MWA), lets you cast spreads with fair local RNG, and synthesizes 7-beat narrative readings through a fast on-chain oracle engine.
 
----
-
-## ⚡ Key Features
-
-### 🎴 Handcrafted 78-Card Blockchain Deck
-* **22 Major Arcana:** Foundational crypto archetypes (*The Genesis Block*, *The Smart Contract Architect*, *The Validator*, *The Hard Fork*, *The Rug Pull*, *Liquidation*, *ATH*).
-* **56 Minor Arcana:** Four elemental suits mapping to blockchain reality:
-  * ⚡ **Nodes (Fire):** Building, execution, startups, dev energy.
-  * 💧 **Liquidity (Water):** Sentiment, community, capital flow, trust.
-  * ⚔️ **Protocols (Air):** Logic, smart contracts, security, exploits.
-  * 🪙 **Assets (Earth):** Value, long-term holdings, staking, treasury.
-* **500+ Curated Combinations:** Unique multi-card synergy engine resolving macro forces and elemental balance.
-
-### 🧠 Seven-Beat Narrative Synthesis
-Every reading delivers a structured story in the language of the chain:
-1. **The Story:** Holistic synthesis of all drawn cards into one cohesive narrative.
-2. **Hidden Forces:** Sub-surface mempool currents and reversed card dynamics.
-3. **What Strengthens You:** Supportive validator consensus and momentum.
-4. **What Weakens You:** Protocol vulnerabilities, liquidity leaks, and shadows to manage.
-5. **Oracle Advice:** Pragmatic, stoic blockchain guidance.
-6. **Warning:** Hard-fork risk if navigating unhedged.
-7. **Final Omen:** An immutable cryptographic aphorism.
-
-### 📱 Built for Solana Mobile & Seeker
-* **Mobile Wallet Adapter (MWA):** Native connection to Seeker hardware **Seed Vault**, Phantom, or Solflare.
-* **Tactile Haptic Feedback:** Physical card shuffling and draw sensations via `expo-haptics`.
-* **Fluid 3D Animations:** 60/120fps card flip and reveal physics powered by `react-native-reanimated`.
-* **Daily Clock-In Ritual:** Daily 1-card draw (*The Daily Block*) with multi-day streak tracking and SKR reward rewards.
-* **SKR Ecosystem Utility:** Micro-burn and staking perks for unlocking deep 5-card spreads (*The Validator Cross*, *The Crypto Compass*) and interactive Oracle AI chats.
+[⚡ Download Android APK](http://184.174.39.62/arkana.apk) · [🎨 Design Kit (78 cards, 22 MB)](http://184.174.39.62/arkana-designs.zip) · [Releases](https://github.com/wakanda-soul/arkana/releases)
 
 ---
 
-## 📁 Repository Structure
+## What Arkana Does
+
+Most tarot apps run generic fortune-cookie scripts in a webview. Arkana runs a native Kotlin and React Native engine with physical card physics, haptics, and a structured deck modeled on decentralized networks.
+
+- 78-card blockchain deck: 22 Major Arcana (Genesis Block, Validator, Hard Fork, Liquidation, ATH) and 56 Minor Arcana across four suits: Nodes (execution), Liquidity (capital), Protocols (security), and Assets (value).
+- 500+ card synergies: an interpretation engine checks card pairs, dominant suits, and arcana density before running narrative synthesis.
+- Seven-beat readings: readings break down into seven concrete angles: The Story, Hidden Forces, What Strengthens You, What Weakens You, Oracle Advice, Warning, and Final Omen.
+- Hardware wallet security: native MWA integration signs transactions directly inside Solana Mobile Seed Vault without exposing private keys.
+- Daily Clock-In: draw one card each morning to test your market mindset, extend your streak, and refill your daily allowance.
+
+---
+
+## In-App Economy & SKR Tokenomics
+
+Arkana avoids runaway token inflation by pairing free daily usage with micro-rewards:
+
+| Action | Cost / Reward | Quota Impact |
+| :--- | :--- | :--- |
+| Daily Clock-In | +0.10 SKR (or +1.0 SKR every 7 days) | Refills free daily spread allowance |
+| Daily free spreads | Free | 3 spreads/day (up to 5/day for 7+ day streaks) |
+| Extra spread | 5 SKR | Deducted once daily free allowance runs out |
+| Codex & Card inspection | Free | Always available offline |
+
+If a user exhausts their free allowance and has fewer than 5 SKR, the app flags the balance and asks for confirmation or suggests clocking in the next day.
+
+---
+
+## Architecture
+
+Arkana ships as two decoupled pieces:
 
 ```
-├── arkana-app/              # Native Solana Mobile Application (React Native / Expo / MWA)
-│   ├── app/                 # Expo Router screens (Altar, Spreads, Oracle AI, Codex, Seeker Wallet)
-│   ├── android/             # Prebuilt native Android project with Gradle & MWA bindings
-│   ├── assets/cards/        # 78 optimized WebP card artworks (00-77)
-│   ├── components/tarot/    # 3D Reanimated Tarot Cards & SevenBeatsView components
-│   └── services/            # Dual-mode Oracle API & offline fallback engine
+├── arkana-app/              # Native Android/Expo app with Solana MWA
+│   ├── app/                 # Expo Router tabs (Altar, Spreads, Oracle AI, Codex, Wallet)
+│   ├── android/             # Standalone Gradle build with Hermes bytecode
+│   ├── assets/cards/        # 78 WebP card illustrations (00 to 77)
+│   ├── components/tarot/    # 3D card flips, Tarot Cross / Compass geometry, Zoom modal
+│   └── services/            # Dual-mode API client with instant offline fallback
 │
-├── arkana-server/           # AI Oracle Engine & Backend API
-│   ├── src/
-│   │   ├── engine/          # 78 card passports, fair RNG draw core, combinations engine
-│   │   ├── ai/              # 7-beat narrative synthesizer & LLM prompt handler
-│   │   └── solana/          # SKR token tracker & Daily Clock-In persistence
-│   └── public/cards/        # Card assets served via static CDN
-│
-└── README.md                # Project documentation
+└── arkana-server/           # Node.js backend & AI proxy
+    ├── src/engine/          # 78 card definitions, RNG shuffler, combination solver
+    ├── src/ai/              # Gemini 3.8 Flash low-latency persona proxy
+    ├── src/solana/          # SKR balance tracking and streak storage
+    └── public/              # Static CDN for card assets and APK distribution
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1. Backend Server
+### Running the Server
+
+Requires Node.js 18+.
+
 ```bash
 cd arkana-server
 npm install
 npm start
-# Server listens on http://localhost:3001
+# Server listens on port 3001 (and port 80 for APK direct downloads)
 ```
 
-### 2. Mobile Application
+### Running the Mobile App
+
+Requires Node.js, Expo CLI, and an Android device or emulator with Solana Mobile Wallet Adapter.
+
 ```bash
 cd arkana-app
 npm install
 
-# Run development server:
+# Start development server
 npx expo start
 
-# Run on connected Android / Seeker device:
+# Run native Android build directly on a connected device
 npx expo run:android
 ```
 
+### Building the Standalone APK
+
+The release workflow is automated via GitHub Actions:
+
+1. Push commits to `main`.
+2. The workflow builds release Hermes bytecode and signs an installable APK.
+3. The server at `http://184.174.39.62/download` serves the latest binary for one-tap install on Seeker phones.
+
 ---
 
-## 📜 License
-MIT License. Built for the Solana Mobile & Seeker ecosystem.
+## License
+
+MIT License. Authored by wakanda. Built for the Solana Mobile Hackathon 2026.
