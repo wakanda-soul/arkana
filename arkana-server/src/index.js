@@ -134,6 +134,7 @@ app.get("/download", (req, res) => {
         
         ${isReady ? `
           <a class="btn" href="/arkana.apk" download>⚡ Скачать APK (${apkSize})</a>
+          <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Скачать Design Kit (78 карт + иконки, 22 MB)</a>
           <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
           <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
