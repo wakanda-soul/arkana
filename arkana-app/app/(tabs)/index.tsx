@@ -52,13 +52,10 @@ export default function AltarScreen() {
     try {
       const res = await executeClockIn(walletAddress);
       setDailyReading(res.reading);
-      const isMilestone = (res.streak % 7 === 0);
-      const reward = isMilestone ? 1.0 : 0.1;
       setClockInState(prev => ({
         ...prev,
         canClockIn: false,
         streak: res.streak,
-        skrBalance: Number((prev.skrBalance + reward).toFixed(2)),
         freeSpreadsRemaining: prev.freeSpreadsMax ?? 3,
       }));
       setIsModalVisible(true);
@@ -105,7 +102,7 @@ export default function AltarScreen() {
               <Text style={styles.streakText}>STREAK: {clockInState.streak} DAYS</Text>
             </View>
             <Text style={styles.rewardText}>
-              {clockInState.streak % 7 === 6 ? '+1.0 SKR MILESTONE' : '+0.1 SKR / DAY'}
+              {clockInState.streak >= 7 ? 'TIER III (5 SPREADS/DAY)' : clockInState.streak >= 3 ? 'TIER II (4 SPREADS/DAY)' : 'TIER I (3 SPREADS/DAY)'}
             </Text>
           </View>
 

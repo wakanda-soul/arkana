@@ -32,7 +32,7 @@ app.get("/download", (req, res) => {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       ${!isReady ? '<meta http-equiv="refresh" content="10">' : ''}
-      <title>Arkana — Solana Mobile APK</title>
+      <title>Arkana: Solana Mobile APK</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -157,7 +157,7 @@ app.get("/download", (req, res) => {
           <p style="font-weight:600; color:#fff; margin-bottom:8px;">What's inside this build:</p>
           <ul>
             <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare)</li>
-            <li>⏰ Daily Clock-In (+0.1 SKR reward, free spreads refill & streak counter)</li>
+            <li>⏰ Daily Clock-In (daily free spread refill & streak tier multiplier)</li>
             <li>🃏 78 Tarot Arcana cards with 3D flip animations</li>
             <li>🧠 7-Beat Oracle Synthesis (AI Engine)</li>
             <li>💬 Interactive Oracle Chat</li>
@@ -177,7 +177,7 @@ app.get("/api/health", (req, res) => {
     status: "ok",
     app: "Arkana - The Blockchain Oracle API",
     version: "1.0.0",
-    hackathon: "Clock In — A Solana Mobile Hackathon",
+    hackathon: "Clock In: A Solana Mobile Hackathon",
     network: "Solana Mobile / Seeker"
   });
 });
