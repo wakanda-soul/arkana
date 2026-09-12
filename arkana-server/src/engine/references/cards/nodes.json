@@ -1,0 +1,303 @@
+{
+  "suit": "Nodes",
+  "classic_suit": "Wands",
+  "element": "Fire",
+  "emoji": "⚡",
+  "domain": "Creation, development, validators, launching projects, energy, ambition, ecosystem growth. Wands are rendered as Validator Staffs — energy staffs of linked blocks glowing with cryptographic runes.",
+  "cards": [
+    {
+      "id": "nodes-ace", "number": 1, "classic": "Ace of Wands", "crypto_name": "Genesis Block", "arcana": "minor",
+      "keywords": ["Genesis", "Launch", "Innovation", "Builder"],
+      "upright": ["new idea", "project launch", "inspiration", "creating a network"],
+      "reversed": ["loss of motivation", "cancelled launch", "technical problems"],
+      "symbolism": "A hand of light emerges from the clouds holding a Validator Staff that contains the spinning Genesis Block, a whole new blockchain world forming beneath it. As the Ace of the fire suit, it is the first spark of creation — the very block on which everything else will be built. Pure ignition, before a single line of code has run.",
+      "upright_full": "A new idea catches fire: the impulse to launch, build, or create something from nothing. This card carries raw creative energy and the confidence that the project is worth starting. It rewards striking while the inspiration is hot, before doubt or delay can smother the spark.",
+      "reversed_full": "The spark sputters: motivation drains, a launch is cancelled, or technical problems stall the build before it begins. The vision is there but fails to ignite, or the timing is wrong. It is a false start, not a dead end.",
+      "domains": {
+        "crypto": "The genesis of a new project, protocol, or venture; a real spark worth acting on. Reversed: a launch that stalls or fizzles on technical debt.",
+        "trading": "A fresh, high-conviction idea for a new position; reversed, a setup that never triggers.",
+        "money": "A new income idea or venture full of energy and potential.",
+        "career": "An exciting new project or role ignites; act on the momentum.",
+        "startup": "Day-one founding energy — the empty repo lit with genesis fire; reversed, motivation dying before launch.",
+        "relationships": "A spark of new passion or a bold first move.",
+        "health": "A surge of fresh energy and motivation to begin.",
+        "life": "The spark of a new venture is here — give it fuel before it cools."
+      },
+      "advice": "The genesis spark is here — launch while the inspiration still burns.",
+      "shadow": "A spark left unfed burns out into another 'someday' idea."
+    },
+    {
+      "id": "nodes-2", "number": 2, "classic": "Two of Wands", "crypto_name": "Roadmap", "arcana": "minor",
+      "keywords": ["Roadmap", "Vision", "Strategy"],
+      "upright": ["planning", "strategy", "scaling", "choosing a direction"],
+      "reversed": ["indecision", "a poor plan", "no development"],
+      "symbolism": "An architect stands atop a DAO tower, two Validator Staffs in hand, studying a glowing roadmap of future ecosystems spread before him. The Two is the moment after ignition when the spark must choose a direction — vision surveyed from a height, the world weighed before the first real step beyond the comfort of what's built.",
+      "upright_full": "This card is planning and strategic vision: standing at a height, mapping the territory, and choosing which direction to scale. Roadmap rewards the leap beyond the familiar into a larger ambition. The idea exists; now it needs a plan and a decision.",
+      "reversed_full": "Reversed, vision stalls into indecision: a weak plan, fear of leaving the comfort zone, a roadmap that never turns into progress. The map is admired but never walked. Analysis replaces development.",
+      "domains": {
+        "crypto": "Setting protocol strategy and choosing a direction to scale; reversed, a roadmap with no shipping behind it.",
+        "trading": "A clear plan and thesis before entering; reversed, hesitating past the good entry.",
+        "money": "Planning your financial direction and next big move.",
+        "career": "Weighing paths and committing to a strategic direction.",
+        "startup": "Vision and roadmap set; the decision to expand beyond the first version.",
+        "relationships": "Deciding the direction of a relationship or planning a shared future.",
+        "health": "Designing a plan and committing to a direction.",
+        "life": "Vision without a next step is just a screenshot — take the first step."
+      },
+      "advice": "Set the roadmap and pick the direction before you build.",
+      "shadow": "Admiring the map forever is how the journey never starts."
+    },
+    {
+      "id": "nodes-3", "number": 3, "classic": "Three of Wands", "crypto_name": "Mainnet Launch", "arcana": "minor",
+      "keywords": ["Mainnet", "Launch", "Expansion"],
+      "upright": ["mainnet launch", "audience growth", "first results"],
+      "reversed": ["release delay", "no users", "a failed launch"],
+      "symbolism": "Three Validator Staffs stand on a digital shore as blockchain ships arrive on the horizon, carrying the first waves of new users into the ecosystem. The Three is the first payoff of the plan — the mainnet is live and the world begins to respond. Foresight rewarded with early traction.",
+      "upright_full": "This card is expansion and the first fruits of effort: a launch that lands, an audience arriving, early results confirming the direction. Mainnet Launch rewards patience and foresight — the ships you sent out are coming back full. Widen your view to match the traction.",
+      "reversed_full": "Reversed, the launch underdelivers: release delays, no users arriving, a horizon that stays empty. The ships were sent but none return, or the timing missed. Limited vision or unforeseen obstacles blunt the expansion.",
+      "domains": {
+        "crypto": "A mainnet launch gaining early traction and users; reversed, a delayed or empty launch with no adoption.",
+        "trading": "An entered thesis showing first confirmation; reversed, a trade that fails to follow through.",
+        "money": "Early returns on an investment or venture start arriving.",
+        "career": "Your work reaches a wider stage and shows first results.",
+        "startup": "Launch and early traction; the first users prove the direction.",
+        "relationships": "A relationship expanding outward into a shared world.",
+        "health": "Early, encouraging results from a new regimen.",
+        "life": "The groundwork is out in the world — scale your view to match it."
+      },
+      "advice": "The mainnet is live; scale your vision to the traction arriving.",
+      "shadow": "Waiting on the shore for ships that were never given a reason to come."
+    },
+    {
+      "id": "nodes-4", "number": 4, "classic": "Four of Wands", "crypto_name": "DAO Celebration", "arcana": "minor",
+      "keywords": ["DAO", "Community", "Success"],
+      "upright": ["project success", "a strong community", "stability"],
+      "reversed": ["community split", "internal conflict", "instability"],
+      "symbolism": "Four Validator Staffs form a ceremonial arch before a majestic DAO temple as builders and users celebrate a successful protocol launch. The Four is a stable milestone — the first solid foundation reached, worth pausing to honour. Community and structure joined in celebration.",
+      "upright_full": "This card is a milestone worth celebrating: a project succeeding, a strong community forming, a stable foundation reached. DAO Celebration rewards taking a moment to honour the win and the people who built it. Stability and belonging are the achievement here.",
+      "reversed_full": "Reversed, the celebration fractures: a community split, internal conflict, a shaky foundation, a launch that never quite consolidates. The arch cracks before the party. Belonging gives way to discord.",
+      "domains": {
+        "crypto": "A milestone reached with a strong, celebrating community; reversed, a DAO splitting into factions.",
+        "trading": "A solid win worth banking and marking; reversed, a false stability before a shake-out.",
+        "money": "Financial stability and a moment of security to enjoy.",
+        "career": "A team win and a stable, celebrated achievement.",
+        "startup": "A funding round, launch party, or milestone with an engaged community; reversed, internal team conflict.",
+        "relationships": "A joyful milestone — a home, an engagement, a gathering of your people.",
+        "health": "A stable, settled period of well-being.",
+        "life": "Celebrate the milestone; a community that marks its wins keeps building."
+      },
+      "advice": "Celebrate the milestone; a strong community is the real foundation.",
+      "shadow": "A foundation that skips the community cracks at the first stress."
+    },
+    {
+      "id": "nodes-5", "number": 5, "classic": "Five of Wands", "crypto_name": "Fork War", "arcana": "minor",
+      "keywords": ["Fork", "Competition", "Conflict"],
+      "upright": ["competition", "a clash of ideas", "growth through conflict"],
+      "reversed": ["pointless disputes", "toxicity", "chaos"],
+      "symbolism": "Five architects battle with luminous Validator Staffs across a splitting blockchain, sparks of competing protocols forging two diverging chains. The Five is friction and rivalry — the scrappy clash where many builders fight for the same block space and mindshare. Conflict that can sharpen or splinter.",
+      "upright_full": "This card is competition and creative conflict: a crowded arena of clashing ideas, rivalry that pushes everyone to build better. Fork War is messy but generative when the fight stays about the work. The tension is a sign the space is worth contesting.",
+      "reversed_full": "Reversed, the clash turns toxic: pointless disputes, infighting, chaos with no progress, burnout from the noise. The fork becomes a flame war. Energy is spent on ego instead of the build.",
+      "domains": {
+        "crypto": "Fierce competition for mindshare and block space, a contentious fork; reversed, toxic community infighting.",
+        "trading": "A crowded, contested trade with everyone fighting the same level; reversed, chasing noise into chaos.",
+        "money": "Financial competition or a contested resource.",
+        "career": "Rivalry, a competitive push, or a clash of approaches at work.",
+        "startup": "Competing head-on for a market; reversed, internal or ecosystem infighting draining you.",
+        "relationships": "Friction and clashing wills; healthy sparring or petty conflict.",
+        "health": "Restlessness and scattered, combative energy.",
+        "life": "Compete cleanly; the noise is a sign the prize is worth contesting."
+      },
+      "advice": "Compete on ideas; let the conflict forge a better chain, not chaos.",
+      "shadow": "A fork fought over ego, not merit, just splinters everyone's energy."
+    },
+    {
+      "id": "nodes-6", "number": 6, "classic": "Six of Wands", "crypto_name": "Verified", "arcana": "minor",
+      "keywords": ["Audit", "Verified", "Trust"],
+      "upright": ["recognition", "a successful audit", "community trust"],
+      "reversed": ["loss of reputation", "criticism", "a rejected audit"],
+      "symbolism": "A victorious builder rides into the capital beneath a giant glowing verification checkmark as a crowd of validators cheers. The Six is public triumph — the audit passed, the reputation earned, the network's trust made visible. Recognition after the fight.",
+      "upright_full": "This card is earned recognition: a successful audit, public trust, leading the pack after real work. Verified rewards visible achievement and the credibility that comes with it. Accept the applause — you earned the badge.",
+      "reversed_full": "Reversed, the reputation slips: a rejected audit, public criticism, a fall from grace, effort that goes unrecognised. The checkmark is withheld or revoked. Ego, or bad luck, tarnishes the win.",
+      "domains": {
+        "crypto": "A passed audit, public recognition, and community trust; reversed, a failed audit or reputational damage.",
+        "trading": "A public, validated win; reversed, a call that ages badly and dents your credibility.",
+        "money": "Financial recognition or a rewarded, visible success.",
+        "career": "Promotion, praise, and public acknowledgement of your work.",
+        "startup": "Credibility earned — a marquee audit, award, or trust signal; reversed, a public stumble.",
+        "relationships": "Feeling seen, appreciated, and publicly valued.",
+        "health": "Visible, encouraging progress others notice.",
+        "life": "Your work is verified — accept the recognition and keep the trust."
+      },
+      "advice": "Your work is verified — accept the recognition and keep earning the trust.",
+      "shadow": "Recognition believed too deeply becomes the ego that loses it."
+    },
+    {
+      "id": "nodes-7", "number": 7, "classic": "Seven of Wands", "crypto_name": "Network Defense", "arcana": "minor",
+      "keywords": ["Defense", "Security", "Persistence"],
+      "upright": ["defending the project", "resilience", "leadership"],
+      "reversed": ["overload", "loss of control", "pressure"],
+      "symbolism": "A lone guardian holds the top of a blockchain fortress, fending off seven attacking staffs from below. The Seven is the defence of hard-won ground — the higher position that must now be protected against challengers and critics. Conviction under siege.",
+      "upright_full": "This card is standing your ground: defending your project, thesis, or position against pressure and criticism. Network Defense rewards resilience and the courage to hold the high ground you earned. You have the advantage of position — use it.",
+      "reversed_full": "Reversed, the defence buckles: overwhelmed by attacks, losing control, exhausted by relentless pressure. The guardian is worn down or gives up ground. The fight becomes unsustainable.",
+      "domains": {
+        "crypto": "Defending a project or thesis against FUD and challengers; reversed, overwhelmed by attacks or pressure.",
+        "trading": "Holding conviction against a crowd betting the other way; reversed, capitulating under pressure.",
+        "money": "Defending your financial position or resources against demands.",
+        "career": "Standing up for your work or role under scrutiny.",
+        "startup": "Defending market share and vision against competitors and doubters; reversed, burning out under siege.",
+        "relationships": "Defending a boundary or a bond against outside pressure.",
+        "health": "Persisting through a challenge to your well-being.",
+        "life": "Hold the ground you earned — you don't owe every critic a war."
+      },
+      "advice": "Hold your ground; you earned the high position — defend it without exhausting yourself.",
+      "shadow": "Defending every hill at once is how you lose the one that mattered."
+    },
+    {
+      "id": "nodes-8", "number": 8, "classic": "Eight of Wands", "crypto_name": "Instant Finality", "arcana": "minor",
+      "keywords": ["Speed", "TPS", "Finality"],
+      "upright": ["speed", "scaling", "fast transactions"],
+      "reversed": ["delays", "network congestion", "high gas"],
+      "symbolism": "Eight Validator Staffs streak across the night sky like blockchain comets, connecting distant decentralized cities with streams of light. The Eight is acceleration — everything moving fast at once, transactions finalizing, momentum compressing time. Swift, decisive motion.",
+      "upright_full": "This card is speed and rapid progress: things accelerating, news arriving fast, transactions finalizing, a window opening quickly. Instant Finality rewards decisive action while the network is quick. Move now — the pace favours those who are ready.",
+      "reversed_full": "Reversed, the flow jams: delays, congestion, high gas, missed timing, chaos where there should be flow. The comets stall midair. Speed becomes frustration.",
+      "domains": {
+        "crypto": "Fast momentum — price, news, and adoption accelerating together; reversed, congestion, delays, and high fees.",
+        "trading": "A fast, decisive move to act on quickly; reversed, slippage and missed timing.",
+        "money": "Money moving fast — a quick decision or rapid change in finances.",
+        "career": "Rapid developments and fast-moving opportunities.",
+        "startup": "Hypergrowth and rapid iteration; reversed, scaling bottlenecks and delays.",
+        "relationships": "A fast-moving, exciting development.",
+        "health": "A quick surge of progress or a rapid change.",
+        "life": "Things move fast now — act decisively, but don't chase blind."
+      },
+      "advice": "Things finalize fast now; move decisively while the network is quick.",
+      "shadow": "Speed with no aim just arrives at the wrong destination sooner."
+    },
+    {
+      "id": "nodes-9", "number": 9, "classic": "Nine of Wands", "crypto_name": "Battle Tested", "arcana": "minor",
+      "keywords": ["Experience", "Security", "Endurance"],
+      "upright": ["experience", "endurance", "defending what's achieved"],
+      "reversed": ["burnout", "fear of repeating mistakes"],
+      "symbolism": "A wounded builder leans on a Validator Staff before a fortified wall, eight staffs standing behind him marking the trials he has already survived. The Nine is the last stand — battered but resilient, guarding what was built with one more push left. Scars as proof of strength.",
+      "upright_full": "This card is hard-won resilience: experience earned through trials, the endurance to guard what you've built, one last push near the finish. Battle Tested rewards persistence when you're tired but not done. You've survived worse — hold on a little longer.",
+      "reversed_full": "Reversed, resilience runs out: burnout, paranoia, defensiveness, quitting just before the finish. The scars become fear of new wounds. Exhaustion overrides the final push.",
+      "domains": {
+        "crypto": "A seasoned, battle-tested project defending its gains; reversed, team burnout near the goal.",
+        "trading": "Holding a hard-earned position through one last test; reversed, exhaustion forcing a premature exit.",
+        "money": "Guarding what you've built through a tough stretch.",
+        "career": "Persisting through a demanding final push; reversed, burnout.",
+        "startup": "Battle-hardened endurance in the trenches; reversed, founder fatigue before the breakthrough.",
+        "relationships": "Weathered but committed; guarded after past hurts.",
+        "health": "Endurance through a long challenge; reversed, depletion.",
+        "life": "You're almost there — one more block; don't fold at the ninth."
+      },
+      "advice": "You're battle-tested; one more stand — don't fold near the finish.",
+      "shadow": "Guarding your walls so warily that you never open the gate again."
+    },
+    {
+      "id": "nodes-10", "number": 10, "classic": "Ten of Wands", "crypto_name": "Validator Overload", "arcana": "minor",
+      "keywords": ["Responsibility", "Validator", "Infrastructure"],
+      "upright": ["responsibility", "a heavy load", "completing a hard stage"],
+      "reversed": ["exhaustion", "infrastructure failure", "need to delegate"],
+      "symbolism": "An exhausted operator carries ten massive Validator Staffs of network energy toward an immense datacenter, buckling under the weight. The Ten is the burden of success — too much responsibility carried by one, the cost of everything you took on. The load has become the problem.",
+      "upright_full": "This card is overload: too many commitments, heavy responsibility, the crushing weight that comes with success. Validator Overload marks the completion of a hard stage carried on your own back. You can finish, but the load is unsustainable as-is.",
+      "reversed_full": "Reversed, the weight breaks you: burnout, infrastructure failure, collapse under commitments — or the release that comes from finally delegating and putting some staffs down. Either way, the message is that you can't carry it all alone.",
+      "domains": {
+        "crypto": "Running too much infrastructure or too many projects at once; reversed, an outage or the need to delegate ops.",
+        "trading": "Managing too many positions to watch them well; reversed, overload forcing you to cut down.",
+        "money": "Financial responsibilities piling up heavily.",
+        "career": "Overcommitment and an unsustainable workload; reversed, burnout or delegating at last.",
+        "startup": "Founder carrying every function; reversed, the ops break or you finally hire.",
+        "relationships": "Carrying the emotional load of a relationship alone.",
+        "health": "Overload and strain; reversed, burnout demanding rest.",
+        "life": "Success became weight — delegate, or the load ships nothing."
+      },
+      "advice": "The load became too heavy — delegate before the infrastructure fails.",
+      "shadow": "Carrying everything alone is how the whole network goes down at once."
+    },
+    {
+      "id": "nodes-page", "number": 11, "classic": "Page of Wands", "crypto_name": "Testnet Apprentice", "arcana": "minor", "court": "Page",
+      "keywords": ["Testnet", "Learning", "Builder", "Beginner"],
+      "upright": ["curiosity", "learning", "first smart contracts", "testing", "enthusiasm"],
+      "reversed": ["inexperience", "rookie mistakes", "an abandoned project", "no discipline"],
+      "symbolism": "A young dev holds his first glowing Validator Staff at the gate of a Mainnet Citadel, transparent testnet blocks floating around him. As the Page of fire, he is the eager beginner — all enthusiasm and experimentation, standing at the threshold of a long path. Raw potential learning by doing.",
+      "upright_full": "This card is the curious beginner: shipping first contracts on testnet, learning by experiment, full of untamed enthusiasm. Testnet Apprentice rewards playful exploration and the courage to try. Channel the excitement into actually finishing something.",
+      "reversed_full": "Reversed, enthusiasm scatters: rookie mistakes, an abandoned project, hype with no follow-through, no discipline to finish. The Page flits between ideas without shipping. Excitement without structure fizzles.",
+      "domains": {
+        "crypto": "A newcomer experimenting on testnet, learning the stack; reversed, undisciplined dabbling and abandoned repos.",
+        "trading": "A beginner learning by small experiments; reversed, reckless rookie trades.",
+        "money": "Curiosity about a new financial skill or opportunity.",
+        "career": "An eager start in a new field, learning fast; reversed, flakiness.",
+        "startup": "A first scrappy prototype and learning-by-doing; reversed, endless side projects, none finished.",
+        "relationships": "Playful, curious new interest; reversed, immaturity.",
+        "health": "Enthusiasm for a new practice; reversed, no consistency.",
+        "life": "Explore boldly — and channel the excitement into one finished thing."
+      },
+      "advice": "Experiment on the testnet; channel the enthusiasm into finishing something.",
+      "shadow": "Endless new experiments are how nothing ever reaches mainnet."
+    },
+    {
+      "id": "nodes-knight", "number": 12, "classic": "Knight of Wands", "crypto_name": "Protocol Runner", "arcana": "minor", "court": "Knight",
+      "keywords": ["Upgrade", "Speed", "Protocol", "Action"],
+      "upright": ["fast development", "shipping new features", "decisiveness", "ambition"],
+      "reversed": ["haste", "reckless releases", "instability", "deploy errors"],
+      "symbolism": "A knight races a mechanical cyber-horse down a glowing blockchain highway, a blazing Validator Staff in hand carrying a network upgrade, blocks trailing behind. As the Knight of fire, he is bold forward motion — ambition in full gallop, shipping fast and charging at the mission. Momentum personified.",
+      "upright_full": "This card is decisive, ambitious action: fast development, shipping features, charging boldly at a goal. Protocol Runner rewards the courage to move and the charisma to rally others behind the push. Ship with drive — just aim before you charge.",
+      "reversed_full": "Reversed, the gallop turns reckless: hasty releases, deploy errors, instability, all talk and over-promising. Speed without care breaks production. The charge outruns the plan.",
+      "domains": {
+        "crypto": "Rapid shipping and bold protocol upgrades; reversed, reckless deploys and instability.",
+        "trading": "Decisive, aggressive execution; reversed, impulsive, over-hasty trades.",
+        "money": "Bold financial moves and quick action.",
+        "career": "Ambitious, fast-moving drive; reversed, burning bridges by rushing.",
+        "startup": "Ship-fast, move-fast founder energy; reversed, breaking things that matter.",
+        "relationships": "Passionate, adventurous pursuit; reversed, hot-and-cold recklessness.",
+        "health": "High-energy drive; reversed, overexertion and injury.",
+        "life": "Charge forward — but make sure there's substance behind the speed."
+      },
+      "advice": "Ship boldly — but test before you deploy at full speed.",
+      "shadow": "A charge with no aim is how you gallop confidently off a cliff."
+    },
+    {
+      "id": "nodes-queen", "number": 13, "classic": "Queen of Wands", "crypto_name": "Network Guardian", "arcana": "minor", "court": "Queen",
+      "keywords": ["Ecosystem", "Guardian", "Wisdom", "Community"],
+      "upright": ["care for the community", "maturity", "stability", "ecosystem growth"],
+      "reversed": ["control for its own sake", "stagnation", "excess caution"],
+      "symbolism": "A wise queen sits on a throne of blocks, her Validator Staff blooming golden branches, tiny blockchain dragons circling in calm authority. As the Queen of fire, she is warmth turned to stewardship — the magnetic figure who nurtures a whole ecosystem rather than a single spark. Living, confident leadership.",
+      "upright_full": "This card is mature, warm leadership: caring for a community, nurturing an ecosystem, holding stability with confidence. Network Guardian rewards the magnetic steward who grows what surrounds her. Lead with warmth and let the ecosystem flourish under your care.",
+      "reversed_full": "Reversed, the guardian tightens: control for control's sake, stagnation from over-caution, a grip that smothers the growth it meant to protect. Warmth turns to jealous management. Protection becomes a ceiling.",
+      "domains": {
+        "crypto": "A mature ecosystem steward growing the community; reversed, over-governance choking growth.",
+        "trading": "Confident, steady portfolio stewardship; reversed, over-managing every position.",
+        "money": "Warm, wise stewardship of resources.",
+        "career": "Magnetic leadership and mentoring others; reversed, micromanagement.",
+        "startup": "A community-first leader nurturing the ecosystem; reversed, control that stalls momentum.",
+        "relationships": "Confident warmth that draws people in; reversed, jealousy or possessiveness.",
+        "health": "Vibrant, confident energy and self-care.",
+        "life": "Lead with your warmth; magnetism this strong doesn't need to force."
+      },
+      "advice": "Nurture the ecosystem; guard it without smothering its growth.",
+      "shadow": "Guarding growth too tightly is how you become its ceiling."
+    },
+    {
+      "id": "nodes-king", "number": 14, "classic": "King of Wands", "crypto_name": "Master Validator", "arcana": "minor", "court": "King",
+      "keywords": ["Validator", "Leadership", "Infrastructure", "Consensus"],
+      "upright": ["leadership", "a large-scale project", "maturity", "infrastructure control"],
+      "reversed": ["authoritarianism", "centralization", "loss of community trust"],
+      "symbolism": "The supreme guardian sits on a Genesis Block throne beneath the colossal Tree of Consensus, his crown forged of rotating blocks. As the King of fire, he is vision matured into command — the founder who sees the whole map and makes builders believe. Authority earned by building the network itself.",
+      "upright_full": "This card is visionary leadership at full maturity: commanding a large-scale project, controlling the infrastructure, inspiring an ecosystem to follow. Master Validator rewards the leader who points far and delivers enough to keep the faith. Lead the vision boldly.",
+      "reversed_full": "Reversed, leadership curdles: authoritarianism, dangerous centralization, a founder who loses the community's trust by ruling instead of serving. The visionary becomes a despot. Control replaces consensus.",
+      "domains": {
+        "crypto": "A visionary founder commanding major infrastructure and consensus; reversed, centralization and lost community trust.",
+        "trading": "Decisive, big-picture conviction and leadership; reversed, arrogant over-confidence.",
+        "money": "Bold, visionary command of significant resources.",
+        "career": "Executive leadership and long-range vision; reversed, autocratic control.",
+        "startup": "A founder-CEO who inspires builders to a grand mission; reversed, a control-freak losing the team.",
+        "relationships": "Bold, generous leadership in a bond; reversed, domineering.",
+        "health": "Commanding energy and disciplined leadership of your own vitality.",
+        "life": "Point the vision far; ship enough near-term to keep the faith."
+      },
+      "advice": "Lead the infrastructure with vision; centralize the power and you lose the network.",
+      "shadow": "A visionary who rules instead of serving forks the very community he built."
+    }
+  ]
+}

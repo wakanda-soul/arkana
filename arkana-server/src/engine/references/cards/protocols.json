@@ -1,0 +1,303 @@
+{
+  "suit": "Protocols",
+  "classic_suit": "Swords",
+  "element": "Air",
+  "emoji": "⚔",
+  "domain": "Intellect, security, war, audits, hacks, governance, DAO, consensus and technology. Swords are rendered as Protocol Blades — energy blades forged from glowing chains of blocks.",
+  "cards": [
+    {
+      "id": "protocols-ace", "number": 1, "classic": "Ace of Swords", "crypto_name": "Verified Contract", "arcana": "minor",
+      "keywords": ["Audit", "Security", "Smart Contract"],
+      "upright": ["truth", "a successful audit", "security", "clarity", "a new level"],
+      "reversed": ["bugs", "exploits", "false conclusions", "architecture errors"],
+      "symbolism": "A giant Protocol Blade of blockchain links descends from the clouds, Solidity runes orbiting, crowned with a radiant 'Audit Passed' seal. As the Ace of the air suit, it is pure mental clarity — the sword that cuts through confusion to a single, verified truth. A breakthrough insight, clean and decisive.",
+      "upright_full": "This card is clarity and truth: a breakthrough realization, a passed audit, a decisive cut through the noise to what is real. Verified Contract rewards sharp thinking and honest conclusions. You can see clearly now — cut cleanly and act.",
+      "reversed_full": "Reversed, the blade misfires: bugs, exploits, false conclusions drawn from clouded logic, architecture built on a flawed premise. Clarity becomes confusion or misused intellect. The reasoning looks sound but is quietly broken.",
+      "domains": {
+        "crypto": "A passed audit, a secure contract, a moment of hard clarity; reversed, a hidden bug or exploit and false certainty.",
+        "trading": "A clear, decisive read that cuts through the noise; reversed, a confident thesis built on bad logic.",
+        "money": "Mental clarity about a financial truth; a decisive, clean decision.",
+        "career": "A breakthrough idea or a clear, cutting decision; reversed, a costly logical error.",
+        "startup": "A sharp strategic insight or verified architecture; reversed, a flawed core assumption.",
+        "relationships": "Honest, clarifying truth spoken plainly; reversed, a hurtful miscommunication.",
+        "health": "A clear diagnosis or a decisive mental breakthrough.",
+        "life": "You can see clearly now — cut cleanly and decide."
+      },
+      "advice": "The clarity is verified; cut cleanly and move to the next level.",
+      "shadow": "A blade this sharp, aimed by faulty logic, cuts the wrong thing with total confidence."
+    },
+    {
+      "id": "protocols-2", "number": 2, "classic": "Two of Swords", "crypto_name": "Governance Vote", "arcana": "minor",
+      "keywords": ["DAO", "Governance", "Voting"],
+      "upright": ["a choice", "voting", "compromise", "DAO governance"],
+      "reversed": ["politics", "deadlock", "community conflict"],
+      "symbolism": "A DAO guardian stands with two crossed Protocol Blades before an immense governance portal, thousands of glowing wallet addresses illuminating the chamber. The Two is a decision held in tense balance — two options weighed, a vote that must be cast. A crossroads of the mind.",
+      "upright_full": "This card is a choice that must be made: a governance vote, a weighing of two paths, a compromise between factions. Governance Vote asks you to gather the information, drop the blindfold, and decide. Balance is fine, but stalemate is not a strategy.",
+      "reversed_full": "Reversed, the choice jams: political deadlock, community conflict, an avoided decision festering, information withheld. The crossed blades lock rather than balance. Indecision becomes its own damage — or the deadlock finally breaks.",
+      "domains": {
+        "crypto": "A DAO decision or governance vote requiring compromise; reversed, political gridlock and community conflict.",
+        "trading": "A hard call between two setups; reversed, paralysis that misses both.",
+        "money": "A significant financial decision between two options.",
+        "career": "A crossroads requiring a clear choice; reversed, avoiding a decision that's overdue.",
+        "startup": "A key strategic fork or a co-founder/board decision; reversed, governance deadlock.",
+        "relationships": "A stalemate or a choice being avoided between you.",
+        "health": "A decision about treatment or direction; reversed, denial.",
+        "life": "The blindfold is yours to remove — gather the data and choose."
+      },
+      "advice": "Cast the vote; a decision made beats an endless deadlock.",
+      "shadow": "A blindfold kept on out of fear is how the deadlock decides for you."
+    },
+    {
+      "id": "protocols-3", "number": 3, "classic": "Three of Swords", "crypto_name": "Smart Contract Hack", "arcana": "minor",
+      "keywords": ["Hack", "Exploit", "Security"],
+      "upright": ["a hack", "loss of funds", "disappointment"],
+      "reversed": ["recovery", "compensation", "security lessons"],
+      "symbolism": "A glowing blockchain heart is pierced by three Protocol Blades, liquidity leaking from the cracks into a stormy digital rain. The Three is painful truth — the exploit that lands where you trusted, the heartbreak of betrayed security. A wound that clarifies.",
+      "upright_full": "This card is painful loss and hard truth: a hack, a betrayal, a disappointment that pierces where you were most exposed. Smart Contract Hack doesn't soften the blow, but the pain reveals exactly where the vulnerability was. Grief is valid; so is the lesson underneath it.",
+      "reversed_full": "Reversed, the wound begins to heal: recovery, compensation, forgiveness, security lessons integrated. The blades are drawn out. What broke is being repaired, and the pain turns into hardened defence.",
+      "domains": {
+        "crypto": "An exploit, a hack, a painful loss of funds or trust; reversed, recovery, a bounty/compensation, and lessons hardened into security.",
+        "trading": "A painful loss that stings personally; reversed, recovering and learning from the drawdown.",
+        "money": "A financial blow or betrayal; reversed, slow recovery.",
+        "career": "A painful setback, rejection, or betrayal at work; reversed, healing from it.",
+        "startup": "A breach, a co-founder split, or a public failure; reversed, rebuilding stronger from the wound.",
+        "relationships": "Heartbreak, betrayal, or a hard truth that hurts; reversed, forgiveness and healing.",
+        "health": "Emotional pain manifesting physically; reversed, recovery.",
+        "life": "Let the wound teach, not fester; the pain is data too."
+      },
+      "advice": "The exploit hurts; let it teach you where the cracks really were.",
+      "shadow": "A wound left un-audited just waits to be exploited the same way again."
+    },
+    {
+      "id": "protocols-4", "number": 4, "classic": "Four of Swords", "crypto_name": "Cold Storage", "arcana": "minor",
+      "keywords": ["Ledger", "Cold Wallet", "Recovery"],
+      "upright": ["rest", "security", "a pause", "storing assets"],
+      "reversed": ["procrastination", "missed opportunities", "over-caution"],
+      "symbolism": "A guardian rests in a cryptographic sanctuary, four Protocol Blades mounted on the wall beside an illuminated cold-wallet vault. The Four is deliberate stillness — assets moved to safety, the mind put to rest, a strategic pause before the next move. Security through withdrawal.",
+      "upright_full": "This card is rest and secure retreat: stepping back to recover, moving assets to safety, a deliberate pause to reset the mind. Cold Storage rewards the discipline to stop and recover before acting again. Stillness now is strength later.",
+      "reversed_full": "Reversed, the pause overstays: procrastination, missed opportunities, over-caution, hiding in cold storage when it's time to move. Rest becomes avoidance. The blades stay on the wall too long.",
+      "domains": {
+        "crypto": "Moving to safety, taking a defensive pause, securing assets in cold storage; reversed, over-caution missing the move.",
+        "trading": "Sitting in cash and stepping back from the screens; reversed, staying sidelined too long.",
+        "money": "Securing and resting your finances; a conservative pause.",
+        "career": "A needed break to recover; reversed, stagnation from avoidance.",
+        "startup": "A strategic pause to consolidate; reversed, hesitation that costs the window.",
+        "relationships": "Taking space to heal and reflect; reversed, withdrawing indefinitely.",
+        "health": "Rest and recovery are the medicine; reversed, isolation.",
+        "life": "Step away from the screen; clarity returns after the cooldown."
+      },
+      "advice": "Move to cold storage and rest; recover before the next move.",
+      "shadow": "Rest that never ends is just avoidance in a vault."
+    },
+    {
+      "id": "protocols-5", "number": 5, "classic": "Five of Swords", "crypto_name": "Hostile Takeover", "arcana": "minor",
+      "keywords": ["Attack", "DAO", "Conflict"],
+      "upright": ["victory at any cost", "aggressive governance", "dominance"],
+      "reversed": ["reconciliation", "refusing conflict", "rebuilding trust"],
+      "symbolism": "A victor gathers the blades of defeated rivals as ruined DAOs smoke behind him under a dark sky. The Five is a win that costs more than it gains — dominance achieved through a fight that scorches the ground. Hollow victory.",
+      "upright_full": "This card is winning at a cost: an aggressive takeover, dominance seized, a conflict where even the winner loses something. Hostile Takeover asks whether the victory is worth the trust it burns. Sometimes the win is a loss that happened to score.",
+      "reversed_full": "Reversed, the sword is sheathed: reconciliation, walking away from a fight not worth having, rebuilding trust after a scorched conflict. The victor chooses peace over another empty win. De-escalation as strength.",
+      "domains": {
+        "crypto": "An aggressive governance attack or dominance play; reversed, reconciling and rebuilding trust after conflict.",
+        "trading": "Winning a zero-sum fight but at a real cost; reversed, refusing a bad, costly battle.",
+        "money": "A financial win that damages relationships; reversed, choosing fairness.",
+        "career": "Office politics or a win that burns bridges; reversed, making peace.",
+        "startup": "A hostile competitive or boardroom move; reversed, choosing collaboration over conquest.",
+        "relationships": "Conflict where someone wins and someone is hurt; reversed, reconciliation.",
+        "health": "Stress from conflict draining you; reversed, releasing it.",
+        "life": "Ask if this win is worth its cost; some battles are losses that scored."
+      },
+      "advice": "Ask if this conquest is worth its cost; some wins burn the trust you need.",
+      "shadow": "Winning every fight is how you end up ruling a scorched, empty network."
+    },
+    {
+      "id": "protocols-6", "number": 6, "classic": "Six of Swords", "crypto_name": "Bridge Migration", "arcana": "minor",
+      "keywords": ["Migration", "Bridge", "Transition"],
+      "upright": ["transition", "migration", "development", "a new stage"],
+      "reversed": ["a failed bridge", "delays", "loss of funds"],
+      "symbolism": "Travellers cross a magnificent cross-chain bridge escorted by floating Protocol Blades, leaving an aging blockchain behind for a brighter one. The Six is transition — a considered move away from trouble toward calmer water. Progress through migration.",
+      "upright_full": "This card is a transition toward better conditions: migrating away from turbulence, moving on, a gradual recovery into a new stage. Bridge Migration rewards leaving what no longer works and steadily crossing to the next chain. Keep moving; the water calms ahead.",
+      "reversed_full": "Reversed, the crossing fails: a failed bridge, delays, funds lost mid-transfer, an inability to leave the old chain behind. You're stuck between worlds. The transition stalls halfway.",
+      "domains": {
+        "crypto": "A migration to a better chain or protocol, a smooth transition; reversed, a bridge exploit or a stalled migration.",
+        "trading": "Rotating out of a bad regime into a calmer one; reversed, stuck in a losing position.",
+        "money": "A financial transition toward stability.",
+        "career": "A move to a better role or environment; reversed, a transition that drags.",
+        "startup": "A pivot or platform migration toward calmer waters; reversed, a botched transition.",
+        "relationships": "Moving on toward calmer, healthier ground; reversed, unable to let go.",
+        "health": "Gradual recovery and moving past a rough patch.",
+        "life": "You're crossing to calmer water; keep moving, don't look back."
+      },
+      "advice": "Migrate to the brighter chain; keep moving through the transition.",
+      "shadow": "A migration abandoned midway strands you between two chains, safe on neither."
+    },
+    {
+      "id": "protocols-7", "number": 7, "classic": "Seven of Swords", "crypto_name": "White Hat", "arcana": "minor",
+      "keywords": ["White Hat", "Audit", "Exploit"],
+      "upright": ["an ethical audit", "unconventional thinking", "finding vulnerabilities"],
+      "reversed": ["a real hack", "deception", "fraud"],
+      "symbolism": "An ethical hacker slips from a fortress carrying five Protocol Blades, leaving two behind, under a moonlit sky — saving the network rather than robbing it. The Seven is cunning strategy — stealth and lateral thinking used for a purpose. The clever move made quietly.",
+      "upright_full": "This card is strategy and unconventional thinking: the white-hat move, spotting the vulnerability first, acting cleverly and quietly for a good end. White Hat rewards resourcefulness and thinking around the problem. Use the clever angle to protect, not to plunder.",
+      "reversed_full": "Reversed, the stealth turns black-hat: a real exploit, deception, fraud, cutting corners, someone getting away with something. The same cunning aimed at harm. Watch for the quiet move made against you — or the temptation to make it yourself.",
+      "domains": {
+        "crypto": "Ethical hacking, finding a bug before the black hats, a clever protective move; reversed, an actual exploit or scam nearby.",
+        "trading": "A clever, unconventional edge; reversed, someone front-running or deceiving you.",
+        "money": "A strategic, resourceful financial move; reversed, financial deception.",
+        "career": "Working smart and unconventionally; reversed, someone taking credit or cutting corners.",
+        "startup": "A lateral, clever strategy; reversed, a bad actor on the team or a deceptive partner.",
+        "relationships": "Discretion or strategy; reversed, dishonesty and betrayal.",
+        "health": "A clever, non-obvious approach; reversed, cutting corners on your health.",
+        "life": "Use the clever angle to protect the network, not to exploit it."
+      },
+      "advice": "Use the clever angle to protect the network, not to exploit it.",
+      "shadow": "The same skill that patches a hole can quietly open one — watch which you're doing."
+    },
+    {
+      "id": "protocols-8", "number": 8, "classic": "Eight of Swords", "crypto_name": "Frozen Wallet", "arcana": "minor",
+      "keywords": ["Frozen Wallet", "Restriction"],
+      "upright": ["restrictions", "frozen funds", "internal barriers"],
+      "reversed": ["release", "regained access", "the problem solved"],
+      "symbolism": "A figure stands surrounded by eight Protocol Blades, her wallet frozen inside a transparent cryptographic crystal, an exit visible but unseen. The Eight is self-made restriction — a trap that feels total but whose bars are mostly in the mind. Paralysis by fear.",
+      "upright_full": "This card is feeling trapped: frozen funds, restriction, a cage of fear that hides the open door. Frozen Wallet shows a limitation that is more perceived than absolute. The blades are real, but a path between them exists once you stop panicking and look.",
+      "reversed_full": "Reversed, the wallet thaws: access regained, the barrier dissolved, a fresh perspective revealing the exit was always there. The fear releases its grip. You free yourself.",
+      "domains": {
+        "crypto": "Frozen or locked funds, restrictions, a stuck position; reversed, access restored and the block cleared.",
+        "trading": "Paralysis by fear, unable to act on an obvious move; reversed, breaking free of the freeze.",
+        "money": "Financial restriction or feeling trapped by money; reversed, a way out appears.",
+        "career": "Feeling stuck and boxed in; reversed, realizing you can leave.",
+        "startup": "Constraints and blockers that feel fatal; reversed, an unlock that changes everything.",
+        "relationships": "Feeling trapped or powerless; reversed, freeing yourself.",
+        "health": "Anxiety-driven paralysis; reversed, releasing the fear.",
+        "life": "The cage isn't locked — the fear is; loosen one blade and look."
+      },
+      "advice": "The barrier feels total, but the cage is thinner than the fear around it.",
+      "shadow": "The tightest prison is the one whose door you refuse to test."
+    },
+    {
+      "id": "protocols-9", "number": 9, "classic": "Nine of Swords", "crypto_name": "Night Before Liquidation", "arcana": "minor",
+      "keywords": ["Liquidation", "Fear", "Anxiety"],
+      "upright": ["anxiety", "stress", "fear of losses"],
+      "reversed": ["acceptance", "emotional recovery"],
+      "symbolism": "A trader wakes in panic at night, nine Protocol Blades hanging on the wall, a crashing red candlestick chart glowing crimson through the window. The Nine is the 4am mind — dread and worry magnified in the dark, fear louder than the actual danger. Mental anguish.",
+      "upright_full": "This card is anxiety and dread: sleepless worry over losses, catastrophizing in the dark, the mind torturing itself past the facts. Night Before Liquidation names the fear so you can see it for what it is — usually larger than reality. The blades are on the wall, not in you.",
+      "reversed_full": "Reversed, the dawn comes: the anxiety eases, acceptance settles in, help is sought, hope returns. The nightmare loosens its grip. You recover your footing and the fear shrinks to size.",
+      "domains": {
+        "crypto": "Sleepless dread over a falling position or an impending liquidation; reversed, the panic easing and perspective returning.",
+        "trading": "Overtrading on fear, watching red candles at 4am; reversed, accepting the risk and calming down.",
+        "money": "Financial anxiety and worst-case spiraling; reversed, relief and a clearer head.",
+        "career": "Stress and dread about work; reversed, it eases.",
+        "startup": "Founder anxiety, runway panic, sleepless nights; reversed, regaining calm.",
+        "relationships": "Worry and mental anguish over a bond; reversed, reassurance.",
+        "health": "Anxiety, insomnia, mental strain; reversed, recovery and rest.",
+        "life": "The 4am fear exaggerates; touch grass, then check the chart in daylight."
+      },
+      "advice": "The 4am dread exaggerates; breathe, then face the chart in daylight.",
+      "shadow": "Rehearsing the catastrophe all night is how you lose the sleep the fight needs."
+    },
+    {
+      "id": "protocols-10", "number": 10, "classic": "Ten of Swords", "crypto_name": "Protocol Collapse", "arcana": "minor",
+      "keywords": ["Collapse", "Fork", "Rebirth"],
+      "upright": ["total collapse", "the end of a cycle", "a project shutdown"],
+      "reversed": ["rebirth", "a new fork", "the start of recovery"],
+      "symbolism": "A fallen blockchain titan lies pierced by ten Protocol Blades beneath a dark sky — yet a brilliant digital sunrise is already breaking on the horizon. The Ten is rock bottom: the definitive painful end, but also the point from which the only direction is up. Ruin that promises rebirth.",
+      "upright_full": "This card is a painful, decisive ending: a total collapse, a cycle over, a project shut down, rock bottom reached. Protocol Collapse doesn't pretend it's fine — but it marks the true bottom, and the sunrise is already visible behind the blades. It cannot get more painful than this; the next move is up.",
+      "reversed_full": "Reversed, recovery begins: surviving the worst, a new fork rising from the ruin, refusing to let the ending be the end. The titan stirs. The rebuild starts from the ashes.",
+      "domains": {
+        "crypto": "A total collapse — a protocol dead, a cycle bottomed, a project shut; reversed, a fork/rebirth and the first signs of recovery.",
+        "trading": "Full capitulation and the bottom of a painful drawdown; reversed, the recovery beginning.",
+        "money": "A financial rock bottom; reversed, rebuilding from the low.",
+        "career": "A definitive ending — a role or path collapses; reversed, a fresh start from the ruins.",
+        "startup": "A shutdown or total failure; reversed, the rebuild or pivot rising from it.",
+        "relationships": "A painful, final ending; reversed, healing and starting over.",
+        "health": "A low point that forces a reckoning; reversed, recovery.",
+        "life": "This is the bottom of this chapter — the sun rises behind the blades."
+      },
+      "advice": "This chapter has fully collapsed; the sunrise behind it is the next fork.",
+      "shadow": "Staring only at the ten blades is how you miss the sunrise already breaking."
+    },
+    {
+      "id": "protocols-page", "number": 11, "classic": "Page of Swords", "crypto_name": "Security Researcher", "arcana": "minor", "court": "Page",
+      "keywords": ["Audit", "Learning", "Curiosity", "Security", "Solidity"],
+      "upright": ["curiosity", "research", "first audits", "thirst for knowledge", "code analysis", "catching problems early"],
+      "reversed": ["lack of experience", "false conclusions", "a shallow audit", "hasty accusations", "misreading the architecture"],
+      "symbolism": "A young researcher stands atop a datacenter tower with his first Protocol Blade, Solidity code and EVM diagrams floating around him, digital ravens circling to hunt vulnerabilities. As the Page of air, he is the sharp, curious mind — gathering intel, watchful, hungry to understand how things break. Vigilant beginner intellect.",
+      "upright_full": "This card is the curious, vigilant mind: researching, auditing, hunting for problems before they surface, hungry to learn how systems work. Security Researcher rewards sharp curiosity and careful observation. Gather the intel — then verify it before you repeat it.",
+      "reversed_full": "Reversed, curiosity outruns competence: shallow audits, false conclusions, hasty accusations, gossip, misreading the architecture, all talk. The Page mistakes a hunch for a finding. Watchfulness tips into paranoia or spying.",
+      "domains": {
+        "crypto": "On-chain sleuthing, early-stage security research, catching issues early; reversed, half-baked FUD and false alarms.",
+        "trading": "A curious analyst gathering data and testing ideas; reversed, acting on unverified rumor.",
+        "money": "Researching and analyzing before a financial move.",
+        "career": "An eager learner gathering knowledge; reversed, gossip or hasty conclusions.",
+        "startup": "Diligent early research and threat-modeling; reversed, analysis paralysis or shallow diligence.",
+        "relationships": "Curiosity and honest questions; reversed, suspicion and snooping.",
+        "health": "Researching your own condition; reversed, self-diagnosis gone wrong.",
+        "life": "Gather the intel — then verify it before you repeat it."
+      },
+      "advice": "Investigate everything — then verify before you accuse.",
+      "shadow": "A hunch mistaken for a finding is how the researcher becomes the FUD."
+    },
+    {
+      "id": "protocols-knight", "number": 12, "classic": "Knight of Swords", "crypto_name": "White Hat Hunter", "arcana": "minor", "court": "Knight",
+      "keywords": ["White Hat", "Audit", "Security", "Hunt", "Speed", "Defense"],
+      "upright": ["decisiveness", "instant reaction", "preventing attacks", "professional audit", "active defense"],
+      "reversed": ["recklessness", "hasty upgrades", "risky actions", "careless fixes that create new bugs"],
+      "symbolism": "A legendary white hat charges a cyber-steed through a storm of malicious code, a blazing Protocol Blade slicing exploits into disintegrating particles, repaired blocks streaming overhead. As the Knight of air, he is thought weaponized into speed — decisive, aggressive, cutting straight to the fix. Fast, fearless defense.",
+      "upright_full": "This card is fast, decisive defense: reacting instantly, cutting through the threat, preventing the attack, an aggressive professional audit. White Hat Hunter rewards speed and courage in a crisis. Charge — but aim the blade before you swing.",
+      "reversed_full": "Reversed, speed turns reckless: hasty patches that create new bugs, risky actions, aggression, charging in without thinking. The cure becomes another wound. Momentum outruns judgement.",
+      "domains": {
+        "crypto": "Fast incident response, patching exploits, active defense; reversed, a rushed fix that introduces new bugs.",
+        "trading": "Fast, aggressive, decisive execution; reversed, reckless overtrading.",
+        "money": "Decisive, bold financial action; reversed, rash moves.",
+        "career": "Cutting through obstacles fast; reversed, aggression that burns bridges.",
+        "startup": "Rapid crisis response and hard pushes; reversed, moving so fast you break things.",
+        "relationships": "Direct and decisive; reversed, harsh or combative.",
+        "health": "Fast, decisive action on a problem; reversed, overexertion.",
+        "life": "Your speed is an edge and a risk; aim before you charge."
+      },
+      "advice": "Hunt the bugs before the hackers do — but a rushed patch breeds new ones.",
+      "shadow": "A blade swung faster than the mind can aim cuts the defender, not the exploit."
+    },
+    {
+      "id": "protocols-queen", "number": 13, "classic": "Queen of Swords", "crypto_name": "Consensus Keeper", "arcana": "minor", "court": "Queen",
+      "keywords": ["Governance", "Consensus", "Wisdom", "Validation", "Integrity"],
+      "upright": ["wisdom", "objectivity", "fair governance", "protecting consensus", "upholding the rules", "strategic thinking"],
+      "reversed": ["excessive strictness", "bureaucracy", "abuse of power", "harsh censorship", "loss of flexibility"],
+      "symbolism": "The keeper sits on a throne of perfectly aligned blocks, a Protocol Blade in one hand and the Consensus Rules scroll in the other, a halo of synchronized validators turning above her. As the Queen of air, she is clear, independent judgement — seeing through the noise, fair but unfooled. Principled clarity.",
+      "upright_full": "This card is clear-eyed wisdom and fair judgement: independence, objectivity, upholding the rules, seeing through the pitch. Consensus Keeper rewards honest perception and principled boundaries. Judge with clarity — keep the edge sharp, not cruel.",
+      "reversed_full": "Reversed, clarity turns cold: harsh criticism, bureaucracy, censorship, abuse of power, rigidity, cynicism. The blade cuts to wound rather than to clarify. Fairness hardens into control.",
+      "domains": {
+        "crypto": "Fair governance, protecting consensus, reading a contract with clear eyes; reversed, over-strict, censorious control.",
+        "trading": "Objective, unemotional judgement that isn't fooled by hype; reversed, cynical over-caution.",
+        "money": "Clear, honest financial assessment; reversed, harsh or rigid money rules.",
+        "career": "Independent, principled decision-making; reversed, cold or bureaucratic.",
+        "startup": "Objective governance and honest evaluation; reversed, bureaucracy strangling agility.",
+        "relationships": "Honesty and clear boundaries; reversed, coldness or harsh criticism.",
+        "health": "Clear-headed, disciplined choices; reversed, being too hard on yourself.",
+        "life": "Judge with clear eyes; keep the edge sharp, not cruel."
+      },
+      "advice": "Guard the consensus fairly; enforce the rules without sliding into censorship.",
+      "shadow": "A blade that only ever cuts turns fair judgement into cold cruelty."
+    },
+    {
+      "id": "protocols-king", "number": 14, "classic": "King of Swords", "crypto_name": "Protocol Architect", "arcana": "minor", "court": "King",
+      "keywords": ["Leadership", "Architecture", "Consensus", "Security", "Blockchain", "Mastery"],
+      "upright": ["absolute mastery", "systems architecture", "leadership", "foresight", "security", "building foundational tech", "responsibility for the ecosystem"],
+      "reversed": ["authoritarianism", "over-control", "technical arrogance", "refusing new ideas", "dangerous centralization"],
+      "symbolism": "The supreme architect sits on a Genesis Block throne in a blockchain cathedral, a crown of rotating blocks on his head, the legendary Protocol Blade in one hand and the Blockchain Core sphere in the other, the Wheel of Consensus turning behind. As the King of air, he is intellect matured into ethical command — logic, structure and security wielded with responsibility.",
+      "upright_full": "This card is intellectual authority and mastery: designing the system, leading with logic and ethics, taking responsibility for the whole ecosystem. Protocol Architect rewards principled, strategic command. Lead with clear, ethical logic — power over minds demands it.",
+      "reversed_full": "Reversed, authority turns tyrannical: over-control, technical arrogance, refusing new ideas, dangerous centralization, logic used to dominate. The architect becomes a dictator of the protocol. Ethics fall away from the intellect.",
+      "domains": {
+        "crypto": "Masterful systems architecture and ethical technical leadership; reversed, technical arrogance and dangerous centralization.",
+        "trading": "Disciplined, strategic, rules-based mastery; reversed, rigid dogma or overconfidence.",
+        "money": "Authoritative, structured financial strategy.",
+        "career": "Intellectual leadership and sound, ethical judgement; reversed, cold authoritarianism.",
+        "startup": "A principled technical founder building foundational systems; reversed, a control-freak CTO refusing input.",
+        "relationships": "Honest, fair, principled leadership; reversed, cold or domineering logic.",
+        "health": "Disciplined, rational management of your well-being.",
+        "life": "Lead with principled logic; power over minds demands ethics."
+      },
+      "advice": "Architect the foundation with mastery; refuse to centralize or you become the risk.",
+      "shadow": "Logic without ethics is how the architect becomes the exploit he was built to prevent."
+    }
+  ]
+}

@@ -1,0 +1,468 @@
+{
+  "suit": "Major Arcana",
+  "note": "22 archetypal cards. If several appear in one spread, the reading is structural / life-changing. crypto_name is canonical (from the author's deck); classic is the RWS source. Fixed fields (crypto_name, classic, keywords, upright, reversed) must never be altered.",
+  "cards": [
+    {
+      "id": "0", "classic": "The Fool", "crypto_name": "The New Wallet", "arcana": "major",
+      "keywords": ["Wallet", "Seed Phrase", "DYOR", "Beginning", "Adventure"],
+      "upright": ["beginning of the journey", "new opportunities", "first entry into crypto", "exploration", "courage"],
+      "reversed": ["lost seed phrase", "gullibility", "scammers", "FOMO", "reckless investments"],
+      "symbolism": "A young explorer steps onto a bridge of glowing blocks, a hardware wallet in one hand and seed-phrase scrolls on his back, a rug-pull abyss opening below and a golden Bitcoin rising ahead. He is the zero — pure potential before the first transaction is signed. Everything is possible precisely because nothing has been committed yet.",
+      "upright_full": "This is the genesis of a journey: a first entry into a new world, taken on faith and curiosity rather than proof. The card carries the clean energy of a fresh wallet with no history — open, hopeful, willing to risk the unknown because the upside feels infinite. It blesses the leap, provided the traveller keeps one eye on the path.",
+      "reversed_full": "Reversed, the innocence curdles into carelessness: a lost seed phrase, a signature given to a scammer, a FOMO leap off the bridge with no plan. The same openness that begins the journey now invites the predators who wait for the naive. The lesson is not to stop moving, but to stop moving blindly.",
+      "domains": {
+        "crypto": "A brand-new entry — first wallet, first chain, first position — driven by hope more than research; the courage to start, shadowed by the risk of aping in without DYOR.",
+        "trading": "The impulse to open a first position on instinct; exciting, but unhedged and unproven — size it as a lesson, not a life-changer.",
+        "money": "A fresh financial chapter with real potential and no track record yet; treat the first steps as tuition.",
+        "career": "A bold new path or first project, carried more by enthusiasm than experience; beginnings favour the willing here.",
+        "startup": "Day zero of a venture — the empty repo, the blank whitepaper; pure possibility that still needs a plan.",
+        "relationships": "A spontaneous, open-hearted new connection begun without armour or expectation.",
+        "health": "Fresh energy and a new routine started lightly; good momentum if you don't overreach on day one.",
+        "life": "Standing at the edge of a genuinely new journey with an open backpack and an open mind."
+      },
+      "advice": "Begin the journey — but guard your seed phrase and do your own research before you leap.",
+      "shadow": "One careless step — a lost key, a FOMO ape — turns the adventure into the abyss."
+    },
+    {
+      "id": "I", "classic": "The Magician", "crypto_name": "The Smart Contract Architect", "arcana": "major",
+      "keywords": ["Solidity", "Builder", "Smart Contract", "Creation"],
+      "upright": ["creation", "development", "mastery", "launching a project", "technology"],
+      "reversed": ["vulnerabilities", "exploits", "bad code", "scam contracts"],
+      "symbolism": "A legendary developer stands at an altar while Solidity contracts, an Ethereum crystal, an oracle sphere and a hardware wallet orbit him, an infinity symbol forged of blockchain links crowning his head. He is will made executable — the one who turns intention directly into deployed code. Every tool he needs is already in reach.",
+      "upright_full": "This is the power to build: raw skill focused into something real, a project shipped, a tool deployed, a vision compiled into working code. The Architect has all four elements at hand and simply needs to act. When he appears, the resources are present and the only missing ingredient is the decision to begin.",
+      "reversed_full": "Reversed, the same mastery turns toward deception or decay: exploitable code, vaporware, a slick pitch with nothing under the hood, a scam contract dressed as innovation. Talent is present but misdirected, or confidence outruns competence. The gift becomes a weapon or a mirage.",
+      "domains": {
+        "crypto": "A builder shipping real tools — smart contracts, protocols, infrastructure; reversed, an exploit or a contract that isn't what it claims to be.",
+        "trading": "You have the tools and the read to act decisively; the risk reversed is manufacturing false conviction from noise.",
+        "money": "You hold every resource needed to make it happen — the constraint is action, not means.",
+        "career": "Your skills are ready to deploy; this is the moment to build the thing rather than plan it further.",
+        "startup": "Founder energy at full power — vision, skill and tooling aligned to manifest the product.",
+        "relationships": "Conscious, intentional effort to create or shape a bond, rather than waiting for it to happen.",
+        "health": "The will to actively shape your own state through deliberate practice.",
+        "life": "You already hold every element you need; the power to create your situation is in your hands."
+      },
+      "advice": "You hold every tool to build it — write clean code and ship, instead of endlessly planning.",
+      "shadow": "The same mastery, pointed at deception, is just a scam contract with good branding."
+    },
+    {
+      "id": "II", "classic": "The High Priestess", "crypto_name": "The Oracle", "arcana": "major",
+      "keywords": ["Oracle", "Consensus", "Insight", "Validation"],
+      "upright": ["intuition", "hidden information", "analytics", "signals", "data"],
+      "reversed": ["manipulation", "false signals", "fake news", "noise"],
+      "symbolism": "A veiled priestess sits between two validator pillars, an endless blockchain network glowing under an Ethereum moon, the Consensus manuscript resting on her lap. She is the oracle in both senses — the keeper of hidden knowledge and the feed that reports the truth of the chain. What she knows is real but not yet spoken aloud.",
+      "upright_full": "This card points beneath the surface: the on-chain signal under the noise, the intuition that arrives before the evidence, the data that quietly tells the real story. The Oracle counsels listening rather than acting — the answer is already present, waiting to be read. Trust the pattern you sense even when the crowd hasn't noticed it.",
+      "reversed_full": "Reversed, the feed is poisoned: false signals, manipulated data, fake news, and the roar of noise drowning the true reading. Intuition is ignored or, worse, mimicked by manipulation dressed as insight. The danger is mistaking loud information for accurate information.",
+      "domains": {
+        "crypto": "Hidden information moves under the surface — alpha not yet public, an on-chain truth the price hasn't priced; reversed, coordinated manipulation and fake signals.",
+        "trading": "The read beneath the candles matters more than the candles; reversed, you're being played by a narrative, not data.",
+        "money": "Something financial is unspoken — look beneath the stated numbers before deciding.",
+        "career": "Unspoken dynamics decide more than the visible org chart; sense who really holds the keys.",
+        "startup": "The real signal is in early user behaviour and quiet data, not the loud narrative; read it.",
+        "relationships": "A quiet knowing between you; something true but unsaid asks to be acknowledged.",
+        "health": "Listen to the body's subtle early signals rather than waiting for loud symptoms.",
+        "life": "The answer is already in the data you haven't sat still long enough to read."
+      },
+      "advice": "Read the on-chain signal beneath the noise and trust your intuition before you ask the crowd.",
+      "shadow": "Not every signal is true — some are manipulation wearing the mask of data."
+    },
+    {
+      "id": "III", "classic": "The Empress", "crypto_name": "The Liquidity Queen", "arcana": "major",
+      "keywords": ["Liquidity", "Yield", "TVL", "Growth"],
+      "upright": ["capital growth", "farming", "yield", "abundance"],
+      "reversed": ["liquidity drying up", "TVL falling", "stagnation"],
+      "symbolism": "A queen reigns on a throne of tokens while rivers of liquidity flow around her and Merkle trees hang heavy with glowing digital fruit. She is fertility as capital — the force that makes value multiply, compound, and bloom. Her abundance is generous but demands tending, not just harvesting.",
+      "upright_full": "This is the season of growth: capital that compounds, yield that flows, a project or portfolio blossoming in fertile ground. The Liquidity Queen rewards nurturing over grabbing — plant well, tend patiently, and the garden returns far more than you sowed. Abundance is available and wants to be enjoyed.",
+      "reversed_full": "Reversed, the rivers run thin: TVL drains, yield dries up, growth stalls into stagnation. Sometimes it signals over-extension — abundance stretched past what its liquidity can support. The soil is exhausted, or the fruit was never backed by anything real.",
+      "domains": {
+        "crypto": "Fertile ground for staking, farming and compounding; strong, growing TVL. Reversed: liquidity draining, an unsustainable yield collapsing.",
+        "trading": "Positions that compound and grow if left to work; reversed, a trend running out of the liquidity that fed it.",
+        "money": "Money multiplies; a genuine season of plenty and reinvestment.",
+        "career": "A project or role blossoms and your work visibly bears fruit.",
+        "startup": "Product-market fertility — growth that compounds when nurtured; reversed, a growth stat with no real depth behind it.",
+        "relationships": "Warmth, care, and a nurturing bond that gives more than it takes.",
+        "health": "Vitality, recovery, and abundant energy.",
+        "life": "A garden in bloom — a rich, generative chapter to enjoy and tend."
+      },
+      "advice": "Let capital compound in fertile ground; nurture the yield rather than stripping it bare.",
+      "shadow": "Yield with no real liquidity behind it withers into stagnation."
+    },
+    {
+      "id": "IV", "classic": "The Emperor", "crypto_name": "The Bitcoin King", "arcana": "major",
+      "keywords": ["Bitcoin", "Authority", "Stability", "Security"],
+      "upright": ["stability", "leadership", "reliability", "long-term investing"],
+      "reversed": ["centralization", "dictate", "loss of control", "excessive rigidity"],
+      "symbolism": "A sovereign sits on a colossal throne carved from solid Bitcoin, mountains of blocks rising behind him, robes embroidered with cryptographic sigils. He is sound money made flesh — the immovable base layer, the rule that does not bend, the security that others build upon. His power is structure itself.",
+      "upright_full": "This card is the foundation: order, discipline, and hard rules that create stability. The Bitcoin King favours the long horizon, the sound base, the framework others can trust. When he appears, take command, set the structure, and let reliability be your authority.",
+      "reversed_full": "Reversed, structure hardens into a cage: rigidity, dogma, centralization, a refusal to upgrade or share control. The protocol that once protected now imprisons. Authority becomes about domination rather than order, and the refusal to evolve becomes the weakness.",
+      "domains": {
+        "crypto": "The sound-money base layer — hard rules, immovable protocol, long-term conviction; reversed, dangerous centralization or maximalism that won't evolve.",
+        "trading": "A disciplined, rules-based framework beats improvisation; reversed, rigidity that ignores a regime change.",
+        "money": "Build structure and discipline around capital; stability is the play.",
+        "career": "Take command, set the framework others follow, lead with reliability.",
+        "startup": "Establish solid foundations, governance and structure; reversed, founder over-control choking the org.",
+        "relationships": "Stability, clear boundaries, and a dependable pillar; reversed, control that suffocates.",
+        "health": "Structure and routine restore a sense of control.",
+        "life": "Order is your ally now — architect the system, then hold the line."
+      },
+      "advice": "Build on the solid base; discipline and structure are your real authority.",
+      "shadow": "Authority that refuses to decentralize eventually becomes a cage of control."
+    },
+    {
+      "id": "V", "classic": "The Hierophant", "crypto_name": "The Validator", "arcana": "major",
+      "keywords": ["Validator", "Consensus", "Governance"],
+      "upright": ["trust", "proven protocols", "tradition", "security"],
+      "reversed": ["centralization", "censorship", "outdated rules"],
+      "symbolism": "A wise validator blesses new participants before a giant Proof-of-Stake wheel glowing with sacred light inside a cryptographic cathedral. He is the keeper of consensus — the established rules, the proven protocol, the shared belief that binds a network. Legitimacy flows through him.",
+      "upright_full": "This card honours the tried and tested: proven protocols, shared standards, mentorship, and the security of doing things the established way. The Validator counsels learning the rules and trusting the consensus before improvising. Tradition here is not stagnation but a foundation others already vouch for.",
+      "reversed_full": "Reversed, consensus curdles into control: censorship, gatekeeping, outdated rules that no longer serve, centralization masquerading as order. The same structure that secured the network now suppresses it. It may be time to question the doctrine — or to knowingly step outside it.",
+      "domains": {
+        "crypto": "Regulation, proven protocols, institutional trust, the established playbook; reversed, censorship, gatekeeping or rules that have aged into liabilities.",
+        "trading": "Stick to a proven, conventional system; reversed, dogmatically following a strategy the market has outgrown.",
+        "money": "Conventional, proven, lower-drama financial paths.",
+        "career": "Learn from a mentor or the established institution before breaking from it.",
+        "startup": "Adopt proven standards and compliance; reversed, bureaucracy or convention strangling innovation.",
+        "relationships": "Commitment through shared values, tradition, or a formal bond.",
+        "health": "Trust established, evidence-based methods over experiments.",
+        "life": "The well-worn path carries real wisdom; question it, but respect why it exists."
+      },
+      "advice": "Trust the proven protocol and the shared rules — at least until you understand why they exist.",
+      "shadow": "The same consensus that secures a network can also quietly censor it."
+    },
+    {
+      "id": "VI", "classic": "The Lovers", "crypto_name": "The Merge", "arcana": "major",
+      "keywords": ["Merge", "Partnership", "Harmony", "Integration"],
+      "upright": ["partnership", "successful integration", "synergy"],
+      "reversed": ["conflict", "fork", "incompatibility", "broken collaboration"],
+      "symbolism": "Two radiant chains flow into one luminous stream while two travellers stand bound by a golden thread of consensus beneath a celestial blockchain sky. This is union as upgrade — the moment two things become one greater thing, or the crossroads where a values-defining choice is made. Alignment is everything.",
+      "upright_full": "This card blesses genuine partnership and successful integration: two forces merging into synergy, a bond or alliance where the sum exceeds the parts. It also marks a values-based choice — the decision that defines who you are, made from alignment rather than fear. Choose the merge that fits your deepest values.",
+      "reversed_full": "Reversed, the merge fails: incompatibility, conflict, a hard fork where there should have been harmony, a collaboration that breaks under its first stress. Often the split was baked in from the start — two things that were never truly compatible forced together. Misalignment surfaces under pressure.",
+      "domains": {
+        "crypto": "A partnership, integration or successful merge of chains/protocols; reversed, an incompatible fork or a collaboration splitting apart.",
+        "trading": "A correlated pair or aligned thesis working in harmony; reversed, two legs of a trade fighting each other.",
+        "money": "A meaningful financial choice or the joining of resources with another party.",
+        "career": "A powerful collaboration or a decisive career crossroads defined by your values.",
+        "startup": "A co-founder union or key integration; reversed, founder conflict or a partnership breaking down.",
+        "relationships": "A deep, values-aligned bond — or the choice that defines the relationship itself.",
+        "health": "A lifestyle choice with lasting consequences; integrating body and mind.",
+        "life": "Two chains can become one — choose the merge that aligns with who you actually are."
+      },
+      "advice": "Choose the merge that aligns with your values; true synergy beats going it alone.",
+      "shadow": "A union built on convenience forks apart under the first real incompatibility."
+    },
+    {
+      "id": "VII", "classic": "The Chariot", "crypto_name": "The Bull Run", "arcana": "major",
+      "keywords": ["Bull Market", "Momentum", "Victory"],
+      "upright": ["victory", "momentum", "market growth", "success"],
+      "reversed": ["loss of control", "overheated market", "sharp pullback"],
+      "symbolism": "A hero drives a magnificent chariot pulled by two colossal digital bulls, racing across glowing blocks toward an ascending chart on the horizon. This is momentum harnessed — raw market force steered by will toward victory. The two bulls are the opposing energies the driver must hold in a single direction.",
+      "upright_full": "This card is surging momentum and hard-won victory: a breakout driven by discipline, a market or effort moving powerfully in your favour. The Bull Run rewards the one who keeps the reins — force plus direction, not force alone. Ride the wave decisively while it runs.",
+      "reversed_full": "Reversed, the run overheats: loss of control, a parabolic move snapping into a sharp pullback, energy burned in every direction at once. The bulls pull the driver apart because no one is steering. Momentum without control becomes the crash.",
+      "domains": {
+        "crypto": "Strong upward momentum and a breakout driven by conviction; reversed, an overheated, exhausted top ripe for a pullback.",
+        "trading": "A trending move to ride with the reins in hand; reversed, chasing a blow-off top or overtrading on adrenaline.",
+        "money": "Drive and discipline push you forward fast toward a financial win.",
+        "career": "A decisive push toward a clear victory — steer it, don't just floor it.",
+        "startup": "Rapid traction and momentum; reversed, scaling out of control before the foundations are ready.",
+        "relationships": "Moving forward together with force and shared direction.",
+        "health": "Powerful energy to harness — channel it without redlining the engine.",
+        "life": "You're in motion — success comes from holding the reins of the two forces pulling at you."
+      },
+      "advice": "Ride the momentum with the reins firmly in hand; a bull run still needs steering.",
+      "shadow": "An overheated run outruns its reins and snaps into a pullback."
+    },
+    {
+      "id": "VIII", "classic": "Strength", "crypto_name": "Diamond Hands", "arcana": "major",
+      "keywords": ["Diamond Hands", "HODL", "Patience"],
+      "upright": ["patience", "HODL", "inner strength", "discipline"],
+      "reversed": ["panic", "capitulation", "emotional selling"],
+      "symbolism": "A fearless guardian with hands turned to brilliant diamond calmly tames a massive crypto bear without force, radiating unwavering confidence across a glowing landscape. This is strength as composure — the quiet conviction that outlasts volatility. The bear is not defeated by power but soothed by steadiness.",
+      "upright_full": "This card is inner strength through patience: the discipline to hold conviction while the market shakes, the calm that tames fear instead of fighting it. Diamond Hands wins not by force but by refusing to panic. Steadiness, gentleness, and endurance carry the day.",
+      "reversed_full": "Reversed, composure cracks: panic, capitulation, paper hands selling the exact bottom on emotion. The bear is no longer tamed but obeyed. The strength was there but abandoned at the moment it was most needed.",
+      "domains": {
+        "crypto": "Holding conviction through volatility, taming the fear-and-greed within; reversed, paper hands capitulating at the low.",
+        "trading": "Sticking to the plan under drawdown pressure; reversed, an emotional, panic-driven exit.",
+        "money": "Calm discipline and patience beat brute force with money.",
+        "career": "Quiet persistence and composure win over aggression.",
+        "startup": "Enduring the trough of sorrow with steady conviction; reversed, folding at the first crisis.",
+        "relationships": "Patience and gentleness over confrontation; soft power.",
+        "health": "Steady willpower and self-compassion restore balance.",
+        "life": "The strongest move is often the calm one — soft power, not force."
+      },
+      "advice": "Hold with calm conviction; strength here is composure, not force.",
+      "shadow": "Fear turns diamond hands to paper at the exact bottom."
+    },
+    {
+      "id": "IX", "classic": "The Hermit", "crypto_name": "The DYOR Sage", "arcana": "major",
+      "keywords": ["DYOR", "Research", "Knowledge"],
+      "upright": ["research", "analysis", "patience", "learning"],
+      "reversed": ["seclusion", "information bubble", "ignoring facts"],
+      "symbolism": "An ancient sage climbs frozen blockchain peaks carrying a lantern that holds a glowing Ethereum block, a night sky of validator stars above. He is the solitary researcher — the one who withdraws from the crowd to find the truth by his own light. Wisdom here is earned alone, in silence.",
+      "upright_full": "This card counsels doing your own research: stepping back from the noise to study, analyse, and learn by your own lantern. The DYOR Sage values patience and depth over the crowd's certainty. The answer is found in solitude and diligence, not in the chat.",
+      "reversed_full": "Reversed, solitude sours into isolation: an echo chamber, a self-reinforcing information bubble, a stubborn refusal to update on new facts. The lantern illuminates only what it already believes. Withdrawal stops clarifying and starts hiding.",
+      "domains": {
+        "crypto": "Deep, quiet due diligence — DYOR away from the hype; reversed, an echo chamber ignoring on-chain reality.",
+        "trading": "Step back and study the setup alone before acting; reversed, cherry-picking data to confirm a bias.",
+        "money": "Take time in solitude to think through the long game.",
+        "career": "Seek mastery and clarity through focused, solitary effort.",
+        "startup": "Go heads-down and do deep research and diligence before the next big commitment.",
+        "relationships": "A genuine need for space and reflection; reversed, isolating instead of connecting.",
+        "health": "Rest, retreat, and inward focus restore you.",
+        "life": "Carry your own lantern — the answer is found in the quiet, not the crowd."
+      },
+      "advice": "Do your own research in the quiet, away from the crowd's noise.",
+      "shadow": "Solitude sharpens research; an echo chamber just ignores the facts."
+    },
+    {
+      "id": "X", "classic": "Wheel of Fortune", "crypto_name": "Market Cycle", "arcana": "major",
+      "keywords": ["Cycle", "Halving", "Bull", "Bear", "Fortune"],
+      "upright": ["new cycle", "luck", "growth", "change"],
+      "reversed": ["bear market", "prolonged decline", "bad luck", "stagnation"],
+      "symbolism": "A colossal celestial wheel of blocks turns through the cosmos, its rim engraved with Bull, Bear, Halving, Altseason, ATH and Correction, ringed by constellations of sacred geometry. This is the market cycle as cosmic law — the turning that no one stops, only rides. What rises will fall; what falls will rise.",
+      "upright_full": "This card marks a turning of the cycle: a new phase beginning, fortune shifting, momentum changing in your favour. Market Cycle reminds you that conditions are seasonal — align with the phase you're in rather than clutching the last one. Change is arriving, and it leans upward.",
+      "reversed_full": "Reversed, the wheel turns down: a bear phase, a prolonged decline, bad timing, or stagnation while you wait for the turn. Resisting the change only prolongs the pain. The bottom feels permanent — but the wheel is still turning.",
+      "domains": {
+        "crypto": "The four seasons of the market — bull, bear, halving, altseason; a cycle is shifting, so time the phase rather than fighting it.",
+        "trading": "Regime change is underway; adapt to the new phase instead of trading the last one.",
+        "money": "Fortunes turn; make the most of the phase you're currently in.",
+        "career": "An unexpected turn of events changes the game — ride it.",
+        "startup": "Macro timing and cycle shifts matter as much as execution right now.",
+        "relationships": "A fated shift in the dynamic; a chapter turns.",
+        "health": "Cycles of energy rise and fall — work with the current tide.",
+        "life": "The wheel always turns — what's down comes up, and what's up comes down."
+      },
+      "advice": "Align with the phase of the cycle instead of clutching the last one.",
+      "shadow": "Every top feels eternal, and so does every bottom — the wheel turns anyway."
+    },
+    {
+      "id": "XI", "classic": "Justice", "crypto_name": "The Consensus", "arcana": "major",
+      "keywords": ["Consensus", "Validation", "Justice", "Governance"],
+      "upright": ["honesty", "transparency", "network fairness", "successful validation", "trust"],
+      "reversed": ["manipulation", "corruption", "a network attack", "censorship", "injustice"],
+      "symbolism": "A blockchain judge sits between validator pillars holding the glowing Scales of Consensus that weigh honesty against fraud, a blade of chain-links in the other hand, a block of thousands of confirmations turning behind. This is truth settled on-chain — fairness enforced by the whole network, not one authority. The ledger does not forget.",
+      "upright_full": "This card is honesty and consequence: transparent dealing, a fair outcome that matches your actions, validation earned through integrity. The Consensus reminds you that the network records everything and settles the truth in time. Act as though every block is permanent, because it is.",
+      "reversed_full": "Reversed, fairness is captured: manipulation, corruption, a 51% attack on the truth, censorship, an unjust outcome engineered by the powerful. The scales are rigged, or the record is cooked. Accountability is being dodged — for now.",
+      "domains": {
+        "crypto": "An immutable, transparent settlement; fair play and validation. Reversed: manipulation, hidden liabilities, a network attack on the truth.",
+        "trading": "An honest reckoning of the position — face the real P&L; reversed, a manipulated tape or a rigged setup.",
+        "money": "Balance the books honestly; a fair financial accounting is due.",
+        "career": "A fair outcome that matches what you actually did; accountability lands.",
+        "startup": "Transparent governance and honest metrics build durable trust; reversed, cooked numbers catch up with you.",
+        "relationships": "Honesty and balance; a fair accounting of give and take between you.",
+        "health": "Cause and effect — your habits are validated, for better or worse, in the body.",
+        "life": "The network settles the truth eventually; live as if every block is permanent."
+      },
+      "advice": "Act transparently; consensus weighs honesty against deception — and it remembers.",
+      "shadow": "Enough coordinated dishonesty can capture even a fair system — that is the 51% risk."
+    },
+    {
+      "id": "XII", "classic": "The Hanged Man", "crypto_name": "Locked Staking", "arcana": "major",
+      "keywords": ["Staking", "Lockup", "Patience", "Validator"],
+      "upright": ["patience", "long-term waiting", "staking", "trusting the process"],
+      "reversed": ["locked capital", "inability to exit a position", "wasted time"],
+      "symbolism": "A validator hangs serenely upside-down inside a glowing energy ring, his tokens sealed within a staking crystal, his face calm and enlightened. This is voluntary suspension — value locked away on purpose, a surrender that earns rather than loses. The reward belongs to the one who can wait.",
+      "upright_full": "This card is productive patience: staking your position and trusting the process through the lockup period. Locked Staking counsels stillness and a shift in perspective — the reward comes to those who resist the urge to act prematurely. Surrender the need for instant liquidity and let time do its work.",
+      "reversed_full": "Reversed, the lockup becomes a trap: capital frozen when you need it, an inability to exit a position, time bleeding away with nothing to show. Patience curdles into paralysis or regret. What was a willing pause becomes being genuinely stuck.",
+      "domains": {
+        "crypto": "Committed, staked capital in a lockup; patience while the reward accrues. Reversed: funds frozen, unable to exit when it matters.",
+        "trading": "Holding through a necessary drawdown or timelock; reversed, trapped in an illiquid position.",
+        "money": "Capital is committed and can't move yet — the reward needs the wait.",
+        "career": "Pause and surrender the old approach to gain a new perspective before acting.",
+        "startup": "A necessary period of building in silence with no visible output yet; trust the process.",
+        "relationships": "A pause that reframes the whole thing; suspend judgement and see it anew.",
+        "health": "Rest, stillness, and radical acceptance restore you.",
+        "life": "Hang still and staked; the reward comes to those who wait out the lockup."
+      },
+      "advice": "Lock in and trust the process; the reward needs the full lockup period.",
+      "shadow": "Capital that can never unstake is just capital quietly lost to time."
+    },
+    {
+      "id": "XIII", "classic": "Death", "crypto_name": "The Hard Fork", "arcana": "major",
+      "keywords": ["Hard Fork", "Evolution", "Upgrade", "Renewal"],
+      "upright": ["change", "renewal", "a new cycle", "evolution"],
+      "reversed": ["stagnation", "resistance to change", "an obsolete project"],
+      "symbolism": "A dark rider in obsidian armour crosses a splitting blockchain, the old chain dissolving into glowing dust behind him as a magnificent new network is born ahead. This is transformation as upgrade — an ending that is really a version change. The old must be deprecated so the new can run.",
+      "upright_full": "This card is irreversible, necessary change: an ending that clears the ground for evolution, a hard fork away from what no longer serves. The old chapter closes not as loss but as renewal. Let the deprecated version die so the upgraded one can launch.",
+      "reversed_full": "Reversed, change is refused: clinging to a dead project, bag-holding an obsolete chain, resisting the fork until stagnation sets in. The upgrade waits, but fear keeps running the legacy version. The refusal itself becomes the decay.",
+      "domains": {
+        "crypto": "An irreversible upgrade or exit — a position, project or era ends so a new one can begin; reversed, holding something already dead.",
+        "trading": "Cut the thesis that broke and rotate; reversed, refusing to close a dead trade.",
+        "money": "A financial chapter closes so a better one can open — let it.",
+        "career": "An ending that frees you for the next build; a role or path concludes.",
+        "startup": "A pivot or shutdown that clears the way for the real thing; reversed, zombie-marching an obsolete product.",
+        "relationships": "A profound transformation, or a necessary ending that makes space.",
+        "health": "Release an old pattern or habit for good.",
+        "life": "The old must be left behind — this is a hard fork, not a rollback."
+      },
+      "advice": "Let the old chain fork away; evolution is irreversible, and that's the point.",
+      "shadow": "Refusing the fork leaves you running an obsolete, abandoned chain."
+    },
+    {
+      "id": "XIV", "classic": "Temperance", "crypto_name": "Cross-Chain Bridge", "arcana": "major",
+      "keywords": ["Bridge", "Cross-chain", "Balance", "Liquidity"],
+      "upright": ["balance", "harmony", "a successful bridge between networks", "diversification"],
+      "reversed": ["bridge errors", "loss of funds", "network incompatibility"],
+      "symbolism": "An angelic guardian pours radiant liquidity between two floating blockchain worlds, the flow forming an endless luminous arc that connects two ecosystems. This is temperance as safe transfer — patient balance moving value across a divide without spilling a drop. Harmony is a careful, tested process.",
+      "upright_full": "This card is balance and harmonious blending: a successful bridge between two worlds, diversification, the steady mixing that creates something greater than either side. Cross-Chain Bridge rewards moderation and patience — pour slowly and everything arrives safely. Find the middle path between extremes.",
+      "reversed_full": "Reversed, the bridge fails: funds lost in transit, incompatible networks, imbalance and excess where there should be measure. The transfer was rushed or the two sides never truly fit. Overreach on one side breaks the whole flow.",
+      "domains": {
+        "crypto": "A successful cross-chain move, balanced diversification, patient portfolio blending; reversed, a bridge exploit or funds lost between incompatible chains.",
+        "trading": "Measured position-sizing and hedged balance; reversed, an all-in bet that abandons risk control.",
+        "money": "Moderation and steady flow beat spikes; diversify and balance.",
+        "career": "Blend skills and pace yourself for the long game.",
+        "startup": "Balance burn against growth, ambition against stability; sustainable pacing.",
+        "relationships": "Patience and give-and-take create harmony; meet in the middle.",
+        "health": "Balance, moderation, and steady habits heal.",
+        "life": "Bridge the two sides of your situation slowly; a careful transfer carries everything across safely."
+      },
+      "advice": "Bridge the two sides with patience; balance is a careful, tested transfer.",
+      "shadow": "A careless bridge between incompatible chains loses everything mid-transfer."
+    },
+    {
+      "id": "XV", "classic": "The Devil", "crypto_name": "The Rug Pull", "arcana": "major",
+      "keywords": ["Rug Pull", "Scam", "Greed", "Manipulation"],
+      "upright": ["greed", "addiction", "fraud", "toxic projects"],
+      "reversed": ["liberation", "recognizing the deception", "escaping the trap"],
+      "symbolism": "A masked demon lounges on a throne of stolen liquidity while investors sit chained to worthless tokens they refuse to drop, a burning DEX glowing behind. This is bondage by greed — the trap that owns you while you believe you own it. The chains, notably, are loose enough to slip.",
+      "upright_full": "This card exposes the trap: greed, addiction, manipulation, a toxic project or dynamic that has its hooks in you. The Rug Pull shows where you are chained to something worthless out of fear or craving. Naming the chain is the first step, because it was never actually locked.",
+      "reversed_full": "Reversed, the chains come off: you recognise the deception, cut the loss, and walk away from the trap. Liberation arrives the moment illusion breaks. What owned you loses its grip once you stop feeding it.",
+      "domains": {
+        "crypto": "A scam, over-leverage, or a toxic project — the trap of greed that owns you; reversed, spotting the rug and escaping before or as it happens.",
+        "trading": "Compulsive over-leverage or revenge-trading has a grip; reversed, cutting the addiction and de-risking.",
+        "money": "Debt or greed has hold of you — the chains are looser than they look.",
+        "career": "A golden handcuff or a toxic role that traps you; reversed, breaking free of it.",
+        "startup": "A predatory deal, toxic investor, or growth-at-all-costs addiction; reversed, walking away from the bad money.",
+        "relationships": "A toxic person nearby — insincerity, manipulation, dependency; reversed, recognizing it and leaving.",
+        "health": "A compulsion or vice to confront honestly.",
+        "life": "You're chained to something — notice that the chain isn't actually locked."
+      },
+      "advice": "Name what has you chained; the worthless bag only holds you while you keep holding it.",
+      "shadow": "The chains of greed feel like ownership right up until the liquidity is gone."
+    },
+    {
+      "id": "XVI", "classic": "The Tower", "crypto_name": "Liquidation", "arcana": "major",
+      "keywords": ["Liquidation", "Crash", "Volatility", "Margin"],
+      "upright": ["collapse", "liquidation", "sudden events", "market cleansing"],
+      "reversed": ["avoiding catastrophe", "partial recovery", "late risk awareness"],
+      "symbolism": "A monumental exchange tower is split by a lightning bolt shaped like a candlestick, traders and golden coins falling through the storm as a red 'Margin Call' blazes at the peak. This is sudden, violent correction — the false structure destroyed in an instant. What was built on leverage cannot survive the shock.",
+      "upright_full": "This card is sudden collapse: a liquidation, a crash, a black-swan event that clears away what was over-leveraged or built on illusion. Liquidation is brutal but cleansing — it destroys the fragile so something true can be rebuilt. Don't defend the falling tower; let it fall.",
+      "reversed_full": "Reversed, catastrophe is narrowly avoided or partially survived: you de-risked in time, caught the danger late but not too late, or the collapse comes as a slow unravel rather than a bang. The lesson about risk arrives after the scare. Recovery begins from a lower, humbler base.",
+      "domains": {
+        "crypto": "An exchange failure, a project rug, a margin-call cascade — a sudden shock that clears leverage; reversed, you saw it coming and got out.",
+        "trading": "A liquidation or violent stop-out; reversed, narrowly avoiding one by cutting risk in time.",
+        "money": "A sudden financial shock as an over-leveraged structure breaks.",
+        "career": "An abrupt upheaval that tears down a rotten foundation.",
+        "startup": "A sudden crisis — funding collapse, a critical failure — that forces a reset; reversed, a near-miss survived.",
+        "relationships": "A sudden revelation that shatters an illusion.",
+        "health": "A sudden disruption that forces immediate change.",
+        "life": "What was over-leveraged is coming down — let it clear, then rebuild on truth."
+      },
+      "advice": "Don't defend an over-leveraged structure; the liquidation is the market clearing.",
+      "shadow": "Leverage feels like power right until the margin call takes it all at once."
+    },
+    {
+      "id": "XVII", "classic": "The Star", "crypto_name": "Bull Market", "arcana": "major",
+      "keywords": ["Hope", "Bull", "Recovery", "Growth"],
+      "upright": ["hope", "recovery", "growth", "faith in the market"],
+      "reversed": ["loss of hope", "doubt", "a slow market"],
+      "symbolism": "A radiant maiden pours golden liquidity into a blockchain river beneath a great eight-pointed Bitcoin star, the whole landscape lush and alive with returning prosperity. This is hope after the winter — quiet renewal, faith restored, the first green of recovery. The star is distant but real.",
+      "upright_full": "This card is gentle hope and genuine recovery: the bull returning after the bear, good fundamentals, healing, and renewed faith. Bull Market counsels calm optimism — the current is turning in your favour, so act steadily rather than frantically. The worst has passed and the sky is clearing.",
+      "reversed_full": "Reversed, hope fades: doubt, burnout, a recovery so slow you stop believing in it, dreams that drifted into the unrealistic. The star is still shining, but you've looked away. The danger is abandoning the recovery right before it confirms.",
+      "domains": {
+        "crypto": "The bull returns — recovery, good fundamentals, a real opening after the winter; reversed, the recovery is real but you've lost faith in it.",
+        "trading": "A hopeful, improving setup rewarding calm accumulation; reversed, capitulating just before the turn.",
+        "money": "Capital begins to grow again; a hopeful, well-timed entry.",
+        "career": "A fresh, inspired chapter or a successful launch on the horizon.",
+        "startup": "Conditions turn favourable — a hopeful window to build into as the market recovers.",
+        "relationships": "Healing, renewed hope, and new, supportive connections.",
+        "health": "Energy, optimism, and recovery return.",
+        "life": "The sky clears — act calmly; the current is turning in your favour."
+      },
+      "advice": "Act calmly on the returning hope; the recovery is real if you don't abandon it.",
+      "shadow": "Hope that curdles into doubt sells the recovery right before it runs."
+    },
+    {
+      "id": "XVIII", "classic": "The Moon", "crypto_name": "FUD", "arcana": "major",
+      "keywords": ["FUD", "Emotion", "Illusion", "Fear"],
+      "upright": ["uncertainty", "fear", "rumors", "market emotion"],
+      "reversed": ["clarity", "FUD fading", "objectivity"],
+      "symbolism": "A huge digital moon casts pale light over a fog-covered valley where phantom charts, fake-news scrolls and shadowy figures rise from the mist. This is fear, uncertainty and doubt made landscape — the murky night where nothing can be verified and imagination fills the gaps. Not everything in the fog is real.",
+      "upright_full": "This card is the fog of fear: uncertainty, rumour, emotional markets, illusions that look like threats. FUD counsels against big moves in the dark — what you fear is often a phantom the daylight won't confirm. Trust intuition, but verify before you act on dread.",
+      "reversed_full": "Reversed, the fog lifts: clarity returns, the FUD fades, objectivity replaces panic. The shadows resolve into ordinary shapes and the truth surfaces. Confusion gives way to a clear read.",
+      "domains": {
+        "crypto": "A murky, fear-driven phase — misinformation, shady projects, uncertainty you can't verify; reversed, the FUD clears and the truth shows.",
+        "trading": "A choppy, emotional, low-visibility tape; reversed, clarity returns and the noise resolves.",
+        "money": "The financial picture is unclear — don't make big decisions in the dark.",
+        "career": "Hidden dynamics and misinformation cloud the path; wait for clarity.",
+        "startup": "Market signals are murky and sentiment-driven right now; don't make an irreversible bet in the fog.",
+        "relationships": "Confusion, mixed signals, and unspoken fears distort the read.",
+        "health": "Anxiety, poor sleep, unclear or psychosomatic symptoms.",
+        "life": "You're walking the maze at night — trust intuition, but verify before you trust."
+      },
+      "advice": "Don't make big moves in the fog; wait for the FUD to clear and the truth to surface.",
+      "shadow": "Fear invents phantom charts the daylight rarely confirms."
+    },
+    {
+      "id": "XIX", "classic": "The Sun", "crypto_name": "ATH", "arcana": "major",
+      "keywords": ["ATH", "Success", "Profit", "Bull"],
+      "upright": ["maximum success", "ATH", "profit", "joy", "victory"],
+      "reversed": ["overheated market", "overconfidence", "profit-taking"],
+      "symbolism": "A brilliant Bitcoin sun illuminates a flourishing world as a joyful trader rides a white digital bull into a radiant golden city. This is the euphoric all-time high — success made visible, warmth, clarity, and the peak of the cycle. Everything is lit, and everyone can see it.",
+      "upright_full": "This card is success and joy at full brightness: an all-time high, profit realised, recognition, vitality, and honest happiness. ATH is the reward and the celebration. Enjoy the peak fully — while remembering, quietly, that a top is still a point on a cycle.",
+      "reversed_full": "Reversed, the sun overheats: overconfidence, hollow hype, ego, a euphoric top just before the cool-down. The warmth becomes a burn, or the success is more surface than substance. Time to take some profit and stay humble.",
+      "domains": {
+        "crypto": "The euphoric peak — new highs, celebration, everything green; reversed, hype without substance and the top before the correction.",
+        "trading": "A winning position at its brightest; reversed, greed at the top when you should be scaling out.",
+        "money": "A genuine financial high point and realised gains.",
+        "career": "Visible success, recognition, and a moment in the sun.",
+        "startup": "A peak moment — traction, press, momentum; enjoy it while staying humble about the cycle.",
+        "relationships": "Warmth, joy, and honest, radiant connection.",
+        "health": "Vitality, clarity, and strong energy.",
+        "life": "The sun is out — enjoy it fully, and remember tops are part of the cycle too."
+      },
+      "advice": "Celebrate the peak — and remember an ATH is still one point on a cycle.",
+      "shadow": "At the top everyone forgets that the chart runs both directions."
+    },
+    {
+      "id": "XX", "classic": "Judgement", "crypto_name": "Snapshot", "arcana": "major",
+      "keywords": ["Snapshot", "DAO", "Airdrop", "Governance"],
+      "upright": ["reward", "recognition", "airdrop", "DAO", "a new chapter"],
+      "reversed": ["a missed snapshot", "lost opportunity", "disqualification"],
+      "symbolism": "An angel sounds a cryptographic trumpet and thousands of wallet addresses awaken with golden light, rising to claim governance rights and airdrops. This is the reckoning that rewards — the on-chain snapshot that counts who showed up and who built. The record is taken; the worthy are called.",
+      "upright_full": "This card is a reckoning and a reward: recognition for past positioning, an airdrop for those who were present, a call to rise into a new chapter. Snapshot honours who showed up and did the work. Answer the call, review the past honestly, and step into what you've earned.",
+      "reversed_full": "Reversed, the moment is missed: a snapshot you weren't counted in, a lost opportunity, disqualification, or self-judgement and regret over the past. The trumpet sounded and you weren't holding. The chance to be counted has passed — learn it for the next cycle.",
+      "domains": {
+        "crypto": "A reward for past positioning — an airdrop, governance rights, recognition; reversed, missing the snapshot or being disqualified.",
+        "trading": "Positioning ahead of a catalyst pays off; reversed, missing the entry window that mattered.",
+        "money": "A windfall or reward for earlier decisions; a fresh financial chapter opens.",
+        "career": "A turning-point evaluation where past work is finally recognised — answer the call.",
+        "startup": "Early users and builders get rewarded and counted; reversed, missing a defining moment of momentum.",
+        "relationships": "Forgiveness, an honest reckoning, and a second chance.",
+        "health": "A wake-up call that prompts real change.",
+        "life": "The snapshot is taken — those who showed up are counted and rewarded."
+      },
+      "advice": "Answer the call and be counted; the snapshot rewards those who showed up.",
+      "shadow": "A missed snapshot is a chapter you don't get to claim later."
+    },
+    {
+      "id": "XXI", "classic": "The World", "crypto_name": "Mass Adoption", "arcana": "major",
+      "keywords": ["Mass Adoption", "Unity", "Completion", "Global Network"],
+      "upright": ["journey's completion", "mass adoption", "global unity", "ecosystem maturity"],
+      "reversed": ["incompleteness", "delayed development", "isolation", "market fragmentation"],
+      "symbolism": "A triumphant figure floats within a wreath of interconnected chains as Earth is wrapped in a luminous decentralized network, four guardians — Bitcoin Bull, Ethereum Owl, Solana Phoenix, Chainlink Lion — anchoring the corners. This is completion and integration at global scale: the whole journey come full circle, the network reaching everyone.",
+      "upright_full": "This card is fulfilment and wholeness: a journey completed, a vision integrated, mass adoption achieved, the ecosystem matured into unity. Mass Adoption is the successful arrival — and, quietly, the seed of the next cycle. Honour the completion and let it become a new genesis block.",
+      "reversed_full": "Reversed, completion is withheld: a loose end, delayed development, fragmentation, isolation, a potential left unrealised. One neglected corner keeps the circle from closing. The finish line is close but not yet crossed.",
+      "domains": {
+        "crypto": "Full integration and network effect — the vision goes global and the cycle completes; reversed, almost there, with one fragment missing.",
+        "trading": "A thesis fully played out and realised; reversed, a trade left frustratingly incomplete.",
+        "money": "A financial goal fully achieved and consolidated.",
+        "career": "A major accomplishment comes full circle and is recognised.",
+        "startup": "Category leadership and mainstream adoption; reversed, scaling stalls just short of critical mass.",
+        "relationships": "Wholeness, lasting harmony, and a bond that feels complete.",
+        "health": "Full recovery and a sense of integration.",
+        "life": "The journey completes — and completion is the genesis block of the next cycle."
+      },
+      "advice": "Honour the completion; the whole network arriving is the seed of the next cycle.",
+      "shadow": "One fragmented corner keeps the global network from ever fully closing."
+    }
+  ]
+}
