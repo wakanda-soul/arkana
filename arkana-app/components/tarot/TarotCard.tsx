@@ -19,6 +19,8 @@ interface TarotCardProps {
   onPress?: () => void;
   width?: number;
   height?: number;
+  compact?: boolean;
+  hideName?: boolean;
 }
 
 export function TarotCard({
@@ -30,6 +32,8 @@ export function TarotCard({
   onPress,
   width = 140,
   height = 240,
+  compact = false,
+  hideName = false,
 }: TarotCardProps) {
   const flipAnim = useSharedValue(isRevealed ? 1 : 0);
 
@@ -53,7 +57,6 @@ export function TarotCard({
       transform: [
         { perspective: 1000 },
         { rotateY: `${rotateValue}deg` },
-        { rotateZ: isReversed ? '180deg' : '0deg' },
       ],
       backfaceVisibility: 'hidden',
     };
@@ -70,24 +73,35 @@ export function TarotCard({
   const imageSource = CardImages[cardNo] || CardImages['00'];
 
   return (
-    <View style={[styles.container, { width, height }]}>
+    <View style={[styles.container, compact && styles.containerCompact, { width, height }]}>
       {positionName && (
-        <View style={styles.positionBadge}>
-          <Text style={styles.positionText}>{positionName.toUpperCase()}</Text>
+        <View style={[styles.positionBadge, compact && styles.positionBadgeCompact]}>
+          <Text style={[styles.positionText, compact && styles.positionTextCompact]} numberOfLines={1}>
+            {positionName.toUpperCase()}
+          </Text>
         </View>
       )}
 
       <Pressable onPress={handlePress} style={styles.pressable}>
-        {/* Card Front */}
+        {/* Card Front - container remains upright, image rotates if reversed */}
         <Animated.View style={[styles.card, frontStyle, { width, height }]}>
-          <Image source={imageSource} style={styles.image} contentFit="cover" transition={300} />
+          <Image
+            source={imageSource}
+            style={[styles.image, isReversed && styles.reversedImage]}
+            contentFit="cover"
+            transition={300}
+          />
           {isReversed && (
-            <View style={styles.reversedBadge}>
-              <Text style={styles.reversedText}>REVERSED</Text>
+            <View style={[styles.reversedBadge, compact && styles.reversedBadgeCompact]}>
+              <Text style={[styles.reversedText, compact && styles.reversedTextCompact]}>
+                ▼ REVERSED
+              </Text>
             </View>
           )}
-          <View style={styles.zoomAffordance}>
-            <Text style={styles.zoomAffordanceText}>🔍</Text>
+          <View style={[styles.zoomAffordance, compact && styles.zoomAffordanceCompact]}>
+            <Text style={[styles.zoomAffordanceText, compact && styles.zoomAffordanceTextCompact]}>
+              🔍
+            </Text>
           </View>
         </Animated.View>
 
@@ -96,19 +110,21 @@ export function TarotCard({
           <View style={styles.sigilContainer}>
             <View style={styles.outerGlow} />
             <Text style={styles.sigilIcon}>⚡</Text>
-            <Text style={styles.sigilTitle}>ARKANA</Text>
-            <Text style={styles.sigilSubtitle}>TAP TO VERIFY</Text>
+            <Text style={[styles.sigilTitle, compact && styles.sigilTitleCompact]}>ARKANA</Text>
+            <Text style={[styles.sigilSubtitle, compact && styles.sigilSubtitleCompact]}>
+              TAP TO VERIFY
+            </Text>
           </View>
         </Animated.View>
       </Pressable>
 
-      {isRevealed && (
+      {isRevealed && !hideName && (
         <View style={styles.nameContainer}>
-          <Text style={styles.cardName} numberOfLines={1}>
+          <Text style={[styles.cardName, compact && styles.cardNameCompact]} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={styles.cardMeta}>
-            {isReversed ? '▼ Reversed' : '▲ Upright'} · 🔍 Zoom
+          <Text style={[styles.cardMeta, compact && styles.cardMetaCompact]}>
+            {isReversed ? '▼ Rev' : '▲ Up'} · 🔍 Zoom
           </Text>
         </View>
       )}
@@ -164,19 +180,36 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  reversedImage: {
+    transform: [{ rotateZ: '180deg' }],
+  },
   reversedBadge: {
     position: 'absolute',
     top: 6,
-    right: 6,
-    backgroundColor: 'rgba(255, 68, 68, 0.85)',
+    left: 6,
+    backgroundColor: 'rgba(235, 45, 75, 0.94)',
+    borderColor: '#FFA5B5',
+    borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    borderRadius: 5,
+    zIndex: 10,
+  },
+  reversedBadgeCompact: {
+    top: 4,
+    left: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
     borderRadius: 4,
   },
   reversedText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 8,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  reversedTextCompact: {
+    fontSize: 7,
   },
   sigilContainer: {
     alignItems: 'center',
@@ -200,14 +233,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 2,
   },
+  sigilTitleCompact: {
+    fontSize: 10,
+    letterSpacing: 1,
+  },
   sigilSubtitle: {
     color: '#8B949E',
     fontSize: 9,
     marginTop: 4,
     letterSpacing: 1,
   },
+  sigilSubtitleCompact: {
+    fontSize: 7,
+    marginTop: 2,
+  },
   nameContainer: {
-    marginTop: 6,
+    marginTop: 4,
     alignItems: 'center',
   },
   cardName: {
@@ -216,10 +257,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  cardNameCompact: {
+    fontSize: 10,
+  },
   cardMeta: {
     color: '#8B949E',
     fontSize: 10,
     marginTop: 2,
+  },
+  cardMetaCompact: {
+    fontSize: 8,
+    marginTop: 1,
   },
   zoomAffordance: {
     position: 'absolute',
@@ -234,7 +282,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  zoomAffordanceCompact: {
+    bottom: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
   zoomAffordanceText: {
     fontSize: 11,
+  },
+  zoomAffordanceTextCompact: {
+    fontSize: 9,
+  },
+  containerCompact: {
+    margin: 2,
+  },
+  positionBadgeCompact: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginBottom: 3,
+  },
+  positionTextCompact: {
+    fontSize: 8,
+    letterSpacing: 0.5,
   },
 });

@@ -15,6 +15,7 @@ import { fetchReading, ReadingResponse } from '@/services/oracleApi';
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
 import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
+import { SpreadTableView } from '@/components/tarot/SpreadTableView';
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -133,26 +134,13 @@ export default function SpreadScreen() {
               )}
             </View>
 
-            {/* Cards Display */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cardsScroll}
-            >
-              {reading.cards.map((card, idx) => (
-                <TarotCard
-                  key={idx}
-                  cardNo={card.card_no}
-                  name={card.crypto_name}
-                  isReversed={card.orientation === 'reversed'}
-                  isRevealed={!!revealedMap[idx]}
-                  positionName={card.position}
-                  onPress={() => handleCardPress(idx)}
-                  width={150}
-                  height={250}
-                />
-              ))}
-            </ScrollView>
+            {/* Interactive Spread Table in Authentic Tarot Geometry */}
+            <SpreadTableView
+              spreadKey={spreadKey}
+              cards={reading.cards}
+              revealedMap={revealedMap}
+              onCardPress={handleCardPress}
+            />
 
             {/* Step 3: Synthesis View when all revealed */}
             {isAllRevealed && (
