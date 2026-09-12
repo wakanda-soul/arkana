@@ -5,7 +5,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
-const { generateReadingProse } = require("./ai/oracleService");
+const { generateReadingProse, generateOracleChatReply } = require("./ai/oracleService");
 const { getClockInStatus, recordClockIn } = require("./solana/skrService");
 
 const app = express();
@@ -275,19 +275,23 @@ app.post("/api/reading", async (req, res) => {
   }
 });
 
-// Interactive Oracle chat follow-up
+// Interactive Oracle chat follow-up (proxied to live Oracle AI via agy)
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, history = [] } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: "Message is required" });
+    }
 
-    // Contextual oracle reply
-    const reply = `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
+    // Call live Oracle AI agent proxy
+    const reply = await generateOracleChatReply(message.trim(), history);
 
     res.json({
       reply,
       timestamp: new Date().toISOString()
     });
   } catch (err) {
+    console.error("Chat error:", err);
     res.status(500).json({ error: err.message });
   }
 });

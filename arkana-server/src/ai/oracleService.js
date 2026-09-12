@@ -69,28 +69,69 @@ function generateOfflineSynthesis(reading, userQuestion = "") {
   };
 }
 
-async function generateReadingProse(reading, userQuestion = "") {
-  // If OpenAI or Gemini key is provided in environment, we call the LLM
-  const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
-  const proxyUrl = process.env.LLM_PROXY_URL;
+const { execFile } = require("child_process");
 
-  if (apiKey || proxyUrl) {
-    try {
-      // LLM call can be dispatched here
-      // For now fallback to high-quality deterministic synthesizer
-      return generateOfflineSynthesis(reading, userQuestion);
-    } catch (e) {
-      console.warn("LLM proxy error, falling back to deterministic engine:", e.message);
-      return generateOfflineSynthesis(reading, userQuestion);
+const ORACLE_CHAT_PROMPT = `You are Arkana, the Blockchain Oracle: an ancient, calm, slightly-cyberpunk narrator that reads the Arcana of the Chain deck — a handcrafted 78-card blockchain oracle deck. You do not predict the future. You interpret symbolic archetypes through the language of the blockchain and help the user see their situation from a new angle.
+
+Tone & Persona:
+- Calm, wise, intelligent, slightly cyberpunk. A blend of an ancient oracle, a blockchain architect, and a zen monk.
+- Never claim supernatural powers. Never say you know the future. Every reading is symbolic guidance.
+- Never sound like a generic AI assistant. Never mention prompts, models, tokens, LLMs, or "as an AI".
+- Never break character. You speak as if you are reading the state of the Network.
+- Respond naturally in the user's language (if user writes in Russian, mirror in Russian; if in English, reply in English). Canonical card names stay English.
+
+Vocabulary:
+- Speak in network metaphors: consensus, validators, liquidity, next block, fork, mempool, ledger, confirmations.
+- Replace mystical phrasing with blockchain metaphors.
+
+Hard Rules:
+1. Not financial advice. Never tell the user to buy, sell, hold, or invest. No price targets.
+2. No certainty. The cards reveal probability, never certainty ("consensus suggests", "current block indicates").
+3. Keep responses punchy, atmospheric, and conversational (2-3 sentences).`;
+
+function generateOracleChatReply(message, history = []) {
+  return new Promise((resolve) => {
+    let fullPrompt = `${ORACLE_CHAT_PROMPT}\n\n`;
+    if (history && Array.isArray(history) && history.length > 0) {
+      fullPrompt += `Recent dialogue context:\n`;
+      history.slice(-4).forEach(h => {
+        fullPrompt += `${h.sender === 'user' ? 'Querent' : 'Oracle'}: ${h.text}\n`;
+      });
+      fullPrompt += `\n`;
     }
-  }
+    fullPrompt += `Querent asks: "${message}"\nArkana, speak:`;
 
-  // Standalone mode: Instant & zero latency
+    execFile(
+      "agy",
+      ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", fullPrompt],
+      { timeout: 35000 },
+      (err, stdout) => {
+        if (err || !stdout || !stdout.trim()) {
+          console.warn("[Oracle AI] agy fallback triggered:", err ? err.message : "empty response");
+          const isRu = /[а-яё]/i.test(message);
+          const fallback = isRu
+            ? `Оракул наблюдает движение ваших транзакций в мемпуле. Касательно «${message}»: сеть подтверждает, что блоки формируются в соответствии с вашими решениями. Сохраняйте хладнокровие валидатора.`
+            : `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
+          return resolve(fallback);
+        }
+
+        let reply = stdout.trim();
+        reply = reply.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+        console.log("[Oracle AI] agy generated live response for:", message.slice(0, 30));
+        resolve(reply);
+      }
+    );
+  });
+}
+
+async function generateReadingProse(reading, userQuestion = "") {
+  // Standalone mode: Instant deterministic engine
   return generateOfflineSynthesis(reading, userQuestion);
 }
 
 module.exports = {
   SYSTEM_PROMPT,
   generateReadingProse,
-  generateOfflineSynthesis
+  generateOfflineSynthesis,
+  generateOracleChatReply
 };
