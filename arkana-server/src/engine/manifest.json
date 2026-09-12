@@ -1,0 +1,396 @@
+{
+  "note": "Maps each canonical crypto_name to its deck image (00-77, creation order). web = optimized WebP for display; png = original.",
+  "count": 78,
+  "cards": {
+    "The New Wallet": {
+      "n": "00",
+      "web": "deck-web/00.webp",
+      "classic": "The Fool"
+    },
+    "The Smart Contract Architect": {
+      "n": "01",
+      "web": "deck-web/01.webp",
+      "classic": "The Magician"
+    },
+    "The Oracle": {
+      "n": "02",
+      "web": "deck-web/02.webp",
+      "classic": "The High Priestess"
+    },
+    "The Liquidity Queen": {
+      "n": "03",
+      "web": "deck-web/03.webp",
+      "classic": "The Empress"
+    },
+    "The Bitcoin King": {
+      "n": "04",
+      "web": "deck-web/04.webp",
+      "classic": "The Emperor"
+    },
+    "The Validator": {
+      "n": "05",
+      "web": "deck-web/05.webp",
+      "classic": "The Hierophant"
+    },
+    "The Merge": {
+      "n": "06",
+      "web": "deck-web/06.webp",
+      "classic": "The Lovers"
+    },
+    "The Bull Run": {
+      "n": "07",
+      "web": "deck-web/07.webp",
+      "classic": "The Chariot"
+    },
+    "Diamond Hands": {
+      "n": "08",
+      "web": "deck-web/08.webp",
+      "classic": "Strength"
+    },
+    "The DYOR Sage": {
+      "n": "09",
+      "web": "deck-web/09.webp",
+      "classic": "The Hermit"
+    },
+    "Market Cycle": {
+      "n": "10",
+      "web": "deck-web/10.webp",
+      "classic": "Wheel of Fortune"
+    },
+    "The Consensus": {
+      "n": "11",
+      "web": "deck-web/11.webp",
+      "classic": "Justice"
+    },
+    "Locked Staking": {
+      "n": "12",
+      "web": "deck-web/12.webp",
+      "classic": "The Hanged Man"
+    },
+    "The Hard Fork": {
+      "n": "13",
+      "web": "deck-web/13.webp",
+      "classic": "Death"
+    },
+    "Cross-Chain Bridge": {
+      "n": "14",
+      "web": "deck-web/14.webp",
+      "classic": "Temperance"
+    },
+    "The Rug Pull": {
+      "n": "15",
+      "web": "deck-web/15.webp",
+      "classic": "The Devil"
+    },
+    "Liquidation": {
+      "n": "16",
+      "web": "deck-web/16.webp",
+      "classic": "The Tower"
+    },
+    "Bull Market": {
+      "n": "17",
+      "web": "deck-web/17.webp",
+      "classic": "The Star"
+    },
+    "FUD": {
+      "n": "18",
+      "web": "deck-web/18.webp",
+      "classic": "The Moon"
+    },
+    "ATH": {
+      "n": "19",
+      "web": "deck-web/19.webp",
+      "classic": "The Sun"
+    },
+    "Snapshot": {
+      "n": "20",
+      "web": "deck-web/20.webp",
+      "classic": "Judgement"
+    },
+    "Mass Adoption": {
+      "n": "21",
+      "web": "deck-web/21.webp",
+      "classic": "The World"
+    },
+    "Genesis Block": {
+      "n": "22",
+      "web": "deck-web/22.webp",
+      "classic": "Ace of Wands"
+    },
+    "Roadmap": {
+      "n": "23",
+      "web": "deck-web/23.webp",
+      "classic": "Two of Wands"
+    },
+    "Mainnet Launch": {
+      "n": "24",
+      "web": "deck-web/24.webp",
+      "classic": "Three of Wands"
+    },
+    "DAO Celebration": {
+      "n": "25",
+      "web": "deck-web/25.webp",
+      "classic": "Four of Wands"
+    },
+    "Fork War": {
+      "n": "26",
+      "web": "deck-web/26.webp",
+      "classic": "Five of Wands"
+    },
+    "Verified": {
+      "n": "27",
+      "web": "deck-web/27.webp",
+      "classic": "Six of Wands"
+    },
+    "Network Defense": {
+      "n": "28",
+      "web": "deck-web/28.webp",
+      "classic": "Seven of Wands"
+    },
+    "Instant Finality": {
+      "n": "29",
+      "web": "deck-web/29.webp",
+      "classic": "Eight of Wands"
+    },
+    "Battle Tested": {
+      "n": "30",
+      "web": "deck-web/30.webp",
+      "classic": "Nine of Wands"
+    },
+    "Validator Overload": {
+      "n": "31",
+      "web": "deck-web/31.webp",
+      "classic": "Ten of Wands"
+    },
+    "Testnet Apprentice": {
+      "n": "32",
+      "web": "deck-web/32.webp",
+      "classic": "Page of Wands"
+    },
+    "Protocol Runner": {
+      "n": "33",
+      "web": "deck-web/33.webp",
+      "classic": "Knight of Wands"
+    },
+    "Network Guardian": {
+      "n": "34",
+      "web": "deck-web/34.webp",
+      "classic": "Queen of Wands"
+    },
+    "Master Validator": {
+      "n": "35",
+      "web": "deck-web/35.webp",
+      "classic": "King of Wands"
+    },
+    "Genesis Liquidity": {
+      "n": "36",
+      "web": "deck-web/36.webp",
+      "classic": "Ace of Cups"
+    },
+    "Liquidity Pair": {
+      "n": "37",
+      "web": "deck-web/37.webp",
+      "classic": "Two of Cups"
+    },
+    "Yield Festival": {
+      "n": "38",
+      "web": "deck-web/38.webp",
+      "classic": "Three of Cups"
+    },
+    "Idle Capital": {
+      "n": "39",
+      "web": "deck-web/39.webp",
+      "classic": "Four of Cups"
+    },
+    "Impermanent Loss": {
+      "n": "40",
+      "web": "deck-web/40.webp",
+      "classic": "Five of Cups"
+    },
+    "Genesis Memories": {
+      "n": "41",
+      "web": "deck-web/41.webp",
+      "classic": "Six of Cups"
+    },
+    "Too Many Tokens": {
+      "n": "42",
+      "web": "deck-web/42.webp",
+      "classic": "Seven of Cups"
+    },
+    "Exit Position": {
+      "n": "43",
+      "web": "deck-web/43.webp",
+      "classic": "Eight of Cups"
+    },
+    "Whale's Vault": {
+      "n": "44",
+      "web": "deck-web/44.webp",
+      "classic": "Nine of Cups"
+    },
+    "Financial Freedom": {
+      "n": "45",
+      "web": "deck-web/45.webp",
+      "classic": "Ten of Cups"
+    },
+    "Yield Apprentice": {
+      "n": "46",
+      "web": "deck-web/46.webp",
+      "classic": "Page of Cups"
+    },
+    "Yield Farmer": {
+      "n": "47",
+      "web": "deck-web/47.webp",
+      "classic": "Knight of Cups"
+    },
+    "DeFi Matriarch": {
+      "n": "48",
+      "web": "deck-web/48.webp",
+      "classic": "Queen of Cups"
+    },
+    "Liquidity Sovereign": {
+      "n": "49",
+      "web": "deck-web/49.webp",
+      "classic": "King of Cups"
+    },
+    "Verified Contract": {
+      "n": "50",
+      "web": "deck-web/50.webp",
+      "classic": "Ace of Swords"
+    },
+    "Governance Vote": {
+      "n": "51",
+      "web": "deck-web/51.webp",
+      "classic": "Two of Swords"
+    },
+    "Smart Contract Hack": {
+      "n": "52",
+      "web": "deck-web/52.webp",
+      "classic": "Three of Swords"
+    },
+    "Cold Storage": {
+      "n": "53",
+      "web": "deck-web/53.webp",
+      "classic": "Four of Swords"
+    },
+    "Hostile Takeover": {
+      "n": "54",
+      "web": "deck-web/54.webp",
+      "classic": "Five of Swords"
+    },
+    "Bridge Migration": {
+      "n": "55",
+      "web": "deck-web/55.webp",
+      "classic": "Six of Swords"
+    },
+    "White Hat": {
+      "n": "56",
+      "web": "deck-web/56.webp",
+      "classic": "Seven of Swords"
+    },
+    "Frozen Wallet": {
+      "n": "57",
+      "web": "deck-web/57.webp",
+      "classic": "Eight of Swords"
+    },
+    "Night Before Liquidation": {
+      "n": "58",
+      "web": "deck-web/58.webp",
+      "classic": "Nine of Swords"
+    },
+    "Protocol Collapse": {
+      "n": "59",
+      "web": "deck-web/59.webp",
+      "classic": "Ten of Swords"
+    },
+    "Security Researcher": {
+      "n": "60",
+      "web": "deck-web/60.webp",
+      "classic": "Page of Swords"
+    },
+    "White Hat Hunter": {
+      "n": "61",
+      "web": "deck-web/61.webp",
+      "classic": "Knight of Swords"
+    },
+    "Consensus Keeper": {
+      "n": "62",
+      "web": "deck-web/62.webp",
+      "classic": "Queen of Swords"
+    },
+    "Protocol Architect": {
+      "n": "63",
+      "web": "deck-web/63.webp",
+      "classic": "King of Swords"
+    },
+    "Genesis Treasury": {
+      "n": "64",
+      "web": "deck-web/64.webp",
+      "classic": "Ace of Pentacles"
+    },
+    "Portfolio Balance": {
+      "n": "65",
+      "web": "deck-web/65.webp",
+      "classic": "Two of Pentacles"
+    },
+    "Builders DAO": {
+      "n": "66",
+      "web": "deck-web/66.webp",
+      "classic": "Three of Pentacles"
+    },
+    "Diamond Vault": {
+      "n": "67",
+      "web": "deck-web/67.webp",
+      "classic": "Four of Pentacles"
+    },
+    "Crypto Winter": {
+      "n": "68",
+      "web": "deck-web/68.webp",
+      "classic": "Five of Pentacles"
+    },
+    "Airdrop": {
+      "n": "69",
+      "web": "deck-web/69.webp",
+      "classic": "Six of Pentacles"
+    },
+    "Long-Term HODL": {
+      "n": "70",
+      "web": "deck-web/70.webp",
+      "classic": "Seven of Pentacles"
+    },
+    "Master Builder": {
+      "n": "71",
+      "web": "deck-web/71.webp",
+      "classic": "Eight of Pentacles"
+    },
+    "Whale Estate": {
+      "n": "72",
+      "web": "deck-web/72.webp",
+      "classic": "Nine of Pentacles"
+    },
+    "Legacy Chain": {
+      "n": "73",
+      "web": "deck-web/73.webp",
+      "classic": "Ten of Pentacles"
+    },
+    "NFT Collector": {
+      "n": "74",
+      "web": "deck-web/74.webp",
+      "classic": "Page of Pentacles"
+    },
+    "Long-Term Investor": {
+      "n": "75",
+      "web": "deck-web/75.webp",
+      "classic": "Knight of Pentacles"
+    },
+    "Treasury Keeper": {
+      "n": "76",
+      "web": "deck-web/76.webp",
+      "classic": "Queen of Pentacles"
+    },
+    "Blockchain Tycoon": {
+      "n": "77",
+      "web": "deck-web/77.webp",
+      "classic": "King of Pentacles"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Expo & Metro
+.expo/
+dist/
+web-build/
+
+# Android Native Builds
+android/.gradle/
+android/app/build/
+android/build/
+android/.idea/
+*.keystore
+!debug.keystore
+
+# Scratch / temporary logs
+*.log
+hackathon_raw_chunk.txt
+hackathon_info.txt
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+temp/

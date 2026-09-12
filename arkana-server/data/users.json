@@ -1,0 +1,17 @@
+{
+  "DemoSeekerWallet111111111111111111111111111": {
+    "streak": 1,
+    "history": [
+      {
+        "timestamp": "2026-09-12T18:27:08.253Z",
+        "type": "daily-block",
+        "card": "Protocol Architect",
+        "orientation": "reversed",
+        "image": "/cards/63.webp"
+      }
+    ],
+    "totalReadings": 1,
+    "skrBalance": 100,
+    "lastClockIn": "2026-09-12T18:27:08.253Z"
+  }
+}

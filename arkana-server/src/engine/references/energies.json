@@ -1,0 +1,30 @@
+{
+  "note": "A 5-fold ENERGY / archetype layer over the 78 cards — the emblem each card carries, reflecting the KIND of energy (not good/bad, not the card's strength). Use it as a SPREAD-LEVEL signal (dominant energy) alongside dominant_suit and Major-Arcana weight. Keyed by card number 00-77.",
+  "design": "On the physical/art deck the emblem is a small enamel seal (~8-12mm) set into the lower-left medallion of the frame — a hidden layer the viewer notices after the art and title, not a big label.",
+  "energies": {
+    "Blessing":       {"emblem": "☀", "theme": "Growth / Success / Prosperity / Creation",            "spread_meaning": "a season of growth and success — the current supports building and acting"},
+    "Balance":        {"emblem": "◈", "theme": "Harmony / Cooperation / Stability / Choice",           "spread_meaning": "harmony and a choice to weigh — steady, cooperative, deliberate"},
+    "Trial":          {"emblem": "⬢", "theme": "Risk / Loss / Pressure / Conflict / Testing",          "spread_meaning": "a testing period — risk and pressure; endure, verify, protect"},
+    "Transformation": {"emblem": "🪷", "theme": "Growth / Learning / Evolution / New stage",      "spread_meaning": "change and learning — an evolution, a new stage, letting the old go"},
+    "Karma":          {"emblem": "🌑", "theme": "Fate / Cycles / Inevitability / Higher knowledge","spread_meaning": "forces of fate and cycles beyond full control — align with the current, don't force it"}
+  },
+  "cards": {
+    "00": "Transformation", "01": "Blessing", "02": "Karma", "03": "Blessing", "04": "Blessing",
+    "05": "Karma", "06": "Balance", "07": "Karma", "08": "Transformation", "09": "Transformation",
+    "10": "Karma", "11": "Balance", "12": "Transformation", "13": "Karma", "14": "Balance",
+    "15": "Trial", "16": "Trial", "17": "Blessing", "18": "Trial", "19": "Blessing",
+    "20": "Transformation", "21": "Blessing",
+    "22": "Blessing", "23": "Balance", "24": "Blessing", "25": "Blessing", "26": "Balance",
+    "27": "Blessing", "28": "Trial", "29": "Trial", "30": "Balance", "31": "Trial",
+    "32": "Transformation", "33": "Transformation", "34": "Transformation", "35": "Transformation",
+    "36": "Blessing", "37": "Blessing", "38": "Blessing", "39": "Balance", "40": "Trial",
+    "41": "Transformation", "42": "Trial", "43": "Trial", "44": "Balance", "45": "Blessing",
+    "46": "Transformation", "47": "Transformation", "48": "Transformation", "49": "Transformation",
+    "50": "Transformation", "51": "Balance", "52": "Trial", "53": "Blessing", "54": "Trial",
+    "55": "Balance", "56": "Blessing", "57": "Trial", "58": "Trial", "59": "Trial",
+    "60": "Transformation", "61": "Transformation", "62": "Transformation", "63": "Transformation",
+    "64": "Blessing", "65": "Balance", "66": "Balance", "67": "Blessing", "68": "Trial",
+    "69": "Transformation", "70": "Transformation", "71": "Balance", "72": "Blessing", "73": "Karma",
+    "74": "Transformation", "75": "Transformation", "76": "Balance", "77": "Karma"
+  }
+}

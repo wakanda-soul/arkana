@@ -1,0 +1,303 @@
+{
+  "suit": "Assets",
+  "classic_suit": "Pentacles",
+  "element": "Earth",
+  "emoji": "🪙",
+  "domain": "Wealth, long-term investing, NFT/RWA, mining, capital, business, legacy, stability. The richest suit. Coins are rendered as golden Crypto Sigils engraved with blocks.",
+  "cards": [
+    {
+      "id": "assets-ace", "number": 1, "classic": "Ace of Pentacles", "crypto_name": "Genesis Treasury", "arcana": "minor",
+      "keywords": ["Treasury", "Investment", "Wealth", "Opportunity"],
+      "upright": ["new wealth", "investment", "opportunity to earn", "capital creation"],
+      "reversed": ["missed opportunity", "poor money management", "bad investment"],
+      "symbolism": "A hand of light presents a colossal golden Crypto Sigil engraved with the Genesis Block above a flourishing garden of Merkle trees and NFT blossoms, a path leading to a DAO palace. As the Ace of the earth suit, it is a tangible new seed of wealth — opportunity made solid, ready to be planted. The most grounded of beginnings.",
+      "upright_full": "This card is a concrete new opportunity: fresh capital, a real chance to earn, the seed of lasting wealth. Genesis Treasury rewards taking a solid, tangible opening and planting it well. The upside is real and material — ground it in a plan before you seize it.",
+      "reversed_full": "Reversed, the seed is squandered: a missed opportunity, poor money management, a bad investment, potential that never takes root. The golden sigil slips through careless hands. The chance was real, but mishandled.",
+      "domains": {
+        "crypto": "A tangible new opportunity — fresh capital, a solid entry, a real chance to build wealth from the ground up; reversed, a fumbled opportunity or a bad allocation.",
+        "trading": "A genuinely good setup with real edge; reversed, a poorly-managed position or a missed entry.",
+        "money": "A new income source, windfall, or investment opportunity; ground it in a plan.",
+        "career": "A solid new job, raise, or material opportunity.",
+        "startup": "Seed capital, a first revenue stream, a tangible foundation; reversed, mismanaging the runway.",
+        "relationships": "A stable, grounded new beginning with real potential.",
+        "health": "A practical new foundation for well-being.",
+        "life": "A real opportunity is on the table — ground it in a plan before you seize it."
+      },
+      "advice": "A real opportunity is on the table; ground it in a plan before you seize it.",
+      "shadow": "A golden seed left in careless hands rots into a missed opportunity."
+    },
+    {
+      "id": "assets-2", "number": 2, "classic": "Two of Pentacles", "crypto_name": "Portfolio Balance", "arcana": "minor",
+      "keywords": ["Portfolio", "Diversification", "Balance"],
+      "upright": ["balance", "diversification", "portfolio management", "juggling priorities"],
+      "reversed": ["overloaded portfolio", "poor allocation", "dropping the ball"],
+      "symbolism": "A young investor gracefully juggles two enormous Crypto Sigils bound by an infinite golden ribbon, standing before a turbulent ocean of bull and bear waves. The Two is dynamic balance — keeping multiple assets and priorities in motion at once, agility amid volatility. Equilibrium as an active skill.",
+      "upright_full": "This card is balance and adaptability: managing a diversified portfolio, juggling competing priorities, staying nimble as conditions shift. Portfolio Balance rewards flexibility and good allocation. Keep both balls in the air — but don't add a third you can't hold.",
+      "reversed_full": "Reversed, the juggle collapses: an overloaded portfolio, poor allocation, dropping the ball, spread too thin to manage anything well. The ribbon tangles. Too many things demand attention at once.",
+      "domains": {
+        "crypto": "Managing a diversified portfolio and rebalancing through volatility; reversed, over-diversified or poorly allocated.",
+        "trading": "Juggling positions and staying nimble; reversed, too many trades to manage well.",
+        "money": "Balancing competing financial demands; reversed, stretched too thin.",
+        "career": "Juggling multiple responsibilities with agility; reversed, overwhelmed.",
+        "startup": "Balancing burn, growth, and priorities; reversed, spread too thin across fronts.",
+        "relationships": "Balancing a relationship with other demands; reversed, dropping the ball.",
+        "health": "Balancing energy across commitments; reversed, burnout from overload.",
+        "life": "Keep both balls in the air, but don't add a third you can't hold."
+      },
+      "advice": "Keep both sides of the portfolio balanced; rebalance the moment one outweighs the other.",
+      "shadow": "Juggling one asset too many is how the whole set hits the floor."
+    },
+    {
+      "id": "assets-3", "number": 3, "classic": "Three of Pentacles", "crypto_name": "Builders DAO", "arcana": "minor",
+      "keywords": ["DAO", "Builders", "Teamwork"],
+      "upright": ["teamwork", "building", "collaborative success", "first results"],
+      "reversed": ["miscommunication", "poor collaboration", "weak leadership"],
+      "symbolism": "Three legendary builders raise a Blockchain Cathedral together — one drafting blueprints, one writing glowing smart contracts, one carving cryptographic symbols. The Three is collaborative craft — complementary skills combining into something greater than any could build alone. Structure through teamwork.",
+      "upright_full": "This card is teamwork and skilled collaboration: complementary talents building something solid together, the first real results of coordinated effort. Builders DAO rewards aligning roles and respecting each specialist's craft. Build with others whose skills complete yours.",
+      "reversed_full": "Reversed, the collaboration falters: miscommunication, misaligned roles, weak leadership, a cathedral half-built and crooked. The builders work at cross-purposes. Coordination breaks down.",
+      "domains": {
+        "crypto": "A strong builder DAO or team shipping together; reversed, misaligned contributors and weak coordination.",
+        "trading": "Learning from and collaborating with skilled peers; reversed, following poor collective advice.",
+        "money": "A joint financial venture or pooled effort; reversed, mismanaged collaboration.",
+        "career": "Team success and recognized craftsmanship; reversed, poor teamwork or unclear roles.",
+        "startup": "Complementary co-founders and early team execution; reversed, communication breakdown.",
+        "relationships": "Building something together as a team; reversed, working at cross-purposes.",
+        "health": "Working with professionals on a shared goal; reversed, conflicting advice.",
+        "life": "Build with others whose skills complete yours; align the roles."
+      },
+      "advice": "Build with others whose skills complete yours; align the roles clearly.",
+      "shadow": "Three builders with no shared blueprint raise three crooked walls."
+    },
+    {
+      "id": "assets-4", "number": 4, "classic": "Four of Pentacles", "crypto_name": "Diamond Vault", "arcana": "minor",
+      "keywords": ["HODL", "Vault", "Security"],
+      "upright": ["HODL", "accumulation", "protecting capital", "discipline"],
+      "reversed": ["greed", "fear to invest", "stagnant capital", "hoarding"],
+      "symbolism": "A wealthy vault keeper clutches a massive Crypto Sigil to his chest, two more beneath his feet, one on his throne, a Vault Fortress rising behind. The Four is holding tight — security and accumulation that can tip into hoarding. Control through possession.",
+      "upright_full": "This card is disciplined holding: protecting capital, accumulating, securing what you've built, resisting the urge to spend or sell. Diamond Vault rewards prudent security and long-term conviction. Protect what you have — but remember a sealed vault also stops the flow.",
+      "reversed_full": "Reversed, security becomes a cage: greed, fear of investing, capital stagnating, white-knuckle hoarding that blocks growth. The keeper grips so tightly nothing can circulate. Holding turns into clinging.",
+      "domains": {
+        "crypto": "Disciplined HODLing and securing capital; reversed, fearful hoarding and stagnant, unproductive holdings.",
+        "trading": "Protecting gains and sizing conservatively; reversed, too scared to deploy capital.",
+        "money": "Saving and securing wealth; reversed, miserliness or fear-driven inaction.",
+        "career": "Protecting your position and stability; reversed, clinging to security out of fear.",
+        "startup": "Prudent treasury management; reversed, hoarding cash instead of investing in growth.",
+        "relationships": "Security and stability; reversed, possessiveness or emotional withholding.",
+        "health": "Protecting your reserves and energy; reversed, rigidity.",
+        "life": "Protect what you have — but a locked vault also stops the flow."
+      },
+      "advice": "Protect what you have — but a locked vault also stops the flow.",
+      "shadow": "Gripping the sigil so tightly that nothing new can ever reach your hand."
+    },
+    {
+      "id": "assets-5", "number": 5, "classic": "Five of Pentacles", "crypto_name": "Crypto Winter", "arcana": "minor",
+      "keywords": ["Winter", "Bear Market", "Recovery"],
+      "upright": ["financial hardship", "bear market", "trials", "scarcity"],
+      "reversed": ["recovery", "end of the crisis", "community help", "warmth returns"],
+      "symbolism": "Two exhausted travellers cross a frozen blockchain wasteland during crypto winter while a radiant Blockchain Cathedral glows warmly nearby, its shelter unnoticed. The Five is hardship — the bear market of the soul, scarcity and cold, with help closer than the cold lets you see. Trial with a door out.",
+      "upright_full": "This card is hardship and scarcity: a bear market, financial trials, a cold stretch that tests endurance. Crypto Winter is real, but the warm cathedral stands just beside the travellers — help and shelter exist if you look up. Winters end.",
+      "reversed_full": "Reversed, the thaw begins: recovery, the end of the crisis, community help arriving, warmth returning. The travellers reach the door at last. The worst of the cold is passing.",
+      "domains": {
+        "crypto": "A bear market, a funding drought, a hard down-cycle; reversed, recovery, community support, and the winter ending.",
+        "trading": "A brutal drawdown testing your survival; reversed, the bottom passing and recovery starting.",
+        "money": "Financial hardship and scarcity; reversed, relief and help arriving.",
+        "career": "A rough, lean period; reversed, things improving and support appearing.",
+        "startup": "Running lean through a funding winter; reversed, capital and momentum returning.",
+        "relationships": "Feeling left out in the cold; reversed, reconnection and support.",
+        "health": "A depleted, difficult stretch; reversed, recovery.",
+        "life": "Winters end; the shelter is closer than the cold lets you see."
+      },
+      "advice": "Winters end; the shelter is closer than the cold lets you see.",
+      "shadow": "Trudging past the lit cathedral because pride won't let you ask for warmth."
+    },
+    {
+      "id": "assets-6", "number": 6, "classic": "Six of Pentacles", "crypto_name": "Airdrop", "arcana": "minor",
+      "keywords": ["Airdrop", "DAO", "Reward"],
+      "upright": ["generosity", "distribution", "reward", "fair sharing"],
+      "reversed": ["unfair distribution", "dependency", "strings attached"],
+      "symbolism": "A noble benefactor distributes radiant Crypto Sigils to grateful network participants beneath a glowing DAO emblem. The Six is the flow of giving and receiving — reward fairly distributed, generosity in balance. The circulation of abundance.",
+      "upright_full": "This card is generosity and fair exchange: an airdrop, a reward distributed, giving and receiving in healthy balance. Airdrop rewards open-handedness and the grace to receive as well as give. Let value flow — freely and fairly.",
+      "reversed_full": "Reversed, the flow distorts: unfair distribution, gifts with strings attached, dependency, a power imbalance between giver and taker. The airdrop favours insiders. Generosity becomes control, or charity becomes a leash.",
+      "domains": {
+        "crypto": "An airdrop, a grant, a fair reward distribution; reversed, an insider-skewed or strings-attached distribution.",
+        "trading": "A windfall or shared gain; reversed, uneven or manipulated payouts.",
+        "money": "Giving or receiving financial help fairly; reversed, dependency or unequal terms.",
+        "career": "Recognition, a bonus, or sharing success; reversed, credit distributed unfairly.",
+        "startup": "Fair token/equity distribution and community rewards; reversed, a cap table that favours insiders.",
+        "relationships": "Balanced give-and-take; reversed, one-sided giving or dependency.",
+        "health": "Receiving or offering support; reversed, over-reliance.",
+        "life": "Give or receive freely, but watch for gifts with hidden strings."
+      },
+      "advice": "Give or receive freely, but watch for gifts with hidden strings.",
+      "shadow": "An airdrop that always lands in the same hands is charity as control."
+    },
+    {
+      "id": "assets-7", "number": 7, "classic": "Seven of Pentacles", "crypto_name": "Long-Term HODL", "arcana": "minor",
+      "keywords": ["HODL", "Patience", "Investment"],
+      "upright": ["patience", "long-term investment", "waiting for the harvest", "assessment"],
+      "reversed": ["impatience", "premature selling", "disappointment in results"],
+      "symbolism": "A wise investor peacefully observes an ancient Merkle tree bearing golden Crypto Sigils instead of fruit, the harvest almost ripe under a radiant sky. The Seven is patient assessment — the long pause where you tend what you planted and wait for it to mature. Faith in slow growth.",
+      "upright_full": "This card is patience and the long view: a long-term investment maturing, a moment to assess progress and let the harvest ripen. Long-Term HODL rewards those who resist the urge to pick early. You've planted well — don't dig up the seeds to check on them.",
+      "reversed_full": "Reversed, patience snaps: impatience, selling too early, disappointment that the results aren't instant. The investor uproots the crop before it's ripe. Short-term frustration undoes long-term work.",
+      "domains": {
+        "crypto": "A long-term hold maturing; the harvest is near — assess and wait; reversed, paper-handing before the payoff.",
+        "trading": "Letting a good position develop over time; reversed, cutting winners far too early.",
+        "money": "A long-term investment coming to fruition; reversed, impatience sabotaging it.",
+        "career": "Long-term effort about to pay off; reversed, giving up right before the reward.",
+        "startup": "Patient compounding toward the harvest; reversed, quitting just before traction.",
+        "relationships": "A bond deepening slowly over time; reversed, impatience with its pace.",
+        "health": "A slow regimen bearing results; reversed, abandoning it too soon.",
+        "life": "You've planted well; don't dig up the seeds to check on them."
+      },
+      "advice": "You've planted well; don't dig up the seeds to check on them.",
+      "shadow": "Harvesting the tree the week before it ripens forfeits the whole crop."
+    },
+    {
+      "id": "assets-8", "number": 8, "classic": "Eight of Pentacles", "crypto_name": "Master Builder", "arcana": "minor",
+      "keywords": ["Craftsmanship", "NFT", "Skill"],
+      "upright": ["refinement", "mastery", "skill development", "diligence"],
+      "reversed": ["sloppy work", "loss of quality", "no discipline"],
+      "symbolism": "A master artisan hand-forges Crypto Sigils in a glowing workshop, each engraved with a unique cryptographic mark, NFT artifacts and tools scattered around. The Eight is devoted craft — mastery earned through diligent repetition. Skill compounding stroke by stroke.",
+      "upright_full": "This card is dedicated craftsmanship: refining a skill, doing the diligent work, building mastery through repetition. Master Builder rewards patient, quality-focused effort. Perfect the craft — quality compounds like the best asset.",
+      "reversed_full": "Reversed, the craft slips: sloppy work, loss of quality, cutting corners, no discipline, going through the motions. The engravings turn crude. Mastery decays without diligence.",
+      "domains": {
+        "crypto": "Refining a protocol, minting quality NFTs, honing technical craft; reversed, shipping sloppy, low-quality work.",
+        "trading": "Diligently refining your system and process; reversed, careless, undisciplined execution.",
+        "money": "Steadily building skill that increases your earning; reversed, cutting corners.",
+        "career": "Deliberate skill development and mastery; reversed, complacency and declining quality.",
+        "startup": "Craftsmanship and iterative product refinement; reversed, technical debt from rushed work.",
+        "relationships": "Working steadily to improve a bond; reversed, neglecting the effort.",
+        "health": "Diligent, consistent practice; reversed, inconsistency.",
+        "life": "Perfect the craft; quality compounds like the best asset."
+      },
+      "advice": "Perfect the craft; quality compounds like the best asset.",
+      "shadow": "A master who stops refining watches his craft quietly decay to crude work."
+    },
+    {
+      "id": "assets-9", "number": 9, "classic": "Nine of Pentacles", "crypto_name": "Whale Estate", "arcana": "minor",
+      "keywords": ["Luxury", "Wealth", "NFT", "Independence"],
+      "upright": ["independence", "wealth", "success", "luxury earned alone"],
+      "reversed": ["isolation", "arrogance", "material dependence"],
+      "symbolism": "An elegant crypto noblewoman walks through a luxurious blockchain estate of NFT sculptures and golden gardens, a mechanical falcon on her arm. The Nine is self-made refinement — independent prosperity enjoyed alone, the fruit of one's own discipline. Earned luxury.",
+      "upright_full": "This card is independent, self-made success: refined prosperity, the freedom that comes from having built your own wealth. Whale Estate rewards the discipline that earned the estate. Enjoy what you built alone — you deserve the garden.",
+      "reversed_full": "Reversed, the estate isolates: loneliness behind the wealth, arrogance, material dependence, success that cost the connection. The falcon is the only company. Prosperity without belonging rings hollow.",
+      "domains": {
+        "crypto": "Self-made wealth and independent success; reversed, isolation or over-reliance on paper riches.",
+        "trading": "Enjoying the fruits of disciplined, independent trading; reversed, hubris after a win.",
+        "money": "Financial independence and refined comfort; reversed, defining yourself by money.",
+        "career": "Autonomy and self-made achievement; reversed, isolation at the top.",
+        "startup": "A profitable, self-sufficient venture; reversed, going it too alone.",
+        "relationships": "Healthy independence within a bond; reversed, loneliness beneath success.",
+        "health": "Well-earned self-care and wellness; reversed, indulgence.",
+        "life": "Enjoy what you built alone; make sure the wealth didn't cost the connection."
+      },
+      "advice": "Enjoy what you built alone; make sure the wealth didn't cost the connection.",
+      "shadow": "An estate this beautiful, walked entirely alone, is a gilded kind of exile."
+    },
+    {
+      "id": "assets-10", "number": 10, "classic": "Ten of Pentacles", "crypto_name": "Legacy Chain", "arcana": "minor",
+      "keywords": ["Legacy", "Dynasty", "Family", "Wealth"],
+      "upright": ["legacy", "family wealth", "long-term success", "stability"],
+      "reversed": ["loss of legacy", "family conflict", "capital destruction"],
+      "symbolism": "Three generations of a crypto dynasty stand before a Blockchain Palace beneath ten radiant Crypto Sigils forming a sacred circle around the Tree of Legacy, its roots in the Genesis Block. The Ten is completion and inheritance — wealth that outlasts one lifetime, built for those who come after. Enduring abundance.",
+      "upright_full": "This card is lasting legacy: generational wealth, deep stability, long-term success that endures beyond you. Legacy Chain rewards building for the generation after the next candle. This is the fulfilment of the earth suit — wealth rooted deep enough to last.",
+      "reversed_full": "Reversed, the legacy fractures: family conflict, capital destroyed, an inheritance squandered, foundations that don't hold. The tree's roots rot or the heirs fight over the fruit. What was built to last comes undone.",
+      "domains": {
+        "crypto": "Generational, foundational wealth and enduring protocols; reversed, capital destruction or a legacy squandered.",
+        "trading": "Building lasting, compounding wealth beyond one trade; reversed, blowing up hard-won gains.",
+        "money": "Long-term financial stability and inheritance; reversed, financial conflict or loss.",
+        "career": "A lasting body of work and enduring reputation; reversed, it unravels.",
+        "startup": "Building an enduring, institution-grade company; reversed, founder conflict destroying it.",
+        "relationships": "Family, deep roots, and lasting bonds; reversed, family conflict.",
+        "health": "Long-term, generational well-being; reversed, inherited or chronic issues.",
+        "life": "Build for the generation after you, not just the next candle."
+      },
+      "advice": "Build for the generation after you, not just the next candle.",
+      "shadow": "A dynasty that fights over the fruit lets the whole tree rot at the root."
+    },
+    {
+      "id": "assets-page", "number": 11, "classic": "Page of Pentacles", "crypto_name": "NFT Collector", "arcana": "minor", "court": "Page",
+      "keywords": ["NFT", "Collector", "Learning", "Investment"],
+      "upright": ["new investment", "curiosity", "studying NFTs", "starting to accumulate"],
+      "reversed": ["impulsive buys", "overvaluation", "inexperience"],
+      "symbolism": "A young collector studies a floating Crypto Sigil holding a legendary animated NFT, a grand blockchain gallery of digital masterpieces behind him. As the Page of earth, he is the diligent student of value — curious, careful, just beginning to accumulate. Grounded beginner ambition.",
+      "upright_full": "This card is the curious student of value: a first investment, careful study, the early accumulation of assets and knowledge. NFT Collector rewards learning-before-buying and grounded curiosity. Study before you collect; curiosity is capital when it's disciplined.",
+      "reversed_full": "Reversed, curiosity turns careless: impulsive buys, overvaluing hype, inexperience mistaking a jpeg for a fortune. The Page collects without understanding. Enthusiasm outruns due diligence.",
+      "domains": {
+        "crypto": "A newcomer studying NFTs/assets and starting to accumulate; reversed, impulsive, hype-driven buys.",
+        "trading": "A student building knowledge before sizing up; reversed, chasing fads.",
+        "money": "Learning to invest and save; reversed, careless spending.",
+        "career": "An eager learner in a practical field; reversed, inexperience showing.",
+        "startup": "Early, careful study of the market and unit economics; reversed, betting on hype.",
+        "relationships": "A grounded, studious new interest; reversed, naivety.",
+        "health": "Learning good practical habits; reversed, chasing fads.",
+        "life": "Study before you collect; curiosity is capital when it's disciplined."
+      },
+      "advice": "Study before you collect; curiosity is capital when it's disciplined.",
+      "shadow": "Collecting hype you never researched is how a jpeg becomes a lesson."
+    },
+    {
+      "id": "assets-knight", "number": 12, "classic": "Knight of Pentacles", "crypto_name": "Long-Term Investor", "arcana": "minor", "court": "Knight",
+      "keywords": ["Investor", "HODL", "Discipline", "Patience"],
+      "upright": ["patience", "reliability", "discipline", "gradual accumulation"],
+      "reversed": ["slowness", "missed opportunities", "over-caution"],
+      "symbolism": "A noble investor rides a mechanical bull slowly across golden blockchain valleys, a radiant Crypto Sigil in hand, embodying patience and discipline. As the Knight of earth, he is the steady, dependable accumulator — methodical, reliable, in no hurry. Slow, sure progress.",
+      "upright_full": "This card is disciplined, methodical progress: reliable long-term accumulation, patience, dependability. Long-Term Investor rewards the steady hand that wins the marathon, not the sprint. Slow and methodical wins the long game.",
+      "reversed_full": "Reversed, steadiness stalls: over-caution, excessive slowness, missed opportunities from moving too carefully, dependability tipping into inertia. The bull barely moves. Prudence becomes paralysis.",
+      "domains": {
+        "crypto": "A reliable DCA/HODL strategy of steady accumulation; reversed, so cautious you miss the move.",
+        "trading": "Methodical, low-drama, disciplined trading; reversed, over-caution and inertia.",
+        "money": "Steady saving and dependable growth; reversed, too conservative to grow.",
+        "career": "Reliable, consistent, dependable work; reversed, stuck in a rut.",
+        "startup": "Sustainable, disciplined execution; reversed, moving too slowly to compete.",
+        "relationships": "Dependability and steady commitment; reversed, stagnation.",
+        "health": "Consistent, sustainable routines; reversed, rigidity.",
+        "life": "Slow and methodical wins the long game; just don't stall entirely."
+      },
+      "advice": "Slow and methodical wins the long game; just don't stall entirely.",
+      "shadow": "A bull ridden too cautiously never actually crosses the valley."
+    },
+    {
+      "id": "assets-queen", "number": 13, "classic": "Queen of Pentacles", "crypto_name": "Treasury Keeper", "arcana": "minor", "court": "Queen",
+      "keywords": ["Treasury", "Prosperity", "Stability", "Wealth"],
+      "upright": ["financial wisdom", "care for capital", "prosperity", "stability"],
+      "reversed": ["greed", "materialism", "poor resource management"],
+      "symbolism": "A majestic keeper sits enthroned on ancient gold and Genesis Blocks, a huge Crypto Sigil in hand, golden Merkle trees bearing tokens and NFT relics around her in serene abundance. As the Queen of earth, she is nurturing prosperity — practical, generous stewardship of wealth. Abundance tended like a garden.",
+      "upright_full": "This card is wise, nurturing stewardship of resources: financial wisdom, care for capital, practical prosperity, stability that provides for others. Treasury Keeper rewards tending wealth rather than merely guarding it. Steward capital like a garden.",
+      "reversed_full": "Reversed, stewardship sours: greed, materialism, smothering, poor resource management, self-worth measured in coins. The garden is over-harvested or neglected. Nurture turns to hoarding or waste.",
+      "domains": {
+        "crypto": "Wise treasury management and nurturing sustainable yield; reversed, greed or mismanaged funds.",
+        "trading": "Practical, grounded, well-managed capital; reversed, greed-driven overreach.",
+        "money": "Financial wisdom and comfortable stability; reversed, materialism.",
+        "career": "Resourceful, nurturing leadership that provides; reversed, poor management.",
+        "startup": "Prudent, generous treasury stewardship; reversed, mishandling the runway.",
+        "relationships": "Warm, practical, providing care; reversed, valuing status over the bond.",
+        "health": "Grounded, nurturing self-care; reversed, neglect or excess.",
+        "life": "Tend capital like a garden — steward it, don't just guard it."
+      },
+      "advice": "Tend capital like a garden — steward it, don't just guard it.",
+      "shadow": "Measuring your worth in sigils is how the treasury keeper starves the soul."
+    },
+    {
+      "id": "assets-king", "number": 14, "classic": "King of Pentacles", "crypto_name": "Blockchain Tycoon", "arcana": "minor", "court": "King",
+      "keywords": ["Wealth", "Leadership", "Legacy", "Prosperity", "Authority"],
+      "upright": ["wealth", "leadership", "maturity", "long-term success", "responsibility", "influence"],
+      "reversed": ["avarice", "over-control", "corruption", "financial blindness", "power concentration"],
+      "symbolism": "The supreme magnate sits on a throne carved from gold and Genesis Blocks, a crown of rotating Crypto Sigils on his head, colossal mechanical bulls guarding the Blockchain Capital behind him. As the King of earth, he is mastery of the material world — abundance, authority, and responsibility fully realized. Prosperity commanded with a steady hand.",
+      "upright_full": "This card is mastery of wealth and worldly success: mature leadership, long-term prosperity, the security and generosity of one who has truly built. Blockchain Tycoon rewards leading with the abundance you've mastered. Provide, protect, and steward at scale.",
+      "reversed_full": "Reversed, mastery corrupts: avarice, over-control, corruption, financial blindness, power hoarded rather than shared. The tycoon is owned by his own gold. Wealth becomes the master instead of the tool.",
+      "domains": {
+        "crypto": "A crypto magnate mastering the material game — wealth, influence, stability; reversed, greed, corruption, and over-centralized control.",
+        "trading": "Mastery, abundance, and disciplined big-picture command; reversed, greed clouding judgement.",
+        "money": "Financial mastery, security, and generosity; reversed, avarice or being ruled by money.",
+        "career": "Established authority and successful leadership; reversed, corruption or over-control.",
+        "startup": "A proven, wealth-generating enterprise led responsibly; reversed, a founder consumed by greed.",
+        "relationships": "A providing, stable, generous partner; reversed, controlling or materialistic.",
+        "health": "Robust, well-resourced well-being; reversed, excess.",
+        "life": "Lead with the abundance you've mastered; guard against it mastering you."
+      },
+      "advice": "Lead with the abundance you've mastered; guard against it mastering you.",
+      "shadow": "A crown of sigils worn too long is how wealth quietly starts wearing the man."
+    }
+  ]
+}
