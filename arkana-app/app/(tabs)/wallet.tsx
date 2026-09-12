@@ -5,7 +5,7 @@ import {
   Text,
   ScrollView,
   Pressable,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -13,10 +13,12 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/components/auth/auth-provider';
 import { fetchClockInStatus, ClockInResult } from '@/services/oracleApi';
 import { ellipsify } from '@/utils/ellipsify';
+import { showError } from '@/utils/show-error';
 
 export default function WalletScreen() {
-  const { account, signOut } = useAuth();
-  const address = account?.publicKey?.toString() || 'Seeker1111111111111111111111111111111111111';
+  const { account, isAuthenticated, signIn, signOut } = useAuth();
+  const address = account?.publicKey?.toString() || '';
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -30,16 +32,32 @@ export default function WalletScreen() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetchClockInStatus(address).then(setClockInState);
+    const targetAddress = address || 'SeekerDemoWallet1111111111111111111';
+    fetchClockInStatus(targetAddress).then(setClockInState);
   }, [address]);
 
   const copyAddress = () => {
+    if (!address) return;
     Clipboard.setString(address);
     setCopied(true);
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleConnect = async () => {
+    if (isConnecting) return;
+    setIsConnecting(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await signIn();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      showError('Could not connect wallet', e);
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -60,81 +78,152 @@ export default function WalletScreen() {
           <Text style={styles.headerTitle}>Seeker & SKR</Text>
         </View>
 
-        {/* Account Identity Card */}
-        <View style={styles.walletCard}>
-          <View style={styles.walletCardHeader}>
-            <View style={styles.seekerBadge}>
-              <Text style={styles.seekerBadgeText}>SEEKER GENESIS HOLDER</Text>
+        {isAuthenticated ? (
+          <>
+            {/* Account Identity Card */}
+            <View style={styles.walletCard}>
+              <View style={styles.walletCardHeader}>
+                <View style={styles.seekerBadge}>
+                  <Text style={styles.seekerBadgeText}>SEEKER GENESIS HOLDER</Text>
+                </View>
+                <View style={styles.statusDotRow}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.statusText}>Connected</Text>
+                </View>
+              </View>
+
+              <Text style={styles.addressLabel}>CONNECTED PUBLIC KEY</Text>
+              <Pressable style={styles.addressBox} onPress={copyAddress}>
+                <Text style={styles.addressText}>{ellipsify(address, 8)}</Text>
+                <Text style={styles.copyText}>{copied ? 'COPIED!' : 'COPY'}</Text>
+              </Pressable>
+
+              {/* Seed Vault Notice */}
+              <View style={styles.seedVaultBox}>
+                <Text style={styles.seedVaultIcon}>🛡️</Text>
+                <Text style={styles.seedVaultText}>
+                  Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.
+                </Text>
+              </View>
             </View>
-            <View style={styles.statusDotRow}>
-              <View style={styles.liveDot} />
-              <Text style={styles.statusText}>Devnet</Text>
+
+            {/* Assets Row */}
+            <View style={styles.row}>
+              {/* SOL Card */}
+              <View style={styles.assetCard}>
+                <Text style={styles.assetLabel}>SOL BALANCE</Text>
+                <Text style={styles.assetValue}>1.45 SOL</Text>
+                <Text style={styles.assetSub}>Gas & Minting</Text>
+              </View>
+
+              {/* SKR Card */}
+              <View style={[styles.assetCard, styles.skrCard]}>
+                <Text style={styles.assetLabel}>SKR BALANCE</Text>
+                <Text style={[styles.assetValue, { color: '#F5D061' }]}>
+                  {clockInState.skrBalance} SKR
+                </Text>
+                <Text style={styles.assetSub}>Seeker Oracle Fuel</Text>
+              </View>
             </View>
-          </View>
 
-          <Text style={styles.addressLabel}>CONNECTED PUBLIC KEY</Text>
-          <Pressable style={styles.addressBox} onPress={copyAddress}>
-            <Text style={styles.addressText}>{ellipsify(address, 8)}</Text>
-            <Text style={styles.copyText}>{copied ? 'COPIED!' : 'COPY'}</Text>
-          </Pressable>
+            {/* Clock In Stats */}
+            <View style={styles.statsCard}>
+              <Text style={styles.statsTitle}>CLOCK-IN REPUTATION</Text>
 
-          {/* Seed Vault Notice */}
-          <View style={styles.seedVaultBox}>
-            <Text style={styles.seedVaultIcon}>🛡️</Text>
-            <Text style={styles.seedVaultText}>
-              Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.
-            </Text>
-          </View>
-        </View>
-
-        {/* Assets Row */}
-        <View style={styles.row}>
-          {/* SOL Card */}
-          <View style={styles.assetCard}>
-            <Text style={styles.assetLabel}>SOL BALANCE</Text>
-            <Text style={styles.assetValue}>1.45 SOL</Text>
-            <Text style={styles.assetSub}>Gas & Minting</Text>
-          </View>
-
-          {/* SKR Card */}
-          <View style={[styles.assetCard, styles.skrCard]}>
-            <Text style={styles.assetLabel}>SKR BALANCE</Text>
-            <Text style={[styles.assetValue, { color: '#F5D061' }]}>
-              {clockInState.skrBalance} SKR
-            </Text>
-            <Text style={styles.assetSub}>Seeker Oracle Fuel</Text>
-          </View>
-        </View>
-
-        {/* Clock In Stats */}
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>CLOCK-IN REPUTATION</Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>🔥 {clockInState.streak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>🔥 {clockInState.streak}</Text>
+                  <Text style={styles.statLabel}>Day Streak</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>📜 {clockInState.totalReadings}</Text>
+                  <Text style={styles.statLabel}>Blocks Verified</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>⚡ 100%</Text>
+                  <Text style={styles.statLabel}>Consensus Rate</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>📜 {clockInState.totalReadings}</Text>
-              <Text style={styles.statLabel}>Blocks Verified</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>⚡ 100%</Text>
-              <Text style={styles.statLabel}>Consensus Rate</Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Action Buttons */}
-        <Pressable
-          style={({ pressed }) => [styles.disconnectBtn, pressed && styles.btnPressed]}
-          onPress={handleDisconnect}
-        >
-          <Text style={styles.disconnectText}>DISCONNECT WALLET</Text>
-        </Pressable>
+            {/* Action Buttons */}
+            <Pressable
+              style={({ pressed }) => [styles.disconnectBtn, pressed && styles.btnPressed]}
+              onPress={handleDisconnect}
+            >
+              <Text style={styles.disconnectText}>DISCONNECT WALLET</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            {/* Disconnected Hero Card */}
+            <View style={styles.disconnectedCard}>
+              <View style={styles.disconnectedBadgeRow}>
+                <View style={styles.disconnectedBadge}>
+                  <Text style={styles.disconnectedBadgeText}>SOLANA MOBILE ADAPTER</Text>
+                </View>
+                <View style={styles.statusDotRow}>
+                  <View style={[styles.liveDot, { backgroundColor: '#6E7681' }]} />
+                  <Text style={styles.statusText}>Not Connected</Text>
+                </View>
+              </View>
+
+              <Text style={styles.disconnectedTitle}>Connect Your Wallet</Text>
+              <Text style={styles.disconnectedDesc}>
+                Connect with Seeker Seed Vault or any Solana Mobile wallet to persist your oracle streaks, verify on-chain readings, and manage your SKR balance.
+              </Text>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.connectMainBtn,
+                  pressed && styles.btnPressed,
+                  isConnecting && styles.btnDisabled,
+                ]}
+                onPress={handleConnect}
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <ActivityIndicator color="#0E101A" />
+                ) : (
+                  <Text style={styles.connectMainBtnText}>⚡ CONNECT WALLET (MWA)</Text>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Feature & Security Cards */}
+            <View style={styles.featureBox}>
+              <Text style={styles.featureIcon}>🛡️</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>Seed Vault Enclave</Text>
+                <Text style={styles.featureDesc}>
+                  Hardware-isolated security for Solana Mobile Seeker. Seed phrases never touch Android memory.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.featureBox}>
+              <Text style={styles.featureIcon}>✨</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>3 Daily Free Spreads</Text>
+                <Text style={styles.featureDesc}>
+                  Validate daily block consensus on the Altar to refill your daily readings allowance without spending SKR.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.featureBox}>
+              <Text style={styles.featureIcon}>🔮</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>78 Solana Archetypes</Text>
+                <Text style={styles.featureDesc}>
+                  Explore the full cryptographic Codex and consult Arkana, The Solana Oracle anytime.
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -338,10 +427,94 @@ const styles = StyleSheet.create({
   btnPressed: {
     opacity: 0.8,
   },
+  btnDisabled: {
+    opacity: 0.6,
+  },
   disconnectText: {
     color: '#FF4466',
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  disconnectedCard: {
+    backgroundColor: '#121024',
+    borderColor: '#9945FF',
+    borderWidth: 1.5,
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 20,
+  },
+  disconnectedBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  disconnectedBadge: {
+    backgroundColor: '#281747',
+    borderColor: '#9945FF',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  disconnectedBadgeText: {
+    color: '#14F195',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  disconnectedTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  disconnectedDesc: {
+    color: '#8B949E',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  connectMainBtn: {
+    backgroundColor: '#14F195',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  connectMainBtnText: {
+    color: '#0E101A',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  featureBox: {
+    flexDirection: 'row',
+    backgroundColor: '#131525',
+    borderColor: '#222842',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+    gap: 14,
+  },
+  featureIcon: {
+    fontSize: 22,
+  },
+  featureContent: {
+    flex: 1,
+  },
+  featureTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  featureDesc: {
+    color: '#8B949E',
+    fontSize: 12,
+    lineHeight: 17,
   },
 });
