@@ -1,4 +1,4 @@
-# Arkana: The Blockchain Oracle
+# Arkana: The Solana Oracle
 
 Crypto tarot and daily block consensus built for Solana Mobile and the Seeker ecosystem.
 

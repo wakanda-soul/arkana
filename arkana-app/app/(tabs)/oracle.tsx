@@ -33,7 +33,7 @@ export default function OracleScreen() {
     {
       id: '1',
       sender: 'oracle',
-      text: 'The network remembers every block. The deck reflects every market cycle. I am Arkana, the Blockchain Oracle. Inscribe your question — consensus shall respond.',
+      text: 'The network remembers every block. The deck reflects every market cycle. I am Arkana, The Solana Oracle. Inscribe your question - consensus shall respond.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);

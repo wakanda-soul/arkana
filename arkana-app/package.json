@@ -15,8 +15,8 @@
     "start": "expo start",
     "web": "expo start --web"
   },
-  "displayName": "Expo Web3.js Wallet example",
-  "description": "A wallet template for building a Solana mobile app with Expo, React Native, and Web3.js.",
+  "displayName": "Arkana",
+  "description": "Decentralized crypto-oracle for Solana Mobile with MWA and Seed Vault support.",
   "usecase": "Mobile",
   "keywords": [
     "expo",
@@ -37,7 +37,7 @@
     }
   },
   "main": "./index.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.15",
     "@expo/vector-icons": "^15.1.1",
