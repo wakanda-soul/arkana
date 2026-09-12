@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   gridRow: {
     justifyContent: 'space-between',

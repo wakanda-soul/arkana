@@ -1,8 +1,14 @@
 import { Tabs } from 'expo-router'
 import React from 'react'
+import { Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets()
+  // Android navigation bar or gesture indicator safe area
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 0)
+
   return (
     <Tabs
       screenOptions={{
@@ -11,9 +17,9 @@ export default function TabLayout() {
           backgroundColor: '#0E101A',
           borderTopColor: '#1F2338',
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 58 + bottomInset,
+          paddingBottom: bottomInset > 0 ? bottomInset + 4 : 8,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: '#14F195',
         tabBarInactiveTintColor: '#6E7681',
