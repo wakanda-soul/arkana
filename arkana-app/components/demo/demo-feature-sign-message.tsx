@@ -52,10 +52,12 @@ export function DemoFeatureSignMessage({ address }: { address: PublicKey }) {
                 .mutateAsync({ message })
                 .then(() => {
                   console.log(`Signed message: ${message} with ${address.toString()}`)
-                  Snackbar.show({
-                    text: `Signed message with ${ellipsify(address.toString(), 8)}`,
-                    duration: Snackbar.LENGTH_SHORT,
-                  })
+                  if (Snackbar?.show) {
+                    Snackbar.show({
+                      text: `Signed message with ${ellipsify(address.toString(), 8)}`,
+                      duration: Snackbar.LENGTH_SHORT,
+                    })
+                  }
                 })
                 .catch((err) => console.log(`Error signing message: ${err}`, err))
             }}
