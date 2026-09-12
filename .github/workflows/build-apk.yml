@@ -66,12 +66,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-beta
-          name: "Arkana v1.0.0-beta — Solana Mobile Build"
+          name: "Arkana v1.0.1 - Solana Mobile Build"
           body: |
-            ### 🔮 Arkana — The Blockchain Oracle (Mobile Test Build)
-            - Built for **Solana Mobile & Seeker**
-            - Includes **Mobile Wallet Adapter (MWA)**, **Seed Vault** security, 78-card deck, and **Daily Clock-In** (+5 SKR).
+            ### 🔮 Arkana: The Blockchain Oracle (Mobile Release v1.0.1)
+            - Built for **Solana Mobile & Seeker** (versionCode 2, versionName 1.0.1)
+            - Includes **Mobile Wallet Adapter (MWA)**, **Seed Vault** security, 78-card deck, and **Daily Clock-In** streak retention.
+            - Hardened multi-layer prompt injection defense and strict oracle domain boundary.
             - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Seeker emulator.
           files: arkana-v1.0.0-beta.apk
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
