@@ -16,11 +16,15 @@ import { fetchClockInStatus, executeClockIn, ClockInResult, ReadingResponse } fr
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
 import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
+import { ellipsify } from '@/utils/ellipsify';
+import { showError } from '@/utils/show-error';
 
 export default function AltarScreen() {
   const router = useRouter();
-  const { account } = useAuth();
+  const { account, isAuthenticated, signIn } = useAuth();
   const walletAddress = account?.publicKey?.toString() || 'SeekerDemoWallet1111111111111111111';
+
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -69,6 +73,20 @@ export default function AltarScreen() {
     }
   };
 
+  const handleConnect = async () => {
+    if (isConnecting) return;
+    setIsConnecting(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await signIn();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      showError('Could not connect wallet', e);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const openSpread = (spreadId: string) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -88,10 +106,32 @@ export default function AltarScreen() {
             <Text style={styles.headerKicker}>SOLANA MOBILE ORACLE</Text>
             <Text style={styles.headerTitle}>ARKANA</Text>
           </View>
-          <View style={styles.skrBadge}>
-            <Text style={styles.skrFire}>🔥</Text>
-            <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
-          </View>
+          {isAuthenticated ? (
+            <View style={styles.headerRight}>
+              <View style={styles.skrBadge}>
+                <Text style={styles.skrFire}>🔥</Text>
+                <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
+              </View>
+              <View style={styles.addressChip}>
+                <Text style={styles.addressChipText}>{ellipsify(walletAddress, 4)}</Text>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.connectHeaderBtn, pressed && styles.buttonPressed]}
+              onPress={handleConnect}
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <ActivityIndicator size="small" color="#14F195" />
+              ) : (
+                <>
+                  <Text style={styles.connectHeaderIcon}>⚡</Text>
+                  <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
+                </>
+              )}
+            </Pressable>
+          )}
         </View>
 
         {/* Daily Clock-In Banner */}
@@ -281,6 +321,44 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '900',
     letterSpacing: 1.5,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addressChip: {
+    backgroundColor: '#16192B',
+    borderColor: '#2D325A',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  addressChipText: {
+    color: '#8B949E',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  connectHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#18122B',
+    borderColor: '#9945FF',
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    gap: 6,
+  },
+  connectHeaderIcon: {
+    fontSize: 13,
+  },
+  connectHeaderBtnText: {
+    color: '#14F195',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   skrBadge: {
     backgroundColor: '#1E1435',

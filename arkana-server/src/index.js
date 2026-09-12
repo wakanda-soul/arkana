@@ -129,7 +129,7 @@ app.get("/download", (req, res) => {
     <body>
       <div class="card">
         <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
-        <h1>🔮 Arkana v1.0.2</h1>
+        <h1>🔮 Arkana v1.0.3</h1>
         <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
         ${isReady ? `
@@ -176,7 +176,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     app: "Arkana - The Solana Oracle API",
-    version: "1.0.2",
+    version: "1.0.3",
     hackathon: "Clock In: A Solana Mobile Hackathon",
     network: "Solana Mobile / Seeker"
   });
