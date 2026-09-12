@@ -20,13 +20,13 @@ Arkana is an AI-powered blockchain oracle and cyber-tarot application built nati
 
 ### 🧠 Seven-Beat Narrative Synthesis
 Every reading delivers a structured story in the language of the chain:
-1. **The Story (История):** Holistic synthesis of all drawn cards into one cohesive narrative.
-2. **Hidden Forces (Скрытые силы):** Sub-surface mempool currents and reversed card dynamics.
-3. **What Strengthens You (Что усиливает):** Supportive validator consensus and momentum.
-4. **What Weakens You (Что ослабляет):** Protocol vulnerabilities, liquidity leaks, and shadows to manage.
-5. **Oracle Advice (Совет Оракула):** Pragmatic, stoic blockchain guidance.
-6. **Warning (Предостережение):** Hard-fork risk if navigating unhedged.
-7. **Final Omen (Финальное знамение):** An immutable cryptographic aphorism.
+1. **The Story:** Holistic synthesis of all drawn cards into one cohesive narrative.
+2. **Hidden Forces:** Sub-surface mempool currents and reversed card dynamics.
+3. **What Strengthens You:** Supportive validator consensus and momentum.
+4. **What Weakens You:** Protocol vulnerabilities, liquidity leaks, and shadows to manage.
+5. **Oracle Advice:** Pragmatic, stoic blockchain guidance.
+6. **Warning:** Hard-fork risk if navigating unhedged.
+7. **Final Omen:** An immutable cryptographic aphorism.
 
 ### 📱 Built for Solana Mobile & Seeker
 * **Mobile Wallet Adapter (MWA):** Native connection to Seeker hardware **Seed Vault**, Phantom, or Solflare.

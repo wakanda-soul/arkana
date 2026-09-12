@@ -130,41 +130,41 @@ app.get("/download", (req, res) => {
       <div class="card">
         <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
         <h1>🔮 Arkana v1.0.0-beta</h1>
-        <p class="sub">Децентрализованный крипто-оракул для Solana Mobile & Seeker с поддержкой MWA и Seed Vault.</p>
+        <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
         ${isReady ? `
-          <a class="btn" href="/arkana.apk" download>⚡ Скачать APK (${apkSize})</a>
-          <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Скачать Design Kit (78 карт + иконки, 22 MB)</a>
+          <a class="btn" href="/arkana.apk" download>⚡ Download APK (${apkSize})</a>
+          <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Download Design Kit (78 cards + icons, 22 MB)</a>
           <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
           <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://184.174.39.62/arkana.apk" alt="QR Code" width="180" height="180" style="display:block;" />
-            <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Сканируй камерой телефона</p>
+            <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Scan with phone camera</p>
           </div>
         ` : `
           <div class="building-box">
             <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
-            <p style="font-weight: 700; color: #fff; margin-bottom: 6px;">Компиляция автономного Release APK</p>
+            <p style="font-weight: 700; color: #fff; margin-bottom: 6px;">Compiling Standalone Release APK</p>
             <p style="font-size: 12px; color: #a5a0c2; line-height: 1.5; margin-bottom: 12px;">
-              GitHub Actions прямо сейчас собирает чистый релизный APK (с удаленным dev-клиентом и оффлайн-бандлом).
+              GitHub Actions is building the release APK (bundled offline Hermes bytecode, no dev-client).
             </p>
-            <p style="font-size: 11px; color: #14F195;">🔄 Страница автоматически обновляется каждые 10 секунд...</p>
+            <p style="font-size: 11px; color: #14F195;">🔄 Page refreshes automatically every 10 seconds...</p>
           </div>
-          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/actions" target="_blank">🔍 Смотреть статус в GitHub Actions</a>
+          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/actions" target="_blank">🔍 View Status in GitHub Actions</a>
         `}
 
         <div class="features">
-          <p style="font-weight:600; color:#fff; margin-bottom:8px;">Что внутри сборки:</p>
+          <p style="font-weight:600; color:#fff; margin-bottom:8px;">What's inside this build:</p>
           <ul>
             <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare)</li>
-            <li>⏰ Daily Clock-In (+5 SKR ритуал и учет стриков)</li>
-            <li>🃏 78 карт Арканов с 3D flip анимациями</li>
-            <li>🧠 7-битный синтез пророчеств (AI Engine)</li>
-            <li>💬 Диалоговый чат с Оракулом</li>
+            <li>⏰ Daily Clock-In (+5 SKR ritual & streak counter)</li>
+            <li>🃏 78 Tarot Arcana cards with 3D flip animations</li>
+            <li>🧠 7-Beat Oracle Synthesis (AI Engine)</li>
+            <li>💬 Interactive Oracle Chat</li>
           </ul>
         </div>
 
-        <p class="note">⚠️ Для установки на Android: откройте скачанный .apk файл и разрешите установку приложений из этого источника (Settings &rarr; Install unknown apps).</p>
+        <p class="note">⚠️ To install on Android: open downloaded .apk file and allow installation from this source (Settings &rarr; Install unknown apps).</p>
       </div>
     </body>
     </html>
@@ -278,13 +278,10 @@ app.post("/api/reading", async (req, res) => {
 // Interactive Oracle chat follow-up
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, history = [], language = "ru" } = req.body;
-    const isRu = language.startsWith("ru") || /[а-яё]/i.test(message);
+    const { message, history = [] } = req.body;
 
     // Contextual oracle reply
-    const reply = isRu
-      ? `Оракул наблюдает движение ваших транзакций в мемпуле. Касательно «${message}»: сеть подтверждает, что блоки формируются в соответствии с вашими решениями. Сохраняйте хладнокровие валидатора.`
-      : `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
+    const reply = `The Oracle observes your transaction intents in the mempool. Regarding "${message}": consensus solidifies that blocks follow your intent. Maintain validator composure.`;
 
     res.json({
       reply,
