@@ -175,37 +175,43 @@ export default function AltarScreen() {
         {/* Obsidian Header */}
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <Image
-              source={require("@/assets/images/app_logo.png")}
-              style={styles.headerLogo}
-              contentFit="contain"
-            />
-            <View>
-              <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
-              <Text style={styles.headerTitle}>ARKANA</Text>
+            <View style={styles.brandLeft}>
+              <Image
+                source={require("@/assets/images/app_logo.png")}
+                style={styles.headerLogo}
+                contentFit="contain"
+              />
+              <View>
+                <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
+                <Text style={styles.headerTitle}>ARKANA</Text>
+              </View>
             </View>
+            {!isAuthenticated && (
+              <Pressable
+                style={({ pressed }) => [styles.connectHeaderBtn, pressed && styles.buttonPressed]}
+                onPress={handleConnect}
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <ActivityIndicator size="small" color={ObsidianTokens.colors.gold.primary} />
+                ) : (
+                  <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
+                )}
+              </Pressable>
+            )}
           </View>
-          {isAuthenticated ? (
-            <View style={styles.headerRight}>
+
+          {isAuthenticated && (
+            <View style={styles.walletBar}>
+              <View style={styles.addressChip}>
+                <View style={styles.walletLiveDot} />
+                <Text style={styles.addressChipText}>{ellipsify(walletAddress, 6)}</Text>
+              </View>
               <View style={styles.skrBadge}>
+                <Text style={styles.skrBadgeLabel}>BALANCE</Text>
                 <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
               </View>
-              <View style={styles.addressChip}>
-                <Text style={styles.addressChipText}>{ellipsify(walletAddress, 4)}</Text>
-              </View>
             </View>
-          ) : (
-            <Pressable
-              style={({ pressed }) => [styles.connectHeaderBtn, pressed && styles.buttonPressed]}
-              onPress={handleConnect}
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <ActivityIndicator size="small" color={ObsidianTokens.colors.gold.primary} />
-              ) : (
-                <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
-              )}
-            </Pressable>
           )}
         </View>
 
@@ -392,12 +398,15 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   header: {
+    marginBottom: 20,
+    gap: 12,
+  },
+  brandRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
   },
-  brandRow: {
+  brandLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -423,23 +432,33 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginTop: 2,
   },
-  headerRight: {
+  walletBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  addressChip: {
-    backgroundColor: ObsidianTokens.colors.ink.fill,
+    justifyContent: "space-between",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
     borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  walletLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#14F195",
+    marginRight: 6,
+  },
+  addressChip: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   addressChipText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
-    color: ObsidianTokens.colors.ink.text55,
-    fontSize: 10,
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
   connectHeaderBtn: {
     backgroundColor: ObsidianTokens.colors.ink.fill,
@@ -457,17 +476,26 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   skrBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     backgroundColor: ObsidianTokens.colors.gold.surface,
-    borderColor: ObsidianTokens.colors.gold.muted,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  skrBadgeLabel: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 1,
   },
   skrText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 11,
   },
   quotaRow: {

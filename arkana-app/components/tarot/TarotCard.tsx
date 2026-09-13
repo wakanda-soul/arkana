@@ -9,6 +9,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { CardImages, CARD_BACK } from '@/assets/cards';
+import { ObsidianTokens } from '@/constants/theme';
 
 interface TarotCardProps {
   cardNo: string;
@@ -138,8 +139,8 @@ const styles = StyleSheet.create({
     margin: 8,
   },
   positionBadge: {
-    backgroundColor: '#1E1435',
-    borderColor: '#9945FF',
+    backgroundColor: 'rgba(200, 162, 74, 0.12)',
+    borderColor: 'rgba(200, 162, 74, 0.45)',
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   positionText: {
-    color: '#14F195',
+    color: '#C8A24A',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
@@ -161,18 +162,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderRadius: 14,
     overflow: 'hidden',
-    borderColor: '#2D325A',
+    borderColor: 'rgba(200, 162, 74, 0.35)',
     borderWidth: 1.5,
-    backgroundColor: '#0F111E',
-    shadowColor: '#9945FF',
+    backgroundColor: '#08070B',
+    shadowColor: '#C8A24A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
   },
   cardBack: {
-    borderColor: '#9945FF',
-    backgroundColor: '#130E26',
+    borderColor: '#C8A24A',
+    backgroundColor: '#120E1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -187,8 +188,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     left: 6,
-    backgroundColor: 'rgba(235, 45, 75, 0.94)',
-    borderColor: '#FFA5B5',
+    backgroundColor: '#D45240',
+    borderColor: 'rgba(212, 82, 64, 0.8)',
     borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   reversedText: {
-    color: '#FFFFFF',
+    color: '#EDE7DC',
     fontSize: 8,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -221,14 +222,14 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(153, 69, 255, 0.15)',
+    backgroundColor: 'rgba(200, 162, 74, 0.15)',
   },
   sigilIcon: {
     fontSize: 32,
     marginBottom: 8,
   },
   sigilTitle: {
-    color: '#F5D061',
+    color: '#C8A24A',
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 2,
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   sigilSubtitle: {
-    color: '#8B949E',
+    color: '#8A8275',
     fontSize: 9,
     marginTop: 4,
     letterSpacing: 1,
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardName: {
-    color: '#FFFFFF',
+    color: '#EDE7DC',
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   cardMeta: {
-    color: '#8B949E',
+    color: '#8A8275',
     fontSize: 10,
     marginTop: 2,
   },
@@ -273,8 +274,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(14, 16, 29, 0.85)',
-    borderColor: '#9945FF',
+    backgroundColor: 'rgba(8, 7, 11, 0.85)',
+    borderColor: 'rgba(200, 162, 74, 0.5)',
     borderWidth: 1,
     borderRadius: 12,
     width: 24,

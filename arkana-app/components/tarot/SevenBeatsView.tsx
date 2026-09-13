@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Platform } from 'react-native';
+import { ObsidianTokens } from '@/constants/theme';
 
 interface SevenBeatsProps {
   beats: {
@@ -34,13 +35,13 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
           {metrics.dominant_suit && (
             <View style={styles.metricPill}>
               <Text style={styles.metricLabel}>DOMINANT SUIT</Text>
-              <Text style={styles.metricValue}>{metrics.dominant_suit}</Text>
+              <Text style={styles.metricValue}>{metrics.dominant_suit.toUpperCase()}</Text>
             </View>
           )}
           {metrics.dominant_energy && (
             <View style={styles.metricPill}>
               <Text style={styles.metricLabel}>ENERGY</Text>
-              <Text style={styles.metricValue}>{metrics.dominant_energy}</Text>
+              <Text style={styles.metricValue}>{metrics.dominant_energy.toUpperCase()}</Text>
             </View>
           )}
         </View>
@@ -50,7 +51,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
       {beats.story && (
         <View style={[styles.beatCard, styles.storyBorder]}>
           <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>📜</Text>
+            <Text style={styles.beatIcon}>✦</Text>
             <Text style={styles.beatTitle}>THE NARRATIVE SYNTHESIS</Text>
           </View>
           <Text style={styles.beatContent}>{beats.story}</Text>
@@ -61,7 +62,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
       {beats.hiddenForces && (
         <View style={styles.beatCard}>
           <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>👁️</Text>
+            <Text style={styles.beatIcon}>👁</Text>
             <Text style={styles.beatTitle}>HIDDEN MEMPOOL FORCES</Text>
           </View>
           <Text style={styles.beatContent}>{beats.hiddenForces}</Text>
@@ -82,7 +83,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         {beats.weakens && (
           <View style={[styles.beatCard, styles.halfCard, styles.dangerBorder]}>
             <View style={styles.beatHeader}>
-              <Text style={styles.beatIcon}>🛡️</Text>
+              <Text style={styles.beatIcon}>🛡</Text>
               <Text style={styles.beatTitleSmall}>LIQUIDITY FRICTION</Text>
             </View>
             <Text style={styles.beatContentSmall}>{beats.weakens}</Text>
@@ -95,7 +96,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={[styles.beatCard, styles.adviceBorder]}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>🔮</Text>
-            <Text style={[styles.beatTitle, { color: '#14F195' }]}>ORACLE DIRECTIVE</Text>
+            <Text style={[styles.beatTitle, { color: ObsidianTokens.colors.gold.primary }]}>ORACLE DIRECTIVE</Text>
           </View>
           <Text style={styles.beatContent}>{beats.oracleAdvice}</Text>
         </View>
@@ -106,7 +107,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
         <View style={[styles.beatCard, styles.warningBorder]}>
           <View style={styles.beatHeader}>
             <Text style={styles.beatIcon}>⚠️</Text>
-            <Text style={[styles.beatTitle, { color: '#FFB800' }]}>WARNING (HARD-FORK RISK)</Text>
+            <Text style={[styles.beatTitle, { color: '#FFA595' }]}>WARNING (HARD-FORK RISK)</Text>
           </View>
           <Text style={styles.beatContent}>{beats.warning}</Text>
         </View>
@@ -116,7 +117,7 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
       {beats.finalOmen && (
         <View style={[styles.beatCard, styles.omenCard]}>
           <Text style={styles.omenBadge}>FINAL IMMUTABLE OMEN</Text>
-          <Text style={styles.omenQuote}>« {beats.finalOmen} »</Text>
+          <Text style={styles.omenQuote}>"{beats.finalOmen}"</Text>
         </View>
       )}
     </View>
@@ -135,51 +136,54 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   metricPill: {
-    backgroundColor: '#1E1638',
-    borderColor: '#382866',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   metricLabel: {
-    color: '#8B949E',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.ink.text55,
     fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   metricValue: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    fontWeight: '700',
   },
   beatCard: {
-    backgroundColor: '#121422',
-    borderColor: '#232742',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
   },
   storyBorder: {
-    borderColor: '#3D2F70',
-    backgroundColor: '#16122C',
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
   },
   successBorder: {
-    borderColor: '#14F19544',
+    borderColor: 'rgba(200, 162, 74, 0.25)',
+    backgroundColor: ObsidianTokens.colors.gold.surface,
   },
   dangerBorder: {
-    borderColor: '#FF446644',
+    borderColor: 'rgba(212, 82, 64, 0.25)',
+    backgroundColor: 'rgba(212, 82, 64, 0.08)',
   },
   adviceBorder: {
-    borderColor: '#14F195',
-    backgroundColor: '#0E1F1A',
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
   },
   warningBorder: {
-    borderColor: '#FFB800',
-    backgroundColor: '#1F1A0E',
+    borderColor: 'rgba(212, 82, 64, 0.35)',
+    backgroundColor: 'rgba(212, 82, 64, 0.1)',
   },
   row: {
     flexDirection: 'row',
@@ -195,49 +199,54 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   beatIcon: {
-    fontSize: 18,
+    fontSize: 14,
+    color: ObsidianTokens.colors.gold.primary,
   },
   beatTitle: {
-    color: '#F5D061',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: '700',
   },
   beatTitleSmall: {
-    color: '#F5D061',
-    fontSize: 10,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1,
     fontWeight: '700',
-    letterSpacing: 0.5,
   },
   beatContent: {
-    color: '#D1D5DB',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
     fontSize: 14,
     lineHeight: 22,
   },
   beatContentSmall: {
-    color: '#D1D5DB',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
     fontSize: 12,
     lineHeight: 18,
   },
   omenCard: {
-    backgroundColor: '#1C1538',
-    borderColor: '#F5D061',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
     borderWidth: 1.5,
     alignItems: 'center',
-    padding: 18,
+    padding: 20,
   },
   omenBadge: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
     letterSpacing: 2,
     marginBottom: 8,
   },
   omenQuote: {
-    color: '#F5D061',
-    fontSize: 15,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 16,
     fontStyle: 'italic',
-    fontWeight: '600',
     textAlign: 'center',
     lineHeight: 24,
   },

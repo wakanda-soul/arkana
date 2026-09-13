@@ -7,11 +7,13 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { CardImages } from '@/assets/cards';
+import { ObsidianTokens } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_ZOOM_WIDTH = Math.min(SCREEN_WIDTH - 48, 320);
@@ -74,17 +76,11 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
           {/* Top Bar Navigation */}
           <View style={styles.topBar}>
             <View style={styles.headerInfo}>
-              {card.position ? (
-                <View style={styles.positionBadge}>
-                  <Text style={styles.positionBadgeText}>
-                    {card.position.toUpperCase()}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.positionBadge}>
-                  <Text style={styles.positionBadgeText}>INSPECT ARTIFACT</Text>
-                </View>
-              )}
+              <View style={styles.positionBadge}>
+                <Text style={styles.positionBadgeText}>
+                  {card.position ? card.position.toUpperCase() : 'INSPECT ARTIFACT'}
+                </Text>
+              </View>
             </View>
 
             <Pressable
@@ -128,7 +124,12 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                     isDrawnReversed ? styles.orientationReversed : styles.orientationUpright,
                   ]}
                 >
-                  <Text style={styles.orientationPillText}>
+                  <Text
+                    style={[
+                      styles.orientationPillText,
+                      isDrawnReversed ? styles.orientationTextReversed : styles.orientationTextUpright,
+                    ]}
+                  >
                     {isDrawnReversed ? '▼ DRAWN REVERSED' : '▲ DRAWN UPRIGHT'}
                   </Text>
                 </View>
@@ -148,7 +149,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 
             {/* In-depth Archetype Info */}
             <View style={styles.detailsCard}>
-              <Text style={styles.cardNoLabel}>CARD #{card.card_no}</Text>
+              <Text style={styles.cardNoLabel}>ARCHETYPE #{card.card_no}</Text>
               <Text style={styles.cardTitle}>{card.crypto_name}</Text>
               {card.classic && (
                 <Text style={styles.classicSubtitle}>
@@ -182,14 +183,14 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 
               {card.advice && (
                 <View style={styles.sectionBox}>
-                  <Text style={[styles.sectionHeader, { color: '#14F195' }]}>ORACLE ADVICE</Text>
+                  <Text style={styles.sectionHeader}>ORACLE ADVICE</Text>
                   <Text style={styles.bodyText}>{card.advice}</Text>
                 </View>
               )}
 
               {card.shadow && (
-                <View style={styles.sectionBox}>
-                  <Text style={[styles.sectionHeader, { color: '#FF4466' }]}>SHADOW WARNING</Text>
+                <View style={[styles.sectionBox, styles.shadowSectionBox]}>
+                  <Text style={styles.shadowHeader}>SHADOW WARNING</Text>
                   <Text style={styles.bodyText}>{card.shadow}</Text>
                 </View>
               )}
@@ -199,7 +200,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                 style={({ pressed }) => [styles.doneButton, pressed && styles.doneButtonPressed]}
                 onPress={handleClose}
               >
-                <Text style={styles.doneButtonText}>RETURN TO SPREAD</Text>
+                <Text style={styles.doneButtonText}>RETURN TO DECK</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -212,7 +213,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(5, 7, 14, 0.96)',
+    backgroundColor: 'rgba(8, 7, 11, 0.98)',
   },
   safeArea: {
     flex: 1,
@@ -221,51 +222,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1B1E32',
+    borderBottomColor: ObsidianTokens.colors.gold.subtle,
   },
   headerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   positionBadge: {
-    backgroundColor: '#1E1435',
-    borderColor: '#9945FF',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   positionBadgeText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#181A2A',
-    borderColor: '#363C60',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonPressed: {
-    backgroundColor: '#262A45',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
   },
   closeIcon: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 15,
     fontWeight: '700',
   },
   scrollContent: {
     alignItems: 'center',
     paddingVertical: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
   },
   cardWrapper: {
     alignItems: 'center',
@@ -274,12 +276,12 @@ const styles = StyleSheet.create({
   cardOuter: {
     borderRadius: 20,
     overflow: 'hidden',
-    borderColor: '#9945FF',
-    borderWidth: 2,
-    backgroundColor: '#0E101D',
-    shadowColor: '#9945FF',
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1.5,
+    backgroundColor: ObsidianTokens.colors.ink.void,
+    shadowColor: ObsidianTokens.colors.gold.primary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.35,
     shadowRadius: 18,
     elevation: 12,
   },
@@ -294,105 +296,131 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   orientationPill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
   },
   orientationUpright: {
-    backgroundColor: '#0F261C',
-    borderColor: '#14F195',
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
   },
   orientationReversed: {
-    backgroundColor: '#2D141F',
-    borderColor: '#FF4466',
+    backgroundColor: 'rgba(212, 82, 64, 0.15)',
+    borderColor: '#D45240',
   },
   orientationPillText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: '700',
+  },
+  orientationTextUpright: {
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  orientationTextReversed: {
+    color: '#FFA595',
   },
   flipBtn: {
-    backgroundColor: '#1C1F36',
-    borderColor: '#3D4472',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 999,
   },
   flipBtnPressed: {
-    backgroundColor: '#2B3054',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
   },
   flipBtnText: {
-    color: '#00F0FF',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1,
   },
   detailsCard: {
     width: '100%',
-    backgroundColor: '#101322',
-    borderColor: '#232845',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: ObsidianTokens.radii.panels,
     padding: 20,
   },
   cardNoLabel: {
-    color: '#9945FF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
     letterSpacing: 2,
     marginBottom: 4,
   },
   cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '900',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 26,
+    fontWeight: '300',
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   classicSubtitle: {
-    color: '#8A91A8',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text55,
     fontSize: 13,
+    fontStyle: 'italic',
     marginBottom: 16,
   },
   classicAccent: {
-    color: '#E0E3EB',
-    fontWeight: '700',
+    color: ObsidianTokens.colors.ink.text82,
+    fontWeight: '600',
   },
   positionHintBox: {
-    backgroundColor: '#181C30',
-    borderColor: '#2A3154',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 14,
   },
   positionHintTitle: {
-    color: '#14F195',
-    fontSize: 10,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   positionHintText: {
-    color: '#C7CBD6',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   sectionBox: {
-    marginBottom: 16,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  shadowSectionBox: {
+    borderColor: 'rgba(212, 82, 64, 0.25)',
   },
   sectionHeader: {
-    color: '#9945FF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  shadowHeader: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: '#D45240',
+    fontSize: 9,
     letterSpacing: 1.5,
     marginBottom: 6,
   },
   bodyText: {
-    color: '#D1D5E0',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
     fontSize: 14,
     lineHeight: 21,
   },
@@ -400,37 +428,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   keywordTag: {
-    backgroundColor: '#1E233E',
-    borderColor: '#373E6D',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   keywordText: {
-    color: '#00F0FF',
-    fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
   doneButton: {
-    backgroundColor: '#1A1D2E',
-    borderColor: '#333A5C',
-    borderWidth: 1,
+    backgroundColor: ObsidianTokens.colors.gold.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
   },
   doneButtonPressed: {
-    backgroundColor: '#262B45',
+    opacity: 0.85,
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
   doneButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: '#100C06',
+    fontSize: 11,
     letterSpacing: 1.5,
+    fontWeight: '700',
   },
 });
