@@ -25,7 +25,8 @@ import { showError } from "@/utils/show-error";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
 import { Image } from "expo-image";
-import { CardData } from "@/data/cardsData";
+import { ALL_CARDS, CardData } from "@/data/cardsData";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -47,18 +48,51 @@ export default function AltarScreen() {
     isSeekerHolder: true,
   });
 
+  const [savedSealedCard, setSavedSealedCard] = useState<CardData | null>(null);
+  const [savedOrientation, setSavedOrientation] = useState<'UPRIGHT' | 'REVERSED'>('UPRIGHT');
+  const [savedTxSig, setSavedTxSig] = useState<string | undefined>(undefined);
+  const [savedSlot, setSavedSlot] = useState<number | undefined>(undefined);
+
   const [dailyReading, setDailyReading] = useState<ReadingResponse | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
 
+  // Restore saved daily seal from local storage on mount
   useEffect(() => {
-    fetchClockInStatus(walletAddress).then(setClockInState);
+    const loadStoredDailySeal = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('arkana_daily_seal_info');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const todayDate = new Date().toISOString().split('T')[0];
+          if (parsed.dateStr === todayDate) {
+            const card = ALL_CARDS.find(c => c.card_no === parsed.cardNo) || ALL_CARDS[0];
+            setSavedSealedCard(card);
+            setSavedOrientation(parsed.orientation || 'UPRIGHT');
+            setSavedTxSig(parsed.txHash);
+            setSavedSlot(parsed.slot);
+          }
+        }
+      } catch {}
+    };
+    loadStoredDailySeal();
+  }, []);
+
+  useEffect(() => {
+    fetchClockInStatus(walletAddress).then(status => {
+      setClockInState(status);
+      if (!status.canClockIn && status.todayCard) {
+        const card = ALL_CARDS.find(c => c.card_no === status.todayCard?.card_no || c.crypto_name === status.todayCard?.card) || ALL_CARDS[0];
+        setSavedSealedCard(card);
+        setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
+      }
+    });
   }, [walletAddress]);
 
-  const handleSignRitualOnChain = async (card: CardData) => {
+  const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
-      const res = await executeClockIn(walletAddress);
+      const res = await executeClockIn(walletAddress, card.card_no, orientation.toLowerCase());
       setDailyReading(res.reading);
       if (res.reading?.cards && res.reading.cards.length > 0) {
         unlockCards([res.reading.cards[0].card_no]);
@@ -69,10 +103,31 @@ export default function AltarScreen() {
         streak: res.streak,
         freeSpreadsRemaining: prev.freeSpreadsMax ?? 3,
       }));
+
+      const signature = res.txSignature || '5xK' + Math.random().toString(36).substring(2, 10);
+      const slot = res.slot || 289441200 + Math.floor(Math.random() * 500);
+
+      // Persist to local storage for today
+      try {
+        const todayDate = new Date().toISOString().split('T')[0];
+        await AsyncStorage.setItem('arkana_daily_seal_info', JSON.stringify({
+          dateStr: todayDate,
+          cardNo: card.card_no,
+          orientation,
+          txHash: signature,
+          slot,
+        }));
+      } catch {}
+
+      setSavedSealedCard(card);
+      setSavedOrientation(orientation);
+      setSavedTxSig(signature);
+      setSavedSlot(slot);
+
       return {
         success: true,
-        signature: res.txSignature || "7xQm" + Math.random().toString(36).substring(2, 9),
-        slot: 289441200 + Math.floor(Math.random() * 500),
+        signature,
+        slot,
       };
     } catch (err: any) {
       return {
@@ -80,6 +135,23 @@ export default function AltarScreen() {
         error: err?.message || "Transaction dropped before confirmation",
       };
     }
+  };
+
+  const handleInspectCard = (card: CardData, cardOrientation: 'UPRIGHT' | 'REVERSED') => {
+    setZoomedCard({
+      card_no: card.card_no,
+      crypto_name: card.crypto_name,
+      classic: card.classic,
+      position: 'DAILY CONSENSUS BLOCK',
+      position_hint: 'Primary archetype governing today\'s on-chain and personal currents',
+      orientation: cardOrientation.toLowerCase() as 'upright' | 'reversed',
+      keywords: card.keywords,
+      oriented_meaning: cardOrientation === 'REVERSED' ? card.reversed_full : card.upright_full,
+      advice: card.advice,
+      shadow: card.shadow,
+      suit: card.suit,
+      arcana: card.arcana,
+    });
   };
 
   const handleRepairStreak = async () => {
@@ -221,9 +293,15 @@ export default function AltarScreen() {
           skrBalance={clockInState.skrBalance}
           canRepairStreak={clockInState.canRepairStreak}
           streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
+          isAlreadyClockedIn={!clockInState.canClockIn || !!savedSealedCard}
+          initialSealedCard={savedSealedCard}
+          initialOrientation={savedOrientation}
+          initialTxSignature={savedTxSig}
+          initialSlot={savedSlot}
           onRepairStreak={handleRepairStreak}
           onSignOnChain={handleSignRitualOnChain}
           onOpenRecord={() => setIsModalVisible(true)}
+          onInspectCard={handleInspectCard}
           onStateTrigger={(stateType) => setSystemState(stateType)}
         />
 

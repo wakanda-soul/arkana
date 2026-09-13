@@ -11,6 +11,7 @@ export interface ClockInResult {
   repairStreakTarget?: number;
   streakRepairCostSkr?: number;
   lastClockIn: string | null;
+  todayCard?: { card_no: string; card: string; orientation: 'upright' | 'reversed' } | null;
   totalReadings: number;
   skrBalance: number;
   isSeekerHolder: boolean;
@@ -156,7 +157,7 @@ export async function fetchClockInStatus(wallet: string): Promise<ClockInResult>
   };
 }
 
-export async function executeClockIn(wallet: string): Promise<{
+export async function executeClockIn(wallet: string, cardNo?: string, orientation?: string): Promise<{
   success: boolean;
   streak: number;
   reading: ReadingResponse;
@@ -167,7 +168,7 @@ export async function executeClockIn(wallet: string): Promise<{
     const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet }),
+      body: JSON.stringify({ wallet, cardNo, orientation }),
     });
     if (res.ok) {
       const data = await res.json();
