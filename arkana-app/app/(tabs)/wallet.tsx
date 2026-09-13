@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -6,18 +6,20 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Clipboard from '@react-native-clipboard/clipboard';
-import * as Haptics from 'expo-haptics';
-import { useAuth } from '@/components/auth/auth-provider';
-import { fetchClockInStatus, ClockInResult } from '@/services/oracleApi';
-import { ellipsify } from '@/utils/ellipsify';
-import { showError } from '@/utils/show-error';
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Clipboard from "@react-native-clipboard/clipboard";
+import * as Haptics from "expo-haptics";
+import { useAuth } from "@/components/auth/auth-provider";
+import { fetchClockInStatus, ClockInResult } from "@/services/oracleApi";
+import { ellipsify } from "@/utils/ellipsify";
+import { showError } from "@/utils/show-error";
+import { ObsidianTokens } from "@/constants/theme";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
-  const address = account?.publicKey?.toString() || '';
+  const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
@@ -32,7 +34,7 @@ export default function WalletScreen() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const targetAddress = address || 'SeekerDemoWallet1111111111111111111';
+    const targetAddress = address || "SeekerDemoWallet1111111111111111111";
     fetchClockInStatus(targetAddress).then(setClockInState);
   }, [address]);
 
@@ -54,7 +56,7 @@ export default function WalletScreen() {
       await signIn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
-      showError('Could not connect wallet', e);
+      showError("Could not connect wallet", e);
     } finally {
       setIsConnecting(false);
     }
@@ -65,17 +67,20 @@ export default function WalletScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await signOut();
     } catch (e) {
-      console.warn('Sign out error:', e);
+      console.warn("Sign out error:", e);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Obsidian Header */}
         <View style={styles.header}>
-          <Text style={styles.headerKicker}>SOLANA MOBILE STACK</Text>
-          <Text style={styles.headerTitle}>Seeker & SKR</Text>
+          <Text style={styles.headerKicker}>ME · IDENTITY & RECORD</Text>
+          <Text style={styles.headerTitle}>seeker.sol</Text>
+          <Text style={styles.headerSub}>
+            On-chain proof of your rites, seed vault status, and oracle fuel.
+          </Text>
         </View>
 
         {isAuthenticated ? (
@@ -95,12 +100,12 @@ export default function WalletScreen() {
               <Text style={styles.addressLabel}>CONNECTED PUBLIC KEY</Text>
               <Pressable style={styles.addressBox} onPress={copyAddress}>
                 <Text style={styles.addressText}>{ellipsify(address, 8)}</Text>
-                <Text style={styles.copyText}>{copied ? 'COPIED!' : 'COPY'}</Text>
+                <Text style={styles.copyText}>{copied ? "COPIED" : "COPY"}</Text>
               </Pressable>
 
               {/* Seed Vault Notice */}
               <View style={styles.seedVaultBox}>
-                <Text style={styles.seedVaultIcon}>🛡️</Text>
+                <Text style={styles.seedVaultIcon}>🛡</Text>
                 <Text style={styles.seedVaultText}>
                   Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.
                 </Text>
@@ -119,7 +124,7 @@ export default function WalletScreen() {
               {/* SKR Card */}
               <View style={[styles.assetCard, styles.skrCard]}>
                 <Text style={styles.assetLabel}>SKR BALANCE</Text>
-                <Text style={[styles.assetValue, { color: '#F5D061' }]}>
+                <Text style={[styles.assetValue, { color: ObsidianTokens.colors.gold.primary }]}>
                   {clockInState.skrBalance} SKR
                 </Text>
                 <Text style={styles.assetSub}>Seeker Oracle Fuel</Text>
@@ -132,20 +137,29 @@ export default function WalletScreen() {
 
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>🔥 {clockInState.streak}</Text>
+                  <Text style={styles.statValue}>✦ {clockInState.streak}</Text>
                   <Text style={styles.statLabel}>Day Streak</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>📜 {clockInState.totalReadings}</Text>
-                  <Text style={styles.statLabel}>Blocks Verified</Text>
+                  <Text style={styles.statValue}>◈ {clockInState.totalReadings}</Text>
+                  <Text style={styles.statLabel}>Rites Sealed</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>⚡ 100%</Text>
+                  <Text style={styles.statValue}>100%</Text>
                   <Text style={styles.statLabel}>Consensus Rate</Text>
                 </View>
               </View>
+            </View>
+
+            {/* Membership / Order Box */}
+            <View style={styles.membershipCard}>
+              <View>
+                <Text style={styles.membershipTitle}>Join the Order</Text>
+                <Text style={styles.membershipSub}>Unlimited asks · Unbroken record · 0.045 SOL/mo or 15 SKR</Text>
+              </View>
+              <Text style={styles.membershipArrow}>→</Text>
             </View>
 
             {/* Action Buttons */}
@@ -165,7 +179,7 @@ export default function WalletScreen() {
                   <Text style={styles.disconnectedBadgeText}>SOLANA MOBILE ADAPTER</Text>
                 </View>
                 <View style={styles.statusDotRow}>
-                  <View style={[styles.liveDot, { backgroundColor: '#6E7681' }]} />
+                  <View style={[styles.liveDot, { backgroundColor: ObsidianTokens.colors.ink.text42 }]} />
                   <Text style={styles.statusText}>Not Connected</Text>
                 </View>
               </View>
@@ -185,16 +199,16 @@ export default function WalletScreen() {
                 disabled={isConnecting}
               >
                 {isConnecting ? (
-                  <ActivityIndicator color="#0E101A" />
+                  <ActivityIndicator color="#100C06" />
                 ) : (
-                  <Text style={styles.connectMainBtnText}>⚡ CONNECT WALLET (MWA)</Text>
+                  <Text style={styles.connectMainBtnText}>CONNECT WALLET (MWA)</Text>
                 )}
               </Pressable>
             </View>
 
             {/* Feature & Security Cards */}
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>🛡️</Text>
+              <Text style={styles.featureIcon}>🛡</Text>
               <View style={styles.featureContent}>
                 <Text style={styles.featureTitle}>Seed Vault Enclave</Text>
                 <Text style={styles.featureDesc}>
@@ -204,9 +218,9 @@ export default function WalletScreen() {
             </View>
 
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>✨</Text>
+              <Text style={styles.featureIcon}>✦</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>3 Daily Free Spreads</Text>
+                <Text style={styles.featureTitle}>Daily Block Consensus</Text>
                 <Text style={styles.featureDesc}>
                   Validate daily block consensus on the Altar to refill your daily readings allowance without spending SKR.
                 </Text>
@@ -214,11 +228,11 @@ export default function WalletScreen() {
             </View>
 
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>🔮</Text>
+              <Text style={styles.featureIcon}>◈</Text>
               <View style={styles.featureContent}>
                 <Text style={styles.featureTitle}>78 Solana Archetypes</Text>
                 <Text style={styles.featureDesc}>
-                  Explore the full cryptographic Codex and consult Arkana, The Solana Oracle anytime.
+                  Full collection of 78 crypto-tarot arcana reflecting decentralized market cycles.
                 </Text>
               </View>
             </View>
@@ -232,289 +246,337 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0C12',
+    backgroundColor: ObsidianTokens.colors.ink.void,
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingTop: 12,
     paddingBottom: 110,
   },
   header: {
     marginBottom: 20,
   },
   headerKicker: {
-    color: '#9945FF',
-    fontSize: 10,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
     letterSpacing: 2,
   },
   headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '900',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 26,
+    fontWeight: "300",
     letterSpacing: 1,
+    marginTop: 2,
+  },
+  headerSub: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+    marginTop: 4,
   },
   walletCard: {
-    backgroundColor: '#121422',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    borderRadius: 18,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
     padding: 18,
     marginBottom: 16,
   },
   walletCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   seekerBadge: {
-    backgroundColor: '#281747',
-    borderColor: '#9945FF',
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.muted,
     borderWidth: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 999,
   },
   seekerBadgeText: {
-    color: '#14F195',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    fontWeight: "600",
   },
   statusDotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#14F195',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: ObsidianTokens.colors.state.gain,
   },
   statusText: {
-    color: '#8B949E',
-    fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 9,
   },
   addressLabel: {
-    color: '#8B949E',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 6,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    marginBottom: 8,
   },
   addressBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#0B0C12',
-    borderColor: '#2D325A',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     marginBottom: 14,
   },
   addressText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 12,
   },
   copyText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    fontWeight: "600",
   },
   seedVaultBox: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
-    backgroundColor: '#0D1B1E',
-    borderColor: '#14F19544',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 10,
     padding: 12,
-    alignItems: 'center',
+    borderRadius: 12,
   },
   seedVaultIcon: {
-    fontSize: 18,
+    fontSize: 14,
   },
   seedVaultText: {
-    color: '#A7F3D0',
-    fontSize: 11,
-    lineHeight: 16,
     flex: 1,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 12,
+    lineHeight: 16,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 16,
   },
   assetCard: {
     flex: 1,
-    backgroundColor: '#131525',
-    borderColor: '#222842',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
   },
   skrCard: {
-    borderColor: '#4A3414',
-    backgroundColor: '#1C160E',
+    borderColor: ObsidianTokens.colors.gold.subtle,
   },
   assetLabel: {
-    color: '#8B949E',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.2,
     marginBottom: 6,
   },
   assetValue: {
-    color: '#FFFFFF',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: "600",
   },
   assetSub: {
-    color: '#6B7280',
-    fontSize: 10,
-    marginTop: 4,
-  },
-  statsCard: {
-    backgroundColor: '#131525',
-    borderColor: '#222842',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  statsTitle: {
-    color: '#8B949E',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 14,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: '#6B7280',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text42,
     fontSize: 11,
     marginTop: 4,
   },
+  statsCard: {
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 18,
+    marginBottom: 16,
+  },
+  statsTitle: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginBottom: 14,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 11,
+  },
   statDivider: {
     width: 1,
-    height: 30,
-    backgroundColor: '#222842',
+    height: 32,
+    backgroundColor: ObsidianTokens.colors.ink.hairline,
+  },
+  membershipCard: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.muted,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  membershipTitle: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 17,
+  },
+  membershipSub: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    marginTop: 4,
+  },
+  membershipArrow: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 20,
   },
   disconnectBtn: {
-    backgroundColor: '#1A1118',
-    borderColor: '#FF446655',
     borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
-  },
-  btnPressed: {
-    opacity: 0.8,
-  },
-  btnDisabled: {
-    opacity: 0.6,
+    alignItems: "center",
   },
   disconnectText: {
-    color: '#FF4466',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 10,
+    letterSpacing: 1.5,
   },
   disconnectedCard: {
-    backgroundColor: '#121024',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 22,
+    marginBottom: 16,
   },
   disconnectedBadgeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   disconnectedBadge: {
-    backgroundColor: '#281747',
-    borderColor: '#9945FF',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 999,
   },
   disconnectedBadgeText: {
-    color: '#14F195',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 1.5,
   },
   disconnectedTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 24,
+    fontWeight: "300",
     marginBottom: 8,
   },
   disconnectedDesc: {
-    color: '#8B949E',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18,
     marginBottom: 20,
   },
   connectMainBtn: {
-    backgroundColor: '#14F195',
+    backgroundColor: ObsidianTokens.colors.gold.primary,
     borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
   connectMainBtnText: {
-    color: '#0E101A',
-    fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#100C06",
+    fontSize: 11,
+    letterSpacing: 1.5,
+    fontWeight: "600",
   },
   featureBox: {
-    flexDirection: 'row',
-    backgroundColor: '#131525',
-    borderColor: '#222842',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
-    alignItems: 'center',
-    gap: 14,
   },
   featureIcon: {
-    fontSize: 22,
+    fontSize: 20,
+    color: ObsidianTokens.colors.gold.primary,
   },
   featureContent: {
     flex: 1,
   },
   featureTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 16,
     marginBottom: 4,
   },
   featureDesc: {
-    color: '#8B949E',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
     fontSize: 12,
-    lineHeight: 17,
+    lineHeight: 16,
+  },
+  btnPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
+  },
+  btnDisabled: {
+    opacity: 0.6,
   },
 });

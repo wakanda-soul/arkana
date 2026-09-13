@@ -66,17 +66,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-beta
-          name: "Arkana v1.0.4 - Solana Mobile Build"
+          name: "Arkana v1.0.5 - Solana Mobile Build"
           body: |
-            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.4)
-            - Built for **Solana Mobile & Seeker** (versionCode 5, versionName 1.0.4)
-            - Share on X: dynamic anti-bot tweet templates with card preview media URL.
+            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.5)
+            - Built for **Solana Mobile & Seeker** (versionCode 6, versionName 1.0.5)
+            - Complete **Obsidian Ritual** design system (#08070B void, #120E1A surface, #C8A24A gold).
+            - Interactive Daily Ritual Core Loop: Tap &rarr; Shuffle &rarr; Pick &rarr; Reveal &rarr; Sign on Solana &rarr; Sealed.
+            - Full System Edge States: AI Generating, Tx Failed, Wallet Declined, Limit Reached, Offline.
+            - Adaptive Android app icon & splash screen from design system kit.
             - Codex Archetype Collection: 78-card progress bar, full card zoom/inspection, locked teaser cards.
             - Streak Repair: on-chain SKR streak recovery mechanism with dynamic admin pricing.
-            - Direct interface access: app opens straight to the altar without a sign-in block screen.
-            - Integrated wallet connection in Altar header and Seeker tab with MWA support.
-            - Includes **Mobile Wallet Adapter (MWA)**, **Seed Vault** security, 78-card deck, and **Daily Clock-In** streak retention.
-            - Hardened multi-layer prompt injection defense and strict oracle domain boundary.
+            - Mobile Wallet Adapter (MWA) & Seed Vault security for Solana Seeker.
             - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Seeker emulator.
           files: arkana-v1.0.0-beta.apk
           overwrite: true

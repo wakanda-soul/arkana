@@ -156,7 +156,13 @@ export async function fetchClockInStatus(wallet: string): Promise<ClockInResult>
   };
 }
 
-export async function executeClockIn(wallet: string): Promise<{ success: boolean; streak: number; reading: ReadingResponse }> {
+export async function executeClockIn(wallet: string): Promise<{
+  success: boolean;
+  streak: number;
+  reading: ReadingResponse;
+  txSignature?: string;
+  slot?: number;
+}> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
@@ -168,6 +174,8 @@ export async function executeClockIn(wallet: string): Promise<{ success: boolean
       return {
         success: true,
         streak: data.clockIn?.streak || 1,
+        txSignature: data.txSignature || data.clockIn?.txSignature,
+        slot: data.slot || data.clockIn?.slot,
         reading: {
           success: true,
           spread_name: data.reading.spread_name,

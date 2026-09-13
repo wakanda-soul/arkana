@@ -1,0 +1,990 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Animated,
+  Easing,
+  Platform,
+  Dimensions,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { ALL_CARDS, CardData } from '@/data/cardsData';
+import { ObsidianTokens } from '@/constants/theme';
+import { shareToTwitter, shareGeneral } from '@/utils/shareOmen';
+import { unlockCards } from '@/services/codexService';
+
+export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
+
+interface DailyRitualViewProps {
+  streak: number;
+  skrBalance: number;
+  canRepairStreak?: boolean;
+  streakRepairCostSkr?: number;
+  onRepairStreak?: () => void;
+  onSignOnChain: (card: CardData) => Promise<{ success: boolean; signature?: string; slot?: number; error?: string }>;
+  onOpenRecord?: () => void;
+  onStateTrigger?: (type: 'wallet_declined' | 'tx_failed' | 'offline' | 'limit_reached') => void;
+}
+
+export function DailyRitualView({
+  streak,
+  skrBalance,
+  canRepairStreak,
+  streakRepairCostSkr = 1,
+  onRepairStreak,
+  onSignOnChain,
+  onOpenRecord,
+  onStateTrigger,
+}: DailyRitualViewProps) {
+  const [stage, setStage] = useState<RitualStage>('idle');
+  const [selectedCard, setSelectedCard] = useState<CardData>(ALL_CARDS[17] || ALL_CARDS[0]);
+  const [orientation, setOrientation] = useState<'UPRIGHT' | 'REVERSED'>('UPRIGHT');
+  const [txHash, setTxHash] = useState('7xQm8Wk2...4Kd9');
+  const [slotNumber, setSlotNumber] = useState(289441204);
+
+  // Animations
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const auraAnim = useRef(new Animated.Value(0.35)).current;
+  const rotAnim = useRef(new Animated.Value(0)).current;
+  const shuffleAnimA = useRef(new Animated.Value(0)).current;
+  const shuffleAnimB = useRef(new Animated.Value(0)).current;
+  const shuffleAnimC = useRef(new Animated.Value(0)).current;
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const sealScaleAnim = useRef(new Animated.Value(0.7)).current;
+
+  // Day name
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = dayNames[new Date().getDay()];
+
+  useEffect(() => {
+    // Ambient floating
+    const floatLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -7,
+          duration: 2700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 2700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    floatLoop.start();
+
+    // Aura pulse
+    const auraLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(auraAnim, {
+          toValue: 0.85,
+          duration: 3500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(auraAnim, {
+          toValue: 0.35,
+          duration: 3500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    auraLoop.start();
+
+    // Ritual ring slow rotation
+    const rotLoop = Animated.loop(
+      Animated.timing(rotAnim, {
+        toValue: 1,
+        duration: 90000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    rotLoop.start();
+
+    return () => {
+      floatLoop.stop();
+      auraLoop.stop();
+      rotLoop.stop();
+    };
+  }, [floatAnim, auraAnim, rotAnim]);
+
+  // Handle stage transitions
+  const startShuffle = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    setStage('shuffle');
+
+    // Shuffle loop
+    Animated.parallel([
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shuffleAnimA, { toValue: 1, duration: 450, useNativeDriver: true }),
+          Animated.timing(shuffleAnimA, { toValue: 0, duration: 450, useNativeDriver: true }),
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shuffleAnimB, { toValue: 1, duration: 450, useNativeDriver: true }),
+          Animated.timing(shuffleAnimB, { toValue: 0, duration: 450, useNativeDriver: true }),
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shuffleAnimC, { toValue: 1, duration: 450, useNativeDriver: true }),
+          Animated.timing(shuffleAnimC, { toValue: 0, duration: 450, useNativeDriver: true }),
+        ])
+      ),
+    ]).start();
+
+    setTimeout(() => {
+      setStage('pick');
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }, 1500);
+  };
+
+  const handlePickCard = (indexOffset: number) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } catch {}
+
+    // Pick a card pseudo-randomly
+    const randomCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+    const isReversed = Math.random() > 0.7;
+    setSelectedCard(randomCard);
+    setOrientation(isReversed ? 'REVERSED' : 'UPRIGHT');
+
+    // Auto unlock in codex
+    unlockCards([randomCard.card_no]);
+
+    // Flip animation
+    flipAnim.setValue(0);
+    setStage('read');
+    Animated.timing(flipAnim, {
+      toValue: 1,
+      duration: ObsidianTokens.motion.revealDuration,
+      easing: Easing.bezier(0.2, 0.7, 0.3, 1),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleSign = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } catch {}
+    setStage('sign');
+
+    // Spinner
+    const spinLoop = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1100,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spinLoop.start();
+
+    try {
+      const res = await onSignOnChain(selectedCard);
+      spinLoop.stop();
+      if (res.success) {
+        if (res.signature) setTxHash(res.signature);
+        if (res.slot) setSlotNumber(res.slot);
+        setStage('sealed');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+
+        // Seal scale animation
+        sealScaleAnim.setValue(0.7);
+        Animated.spring(sealScaleAnim, {
+          toValue: 1,
+          friction: 5,
+          tension: 40,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        setStage('read');
+        if (onStateTrigger) {
+          onStateTrigger('tx_failed');
+        }
+      }
+    } catch (err) {
+      spinLoop.stop();
+      setStage('read');
+      if (onStateTrigger) {
+        onStateTrigger('tx_failed');
+      }
+    }
+  };
+
+  const handleShareX = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    await shareToTwitter({
+      cardName: selectedCard.crypto_name,
+      cardNo: selectedCard.card_no,
+      orientation: orientation.toLowerCase() as 'upright' | 'reversed',
+      streak: streak,
+      proseOmen: selectedCard.advice,
+      spreadName: 'Daily Consensus Block',
+    });
+  };
+
+  const getRomanNumeral = (cardNo: string) => {
+    const num = parseInt(cardNo, 10);
+    const roman = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
+    return roman[num] || cardNo;
+  };
+
+  const rotInterpolate = rotAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const spinInterpolate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const flipInterpolate = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['90deg', '0deg'],
+  });
+
+  const shuffleTransA = shuffleAnimA.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['-3deg', '-16deg', '4deg'],
+  });
+  const shuffleTransC = shuffleAnimC.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['3deg', '16deg', '-4deg'],
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Background ambient glow */}
+      <Animated.View style={[styles.auraGlow, { opacity: auraAnim }]} />
+      {/* Rotating sacred gold boundary ring */}
+      <Animated.View style={[styles.sacredRing, { transform: [{ rotate: rotInterpolate }] }]} />
+
+      {/* Stage Tracker Header */}
+      <View style={styles.topStageRow}>
+        <Text style={styles.brandTitle}>ARKANA</Text>
+        <Text style={styles.stageIndicator}>
+          {stage === 'idle' && 'TODAY'}
+          {stage === 'shuffle' && 'SHUFFLING'}
+          {stage === 'pick' && 'CHOOSE'}
+          {stage === 'read' && 'YOUR CARD'}
+          {stage === 'sign' && 'SIGNING'}
+          {stage === 'sealed' && 'SEALED'}
+        </Text>
+      </View>
+
+      {/* 1. IDLE STAGE */}
+      {stage === 'idle' && (
+        <View style={styles.stageContent}>
+          <View style={styles.headerBlock}>
+            <Text style={styles.heroTitle}>
+              {todayName}'s{'\n'}
+              <Text style={styles.goldItalic}>current</Text>
+            </Text>
+            <Text style={styles.heroSub}>
+              One card a day. Touch the deck when you are ready to be honest.
+            </Text>
+          </View>
+
+          {/* Stacked Deck with Float */}
+          <Pressable onPress={startShuffle} style={styles.deckStackContainer}>
+            <Animated.View style={[styles.deckStack, { transform: [{ translateY: floatAnim }] }]}>
+              <View style={[styles.cardBackLayer, styles.cardLayerBottom]} />
+              <View style={[styles.cardBackLayer, styles.cardLayerMiddle]} />
+              <View style={[styles.cardBackLayer, styles.cardLayerTop]}>
+                <View style={styles.diamondEmblem}>
+                  <View style={styles.innerDiamond} />
+                </View>
+                <Text style={styles.arcanaLabel}>78 ARCANA</Text>
+              </View>
+            </Animated.View>
+          </Pressable>
+
+          <View style={styles.bottomActions}>
+            <Pressable
+              style={({ pressed }) => [styles.touchDeckBtn, pressed && styles.btnPressed]}
+              onPress={startShuffle}
+            >
+              <Text style={styles.touchDeckText}>TOUCH THE DECK</Text>
+            </Pressable>
+
+            <View style={styles.streakIndicatorRow}>
+              <Text style={styles.streakLabel}>DAY {streak} · UNBROKEN</Text>
+              {canRepairStreak && (
+                <Pressable onPress={onRepairStreak} style={styles.repairTag}>
+                  <Text style={styles.repairTagText}>⚡ Repair ({streakRepairCostSkr} SKR)</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* 2. SHUFFLE STAGE */}
+      {stage === 'shuffle' && (
+        <View style={styles.stageContent}>
+          <View style={styles.headerBlock}>
+            <Text style={styles.shufflingTitle}>The deck is listening</Text>
+          </View>
+
+          <View style={styles.deckStackContainer}>
+            <View style={styles.shuffleBox}>
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerBottom, { transform: [{ rotate: shuffleTransA }] }]} />
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerMiddle, { transform: [{ rotate: shuffleTransC }] }]} />
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerTop, styles.glowBorder]} />
+            </View>
+          </View>
+
+          <View style={styles.bottomActions}>
+            <Text style={styles.shufflingMono}>SHUFFLING_</Text>
+          </View>
+        </View>
+      )}
+
+      {/* 3. PICK STAGE */}
+      {stage === 'pick' && (
+        <View style={styles.stageContent}>
+          <View style={styles.headerBlock}>
+            <Text style={styles.heroTitle}>
+              Take the one that{'\n'}
+              <Text style={styles.goldItalic}>pulls</Text>
+            </Text>
+          </View>
+
+          {/* Fan of 3 interactive cards */}
+          <View style={styles.fanContainer}>
+            <Pressable
+              style={({ pressed }) => [styles.fanCard, styles.fanCardLeft, pressed && styles.btnPressed]}
+              onPress={() => handlePickCard(-1)}
+            >
+              <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+                <View style={styles.fanDiamond} />
+              </Animated.View>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.fanCard, styles.fanCardCenter, pressed && styles.btnPressed]}
+              onPress={() => handlePickCard(0)}
+            >
+              <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+                <View style={styles.fanDiamond} />
+              </Animated.View>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.fanCard, styles.fanCardRight, pressed && styles.btnPressed]}
+              onPress={() => handlePickCard(1)}
+            >
+              <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+                <View style={styles.fanDiamond} />
+              </Animated.View>
+            </Pressable>
+          </View>
+
+          <View style={styles.bottomActions}>
+            <Text style={styles.tapCardLabel}>TAP A CARD</Text>
+          </View>
+        </View>
+      )}
+
+      {/* 4. READ STAGE */}
+      {stage === 'read' && (
+        <View style={styles.stageContent}>
+          {/* Card Reveal */}
+          <Animated.View style={[styles.revealedCardBox, { transform: [{ rotateY: flipInterpolate }] }]}>
+            <View style={styles.diamondEmblemLarge}>
+              <View style={styles.innerDiamondLarge} />
+            </View>
+            <Text style={styles.cardNumeralText}>
+              {getRomanNumeral(selectedCard.card_no)}
+              {orientation === 'REVERSED' ? ' · REV' : ''}
+            </Text>
+          </Animated.View>
+
+          <View style={styles.cardInfoBox}>
+            <Text style={styles.cardTitleSerif}>{selectedCard.crypto_name}</Text>
+            <Text style={styles.orientationMono}>{orientation}</Text>
+            <Text style={styles.cardBodySerif}>
+              {orientation === 'REVERSED' && selectedCard.reversed_full
+                ? selectedCard.reversed_full
+                : selectedCard.upright_full || selectedCard.advice}
+            </Text>
+          </View>
+
+          {/* The One Action Box */}
+          <View style={styles.actionPanel}>
+            <Text style={styles.actionPanelLabel}>THE ONE ACTION</Text>
+            <Text style={styles.actionPanelText}>{selectedCard.advice}</Text>
+          </View>
+
+          <View style={styles.readActionsRow}>
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
+              onPress={() => setStage('idle')}
+            >
+              <Text style={styles.secondaryBtnText}>AGAIN</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.primaryGoldBtn, pressed && styles.btnPressed]}
+              onPress={handleSign}
+            >
+              <Text style={styles.primaryGoldBtnText}>SIGN ON-CHAIN</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* 5. SIGN STAGE */}
+      {stage === 'sign' && (
+        <View style={styles.stageContent}>
+          <View style={styles.signingCenter}>
+            <Animated.View style={[styles.spinRingBig, { transform: [{ rotate: spinInterpolate }] }]} />
+            <Text style={styles.signingTitle}>Sealing the rite</Text>
+            <Text style={styles.signingSub}>Confirm in your Seeker wallet. Fee 0.00021 SOL.</Text>
+            <Text style={styles.awaitingMono}>AWAITING SIGNATURE_</Text>
+          </View>
+
+          <View style={styles.bottomActions}>
+            <Pressable
+              style={({ pressed }) => [styles.ghostCancelBtn, pressed && styles.btnPressed]}
+              onPress={() => setStage('read')}
+            >
+              <Text style={styles.ghostCancelText}>CANCEL</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* 6. SEALED STAGE */}
+      {stage === 'sealed' && (
+        <View style={styles.stageContent}>
+          <Animated.View style={[styles.sealedCircle, { transform: [{ scale: sealScaleAnim }] }]}>
+            <Text style={styles.checkGlyph}>✓</Text>
+          </Animated.View>
+
+          <Text style={styles.sealedTitle}>
+            Day {streak}, <Text style={styles.goldItalic}>unbroken</Text>
+          </Text>
+          <Text style={styles.sealedBody}>
+            The card and your answer are sealed. Nobody can edit the record, including you.
+          </Text>
+
+          <View style={styles.proofBadge}>
+            <Text style={styles.proofBadgeText}>
+              {txHash} · SLOT {slotNumber}
+            </Text>
+          </View>
+
+          <View style={styles.sealedActionsRow}>
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
+              onPress={() => setStage('idle')}
+            >
+              <Text style={styles.secondaryBtnText}>RUN IT AGAIN</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.primaryGoldBtn, pressed && styles.btnPressed]}
+              onPress={handleShareX}
+            >
+              <Text style={styles.primaryGoldBtnText}>𝕏 TRANSMIT</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: ObsidianTokens.colors.ink.void,
+    borderRadius: 36,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    paddingTop: 18,
+    paddingBottom: 26,
+    paddingHorizontal: 20,
+    marginVertical: 14,
+    overflow: 'hidden',
+    position: 'relative',
+    minHeight: 460,
+  },
+  auraGlow: {
+    position: 'absolute',
+    top: -120,
+    left: '50%',
+    marginLeft: -200,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: ObsidianTokens.colors.violet.aura,
+  },
+  sacredRing: {
+    position: 'absolute',
+    top: -90,
+    left: '50%',
+    marginLeft: -210,
+    width: 420,
+    height: 420,
+    borderRadius: 210,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.12)',
+  },
+  topStageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  brandTitle: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 2.8,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  stageIndicator: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: ObsidianTokens.colors.ink.text42,
+  },
+  stageContent: {
+    alignItems: 'center',
+  },
+  headerBlock: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  heroTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 28,
+    fontWeight: '300',
+    color: ObsidianTokens.colors.ink.text,
+    textAlign: 'center',
+    lineHeight: 32,
+  },
+  goldItalic: {
+    fontStyle: 'italic',
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  heroSub: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 15,
+    lineHeight: 22,
+    color: ObsidianTokens.colors.ink.text55,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  deckStackContainer: {
+    marginVertical: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deckStack: {
+    width: 140,
+    height: 210,
+    position: 'relative',
+  },
+  shuffleBox: {
+    width: 140,
+    height: 210,
+    position: 'relative',
+  },
+  cardBackLayer: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  cardLayerBottom: {
+    borderColor: 'rgba(200, 162, 74, 0.3)',
+    backgroundColor: '#110D1A',
+    transform: [{ rotate: '-4deg' }, { translateY: 6 }],
+  },
+  cardLayerMiddle: {
+    borderColor: 'rgba(200, 162, 74, 0.4)',
+    backgroundColor: '#141020',
+    transform: [{ rotate: '3deg' }, { translateY: 3 }],
+  },
+  cardLayerTop: {
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: '#0E0B16',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    shadowColor: ObsidianTokens.colors.violet.glow,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  glowBorder: {
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1.5,
+  },
+  diamondEmblem: {
+    width: 44,
+    height: 44,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    transform: [{ rotate: '45deg' }],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  innerDiamond: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.muted,
+  },
+  diamondEmblemLarge: {
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    transform: [{ rotate: '45deg' }],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  innerDiamondLarge: {
+    width: 24,
+    height: 24,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.muted,
+  },
+  arcanaLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  bottomActions: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  touchDeckBtn: {
+    width: '100%',
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  touchDeckText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    letterSpacing: 1.8,
+    fontWeight: '600',
+    color: '#100C06',
+  },
+  streakIndicatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+  },
+  streakLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    color: ObsidianTokens.colors.ink.text42,
+    letterSpacing: 1.2,
+  },
+  repairTag: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+  },
+  repairTagText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  shufflingTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 26,
+    fontWeight: '300',
+    fontStyle: 'italic',
+    color: ObsidianTokens.colors.ink.text82,
+    marginTop: 10,
+  },
+  shufflingMono: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 2.2,
+    color: ObsidianTokens.colors.gold.primary,
+    marginTop: 14,
+  },
+  fanContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 34,
+  },
+  fanCard: {
+    width: 96,
+    height: 146,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.45)',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fanCardLeft: {
+    transform: [{ rotate: '-7deg' }],
+  },
+  fanCardCenter: {
+    transform: [{ rotate: '0deg' }],
+  },
+  fanCardRight: {
+    transform: [{ rotate: '7deg' }],
+  },
+  fanDiamond: {
+    width: 26,
+    height: 26,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.7)',
+    transform: [{ rotate: '45deg' }],
+  },
+  tapCardLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.ink.text42,
+  },
+  revealedCardBox: {
+    width: 120,
+    height: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: '#0E0B16',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 14,
+    shadowColor: ObsidianTokens.colors.violet.glow,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  cardNumeralText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  cardInfoBox: {
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    marginTop: 6,
+  },
+  cardTitleSerif: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 26,
+    fontWeight: '300',
+    color: ObsidianTokens.colors.ink.text,
+    textAlign: 'center',
+  },
+  orientationMono: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.gold.primary,
+    marginTop: 6,
+  },
+  cardBodySerif: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 15,
+    lineHeight: 22,
+    color: ObsidianTokens.colors.ink.text82,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  actionPanel: {
+    width: '100%',
+    marginVertical: 16,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.3)',
+    backgroundColor: 'rgba(124, 77, 255, 0.08)',
+  },
+  actionPanelLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.violet.ink,
+  },
+  actionPanelText: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 15,
+    lineHeight: 21,
+    color: ObsidianTokens.colors.ink.text,
+    marginTop: 6,
+  },
+  readActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 4,
+  },
+  secondaryBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    letterSpacing: 1.4,
+    color: ObsidianTokens.colors.ink.text82,
+  },
+  primaryGoldBtn: {
+    flex: 1.5,
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryGoldBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    letterSpacing: 1.4,
+    fontWeight: '600',
+    color: '#100C06',
+  },
+  signingCenter: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  spinRingBig: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderTopColor: ObsidianTokens.colors.gold.primary,
+    marginBottom: 26,
+  },
+  signingTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 26,
+    fontWeight: '300',
+    color: ObsidianTokens.colors.ink.text,
+  },
+  signingSub: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 15,
+    color: ObsidianTokens.colors.ink.text55,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  awaitingMono: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.gold.primary,
+    marginTop: 20,
+  },
+  ghostCancelBtn: {
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderRadius: 12,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  ghostCancelText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    letterSpacing: 1.4,
+    color: ObsidianTokens.colors.ink.text55,
+  },
+  sealedCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: 'rgba(124, 77, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+  },
+  checkGlyph: {
+    fontSize: 28,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  sealedTitle: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 28,
+    fontWeight: '300',
+    color: ObsidianTokens.colors.ink.text,
+    textAlign: 'center',
+  },
+  sealedBody: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    fontSize: 15,
+    lineHeight: 22,
+    color: ObsidianTokens.colors.ink.text55,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12,
+  },
+  proofBadge: {
+    marginVertical: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+  },
+  proofBadgeText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  sealedActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 10,
+  },
+  btnPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
+  },
+});
+
+export default DailyRitualView;

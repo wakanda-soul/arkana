@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -9,36 +9,37 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import { API_BASE_URL } from '@/services/oracleApi';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+import { API_BASE_URL } from "@/services/oracleApi";
+import { ObsidianTokens } from "@/constants/theme";
 
 interface ChatMessage {
   id: string;
-  sender: 'user' | 'oracle';
+  sender: "user" | "oracle";
   text: string;
   timestamp: string;
 }
 
 const PRESETS = [
-  'Should I enter this token breakout?',
-  'Assess market sentiment and liquidity flow',
-  'How to counter FUD in this cycle?',
-  'What does consensus signal about my protocol venture?',
+  "Should I average down or cut size?",
+  "Depth returns before conviction does",
+  "Is this a thesis or market FOMO?",
+  "Review my open risk in this cycle",
 ];
 
 export default function OracleScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
-      sender: 'oracle',
-      text: 'The network remembers every block. The deck reflects every market cycle. I am Arkana, The Solana Oracle. Inscribe your question - consensus shall respond.',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      id: "1",
+      sender: "oracle",
+      text: "The network remembers every block. The deck reflects every market cycle. I am Arkana, The Solana Oracle. Name what you are sitting with: consensus shall respond.",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -52,23 +53,23 @@ export default function OracleScreen() {
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
-      sender: 'user',
+      sender: "user",
       text: query.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     setMessages(prev => [...prev, userMsg]);
-    if (!textToSend) setInput('');
+    if (!textToSend) setInput("");
     setIsTyping(true);
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: query.trim() }),
       });
 
-      let replyText = 'The network processes your transaction of intent. Consensus is forming around calculated risk management.';
+      let replyText = "Depth returns before conviction does. Guard your capital and let the network confirm the floor.";
       if (res.ok) {
         const data = await res.json();
         replyText = data.reply || replyText;
@@ -76,9 +77,9 @@ export default function OracleScreen() {
 
       const oracleMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        sender: 'oracle',
+        sender: "oracle",
         text: replyText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
       setMessages(prev => [...prev, oracleMsg]);
@@ -86,12 +87,12 @@ export default function OracleScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
     } catch (e) {
-      console.warn('Chat error:', e);
+      console.warn("Chat error:", e);
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        sender: 'oracle',
-        text: 'The mempool is momentarily congested. But the Oracle reminds: validator stoicism prevails over market turbulence.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: "oracle",
+        text: "The mempool is momentarily congested. But remember: stoic conviction outlasts market noise.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -104,21 +105,24 @@ export default function OracleScreen() {
   }, [messages]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {/* Obsidian Ritual Header */}
       <View style={styles.header}>
-        <View style={styles.oracleBadge}>
-          <Text style={styles.oracleIcon}>🔮</Text>
+        <View style={styles.diamondBadge}>
+          <View style={styles.innerDiamond} />
         </View>
-        <View>
-          <Text style={styles.headerTitle}>ARKANA ORACLE AI</Text>
-          <Text style={styles.headerStatus}>● Live Neural Consensus</Text>
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.headerKicker}>ASK · ORACLE CONVERSATION</Text>
+          <Text style={styles.headerTitle}>What are you sitting with?</Text>
+          <Text style={styles.headerSub}>
+            Arkana reads your behaviour, not the chart. It will not tell you a price.
+          </Text>
         </View>
       </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           ref={scrollRef}
@@ -130,32 +134,39 @@ export default function OracleScreen() {
               key={msg.id}
               style={[
                 styles.messageBubble,
-                msg.sender === 'user' ? styles.userBubble : styles.oracleBubble,
+                msg.sender === "user" ? styles.userBubble : styles.oracleBubble,
               ]}
             >
-              {msg.sender === 'oracle' && (
-                <Text style={styles.senderKicker}>ARKANA ORACLE</Text>
+              {msg.sender === "oracle" && (
+                <Text style={styles.senderKicker}>ARKANA</Text>
               )}
-              <Text style={styles.messageText}>{msg.text}</Text>
+              <Text
+                style={[
+                  styles.messageText,
+                  msg.sender === "oracle" ? styles.oracleText : styles.userText,
+                ]}
+              >
+                {msg.text}
+              </Text>
               <Text style={styles.timestampText}>{msg.timestamp}</Text>
             </View>
           ))}
 
           {isTyping && (
             <View style={[styles.messageBubble, styles.oracleBubble, styles.typingBubble]}>
-              <ActivityIndicator size="small" color="#14F195" />
-              <Text style={styles.typingText}>The Oracle is inspecting network state...</Text>
+              <ActivityIndicator size="small" color={ObsidianTokens.colors.gold.primary} />
+              <Text style={styles.typingText}>Reading your record...</Text>
             </View>
           )}
 
           {/* Prompt Presets */}
           <View style={styles.presetsWrap}>
-            <Text style={styles.presetsLabel}>QUICK PROMPTS FOR THE ORACLE:</Text>
+            <Text style={styles.presetsLabel}>RITUAL PROMPTS:</Text>
             <View style={styles.presetsGrid}>
               {PRESETS.map((p, i) => (
                 <Pressable
                   key={i}
-                  style={styles.presetChip}
+                  style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
                   onPress={() => sendMessage(p)}
                 >
                   <Text style={styles.presetText}>{p}</Text>
@@ -169,18 +180,18 @@ export default function OracleScreen() {
         <View style={styles.inputBar}>
           <TextInput
             style={styles.textInput}
-            placeholder="Ask the Oracle about a trade, protocol, or venture..."
-            placeholderTextColor="#6B7280"
+            placeholder="Inscribe a question about size, conviction, or risk..."
+            placeholderTextColor={ObsidianTokens.colors.ink.text42}
             value={input}
             onChangeText={setInput}
             onSubmitEditing={() => sendMessage()}
             returnKeyType="send"
           />
           <Pressable
-            style={({ pressed }) => [styles.sendButton, pressed && styles.sendButtonPressed]}
+            style={({ pressed }) => [styles.sendButton, pressed && styles.chipPressed]}
             onPress={() => sendMessage()}
           >
-            <Text style={styles.sendIcon}>➤</Text>
+            <Text style={styles.sendIcon}>✦</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -191,157 +202,184 @@ export default function OracleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0C12',
+    backgroundColor: ObsidianTokens.colors.ink.void,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomColor: '#1A1E2F',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 14,
+    borderBottomColor: ObsidianTokens.colors.gold.subtle,
     borderBottomWidth: 1,
   },
-  oracleBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E1638',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+  diamondBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
   },
-  oracleIcon: {
-    fontSize: 20,
+  innerDiamond: {
+    width: 16,
+    height: 16,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.muted,
+    transform: [{ rotate: "45deg" }],
+  },
+  headerTextWrap: {
+    flex: 1,
+  },
+  headerKicker: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 2,
   },
   headerTitle: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 16,
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 22,
+    fontWeight: "300",
+    marginTop: 2,
   },
-  headerStatus: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '700',
+  headerSub: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
   },
   keyboardView: {
     flex: 1,
   },
   messagesContainer: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 16,
+    gap: 14,
+    paddingBottom: 24,
   },
   messageBubble: {
-    maxWidth: '85%',
-    padding: 14,
-    borderRadius: 16,
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#1C1636',
-    borderColor: '#9945FF',
-    borderWidth: 1,
-    borderBottomRightRadius: 4,
+    maxWidth: "88%",
+    padding: 16,
+    borderRadius: ObsidianTokens.radii.panels,
   },
   oracleBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#121422',
-    borderColor: '#242A45',
+    alignSelf: "flex-start",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    borderBottomLeftRadius: 4,
+  },
+  userBubble: {
+    alignSelf: "flex-end",
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
   },
   senderKicker: {
-    color: '#F5D061',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 4,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 2,
+    marginBottom: 6,
   },
   messageText: {
-    color: '#F3F4F6',
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  oracleText: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text82,
+  },
+  userText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
   },
   timestampText: {
-    color: '#6B7280',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
     fontSize: 9,
-    alignSelf: 'flex-end',
-    marginTop: 6,
+    marginTop: 8,
+    alignSelf: "flex-end",
   },
   typingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
   },
   typingText: {
-    color: '#14F195',
-    fontSize: 12,
-    fontStyle: 'italic',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 14,
+    fontStyle: "italic",
   },
   presetsWrap: {
-    marginTop: 16,
-    paddingTop: 12,
+    marginTop: 10,
   },
   presetsLabel: {
-    color: '#8B949E',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 8,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginBottom: 10,
   },
   presetsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
   presetChip: {
-    backgroundColor: '#16192A',
-    borderColor: '#2D3454',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
   },
   presetText: {
-    color: '#D1D5DB',
-    fontSize: 12,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+  },
+  chipPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
   inputBar: {
-    flexDirection: 'row',
-    padding: 12,
-    borderTopColor: '#1A1E2F',
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 10,
+    borderTopColor: ObsidianTokens.colors.ink.hairline,
     borderTopWidth: 1,
-    backgroundColor: '#0E101A',
+    backgroundColor: ObsidianTokens.colors.ink.void,
     gap: 10,
-    alignItems: 'center',
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#151726',
-    borderColor: '#262C45',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    color: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: ObsidianTokens.colors.ink.text,
     fontSize: 13,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
   },
   sendButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#14F195',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonPressed: {
-    opacity: 0.8,
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sendIcon: {
-    color: '#0B0C12',
+    color: "#100C06",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
