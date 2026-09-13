@@ -228,8 +228,34 @@ function generateOracleChatReply(message, history = []) {
 
     const cleanMessage = sanitizeUserInput(message);
 
+    // Draw a card from the 78 Arcana deck for this chat inquiry
+    let drawnCard = null;
+    let orientation = "upright";
+    try {
+      const { getDeck } = require("../engine/oracleEngine");
+      const deck = getDeck();
+      if (deck && deck.length > 0) {
+        drawnCard = deck[Math.floor(Math.random() * deck.length)];
+        orientation = Math.random() > 0.75 ? "reversed" : "upright";
+      }
+    } catch (e) {
+      console.warn("Could not draw card for chat:", e);
+    }
+
     // Layer 2: Secure boundary-isolated prompt
     let fullPrompt = `${ORACLE_CHAT_PROMPT}\n\n`;
+
+    if (drawnCard) {
+      fullPrompt += `ARCHETYPE DRAWN FOR THIS QUERY:
+Card: ${drawnCard.crypto_name} (${drawnCard.card_no}, ${orientation})
+Classic Equivalent: ${drawnCard.classic || "None"}
+Suit: ${drawnCard.suit}
+Meaning: ${orientation === "reversed" ? drawnCard.reversed_full : drawnCard.upright_full}
+Advice: ${drawnCard.advice || ""}
+
+Explicitly name this card at the beginning of your response (e.g. "The Card Drawn: ${drawnCard.crypto_name} (${orientation === "reversed" ? "Reversed" : "Upright"})") and weave its archetype directly into your guidance.\n\n`;
+    }
+
     if (history && Array.isArray(history) && history.length > 0) {
       fullPrompt += `Recent dialogue context:\n`;
       history.slice(-4).forEach(h => {
@@ -259,6 +285,7 @@ Arkana, speak:`;
           const fallback = isCyrillic(message) ? RU_CODING_REFUSAL : EN_CODING_REFUSAL;
           return resolve({
             reply: fallback,
+            card: null,
             safety: {
               blocked: false,
               reason: "fallback",
@@ -275,9 +302,22 @@ Arkana, speak:`;
         const validatedReply = validateModelOutput(reply, message);
         const postViolation = validatedReply !== reply;
 
+        const cardPayload = drawnCard ? {
+          card_no: drawnCard.card_no,
+          crypto_name: drawnCard.crypto_name,
+          classic: drawnCard.classic,
+          suit: drawnCard.suit,
+          arcana: drawnCard.arcana,
+          orientation,
+          advice: drawnCard.advice,
+          oriented_meaning: orientation === "reversed" ? drawnCard.reversed_full : drawnCard.upright_full,
+          keywords: drawnCard.keywords
+        } : null;
+
         console.log("[Oracle AI] agy generated live response for:", message.slice(0, 30));
         resolve({
           reply: validatedReply,
+          card: cardPayload,
           safety: {
             blocked: postViolation,
             reason: postViolation ? "post_validation" : null,

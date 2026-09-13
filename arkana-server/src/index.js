@@ -337,7 +337,12 @@ app.post("/api/reading", async (req, res) => {
     // Check & consume quota if wallet provided
     let quotaResult = null;
     if (wallet) {
-      quotaResult = consumeSpread(wallet);
+      quotaResult = consumeSpread(wallet, {
+        type: "spread",
+        cost: 5,
+        payWithSol: Boolean(req.body.payWithSol),
+        txSignature: req.body.txSignature || null
+      });
       if (!quotaResult.allowed) {
         return res.status(402).json({
           success: false,
@@ -400,10 +405,29 @@ app.post("/api/reading", async (req, res) => {
 app.post("/api/chat", async (req, res) => {
   const startTime = Date.now();
   const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
-  const { message, history = [], wallet = "anonymous" } = req.body;
+  const { message, history = [], wallet = "anonymous", payWithSol = false, txSignature = null } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({ error: "Message is required" });
+  }
+
+  // Enforce shared daily quota for chat queries (1 SKR or 0.0002 SOL beyond free 3)
+  let quotaResult = null;
+  if (wallet && wallet !== "anonymous") {
+    quotaResult = consumeSpread(wallet, {
+      type: "chat",
+      cost: 1,
+      payWithSol: Boolean(payWithSol),
+      txSignature
+    });
+
+    if (!quotaResult.allowed) {
+      return res.status(402).json({
+        success: false,
+        error: quotaResult.error,
+        quota: quotaResult
+      });
+    }
   }
 
   try {
@@ -429,6 +453,8 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({
       reply,
+      card: chatResult.card || null,
+      quota: quotaResult,
       timestamp: new Date().toISOString()
     });
   } catch (err) {

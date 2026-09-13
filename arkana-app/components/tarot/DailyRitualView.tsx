@@ -84,6 +84,7 @@ export function DailyRitualView({
   const flipAnim = useRef(new Animated.Value(isAlreadyClockedIn ? 1 : 0)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
   const sealScaleAnim = useRef(new Animated.Value(1)).current;
+  const [signStep, setSignStep] = useState<1 | 2>(1);
 
   // Day name
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -255,6 +256,7 @@ export function DailyRitualView({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
     setStage('sign');
+    setSignStep(1);
 
     // Spinner
     const spinLoop = Animated.loop(
@@ -268,11 +270,24 @@ export function DailyRitualView({
     spinLoop.start();
 
     try {
-      const res = await onSignOnChain(selectedCard, orientation);
-      spinLoop.stop();
+      const signPromise = onSignOnChain(selectedCard, orientation);
+      const minMempoolWait = new Promise(r => setTimeout(r, 900));
+
+      const [res] = await Promise.all([signPromise, minMempoolWait]);
+
       if (res.success) {
         if (res.signature) setTxHash(res.signature);
         if (res.slot) setSlotNumber(res.slot);
+
+        setSignStep(2);
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch {}
+
+        // Allow user to visibly witness validator confirmation step
+        await new Promise(r => setTimeout(r, 800));
+        spinLoop.stop();
+
         setStage('sealed');
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -286,6 +301,7 @@ export function DailyRitualView({
           useNativeDriver: true,
         }).start();
       } else {
+        spinLoop.stop();
         setStage('read');
         if (onStateTrigger) {
           onStateTrigger('tx_failed');
@@ -572,25 +588,47 @@ export function DailyRitualView({
         <View style={styles.stageContent}>
           <View style={styles.signingCenter}>
             <Animated.View style={[styles.spinRingBig, { transform: [{ rotate: spinInterpolate }] }]} />
-            <Text style={styles.signingTitle}>Sealing the block</Text>
-            <Text style={styles.signingSub}>Broadcasting consensus to Solana ledger. Gas fee 0.00021 SOL.</Text>
-            <Text style={styles.awaitingMono}>AWAITING SIGNATURE_</Text>
+            <Text style={styles.signingTitle}>
+              {signStep === 1 ? 'Broadcasting to Mempool' : 'Consensus Confirmed!'}
+            </Text>
+            <Text style={styles.signingSub}>
+              {signStep === 1
+                ? 'Submitting transaction payload to Solana network. Gas fee 0.00021 SOL.'
+                : `Block finalized on-chain · Slot #${slotNumber} confirmed by network validators.`}
+            </Text>
+            <View style={styles.signingBadge}>
+              <View style={[styles.signingDot, signStep === 2 && styles.dotGreen]} />
+              <Text style={styles.awaitingMono}>
+                {signStep === 1 ? 'AWAITING SOLANA CONSENSUS_' : 'LEDGER ENGRAVED_'}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.bottomActions}>
-            <Pressable
-              style={({ pressed }) => [styles.ghostCancelBtn, pressed && styles.btnPressed]}
-              onPress={() => setStage('read')}
-            >
-              <Text style={styles.ghostCancelText}>CANCEL</Text>
-            </Pressable>
-          </View>
+          {signStep === 1 && (
+            <View style={styles.bottomActions}>
+              <Pressable
+                style={({ pressed }) => [styles.ghostCancelBtn, pressed && styles.btnPressed]}
+                onPress={() => setStage('read')}
+              >
+                <Text style={styles.ghostCancelText}>CANCEL</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
 
       {/* 6. SEALED STAGE: PROUDLY RENDER SEALED DAILY CARD */}
       {stage === 'sealed' && (
         <View style={styles.stageContent}>
+          {/* Top Confirmed Celebration Toast */}
+          <View style={styles.celebrationBanner}>
+            <Text style={styles.celebrationGlyph}>✓</Text>
+            <View style={styles.celebrationTextWrap}>
+              <Text style={styles.celebrationTitle}>BLOCK FINALIZED ON SOLANA</Text>
+              <Text style={styles.celebrationSub}>Slot #{slotNumber} confirmed · +25 SKR claimed</Text>
+            </View>
+          </View>
+
           {/* Header Status */}
           <View style={styles.sealedHeaderRow}>
             <View style={styles.sealedLiveDot} />
@@ -1350,6 +1388,61 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     paddingHorizontal: 8,
+  },
+  signingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 18,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  signingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+  },
+  dotGreen: {
+    backgroundColor: '#14F195',
+  },
+  celebrationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+    backgroundColor: 'rgba(20, 241, 149, 0.1)',
+    borderColor: 'rgba(20, 241, 149, 0.4)',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  celebrationGlyph: {
+    fontSize: 18,
+    color: '#14F195',
+    fontWeight: '700',
+  },
+  celebrationTextWrap: {
+    flex: 1,
+  },
+  celebrationTitle: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: '#14F195',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  celebrationSub: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 12,
+    marginTop: 2,
   },
   btnPressed: {
     transform: [{ scale: ObsidianTokens.motion.pressScale }],

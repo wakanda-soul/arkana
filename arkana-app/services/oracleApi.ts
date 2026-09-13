@@ -18,15 +18,24 @@ export interface ClockInResult {
   freeSpreadsRemaining?: number;
   freeSpreadsMax?: number;
   extraSpreadCostSkr?: number;
+  askCostSkr?: number;
+  skrToSolRate?: number;
+  askCostSol?: number;
+  extraSpreadCostSol?: number;
 }
 
 export interface QuotaConsumeResult {
   allowed: boolean;
   isFree: boolean;
   cost: number;
+  costSkr?: number;
+  costSol?: number;
+  paidWith?: 'free' | 'skr' | 'sol';
   remainingFree: number;
   balance: number;
+  canPayWithSol?: boolean;
   error?: string;
+  txSignature?: string | null;
 }
 
 export interface ReadingResponse {
@@ -203,16 +212,21 @@ export async function executeClockIn(wallet: string, cardNo?: string, orientatio
   return { success: true, streak: 1, reading: local };
 }
 
-export async function fetchReading(spread: string, question: string = '', wallet?: string): Promise<ReadingResponse> {
+export async function fetchReading(
+  spread: string,
+  question: string = '',
+  wallet?: string,
+  payWithSol: boolean = false
+): Promise<ReadingResponse> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ spread, question, wallet }),
+      body: JSON.stringify({ spread, question, wallet, payWithSol }),
     });
     if (res.status === 402) {
       const errData = await res.json();
-      throw new Error(errData.error || 'Daily free spread allowance reached. 5 SKR required to cast an additional spread.');
+      throw new Error(errData.error || 'Daily free spread allowance reached. 5 SKR or 0.001 SOL required to cast an additional spread.');
     }
     if (res.ok) {
       return await res.json();
@@ -257,5 +271,41 @@ export async function repairStreak(wallet: string): Promise<{ success: boolean; 
   } catch (e: any) {
     return { success: false, streak: 1, skrBalance: 25, error: e.message || 'Streak repair network error' };
   }
+}
+
+export async function sendOracleChatMessage({
+  message,
+  wallet,
+  history = [],
+  payWithSol = false,
+  txSignature = null,
+}: {
+  message: string;
+  wallet?: string;
+  history?: any[];
+  payWithSol?: boolean;
+  txSignature?: string | null;
+}): Promise<{
+  reply: string;
+  card?: any;
+  quota?: QuotaConsumeResult;
+  timestamp: string;
+}> {
+  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature }),
+  });
+
+  const data = await res.json();
+  if (res.status === 402) {
+    const err = new Error(data.error || 'Daily free allowance reached.');
+    (err as any).quota = data.quota;
+    throw err;
+  }
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to query Oracle');
+  }
+  return data;
 }
 
