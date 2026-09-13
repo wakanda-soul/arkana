@@ -69,3 +69,10 @@ downloaded_logo
 arkana-server/public/design/
 public/design/
 temp/
+
+# Runtime audit dialogue logs
+arkana-server/data/*.jsonl
+arkana-server/data/*.jsonl.gz
+data/*.jsonl
+data/*.jsonl.gz
+

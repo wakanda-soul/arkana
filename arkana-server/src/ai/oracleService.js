@@ -215,7 +215,15 @@ function generateOracleChatReply(message, history = []) {
     const safetyCheck = evaluateSafetyFilter(message);
     if (safetyCheck.blocked) {
       console.log(`[Oracle AI Safety] Intercepted ${safetyCheck.reason} attempt:`, message.slice(0, 40));
-      return resolve(safetyCheck.reply);
+      return resolve({
+        reply: safetyCheck.reply,
+        safety: {
+          blocked: true,
+          reason: safetyCheck.reason,
+          is_injection_attempt: safetyCheck.reason === "injection",
+          is_code_attempt: safetyCheck.reason === "coding"
+        }
+      });
     }
 
     const cleanMessage = sanitizeUserInput(message);
@@ -249,17 +257,34 @@ Arkana, speak:`;
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI] agy fallback triggered:", err ? err.message : "empty response");
           const fallback = isCyrillic(message) ? RU_CODING_REFUSAL : EN_CODING_REFUSAL;
-          return resolve(fallback);
+          return resolve({
+            reply: fallback,
+            safety: {
+              blocked: false,
+              reason: "fallback",
+              is_injection_attempt: false,
+              is_code_attempt: false
+            }
+          });
         }
 
         let reply = stdout.trim();
         reply = reply.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
 
         // Layer 3: Post-inference output validation
-        reply = validateModelOutput(reply, message);
+        const validatedReply = validateModelOutput(reply, message);
+        const postViolation = validatedReply !== reply;
 
         console.log("[Oracle AI] agy generated live response for:", message.slice(0, 30));
-        resolve(reply);
+        resolve({
+          reply: validatedReply,
+          safety: {
+            blocked: postViolation,
+            reason: postViolation ? "post_validation" : null,
+            is_injection_attempt: postViolation,
+            is_code_attempt: postViolation
+          }
+        });
       }
     );
   });
@@ -274,5 +299,7 @@ module.exports = {
   SYSTEM_PROMPT,
   generateReadingProse,
   generateOfflineSynthesis,
-  generateOracleChatReply
+  generateOracleChatReply,
+  evaluateSafetyFilter
 };
+
