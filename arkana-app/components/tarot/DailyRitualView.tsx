@@ -12,7 +12,7 @@ import {
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { ALL_CARDS, CardData } from '@/data/cardsData';
-import { CardImages } from '@/assets/cards';
+import { CardImages, CARD_BACK } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
 import { shareToTwitter } from '@/utils/shareOmen';
 import { unlockCards } from '@/services/codexService';
@@ -398,13 +398,14 @@ export function DailyRitualView({
           {/* Stacked Deck with Float */}
           <Pressable onPress={startShuffle} style={styles.deckStackContainer}>
             <Animated.View style={[styles.deckStack, { transform: [{ translateY: floatAnim }] }]}>
-              <View style={[styles.cardBackLayer, styles.cardLayerBottom]} />
-              <View style={[styles.cardBackLayer, styles.cardLayerMiddle]} />
-              <View style={[styles.cardBackLayer, styles.cardLayerTop]}>
-                <View style={styles.diamondEmblem}>
-                  <View style={styles.innerDiamond} />
-                </View>
-                <Text style={styles.arcanaLabel}>78 ARCANA</Text>
+              <View style={[styles.cardBackLayer, styles.cardLayerBottom]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+              </View>
+              <View style={[styles.cardBackLayer, styles.cardLayerMiddle]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+              </View>
+              <View style={[styles.cardBackLayer, styles.cardLayerTop, styles.glowBorder]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
               </View>
             </Animated.View>
           </Pressable>
@@ -438,9 +439,15 @@ export function DailyRitualView({
 
           <View style={styles.deckStackContainer}>
             <View style={styles.shuffleBox}>
-              <Animated.View style={[styles.cardBackLayer, styles.cardLayerBottom, { transform: [{ rotate: shuffleTransA }] }]} />
-              <Animated.View style={[styles.cardBackLayer, styles.cardLayerMiddle, { transform: [{ rotate: shuffleTransC }] }]} />
-              <Animated.View style={[styles.cardBackLayer, styles.cardLayerTop, styles.glowBorder]} />
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerBottom, { transform: [{ rotate: shuffleTransA }] }]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+              </Animated.View>
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerMiddle, { transform: [{ rotate: shuffleTransC }] }]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+              </Animated.View>
+              <Animated.View style={[styles.cardBackLayer, styles.cardLayerTop, styles.glowBorder]}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+              </Animated.View>
             </View>
           </View>
 
@@ -467,30 +474,36 @@ export function DailyRitualView({
               style={({ pressed }) => [styles.fanCard, styles.fanCardLeft, pressed && styles.btnPressed]}
               onPress={() => handlePickCard(-1)}
             >
-              <Animated.View style={styles.fanInnerWrapper}>
-                <View style={styles.fanDiamond} />
-                <Text style={styles.fanCardLabel}>SLOT A</Text>
-              </Animated.View>
+              <View style={styles.fanInnerWrapper}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+                <View style={styles.fanSlotBadge}>
+                  <Text style={styles.fanCardLabel}>SLOT A</Text>
+                </View>
+              </View>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [styles.fanCard, styles.fanCardCenter, pressed && styles.btnPressed]}
               onPress={() => handlePickCard(0)}
             >
-              <Animated.View style={styles.fanInnerWrapper}>
-                <View style={styles.fanDiamond} />
-                <Text style={styles.fanCardLabel}>SLOT B</Text>
-              </Animated.View>
+              <View style={styles.fanInnerWrapper}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+                <View style={styles.fanSlotBadge}>
+                  <Text style={styles.fanCardLabel}>SLOT B</Text>
+                </View>
+              </View>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [styles.fanCard, styles.fanCardRight, pressed && styles.btnPressed]}
               onPress={() => handlePickCard(1)}
             >
-              <Animated.View style={styles.fanInnerWrapper}>
-                <View style={styles.fanDiamond} />
-                <Text style={styles.fanCardLabel}>SLOT C</Text>
-              </Animated.View>
+              <View style={styles.fanInnerWrapper}>
+                <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+                <View style={styles.fanSlotBadge}>
+                  <Text style={styles.fanCardLabel}>SLOT C</Text>
+                </View>
+              </View>
             </Pressable>
           </View>
 
@@ -820,6 +833,11 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 14,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  cardImageFill: {
+    width: '100%',
+    height: '100%',
   },
   cardLayerBottom: {
     borderColor: 'rgba(200, 162, 74, 0.3)',
@@ -954,6 +972,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    overflow: 'hidden',
   },
   fanCardLeft: {
     transform: [{ rotate: '-8deg' }],
@@ -965,8 +984,20 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '8deg' }],
   },
   fanInnerWrapper: {
-    alignItems: 'center',
-    gap: 14,
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  fanSlotBadge: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(8, 7, 11, 0.88)',
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   fanDiamond: {
     width: 26,

@@ -108,14 +108,11 @@ export function TarotCard({
 
         {/* Card Back */}
         <Animated.View style={[styles.card, styles.cardBack, backStyle, { width, height }]}>
-          <View style={styles.sigilContainer}>
-            <View style={styles.outerGlow} />
-            <Text style={styles.sigilIcon}>⚡</Text>
-            <Text style={[styles.sigilTitle, compact && styles.sigilTitleCompact]}>ARKANA</Text>
-            <Text style={[styles.sigilSubtitle, compact && styles.sigilSubtitleCompact]}>
-              TAP TO VERIFY
-            </Text>
-          </View>
+          <Image
+            source={CARD_BACK}
+            style={styles.image}
+            contentFit="cover"
+          />
         </Animated.View>
       </Pressable>
 
@@ -173,9 +170,8 @@ const styles = StyleSheet.create({
   },
   cardBack: {
     borderColor: '#C8A24A',
-    backgroundColor: '#120E1A',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#0E0B16',
+    overflow: 'hidden',
   },
   image: {
     width: '100%',

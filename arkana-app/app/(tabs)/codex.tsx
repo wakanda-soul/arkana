@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { ALL_CARDS, CardData } from "@/data/cardsData";
-import { CardImages } from "@/assets/cards";
+import { CardImages, CARD_BACK } from "@/assets/cards";
 import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from "@/services/codexService";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
@@ -154,11 +154,18 @@ export default function CodexScreen() {
                     transition={200}
                   />
                 ) : (
-                  <View style={styles.lockedCardPlaceholder}>
-                    <View style={styles.lockedDiamond}>
-                      <Text style={styles.lockGlyph}>✦</Text>
+                  <View style={styles.lockedCardWrap}>
+                    <Image
+                      source={CARD_BACK}
+                      style={styles.cardImage}
+                      contentFit="cover"
+                    />
+                    <View style={styles.lockedCardOverlay}>
+                      <View style={styles.lockedDiamond}>
+                        <Text style={styles.lockGlyph}>✦</Text>
+                      </View>
+                      <Text style={styles.lockedCardNo}>{item.card_no}</Text>
                     </View>
-                    <Text style={styles.lockedCardNo}>{item.card_no}</Text>
                   </View>
                 )}
               </View>
@@ -441,6 +448,23 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: "100%",
+  },
+  lockedCardWrap: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  lockedCardOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(6, 7, 10, 0.72)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   lockedCardPlaceholder: {
     flex: 1,

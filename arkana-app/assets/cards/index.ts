@@ -79,4 +79,5 @@ export const CardImages: Record<string, any> = {
   "76": require("./76.webp"),
   "77": require("./77.webp"),
 };
-export const CARD_BACK = require("../images/icon.png");
+export const CARD_BACK = require("./card_back.webp");
+export const CardBackImage = CARD_BACK;
