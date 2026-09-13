@@ -66,10 +66,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-beta
-          name: "Arkana v1.0.3 - Solana Mobile Build"
+          name: "Arkana v1.0.4 - Solana Mobile Build"
           body: |
-            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.3)
-            - Built for **Solana Mobile & Seeker** (versionCode 4, versionName 1.0.3)
+            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.4)
+            - Built for **Solana Mobile & Seeker** (versionCode 5, versionName 1.0.4)
+            - Share on X: dynamic anti-bot tweet templates with card preview media URL.
+            - Codex Archetype Collection: 78-card progress bar, full card zoom/inspection, locked teaser cards.
+            - Streak Repair: on-chain SKR streak recovery mechanism with dynamic admin pricing.
             - Direct interface access: app opens straight to the altar without a sign-in block screen.
             - Integrated wallet connection in Altar header and Seeker tab with MWA support.
             - Includes **Mobile Wallet Adapter (MWA)**, **Seed Vault** security, 78-card deck, and **Daily Clock-In** streak retention.

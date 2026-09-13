@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,10 +10,13 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { ALL_CARDS, CardData } from '@/data/cardsData';
 import { CardImages } from '@/assets/cards';
+import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from '@/services/codexService';
+import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
 
 const FILTER_TABS = [
   { id: 'all', label: 'ALL (78)' },
@@ -24,12 +27,20 @@ const FILTER_TABS = [
   { id: 'Assets', label: 'ASSETS (14)' },
 ];
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-
 export default function CodexScreen() {
+  const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+  const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
+  const [lockedPreviewCard, setLockedPreviewCard] = useState<CardData | null>(null);
+  const [unlockedCardNos, setUnlockedCardNos] = useState<string[]>(STARTER_UNLOCKED_CARDS);
+
+  useEffect(() => {
+    getUnlockedCards().then(setUnlockedCardNos);
+  }, []);
+
+  const unlockedCount = unlockedCardNos.length;
+  const progressPercent = Math.min(100, Math.round((unlockedCount / 78) * 100));
 
   const filteredCards = ALL_CARDS.filter(card => {
     if (selectedFilter === 'all') return true;
@@ -37,11 +48,17 @@ export default function CodexScreen() {
     return card.suit === selectedFilter;
   });
 
-  const openCardDetail = (card: CardData) => {
+  const handleCardPress = (card: CardData) => {
+    const isUnlocked = unlockedCardNos.includes(card.card_no);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    setSelectedCard(card);
+
+    if (isUnlocked) {
+      setSelectedCard(card);
+    } else {
+      setLockedPreviewCard(card);
+    }
   };
 
   return (
@@ -50,6 +67,24 @@ export default function CodexScreen() {
       <View style={styles.header}>
         <Text style={styles.headerKicker}>78 IMMUTABLE ARCHETYPES</Text>
         <Text style={styles.headerTitle}>Card Codex</Text>
+      </View>
+
+      {/* Collection Progress Card */}
+      <View style={styles.progressCard}>
+        <View style={styles.progressTopRow}>
+          <Text style={styles.progressLabel}>COLLECTION PROGRESS</Text>
+          <Text style={styles.progressFraction}>
+            {unlockedCount} / 78 ({progressPercent}%)
+          </Text>
+        </View>
+        <View style={styles.progressBarTrack}>
+          <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+        </View>
+        <Text style={styles.progressSub}>
+          {unlockedCount >= 78
+            ? 'Full Arcana Mastered: All 78 archetypes in consensus!'
+            : `Clock in daily and cast spreads to reveal the remaining ${78 - unlockedCount} archetypes.`}
+        </Text>
       </View>
 
       {/* Filter Tabs */}
@@ -90,16 +125,37 @@ export default function CodexScreen() {
         contentContainerStyle={styles.gridContent}
         columnWrapperStyle={styles.gridRow}
         renderItem={({ item }) => {
+          const isUnlocked = unlockedCardNos.includes(item.card_no);
           const img = CardImages[item.card_no] || CardImages['00'];
           return (
             <Pressable
-              style={({ pressed }) => [styles.gridCard, pressed && styles.cardPressed]}
-              onPress={() => openCardDetail(item)}
+              style={({ pressed }) => [
+                styles.gridCard,
+                pressed && styles.cardPressed,
+                !isUnlocked && styles.gridCardLocked,
+              ]}
+              onPress={() => handleCardPress(item)}
             >
-              <Image source={img} style={styles.cardCover} contentFit="cover" transition={200} />
+              <View style={styles.imageContainer}>
+                <Image
+                  source={img}
+                  style={[styles.cardCover, !isUnlocked && styles.cardCoverLocked]}
+                  contentFit="cover"
+                  transition={200}
+                />
+                {!isUnlocked && (
+                  <View style={styles.lockedOverlay}>
+                    <View style={styles.lockPill}>
+                      <Text style={styles.lockPillIcon}>🔒</Text>
+                      <Text style={styles.lockPillText}>LOCKED</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
               <View style={styles.cardDetails}>
-                <Text style={styles.cardName} numberOfLines={1}>
-                  {item.crypto_name}
+                <Text style={[styles.cardName, !isUnlocked && styles.cardNameLocked]} numberOfLines={1}>
+                  {isUnlocked ? item.crypto_name : `Archetype #${item.card_no}`}
                 </Text>
                 <Text style={styles.cardClassic} numberOfLines={1}>
                   {item.classic}
@@ -110,7 +166,7 @@ export default function CodexScreen() {
         }}
       />
 
-      {/* Card Details Modal */}
+      {/* Unlocked Card Details Modal */}
       <Modal visible={!!selectedCard} animationType="slide" transparent={false}>
         <SafeAreaView style={styles.modalContainer}>
           {selectedCard && (
@@ -121,13 +177,35 @@ export default function CodexScreen() {
                 <Text style={styles.modalClassic}>Classic Counterpart: {selectedCard.classic}</Text>
               </View>
 
-              <View style={styles.modalImageWrap}>
+              <Pressable
+                style={({ pressed }) => [styles.modalImageWrap, pressed && styles.buttonPressed]}
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {}
+                  setZoomedCard({
+                    card_no: selectedCard.card_no,
+                    crypto_name: selectedCard.crypto_name,
+                    classic: selectedCard.classic,
+                    suit: selectedCard.suit,
+                    arcana: selectedCard.arcana,
+                    keywords: selectedCard.keywords,
+                    oriented_meaning: selectedCard.upright_full,
+                    symbolism: selectedCard.symbolism,
+                    advice: selectedCard.advice,
+                    shadow: selectedCard.shadow,
+                  });
+                }}
+              >
                 <Image
                   source={CardImages[selectedCard.card_no] || CardImages['00']}
                   style={styles.modalImage}
                   contentFit="cover"
                 />
-              </View>
+                <View style={styles.zoomTapBadge}>
+                  <Text style={styles.zoomTapText}>🔍 TAP TO ZOOM FULLSCREEN</Text>
+                </View>
+              </Pressable>
 
               {/* Keywords */}
               {selectedCard.keywords && selectedCard.keywords.length > 0 && (
@@ -184,6 +262,61 @@ export default function CodexScreen() {
           )}
         </SafeAreaView>
       </Modal>
+
+      {/* Locked Archetype Mini Preview Modal */}
+      <Modal visible={!!lockedPreviewCard} animationType="fade" transparent={true}>
+        <View style={styles.lockedModalOverlay}>
+          <View style={styles.lockedModalCard}>
+            <View style={styles.lockedIconBadge}>
+              <Text style={styles.lockedIconText}>🔒</Text>
+            </View>
+
+            <Text style={styles.lockedModalKicker}>MEMPOOL ENCRYPTED</Text>
+            <Text style={styles.lockedModalTitle}>Archetype #{lockedPreviewCard?.card_no}</Text>
+            <Text style={styles.lockedModalClassic}>Tarot Key: {lockedPreviewCard?.classic}</Text>
+
+            <View style={styles.lockedSilhouetteBox}>
+              {lockedPreviewCard && (
+                <Image
+                  source={CardImages[lockedPreviewCard.card_no] || CardImages['00']}
+                  style={styles.lockedSilhouetteImage}
+                  contentFit="cover"
+                />
+              )}
+              <View style={styles.lockedSilhouetteShade}>
+                <Text style={styles.lockedSilhouetteNotice}>AWAITING CONSENSUS</Text>
+              </View>
+            </View>
+
+            <Text style={styles.lockedModalDesc}>
+              This sacred archetype has not yet entered your consensus history. Clock in daily on the Altar or draw spreads to reveal its sacred artwork and prophecy.
+            </Text>
+
+            <Pressable
+              style={({ pressed }) => [styles.lockedGoAltarBtn, pressed && styles.buttonPressed]}
+              onPress={() => {
+                setLockedPreviewCard(null);
+                router.push('/');
+              }}
+            >
+              <Text style={styles.lockedGoAltarText}>⚡ GO TO ALTAR TO DRAW</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.lockedCloseBtn}
+              onPress={() => setLockedPreviewCard(null)}
+            >
+              <Text style={styles.lockedCloseText}>CLOSE</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Card Zoom Fullscreen Modal */}
+      <CardZoomModal
+        card={zoomedCard}
+        onClose={() => setZoomedCard(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -195,7 +328,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   headerKicker: {
     color: '#9945FF',
@@ -209,78 +343,165 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1,
   },
+  progressCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#131526',
+    borderColor: '#242A45',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+  },
+  progressTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    color: '#9945FF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  progressFraction: {
+    color: '#14F195',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: '#1D2136',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#14F195',
+    borderRadius: 3,
+  },
+  progressSub: {
+    color: '#8B949E',
+    fontSize: 10,
+    lineHeight: 14,
+  },
   filtersWrapper: {
-    marginVertical: 8,
+    marginBottom: 8,
   },
   filtersScroll: {
     paddingHorizontal: 16,
     gap: 8,
   },
   filterPill: {
-    backgroundColor: '#121422',
-    borderColor: '#20263D',
+    backgroundColor: '#141724',
+    borderColor: '#22283D',
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 16,
   },
   filterPillActive: {
-    backgroundColor: '#281747',
+    backgroundColor: '#26193E',
     borderColor: '#9945FF',
   },
   filterText: {
     color: '#8B949E',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   filterTextActive: {
     color: '#14F195',
+    fontWeight: '800',
   },
   gridContent: {
-    padding: 16,
-    paddingBottom: 110,
+    padding: 12,
+    paddingBottom: 100,
   },
   gridRow: {
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   gridCard: {
-    width: CARD_WIDTH,
-    backgroundColor: '#131525',
-    borderColor: '#222842',
+    width: '48%',
+    backgroundColor: '#121422',
+    borderColor: '#20243B',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
+  gridCardLocked: {
+    borderColor: '#191C2A',
+    backgroundColor: '#0F101A',
+  },
   cardPressed: {
-    borderColor: '#9945FF',
+    opacity: 0.85,
     transform: [{ scale: 0.98 }],
+  },
+  imageContainer: {
+    width: '100%',
+    height: 190,
+    position: 'relative',
+    backgroundColor: '#080910',
   },
   cardCover: {
     width: '100%',
-    height: CARD_WIDTH * 1.5,
+    height: '100%',
+  },
+  cardCoverLocked: {
+    opacity: 0.25,
+  },
+  lockedOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0E101AEE',
+    borderColor: '#9945FF77',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 6,
+  },
+  lockPillIcon: {
+    fontSize: 11,
+  },
+  lockPillText: {
+    color: '#9945FF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   cardDetails: {
-    padding: 8,
+    padding: 10,
+    backgroundColor: '#121422',
   },
   cardName: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  cardNameLocked: {
+    color: '#6E7681',
   },
   cardClassic: {
     color: '#8B949E',
     fontSize: 10,
-    marginTop: 2,
   },
   modalContainer: {
     flex: 1,
     backgroundColor: '#0B0C12',
   },
   modalScroll: {
-    padding: 16,
-    paddingBottom: 40,
-    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 60,
   },
   modalHeader: {
     alignItems: 'center',
@@ -288,7 +509,7 @@ const styles = StyleSheet.create({
   },
   modalSuit: {
     color: '#9945FF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 2,
   },
@@ -296,7 +517,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '900',
-    marginTop: 2,
+    letterSpacing: 1,
+    marginTop: 4,
     textAlign: 'center',
   },
   modalClassic: {
@@ -305,17 +527,31 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalImageWrap: {
-    width: 200,
-    height: 320,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderColor: '#9945FF',
-    borderWidth: 2,
+    alignItems: 'center',
     marginBottom: 16,
+    position: 'relative',
   },
   modalImage: {
-    width: '100%',
-    height: '100%',
+    width: 220,
+    height: 330,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#9945FF',
+  },
+  zoomTapBadge: {
+    marginTop: 8,
+    backgroundColor: '#1D1735',
+    borderColor: '#9945FF',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  zoomTapText: {
+    color: '#14F195',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   keywordsWrap: {
     flexDirection: 'row',
@@ -325,12 +561,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   keywordTag: {
-    backgroundColor: '#1E1638',
-    borderColor: '#382866',
+    backgroundColor: '#1E1B2E',
+    borderColor: '#9945FF',
     borderWidth: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
   },
   keywordText: {
     color: '#14F195',
@@ -338,9 +574,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionBox: {
-    width: '100%',
-    backgroundColor: '#131525',
-    borderColor: '#242A45',
+    backgroundColor: '#121422',
+    borderColor: '#20243B',
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
@@ -355,20 +590,19 @@ const styles = StyleSheet.create({
   sectionText: {
     color: '#D1D5DB',
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 19,
+  },
+  sectionTextSmall: {
+    color: '#D1D5DB',
+    fontSize: 11,
+    lineHeight: 16,
   },
   row: {
     flexDirection: 'row',
     gap: 10,
-    width: '100%',
   },
   halfBox: {
     flex: 1,
-  },
-  sectionTextSmall: {
-    color: '#D1D5DB',
-    fontSize: 12,
-    lineHeight: 18,
   },
   closeButton: {
     marginTop: 16,
@@ -376,15 +610,125 @@ const styles = StyleSheet.create({
     borderColor: '#9945FF',
     borderWidth: 1.5,
     paddingVertical: 14,
-    paddingHorizontal: 32,
     borderRadius: 12,
-    width: '100%',
     alignItems: 'center',
   },
   closeButtonText: {
     color: '#F5D061',
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 12,
     letterSpacing: 1.5,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  lockedModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 6, 12, 0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  lockedModalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#121422',
+    borderColor: '#9945FF',
+    borderWidth: 1.5,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+  },
+  lockedIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#20163A',
+    borderColor: '#9945FF',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  lockedIconText: {
+    fontSize: 18,
+  },
+  lockedModalKicker: {
+    color: '#9945FF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  lockedModalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  lockedModalClassic: {
+    color: '#8B949E',
+    fontSize: 11,
+    marginTop: 2,
+    marginBottom: 16,
+  },
+  lockedSilhouetteBox: {
+    width: 140,
+    height: 210,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#0A0C14',
+    borderColor: '#242944',
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  lockedSilhouetteImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.15,
+  },
+  lockedSilhouetteShade: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(10, 12, 20, 0.75)',
+  },
+  lockedSilhouetteNotice: {
+    color: '#6E7681',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  lockedModalDesc: {
+    color: '#8B949E',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  lockedGoAltarBtn: {
+    width: '100%',
+    backgroundColor: '#14F195',
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  lockedGoAltarText: {
+    color: '#0B0C12',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  lockedCloseBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  lockedCloseText: {
+    color: '#6E7681',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

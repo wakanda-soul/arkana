@@ -11,9 +11,38 @@ const path = require("path");
 
 const DB_PATH = path.join(__dirname, "..", "..", "data");
 const USERS_FILE = path.join(DB_PATH, "users.json");
+const CONFIG_FILE = path.join(DB_PATH, "economy_config.json");
 
 if (!fs.existsSync(DB_PATH)) {
   fs.mkdirSync(DB_PATH, { recursive: true });
+}
+
+function loadEconomyConfig() {
+  const defaults = {
+    streakRepairCostSkr: 1,
+    extraSpreadCostSkr: 5,
+    freeDailyAllowanceBase: 3,
+    streakTier2Threshold: 3,
+    streakTier3Threshold: 7
+  };
+  if (!fs.existsSync(CONFIG_FILE)) {
+    try {
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaults, null, 2), "utf-8");
+    } catch {}
+    return defaults;
+  }
+  try {
+    return { ...defaults, ...JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8")) };
+  } catch {
+    return defaults;
+  }
+}
+
+function updateEconomyConfig(newSettings) {
+  const current = loadEconomyConfig();
+  const updated = { ...current, ...newSettings };
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(updated, null, 2), "utf-8");
+  return updated;
 }
 
 function loadUsers() {
@@ -36,17 +65,24 @@ function getDailyFreeAllowance(streak = 0) {
 }
 
 /**
- * Check wallet Clock-In and spread quota status
+ * Check wallet Clock-In, spread quota, and streak repair status
  */
 function getClockInStatus(walletAddress) {
+  const config = loadEconomyConfig();
+  const repairCost = config.streakRepairCostSkr || 1;
+
   if (!walletAddress) {
     return {
       canClockIn: true,
       streak: 0,
+      brokenStreak: null,
+      canRepairStreak: false,
+      repairStreakTarget: 1,
+      streakRepairCostSkr: repairCost,
       lastClockIn: null,
       freeSpreadsRemaining: 3,
       freeSpreadsMax: 3,
-      extraSpreadCostSkr: 5,
+      extraSpreadCostSkr: config.extraSpreadCostSkr || 5,
       skrBalance: 25,
       isSeekerHolder: true
     };
@@ -59,15 +95,26 @@ function getClockInStatus(walletAddress) {
 
   const lastDate = user.lastClockIn ? new Date(user.lastClockIn) : null;
   let canClockIn = true;
+  let canRepairStreak = false;
   let currentStreak = user.streak || 0;
 
   if (lastDate) {
     const diffHours = (now - lastDate) / (1000 * 60 * 60);
     canClockIn = diffHours >= 20;
     if (diffHours >= 48) {
+      if (user.streak > 0) {
+        user.brokenStreak = user.streak;
+        user.previousStreak = user.streak;
+        user.streak = 0;
+        users[walletAddress] = user;
+        saveUsers(users);
+      }
+      canRepairStreak = true;
       currentStreak = 0;
     }
   }
+
+  const repairStreakTarget = user.brokenStreak || user.previousStreak || (currentStreak > 0 ? currentStreak : 1);
 
   // Daily free quota calculation
   const lastSpreadDate = user.lastSpreadDate || "";
@@ -78,12 +125,16 @@ function getClockInStatus(walletAddress) {
   return {
     canClockIn,
     streak: currentStreak,
+    brokenStreak: user.brokenStreak || null,
+    canRepairStreak: canRepairStreak || (user.brokenStreak > 0),
+    repairStreakTarget,
+    streakRepairCostSkr: repairCost,
     lastClockIn: user.lastClockIn,
     totalReadings: user.totalReadings || 0,
     skrBalance: user.skrBalance !== undefined ? user.skrBalance : 25,
     freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
-    extraSpreadCostSkr: 5,
+    extraSpreadCostSkr: config.extraSpreadCostSkr || 5,
     isSeekerHolder: true
   };
 }
@@ -210,8 +261,54 @@ function consumeSpread(walletAddress) {
   };
 }
 
+/**
+ * Repair or preserve user streak using SKR
+ * Default cost is 1 SKR (configurable dynamically via loadEconomyConfig)
+ */
+function repairStreak(walletAddress) {
+  if (!walletAddress) {
+    return { success: false, error: "Wallet address is required." };
+  }
+
+  const config = loadEconomyConfig();
+  const cost = config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1;
+  const users = loadUsers();
+  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+
+  if ((user.skrBalance || 0) < cost) {
+    return {
+      success: false,
+      error: `Insufficient SKR balance. ${cost} SKR required to repair streak.`,
+      balance: user.skrBalance || 0
+    };
+  }
+
+  // Deduct repair fee
+  user.skrBalance = Number(((user.skrBalance || 0) - cost).toFixed(2));
+
+  // Restore streak to broken streak or increment current streak
+  const restoredStreak = user.brokenStreak || user.previousStreak || Math.max(1, (user.streak || 0) + 1);
+  user.streak = restoredStreak;
+  user.brokenStreak = null;
+  user.lastClockIn = new Date().toISOString();
+
+  users[walletAddress] = user;
+  saveUsers(users);
+
+  return {
+    success: true,
+    streak: user.streak,
+    skrBalance: user.skrBalance,
+    cost
+  };
+}
+
 module.exports = {
   getClockInStatus,
   recordClockIn,
-  consumeSpread
+  consumeSpread,
+  repairStreak,
+  loadEconomyConfig,
+  updateEconomyConfig
 };
+
