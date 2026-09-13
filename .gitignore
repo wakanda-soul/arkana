@@ -57,4 +57,15 @@ temp/
 *.env.local
 *wallet*.json
 *keypair*.json
+
+# Design development files & prototypes
+*.dc.html
+*.dc.js
+*.thumbnail
+design/
+design_extracted/
+design_archive.zip
+downloaded_logo
+arkana-server/public/design/
+public/design/
 temp/

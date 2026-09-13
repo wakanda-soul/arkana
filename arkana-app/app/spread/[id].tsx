@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,28 +7,31 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { useAuth } from '@/components/auth/auth-provider';
-import { fetchReading, fetchClockInStatus, ClockInResult, ReadingResponse } from '@/services/oracleApi';
-import { TarotCard } from '@/components/tarot/TarotCard';
-import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
-import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
-import { SpreadTableView } from '@/components/tarot/SpreadTableView';
-import { shareToTwitter, shareGeneral } from '@/utils/shareOmen';
-import { unlockCards } from '@/services/codexService';
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { useAuth } from "@/components/auth/auth-provider";
+import { fetchReading, fetchClockInStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { TarotCard } from "@/components/tarot/TarotCard";
+import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
+import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
+import { SpreadTableView } from "@/components/tarot/SpreadTableView";
+import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
+import { ObsidianTokens } from "@/constants/theme";
+import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
+import { unlockCards } from "@/services/codexService";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const spreadKey = id || 'network-scan';
+  const spreadKey = id || "network-scan";
 
   const { account } = useAuth();
-  const walletAddress = account?.publicKey?.toString() || 'SeekerDemoWallet1111111111111111111';
+  const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [reading, setReading] = useState<ReadingResponse | null>(null);
@@ -36,6 +39,7 @@ export default function SpreadScreen() {
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [systemState, setSystemState] = useState<SystemStateType>(null);
 
   useEffect(() => {
     fetchClockInStatus(walletAddress).then(setQuotaInfo);
@@ -64,8 +68,12 @@ export default function SpreadScreen() {
         } : null);
       }
     } catch (e: any) {
-      console.warn('Draw error:', e);
-      setQuotaError(e.message || 'Failed to cast spread');
+      console.warn("Draw error:", e);
+      if (e.message && e.message.includes("5 SKR")) {
+        setSystemState("limit_reached");
+      } else {
+        setQuotaError(e.message || "Failed to cast spread");
+      }
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch {}
@@ -79,14 +87,15 @@ export default function SpreadScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    const lead = reading.cards[0];
+
+    const firstCard = reading.cards[0];
     await shareToTwitter({
-      cardName: lead.crypto_name,
-      cardNo: lead.card_no,
-      orientation: lead.orientation,
+      cardName: firstCard.crypto_name,
+      cardNo: firstCard.card_no,
+      orientation: firstCard.orientation,
       streak: quotaInfo?.streak || 1,
-      proseOmen: reading.prose?.finalOmen || reading.prose?.oracleAdvice || lead.advice,
-      spreadName: reading.spread_name
+      proseOmen: reading.prose?.finalOmen || firstCard.advice,
+      spreadName: reading.spread_name || "Sacred Spread",
     });
   };
 
@@ -95,172 +104,167 @@ export default function SpreadScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    const lead = reading.cards[0];
+
+    const firstCard = reading.cards[0];
     await shareGeneral({
-      cardName: lead.crypto_name,
-      cardNo: lead.card_no,
-      orientation: lead.orientation,
+      cardName: firstCard.crypto_name,
+      cardNo: firstCard.card_no,
+      orientation: firstCard.orientation,
       streak: quotaInfo?.streak || 1,
-      proseOmen: reading.prose?.finalOmen || reading.prose?.oracleAdvice || lead.advice,
-      spreadName: reading.spread_name
+      proseOmen: reading.prose?.finalOmen || firstCard.advice,
+      spreadName: reading.spread_name || "Sacred Spread",
     });
   };
 
-  const flipCard = (index: number) => {
-    setRevealedMap(prev => ({ ...prev, [index]: true }));
-  };
-
-  const handleCardPress = (index: number) => {
-    if (!reading) return;
-    if (!revealedMap[index]) {
-      flipCard(index);
-    } else {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {}
-      setZoomedCard(reading.cards[index]);
-    }
-  };
+  const totalCards = reading?.cards?.length || 3;
+  const revealedCount = Object.values(revealedMap).filter(Boolean).length;
+  const isAllRevealed = hasDrawn && revealedCount >= totalCards;
 
   const revealAll = () => {
-    if (!reading) return;
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
-    const all: Record<number, boolean> = {};
-    reading.cards.forEach((_, idx) => {
-      all[idx] = true;
-    });
-    setRevealedMap(all);
+    const fullMap: Record<number, boolean> = {};
+    for (let i = 0; i < totalCards; i++) {
+      fullMap[i] = true;
+    }
+    setRevealedMap(fullMap);
   };
 
-  const isAllRevealed = reading && reading.cards.every((_, idx) => revealedMap[idx]);
+  const getSpreadTitle = () => {
+    switch (spreadKey) {
+      case "network-scan":
+        return "The Network Scan";
+      case "validator-cross":
+        return "The Validator Cross";
+      case "crypto-compass":
+        return "The Crypto Compass";
+      default:
+        return "Oracle Spread";
+    }
+  };
+
+  const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
+  const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
+  const balance = quotaInfo?.skrBalance ?? 0;
+  const canAfford = hasFreeRemaining || balance >= extraCost;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Navbar */}
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {/* Obsidian Nav Bar */}
       <View style={styles.navBar}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>‹ BACK</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backText}>← ALTAR</Text>
         </Pressable>
-        <Text style={styles.navTitle}>{reading?.spread_name || 'Cast Spread'}</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.navTitle}>{getSpreadTitle()}</Text>
+        <View style={{ width: 60 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Step 1: Input Question */}
-        {!hasDrawn && (
+        {!hasDrawn ? (
           <View style={styles.inputCard}>
-            <Text style={styles.inputKicker}>INSCRIBE INTENT IN THE MEMPOOL</Text>
-            <Text style={styles.inputTitle}>What is your question?</Text>
+            <Text style={styles.inputKicker}>FORMULATE YOUR INTENT</Text>
+            <Text style={styles.inputTitle}>What question do you present to the ledger?</Text>
+
             <TextInput
               style={styles.textInput}
-              placeholder="e.g. Should I enter this new project? How is my liquidity flowing?"
-              placeholderTextColor="#5E6573"
+              placeholder="Inscribe a question about capital allocation, execution, or conviction..."
+              placeholderTextColor={ObsidianTokens.colors.ink.text42}
               value={question}
               onChangeText={setQuestion}
               multiline
-              numberOfLines={3}
             />
 
-            {/* Daily Spread Quota & Fee Verification */}
-            {(() => {
-              const freeRemaining = quotaInfo?.freeSpreadsRemaining ?? 3;
-              const freeMax = quotaInfo?.freeSpreadsMax ?? 3;
-              const isFree = freeRemaining > 0;
-              const balance = quotaInfo?.skrBalance ?? 25;
-              const canAfford = isFree || balance >= 5;
-
-              return (
-                <View style={styles.quotaBox}>
-                  <View style={styles.quotaRow}>
-                    <View style={styles.quotaBadge}>
-                      <Text style={styles.quotaIcon}>{isFree ? '✨' : '⚡'}</Text>
-                      <Text style={styles.quotaTitle}>
-                        {isFree
-                          ? `${freeRemaining}/${freeMax} FREE SPREADS TODAY`
-                          : '5 SKR FEE PER SPREAD'}
-                      </Text>
-                    </View>
-                    <Text style={styles.balanceText}>{balance} SKR</Text>
-                  </View>
-
-                  {!canAfford && (
-                    <Text style={styles.warningText}>
-                      ⚠️ Daily free allowance exhausted (0/{freeMax}) and insufficient balance (&lt;5 SKR). Clock in daily to earn SKR or refill allowance.
-                    </Text>
-                  )}
-
-                  {quotaError && (
-                    <View style={styles.errorBox}>
-                      <Text style={styles.errorText}>⚠️ {quotaError}</Text>
-                    </View>
-                  )}
-
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.drawButton,
-                      !isFree && styles.paidDrawButton,
-                      (!canAfford || isLoading) && styles.drawButtonDisabled,
-                      pressed && canAfford && styles.buttonPressed,
-                    ]}
-                    onPress={handleDraw}
-                    disabled={isLoading || !canAfford}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="#0E101A" />
-                    ) : (
-                      <Text style={styles.drawButtonText}>
-                        {!canAfford
-                          ? 'INSUFFICIENT SKR (5 SKR REQUIRED)'
-                          : isFree
-                          ? '🔮 SHUFFLE & DRAW (FREE)'
-                          : '⚡ APPROVE 5 SKR & DRAW'}
-                      </Text>
-                    )}
-                  </Pressable>
+            {/* Quota & Allowance Status */}
+            <View style={styles.quotaBox}>
+              <View style={styles.quotaRow}>
+                <View style={styles.quotaBadge}>
+                  <Text style={styles.quotaIcon}>✦</Text>
+                  <Text style={styles.quotaTitle}>
+                    {hasFreeRemaining
+                      ? `${quotaInfo?.freeSpreadsRemaining ?? 3} Free Spreads Available`
+                      : `Free limit reached (${extraCost} SKR / spread)`}
+                  </Text>
                 </View>
-              );
-            })()}
-          </View>
-        )}
+                <Text style={styles.balanceText}>{balance} SKR</Text>
+              </View>
 
-        {/* Step 2: Drawn Cards Table */}
-        {hasDrawn && reading && (
-          <View style={styles.tableContainer}>
-            <View style={styles.instructionBanner}>
-              <Text style={styles.instructionText}>
-                {isAllRevealed
-                  ? '✓ ALL CARDS VERIFIED — TAP ANY CARD TO ZOOM & INSPECT'
-                  : 'TAP TO FLIP & VALIDATE · TAP REVEALED TO ZOOM'}
-              </Text>
-              {!isAllRevealed && (
-                <Pressable onPress={revealAll} style={styles.revealAllBtn}>
-                  <Text style={styles.revealAllText}>REVEAL ALL</Text>
-                </Pressable>
+              {!hasFreeRemaining && (
+                <Text style={styles.warningText}>
+                  Your daily free allowance is exhausted. This casting will deduct {extraCost} SKR from your balance.
+                </Text>
               )}
             </View>
 
-            {/* Interactive Spread Table in Authentic Tarot Geometry */}
-            <SpreadTableView
-              spreadKey={spreadKey}
-              cards={reading.cards}
-              revealedMap={revealedMap}
-              onCardPress={handleCardPress}
-            />
+            {quotaError && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{quotaError}</Text>
+              </View>
+            )}
 
-            {/* Step 3: Synthesis View when all revealed */}
-            {isAllRevealed && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.drawButton,
+                !canAfford && styles.drawButtonDisabled,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={handleDraw}
+              disabled={isLoading || !canAfford}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#100C06" />
+              ) : (
+                <Text style={styles.drawButtonText}>
+                  {hasFreeRemaining ? "CAST THE SPREAD" : `CAST FOR ${extraCost} SKR`}
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.tableContainer}>
+            {/* Instruction Banner */}
+            {!isAllRevealed && (
+              <View style={styles.instructionBanner}>
+                <Text style={styles.instructionText}>
+                  Tap each card to unveil the archetype ({revealedCount}/{totalCards})
+                </Text>
+                <Pressable style={styles.revealAllBtn} onPress={revealAll}>
+                  <Text style={styles.revealAllText}>REVEAL ALL</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Spread Table Component */}
+            {reading && reading.cards && (
+              <SpreadTableView
+                spreadKey={spreadKey}
+                cards={reading.cards}
+                revealedMap={revealedMap}
+                onCardPress={(index: number) => {
+                  if (!revealedMap[index]) {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    } catch {}
+                    setRevealedMap(prev => ({ ...prev, [index]: true }));
+                  } else {
+                    setZoomedCard(reading.cards[index]);
+                  }
+                }}
+              />
+            )}
+
+            {/* Synthesis View when all cards are revealed */}
+            {isAllRevealed && reading && (
               <View style={styles.readingWrap}>
                 <View style={styles.divider} />
                 <SevenBeatsView beats={reading.prose} metrics={reading.engine_metrics} />
 
                 {/* Transmit / Share Section */}
                 <View style={styles.shareSection}>
-                  <Text style={styles.shareSectionKicker}>TRANSMIT SPREAD OMEN</Text>
+                  <Text style={styles.shareSectionKicker}>TRANSMIT CONSENSUS</Text>
                   <View style={styles.shareButtonsRow}>
                     <Pressable
-                      style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.buttonPressed]}
+                      style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.cardPressed]}
                       onPress={handleShareX}
                     >
                       <Text style={styles.shareTwitterIcon}>𝕏</Text>
@@ -268,7 +272,7 @@ export default function SpreadScreen() {
                     </Pressable>
 
                     <Pressable
-                      style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.buttonPressed]}
+                      style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.cardPressed]}
                       onPress={handleShareMore}
                     >
                       <Text style={styles.shareGeneralIcon}>📤</Text>
@@ -279,7 +283,7 @@ export default function SpreadScreen() {
 
                 {/* Reset Button */}
                 <Pressable
-                  style={styles.resetButton}
+                  style={({ pressed }) => [styles.resetButton, pressed && styles.cardPressed]}
                   onPress={() => {
                     setHasDrawn(false);
                     setReading(null);
@@ -293,10 +297,17 @@ export default function SpreadScreen() {
         )}
       </ScrollView>
 
-      {/* Zoom Modal for inspecting card up close */}
+      {/* Zoom Modal */}
       <CardZoomModal
         card={zoomedCard}
         onClose={() => setZoomedCard(null)}
+      />
+
+      {/* System State Modal */}
+      <SystemStateModal
+        type={systemState}
+        visible={!!systemState}
+        onClose={() => setSystemState(null)}
       />
     </SafeAreaView>
   );
@@ -305,272 +316,272 @@ export default function SpreadScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0C12',
+    backgroundColor: ObsidianTokens.colors.ink.void,
   },
   navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomColor: '#1A1E2F',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 14,
+    borderBottomColor: ObsidianTokens.colors.gold.subtle,
     borderBottomWidth: 1,
   },
   backButton: {
-    padding: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   backText: {
-    color: '#14F195',
-    fontWeight: '800',
-    fontSize: 14,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontWeight: "600",
+    fontSize: 11,
+    letterSpacing: 1.2,
   },
   navTitle: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 16,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontWeight: "300",
+    fontSize: 20,
     letterSpacing: 0.5,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 60,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingVertical: 16,
+    paddingBottom: 70,
   },
   inputCard: {
-    backgroundColor: '#121422',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    borderRadius: 18,
-    padding: 18,
-    marginVertical: 20,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 20,
+    marginVertical: 10,
   },
   inputKicker: {
-    color: '#9945FF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 2,
     marginBottom: 6,
   },
   inputTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 12,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 22,
+    fontWeight: "300",
+    lineHeight: 28,
+    marginBottom: 14,
   },
   textInput: {
-    backgroundColor: '#0B0C12',
-    borderColor: '#2D325A',
+    backgroundColor: ObsidianTokens.colors.ink.void,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    color: '#FFFFFF',
+    color: ObsidianTokens.colors.ink.text,
     fontSize: 14,
     minHeight: 90,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginBottom: 16,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
   },
   quotaBox: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   quotaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0B0C12',
-    borderColor: '#261F42',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   quotaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   quotaIcon: {
     fontSize: 12,
+    color: ObsidianTokens.colors.gold.primary,
   },
   quotaTitle: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 10,
     letterSpacing: 0.5,
   },
   balanceText: {
-    color: '#F5D061',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    fontWeight: "600",
   },
   warningText: {
-    color: '#FF7B72',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.state.loss,
     fontSize: 12,
     lineHeight: 16,
-    marginBottom: 14,
-    backgroundColor: 'rgba(255, 123, 114, 0.12)',
-    borderColor: 'rgba(255, 123, 114, 0.3)',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
+    marginBottom: 10,
   },
   errorBox: {
-    backgroundColor: 'rgba(255, 123, 114, 0.15)',
-    borderColor: '#FF7B72',
+    backgroundColor: "rgba(201, 115, 106, 0.12)",
+    borderColor: ObsidianTokens.colors.state.loss,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 14,
   },
   errorText: {
-    color: '#FF7B72',
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.state.loss,
+    fontSize: 11,
   },
   drawButton: {
-    backgroundColor: '#14F195',
+    backgroundColor: ObsidianTokens.colors.gold.primary,
     paddingVertical: 15,
     borderRadius: 12,
-    alignItems: 'center',
-  },
-  paidDrawButton: {
-    backgroundColor: '#9945FF',
+    alignItems: "center",
   },
   drawButtonDisabled: {
-    backgroundColor: '#232938',
-    opacity: 0.6,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.4,
   },
   drawButtonText: {
-    color: '#0B0C12',
-    fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#100C06",
+    fontSize: 12,
+    letterSpacing: 1.5,
+    fontWeight: "600",
   },
   tableContainer: {
     marginTop: 8,
   },
   instructionBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#17142A',
-    borderColor: '#2F2654',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     marginBottom: 16,
   },
   instructionText: {
-    color: '#14F195',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 13,
     flex: 1,
   },
   revealAllBtn: {
-    backgroundColor: '#281747',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.muted,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
     marginLeft: 8,
   },
   revealAllText: {
-    color: '#F5D061',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
     fontSize: 9,
-    fontWeight: '800',
-  },
-  cardsScroll: {
-    paddingVertical: 8,
-    gap: 4,
+    letterSpacing: 1,
+    fontWeight: "600",
   },
   readingWrap: {
     marginTop: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: '#1E2338',
-    marginVertical: 16,
+    backgroundColor: ObsidianTokens.colors.ink.hairline,
+    marginVertical: 18,
   },
   resetButton: {
     marginTop: 16,
-    backgroundColor: '#191530',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    paddingVertical: 14,
+    backgroundColor: ObsidianTokens.colors.gold.primary,
     borderRadius: 12,
-    alignItems: 'center',
+    paddingVertical: 14,
+    alignItems: "center",
   },
   resetButtonText: {
-    color: '#F5D061',
-    fontWeight: '800',
-    fontSize: 12,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#100C06",
+    fontWeight: "600",
+    fontSize: 11,
     letterSpacing: 1.5,
   },
   shareSection: {
     marginTop: 20,
-    backgroundColor: '#131526',
-    borderColor: '#262D4A',
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
   },
   shareSectionKicker: {
-    color: '#9945FF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 10,
-    textAlign: 'center',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 2,
+    marginBottom: 12,
+    textAlign: "center",
   },
   shareButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   shareTwitterBtn: {
     flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-    borderColor: '#38444D',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
   },
   shareTwitterIcon: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   shareTwitterText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#FFFFFF",
+    fontSize: 10,
+    letterSpacing: 1.2,
   },
   shareGeneralBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1A1E33',
-    borderColor: '#2D3558',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     gap: 6,
   },
   shareGeneralIcon: {
-    fontSize: 13,
+    fontSize: 12,
   },
   shareGeneralText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 10,
+    letterSpacing: 1.2,
+  },
+  cardPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
 });
