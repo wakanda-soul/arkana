@@ -21,6 +21,8 @@ function loadEconomyConfig() {
   const defaults = {
     streakRepairCostSkr: 1,
     extraSpreadCostSkr: 5,
+    askCostSkr: 1,
+    skrToSolRate: 0.0002,
     freeDailyAllowanceBase: 3,
     streakTier2Threshold: 3,
     streakTier3Threshold: 7
@@ -70,6 +72,9 @@ function getDailyFreeAllowance(streak = 0) {
 function getClockInStatus(walletAddress) {
   const config = loadEconomyConfig();
   const repairCost = config.streakRepairCostSkr || 1;
+  const askCost = config.askCostSkr || 1;
+  const extraSpreadCost = config.extraSpreadCostSkr || 5;
+  const skrToSolRate = config.skrToSolRate || 0.0002;
 
   if (!walletAddress) {
     return {
@@ -82,7 +87,11 @@ function getClockInStatus(walletAddress) {
       lastClockIn: null,
       freeSpreadsRemaining: 3,
       freeSpreadsMax: 3,
-      extraSpreadCostSkr: config.extraSpreadCostSkr || 5,
+      extraSpreadCostSkr: extraSpreadCost,
+      askCostSkr: askCost,
+      skrToSolRate,
+      askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
+      extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
       skrBalance: 25,
       isSeekerHolder: true
     };
@@ -136,7 +145,11 @@ function getClockInStatus(walletAddress) {
     skrBalance: user.skrBalance !== undefined ? user.skrBalance : 25,
     freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
-    extraSpreadCostSkr: config.extraSpreadCostSkr || 5,
+    extraSpreadCostSkr: extraSpreadCost,
+    askCostSkr: askCost,
+    skrToSolRate,
+    askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
+    extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
     isSeekerHolder: true
   };
 }
@@ -197,13 +210,31 @@ function recordClockIn(walletAddress, drawnCard) {
 }
 
 /**
- * Consume a spread cast:
- * - Free if within daily allowance (first 3-5 spreads)
- * - Costs 5 SKR once daily allowance is exhausted
+ * Consume a spread or ask quota:
+ * - Free if within daily allowance (first 3-5 inquiries shared between spreads & ask)
+ * - Costs 1 SKR for chat or 5 SKR for spreads once daily allowance is exhausted
+ * - Fallback to SOL payment if SKR balance is insufficient
  */
-function consumeSpread(walletAddress) {
+function consumeSpread(walletAddress, options = {}) {
+  const config = loadEconomyConfig();
+  const itemType = options.type || "spread";
+  const costSkr = options.cost !== undefined ? options.cost : (itemType === "chat" ? (config.askCostSkr || 1) : (config.extraSpreadCostSkr || 5));
+  const skrToSolRate = config.skrToSolRate || 0.0002;
+  const costSol = Number((costSkr * skrToSolRate).toFixed(5));
+  const payWithSol = Boolean(options.payWithSol);
+  const txSignature = options.txSignature || null;
+
   if (!walletAddress) {
-    return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
+    return {
+      allowed: true,
+      isFree: true,
+      cost: 0,
+      costSkr: 0,
+      costSol: 0,
+      paidWith: "free",
+      remainingFree: 3,
+      balance: 25
+    };
   }
 
   const users = loadUsers();
@@ -216,7 +247,7 @@ function consumeSpread(walletAddress) {
   const maxFree = getDailyFreeAllowance(user.streak || 0);
 
   if (dailySpreadsUsed < maxFree) {
-    // Within free daily allowance
+    // Within free daily allowance (shared between Spreads and ASK)
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
@@ -228,39 +259,79 @@ function consumeSpread(walletAddress) {
       allowed: true,
       isFree: true,
       cost: 0,
+      costSkr: 0,
+      costSol: 0,
+      paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
       balance: user.skrBalance
     };
   }
 
-  // Beyond free quota: require 5 SKR fee
-  const SPREAD_FEE = 5;
-  if ((user.skrBalance || 0) < SPREAD_FEE) {
+  // Beyond free quota: check SKR balance
+  const hasEnoughSkr = (user.skrBalance || 0) >= costSkr;
+
+  if (hasEnoughSkr && !payWithSol) {
+    // Deduct SKR
+    user.skrBalance = Number(((user.skrBalance || 0) - costSkr).toFixed(2));
+    dailySpreadsUsed += 1;
+    user.dailySpreadsUsed = dailySpreadsUsed;
+    user.lastSpreadDate = todayKey;
+    user.totalReadings = (user.totalReadings || 0) + 1;
+    users[walletAddress] = user;
+    saveUsers(users);
+
     return {
-      allowed: false,
+      allowed: true,
       isFree: false,
-      cost: SPREAD_FEE,
+      paidWith: "skr",
+      cost: costSkr,
+      costSkr,
+      costSol,
       remainingFree: 0,
-      balance: user.skrBalance || 0,
-      error: `Daily free allowance reached (${maxFree}/${maxFree}). 5 SKR required to cast an additional spread.`
+      balance: user.skrBalance
     };
   }
 
-  // Deduct 5 SKR
-  user.skrBalance = Number(((user.skrBalance || 0) - SPREAD_FEE).toFixed(2));
-  dailySpreadsUsed += 1;
-  user.dailySpreadsUsed = dailySpreadsUsed;
-  user.lastSpreadDate = todayKey;
-  user.totalReadings = (user.totalReadings || 0) + 1;
-  users[walletAddress] = user;
-  saveUsers(users);
+  // If paying with SOL or if SKR is insufficient but SOL payment is confirmed
+  if (payWithSol) {
+    dailySpreadsUsed += 1;
+    user.dailySpreadsUsed = dailySpreadsUsed;
+    user.lastSpreadDate = todayKey;
+    user.totalReadings = (user.totalReadings || 0) + 1;
+    user.solTxHistory = user.solTxHistory || [];
+    user.solTxHistory.push({
+      timestamp: now.toISOString(),
+      amountSol: costSol,
+      itemType,
+      txSignature: txSignature || "sol_pay_" + Math.random().toString(36).slice(2, 10)
+    });
+    users[walletAddress] = user;
+    saveUsers(users);
 
+    return {
+      allowed: true,
+      isFree: false,
+      paidWith: "sol",
+      cost: costSol,
+      costSkr,
+      costSol,
+      remainingFree: 0,
+      balance: user.skrBalance,
+      txSignature
+    };
+  }
+
+  // Insufficient SKR and no SOL payment provided
   return {
-    allowed: true,
+    allowed: false,
     isFree: false,
-    cost: SPREAD_FEE,
+    cost: costSkr,
+    costSkr,
+    costSol,
     remainingFree: 0,
-    balance: user.skrBalance
+    balance: user.skrBalance || 0,
+    canPayWithSol: true,
+    error: `Daily free allowance reached (${maxFree}/${maxFree}). ${costSkr} SKR or ${costSol} SOL required.`
   };
 }
 

@@ -18,6 +18,7 @@ import { TarotCard } from "@/components/tarot/TarotCard";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { SpreadTableView } from "@/components/tarot/SpreadTableView";
+import { ShuffleCeremony } from "@/components/tarot/ShuffleCeremony";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
 import { ObsidianTokens } from "@/constants/theme";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
@@ -33,6 +34,7 @@ export default function SpreadScreen() {
 
   const [question, setQuestion] = useState("");
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [reading, setReading] = useState<ReadingResponse | null>(null);
   const [revealedMap, setRevealedMap] = useState<Record<number, boolean>>({});
@@ -51,22 +53,39 @@ export default function SpreadScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
 
+    const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
+    const balance = quotaInfo?.skrBalance ?? 0;
+    const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
+    const payWithSol = !hasFree && balance < extraCost;
+
+    setIsShuffling(true);
     setIsLoading(true);
     try {
-      const res = await fetchReading(spreadKey, question, walletAddress);
+      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol);
+      const minShuffleWait = new Promise((resolve) => setTimeout(resolve, 1800));
+
+      const [res] = await Promise.all([readingPromise, minShuffleWait]);
+
       setReading(res);
       setHasDrawn(true);
       setRevealedMap({});
       if (res.cards && res.cards.length > 0) {
-        unlockCards(res.cards.map(c => c.card_no));
+        unlockCards(res.cards.map((c) => c.card_no));
       }
       if (res.quota) {
-        setQuotaInfo(prev => prev ? {
-          ...prev,
-          freeSpreadsRemaining: res.quota!.remainingFree,
-          skrBalance: res.quota!.balance,
-        } : null);
+        setQuotaInfo((prev) =>
+          prev
+            ? {
+                ...prev,
+                freeSpreadsRemaining: res.quota!.remainingFree,
+                skrBalance: res.quota!.balance,
+              }
+            : null
+        );
       }
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
     } catch (e: any) {
       console.warn("Draw error:", e);
       if (e.message && e.message.includes("5 SKR")) {
@@ -78,6 +97,7 @@ export default function SpreadScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch {}
     } finally {
+      setIsShuffling(false);
       setIsLoading(false);
     }
   };
@@ -146,8 +166,9 @@ export default function SpreadScreen() {
 
   const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
+  const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
   const balance = quotaInfo?.skrBalance ?? 0;
-  const canAfford = hasFreeRemaining || balance >= extraCost;
+  const canAfford = true;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -166,7 +187,15 @@ export default function SpreadScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        {!hasDrawn ? (
+        {isShuffling ? (
+          <View style={styles.shuffleWrapper}>
+            <ShuffleCeremony
+              title="The network is shuffling"
+              kicker="CONSENSUS RITUAL"
+              subtitle="SAMPLING VALIDATOR ENTROPY_"
+            />
+          </View>
+        ) : !hasDrawn ? (
           <View style={styles.inputCard}>
             <Text style={styles.inputKicker}>FORMULATE YOUR INTENT</Text>
             <Text style={styles.inputTitle}>What question do you present to the ledger?</Text>
@@ -188,7 +217,9 @@ export default function SpreadScreen() {
                   <Text style={styles.quotaTitle}>
                     {hasFreeRemaining
                       ? `${quotaInfo?.freeSpreadsRemaining ?? 3} Free Spreads Available`
-                      : `Free limit reached (${extraCost} SKR / spread)`}
+                      : balance >= extraCost
+                      ? `Daily free allowance reached (${extraCost} SKR / spread)`
+                      : `Daily free allowance reached (${extraCostSol} SOL / spread)`}
                   </Text>
                 </View>
                 <Text style={styles.balanceText}>{balance} SKR</Text>
@@ -196,7 +227,9 @@ export default function SpreadScreen() {
 
               {!hasFreeRemaining && (
                 <Text style={styles.warningText}>
-                  Your daily free allowance is exhausted. This casting will deduct {extraCost} SKR from your balance.
+                  {balance >= extraCost
+                    ? `Your daily free allowance is exhausted. This casting will deduct ${extraCost} SKR from your balance.`
+                    : `Your daily free allowance is exhausted and SKR balance is 0. Paying ${extraCostSol} SOL.`}
                 </Text>
               )}
             </View>
@@ -210,17 +243,20 @@ export default function SpreadScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.drawButton,
-                !canAfford && styles.drawButtonDisabled,
                 pressed && styles.cardPressed,
               ]}
               onPress={handleDraw}
-              disabled={isLoading || !canAfford}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#100C06" />
               ) : (
                 <Text style={styles.drawButtonText}>
-                  {hasFreeRemaining ? "CAST THE SPREAD" : `CAST FOR ${extraCost} SKR`}
+                  {hasFreeRemaining
+                    ? "CAST THE SPREAD"
+                    : balance >= extraCost
+                    ? `CAST FOR ${extraCost} SKR`
+                    : `CAST FOR ${extraCostSol} SOL`}
                 </Text>
               )}
             </Pressable>
@@ -291,6 +327,7 @@ export default function SpreadScreen() {
                   style={({ pressed }) => [styles.resetButton, pressed && styles.cardPressed]}
                   onPress={() => {
                     setHasDrawn(false);
+                    setIsShuffling(false);
                     setReading(null);
                   }}
                 >
@@ -354,6 +391,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: ObsidianTokens.spacing.screenGutter,
     paddingVertical: 16,
     paddingBottom: 70,
+  },
+  shuffleWrapper: {
+    minHeight: 400,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 20,
+    marginVertical: 10,
   },
   inputCard: {
     backgroundColor: ObsidianTokens.colors.ink.surface,
