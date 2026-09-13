@@ -14,49 +14,51 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0E101A',
-          borderTopColor: '#1F2338',
+          backgroundColor: '#08070B',
+          borderTopColor: 'rgba(200, 162, 74, 0.25)',
           borderTopWidth: 1,
-          height: 58 + bottomInset,
-          paddingBottom: bottomInset > 0 ? bottomInset + 4 : 8,
-          paddingTop: 8,
+          height: 56 + bottomInset,
+          paddingBottom: bottomInset > 0 ? bottomInset + 2 : 6,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: '#14F195',
-        tabBarInactiveTintColor: '#6E7681',
+        tabBarActiveTintColor: '#C8A24A',
+        tabBarInactiveTintColor: 'rgba(237, 231, 220, 0.42)',
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
+          fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+          fontSize: 10,
+          letterSpacing: 1.6,
+          fontWeight: '500',
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Altar',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="sparkles" color={color} />,
+          title: 'TODAY',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="sparkles" color={color} />,
         }}
       />
       <Tabs.Screen
         name="oracle"
         options={{
-          title: 'Oracle AI',
+          title: 'ASK',
           tabBarIcon: ({ color }) => (
-            <UiIconSymbol size={24} name="bubble.left.and.bubble.right.fill" color={color} />
+            <UiIconSymbol size={22} name="bubble.left.and.bubble.right.fill" color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="codex"
         options={{
-          title: 'Codex',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="book.closed.fill" color={color} />,
+          title: 'DECK',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="book.closed.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Seeker',
-          tabBarIcon: ({ color }) => <UiIconSymbol size={24} name="wallet.pass.fill" color={color} />,
+          title: 'ME',
+          tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="wallet.pass.fill" color={color} />,
         }}
       />
       <Tabs.Screen name="account" options={{ href: null }} />

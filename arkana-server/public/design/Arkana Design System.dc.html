@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#08070b}
+a{color:#C8A24A}a:hover{color:#e0bc63}
+@keyframes ark-glow{0%,100%{opacity:.35}50%{opacity:.85}}
+@keyframes ark-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style></helmet>
+
+<div style="max-width:1040px;margin:0 auto;padding:56px 32px 90px;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;color:#EDE7DC">
+
+<div style="font-size:10px;letter-spacing:.34em;color:rgba(200,162,74,.8)">ARKANA</div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:52px;font-weight:300;line-height:1.05;margin-top:14px">Obsidian Ritual<br><span style="font-style:italic;color:#C8A24A">design system &amp; handoff</span></div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;line-height:1.55;color:rgba(237,231,220,.6);max-width:620px;margin-top:18px">Everything an Android engineer needs to build the screens in “Arkana Redesign” without guessing: tokens, components, motion, spacing and where real artwork goes.</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">01 · COLOUR</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:20px">
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#08070b;border-bottom:1px solid rgba(237,231,220,.1)"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">ink.void</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#08070B · app ground</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#120E1A"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">ink.surface</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#120E1A · cards</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#C8A24A"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">gold.primary</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#C8A24A · action, hairline</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#7C4DFF"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">violet.glow</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#7C4DFF · aura, insight</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#EDE7DC"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">ink.text</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#EDE7DC · primary text</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#7FB27A"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">state.gain</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#7FB27A · positive data</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#C9736A"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">state.loss</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#C9736A · failure, drawdown</div></div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:12px;overflow:hidden">
+    <div style="height:76px;background:#A78BFA"></div>
+    <div style="padding:12px 13px"><div style="font-size:11px">violet.ink</div><div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:5px">#A78BFA · pattern labels</div></div>
+  </div>
+</div>
+<div style="font-size:11px;line-height:1.7;color:rgba(237,231,220,.5);margin-top:16px">Alpha ramp on ink.text: .82 body · .55 secondary · .42 mono labels · .12 hairlines · .06 fills. Never tint gold or violet with alpha under text — use full-opacity ink on top of them.</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">02 · TYPE</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:22px">
+  <div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;line-height:1.06">Display 32/300</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;margin-top:16px">Title 30/300 <span style="font-style:italic;color:#C8A24A">italic accent</span></div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.55;margin-top:16px;color:rgba(237,231,220,.82)">Body 18–19 / 1.55. Cormorant Garamond Light carries all meaning-bearing text: card names, readings, empty states.</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:rgba(237,231,220,.55);margin-top:14px">Caption italic 16 — asides and rules of the deck.</div>
+  </div>
+  <div>
+    <div style="font-size:11px;letter-spacing:.24em;color:rgba(200,162,74,.8)">LABEL 10 / .24EM</div>
+    <div style="font-size:13px;margin-top:16px">Mono data 13 — prices, slots, counts</div>
+    <div style="font-size:11px;letter-spacing:.14em;margin-top:16px;color:rgba(237,231,220,.7)">BUTTON 11 / .16EM UPPERCASE</div>
+    <div style="font-size:10px;color:rgba(237,231,220,.45);margin-top:16px;line-height:1.7">IBM Plex Mono is machine voice only: timestamps, hashes, tab bar, chips, buttons. Never body copy. Minimum size in app: 9px for tab labels, 10px everywhere else.</div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">03 · COMPONENTS</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;margin-top:22px">
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">BUTTONS · 48DP MIN HEIGHT</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+      <div style="text-align:center;padding:15px 0;border-radius:12px;background:#C8A24A;color:#100c06;font-size:11px;letter-spacing:.16em">PRIMARY</div>
+      <div style="text-align:center;padding:15px 0;border-radius:12px;border:1px solid rgba(200,162,74,.5);color:#C8A24A;font-size:11px;letter-spacing:.16em">SECONDARY</div>
+      <div style="text-align:center;padding:15px 0;border-radius:12px;border:1px solid rgba(237,231,220,.16);color:rgba(237,231,220,.7);font-size:11px;letter-spacing:.16em">GHOST</div>
+      <div style="text-align:center;padding:15px 0;border-radius:12px;background:rgba(200,162,74,.3);color:rgba(16,12,6,.6);font-size:11px;letter-spacing:.16em">PRESSED (0.94 SCALE, 90MS)</div>
+      <div style="text-align:center;padding:15px 0;border-radius:12px;background:rgba(237,231,220,.08);color:rgba(237,231,220,.3);font-size:11px;letter-spacing:.16em">DISABLED</div>
+    </div>
+  </div>
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">CHIPS &amp; TOKENS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:10px">
+      <span style="padding:8px 12px;border-radius:999px;background:#C8A24A;color:#100c06">SELECTED</span>
+      <span style="padding:8px 12px;border-radius:999px;border:1px solid rgba(237,231,220,.16);color:rgba(237,231,220,.6)">DEFAULT</span>
+      <span style="padding:8px 12px;border-radius:999px;background:rgba(200,162,74,.16);border:1px solid rgba(200,162,74,.5);color:#C8A24A">✓ ATTACHED</span>
+      <span style="padding:7px 11px;border-radius:8px;border:1px solid rgba(124,77,255,.45);color:#A78BFA">FILTER ×</span>
+      <span style="padding:8px 12px;border-radius:999px;border:1px dashed rgba(237,231,220,.18);color:rgba(237,231,220,.35)">LOCKED</span>
+    </div>
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42);margin-top:22px">TOGGLE 44×26</div>
+    <div style="display:flex;gap:14px;margin-top:12px;align-items:center">
+      <span style="width:44px;height:26px;border-radius:999px;background:#C8A24A;display:flex;align-items:center;justify-content:flex-end;padding:0 3px"><span style="width:20px;height:20px;border-radius:50%;background:#100c06"></span></span>
+      <span style="width:44px;height:26px;border-radius:999px;border:1px solid rgba(237,231,220,.2);display:flex;align-items:center;padding:0 3px"><span style="width:20px;height:20px;border-radius:50%;background:rgba(237,231,220,.25)"></span></span>
+    </div>
+  </div>
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">CARD FACE · RATIO 0.66</div>
+    <div style="display:flex;gap:12px;margin-top:14px;align-items:flex-end">
+      <div style="width:86px;height:130px;border-radius:10px;border:1px solid #C8A24A;background:radial-gradient(circle at 50% 34%,rgba(124,77,255,.32),#0a0810 72%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 28px rgba(124,77,255,.28)"><div style="width:28px;height:28px;border:1px solid #C8A24A;transform:rotate(45deg)"></div><div style="font-size:8px;letter-spacing:.2em;color:rgba(200,162,74,.85)">XVII</div></div>
+      <div style="width:70px;height:106px;border-radius:9px;border:1px solid rgba(200,162,74,.4);background:linear-gradient(170deg,#130f1d,#0a0810)"></div>
+      <div style="width:70px;height:106px;border-radius:9px;border:1px dashed rgba(237,231,220,.16);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(237,231,220,.3)">LOCKED</div>
+    </div>
+    <div style="font-size:10px;line-height:1.7;color:rgba(237,231,220,.45);margin-top:14px">Active card: 1px gold border + violet radial + 0 0 30px glow. Face-down: 1px gold @40%. Locked: dashed ink @16%.</div>
+  </div>
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">SURFACES</div>
+    <div style="margin-top:14px;padding:15px 16px;border-radius:14px;border:1px solid rgba(237,231,220,.1);font-family:'Cormorant Garamond',serif;font-size:17px;color:rgba(237,231,220,.8)">Quiet panel — 1px ink @10%, radius 14</div>
+    <div style="margin-top:10px;padding:15px 16px;border-radius:14px;border:1px solid rgba(124,77,255,.3);background:linear-gradient(120deg,rgba(124,77,255,.12),transparent);font-family:'Cormorant Garamond',serif;font-size:17px">Insight panel — violet wash, used once per screen</div>
+    <div style="margin-top:10px;padding:1px;border-radius:15px;background:linear-gradient(160deg,rgba(200,162,74,.7),rgba(124,77,255,.45))"><div style="border-radius:14px;background:#0e0b14;padding:15px 16px;font-family:'Cormorant Garamond',serif;font-size:17px">Hero panel — 1px gradient stroke, one per screen</div></div>
+  </div>
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">TAB BAR · 56DP + INSET</div>
+    <div style="margin-top:16px;border-radius:12px;background:#08070b;border:1px solid rgba(237,231,220,.08);padding:14px 20px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:.14em;color:rgba(237,231,220,.42)">
+      <span style="color:#C8A24A">TODAY</span><span>DECK</span><span>ASK</span><span>RITES</span><span>ME</span>
+    </div>
+    <div style="font-size:10px;line-height:1.7;color:rgba(237,231,220,.45);margin-top:14px">Labels only, no icons — the deck is the only iconography in the app. Gradient scrim (transparent → ground at 42%) sits above it; scroll content must end 60dp above the frame bottom.</div>
+  </div>
+
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:16px;padding:20px">
+    <div style="font-size:10px;letter-spacing:.2em;color:rgba(237,231,220,.42)">SPACING &amp; RADII</div>
+    <div style="font-size:11px;line-height:2;color:rgba(237,231,220,.62);margin-top:12px">
+      Screen gutter 24dp · section gap 22dp · list gap 12dp<br>
+      Radius: 12 buttons · 14 panels · 10–12 cards · 999 chips<br>
+      Grid: 3 columns, 12dp gutter, card ratio 0.66<br>
+      Touch target: 48dp minimum, chips 36dp + 8dp padding<br>
+      Status bar 44dp · nav zone 60dp · safe bottom inset 26dp
+    </div>
+  </div>
+
+</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">04 · MOTION</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-top:20px;font-size:11px;line-height:1.8;color:rgba(237,231,220,.62)">
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">AURA</div>opacity .35→.85, 7s ease-in-out, infinite. One per screen.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">CARD FLOAT</div>translateY 0→−7px, 5–6s ease-in-out, infinite.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">SHUFFLE</div>3 cards, 900ms loop, offsets ±52px / −34px, ends after 1.5s.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">REVEAL</div>rotateY 90°→0 + scale .92→1, 550ms cubic-bezier(.2,.7,.3,1).</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">TEXT ENTER</div>translateY 14px + fade, 500ms, staggered 100ms per block.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">SEAL</div>scale .7→1.08→1, 600ms. Haptic: one medium tick on confirm.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">PRESS</div>scale .94, 90ms in / 140ms out. No ripple — Arkana has no Material ripple.</div>
+  <div style="border:1px solid rgba(237,231,220,.1);border-radius:14px;padding:16px"><div style="color:#C8A24A;letter-spacing:.18em;font-size:10px">REDUCED MOTION</div>All infinite loops stop; reveal becomes a 200ms fade. Ship this.</div>
+</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">05 · VOICE</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.55">
+  <div style="border:1px solid rgba(127,178,122,.3);border-radius:14px;padding:18px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;color:#7FB27A">WRITE</div>
+    <div style="margin-top:10px;color:rgba(237,231,220,.82)">“Depth returns before conviction does.”<br>“That is a pattern, not a thesis.”<br>“Nothing sealed yet.”</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.7;color:rgba(237,231,220,.45);margin-top:12px">Second person. Present tense. One idea per sentence. Name the cost.</div>
+  </div>
+  <div style="border:1px solid rgba(201,115,106,.3);border-radius:14px;padding:18px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;color:#C9736A">DON'T</div>
+    <div style="margin-top:10px;color:rgba(237,231,220,.6)">“Oops! Something went wrong 😔”<br>“The stars say SOL is going to 500!”<br>“Unlock your destiny now!!”</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.7;color:rgba(237,231,220,.45);margin-top:12px">No emoji, no price calls, no urgency, no mystical filler. The app never predicts.</div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">06 · ARTWORK TO COMMISSION</div>
+<div style="font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.55;color:rgba(237,231,220,.6);max-width:620px;margin-top:14px">I don't generate imagery. These are the slots where real art is required, with the composition each one needs. Everything else in the app is type and hairlines by design.</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-top:22px">
+  <div style="border:1px solid rgba(237,231,220,.12);border-radius:14px;overflow:hidden">
+    <div style="height:150px;background:repeating-linear-gradient(135deg,#0f0d14 0 9px,#0a0810 9px 18px);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.16em;color:rgba(237,231,220,.4)">78 CARD FACES</div>
+    <div style="padding:14px;font-size:10px;line-height:1.7;color:rgba(237,231,220,.55)">1000×1515px, ratio 0.66. Gold line art on near-black, single violet light source, no text baked in. Numeral sits bottom-centre in app, not in the art.</div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.12);border-radius:14px;overflow:hidden">
+    <div style="height:150px;background:repeating-linear-gradient(135deg,#0f0d14 0 9px,#0a0810 9px 18px);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.16em;color:rgba(237,231,220,.4)">ONBOARDING KEY ART</div>
+    <div style="padding:14px;font-size:10px;line-height:1.7;color:rgba(237,231,220,.55);">1080×1350. The oracle figure from your reference, cropped to shoulders, centred, bottom 40% fading to #08070b so the headline sits over it.</div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.12);border-radius:14px;overflow:hidden">
+    <div style="height:150px;background:repeating-linear-gradient(135deg,#0f0d14 0 9px,#0a0810 9px 18px);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.16em;color:rgba(237,231,220,.4)">APP ICON</div>
+    <div style="padding:14px;font-size:10px;line-height:1.7;color:rgba(237,231,220,.55)">432×432 adaptive. One gold diamond on #08070b, violet bloom behind it. Must read at 48dp — no figure, no text.</div>
+  </div>
+  <div style="border:1px solid rgba(237,231,220,.12);border-radius:14px;overflow:hidden">
+    <div style="height:150px;background:repeating-linear-gradient(135deg,#0f0d14 0 9px,#0a0810 9px 18px);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.16em;color:rgba(237,231,220,.4)">CARD BACK</div>
+    <div style="padding:14px;font-size:10px;line-height:1.7;color:rgba(237,231,220,.55)">Single tile, seamless gold lattice at 25% opacity. Used for every face-down card and the shuffle animation.</div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(200,162,74,.25);margin:46px 0 34px"></div>
+<div style="font-size:10px;letter-spacing:.26em;color:rgba(200,162,74,.8)">07 · SCREEN INVENTORY</div>
+<div style="margin-top:18px;font-size:11px;line-height:2.1;color:rgba(237,231,220,.62)">
+  <div><span style="color:#C8A24A">Arkana Redesign.dc.html</span> — turn 4: five system states · turn 3: ask, AI answer, search, card detail, dashboard, settings · turn 2: onboarding, deck, paywall, empty state · turn 1: three style directions, home + reading each</div>
+  <div><span style="color:#C8A24A">Arkana Ritual Prototype.dc.html</span> — daily draw, interactive: idle → shuffle → pick → reveal → sign → sealed</div>
+  <div><span style="color:#C8A24A">Arkana Design System.dc.html</span> — this sheet</div>
+</div>
+
+<div style="margin-top:40px;font-size:10px;line-height:1.9;color:rgba(237,231,220,.35)">Handoff note for the implementing agent: all three files are standalone HTML. Values above are authoritative — measure from the tokens, not from screenshots. Android target: dark theme only, no Material ripple, no system accent tinting.</div>
+
+</div>
+</x-dc>
+</body>
+</html>

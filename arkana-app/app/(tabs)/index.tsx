@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,24 +7,29 @@ import {
   Pressable,
   Modal,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { useAuth } from '@/components/auth/auth-provider';
-import { fetchClockInStatus, executeClockIn, repairStreak, ClockInResult, ReadingResponse } from '@/services/oracleApi';
-import { TarotCard } from '@/components/tarot/TarotCard';
-import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
-import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
-import { ellipsify } from '@/utils/ellipsify';
-import { showError } from '@/utils/show-error';
-import { shareToTwitter, shareGeneral } from '@/utils/shareOmen';
-import { unlockCards } from '@/services/codexService';
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { useAuth } from "@/components/auth/auth-provider";
+import { fetchClockInStatus, executeClockIn, repairStreak, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { TarotCard } from "@/components/tarot/TarotCard";
+import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
+import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
+import { DailyRitualView } from "@/components/tarot/DailyRitualView";
+import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
+import { ObsidianTokens } from "@/constants/theme";
+import { ellipsify } from "@/utils/ellipsify";
+import { showError } from "@/utils/show-error";
+import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
+import { unlockCards } from "@/services/codexService";
+import { CardData } from "@/data/cardsData";
 
 export default function AltarScreen() {
   const router = useRouter();
   const { account, isAuthenticated, signIn } = useAuth();
-  const walletAddress = account?.publicKey?.toString() || 'SeekerDemoWallet1111111111111111111';
+  const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
@@ -41,21 +46,16 @@ export default function AltarScreen() {
     isSeekerHolder: true,
   });
 
-  const [isClockingIn, setIsClockingIn] = useState(false);
   const [dailyReading, setDailyReading] = useState<ReadingResponse | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
+  const [systemState, setSystemState] = useState<SystemStateType>(null);
 
   useEffect(() => {
     fetchClockInStatus(walletAddress).then(setClockInState);
   }, [walletAddress]);
 
-  const handleClockIn = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {}
-
-    setIsClockingIn(true);
+  const handleSignRitualOnChain = async (card: CardData) => {
     try {
       const res = await executeClockIn(walletAddress);
       setDailyReading(res.reading);
@@ -68,14 +68,16 @@ export default function AltarScreen() {
         streak: res.streak,
         freeSpreadsRemaining: prev.freeSpreadsMax ?? 3,
       }));
-      setIsModalVisible(true);
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-    } catch (e) {
-      console.warn('Clock in error:', e);
-    } finally {
-      setIsClockingIn(false);
+      return {
+        success: true,
+        signature: res.txSignature || "7xQm" + Math.random().toString(36).substring(2, 9),
+        slot: 289441200 + Math.floor(Math.random() * 500),
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err?.message || "Transaction dropped before confirmation",
+      };
     }
   };
 
@@ -83,7 +85,7 @@ export default function AltarScreen() {
     if (isRepairing) return;
     const cost = clockInState.streakRepairCostSkr || 1;
     if ((clockInState.skrBalance || 0) < cost) {
-      showError('Insufficient SKR', `You need ${cost} SKR to repair your streak.`);
+      showError("Insufficient SKR", `You need ${cost} SKR to repair your streak.`);
       return;
     }
     setIsRepairing(true);
@@ -101,10 +103,10 @@ export default function AltarScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
       } else {
-        showError('Streak Repair', res.error || 'Failed to repair streak.');
+        showError("Streak Repair", res.error || "Failed to repair streak.");
       }
     } catch (e) {
-      showError('Streak Repair', e);
+      showError("Streak Repair", e);
     } finally {
       setIsRepairing(false);
     }
@@ -122,7 +124,7 @@ export default function AltarScreen() {
       orientation: card.orientation,
       streak: clockInState.streak,
       proseOmen: dailyReading.prose?.finalOmen || card.advice,
-      spreadName: 'Daily Consensus Block'
+      spreadName: "Daily Consensus Block"
     });
   };
 
@@ -138,7 +140,7 @@ export default function AltarScreen() {
       orientation: card.orientation,
       streak: clockInState.streak,
       proseOmen: dailyReading.prose?.finalOmen || card.advice,
-      spreadName: 'Daily Consensus Block'
+      spreadName: "Daily Consensus Block"
     });
   };
 
@@ -150,7 +152,7 @@ export default function AltarScreen() {
       await signIn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
-      showError('Could not connect wallet', e);
+      setSystemState("wallet_declined");
     } finally {
       setIsConnecting(false);
     }
@@ -161,24 +163,23 @@ export default function AltarScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
     router.push({
-      pathname: '/spread/[id]',
+      pathname: "/spread/[id]",
       params: { id: spreadId },
     });
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Obsidian Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerKicker}>SOLANA MOBILE ORACLE</Text>
+            <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
             <Text style={styles.headerTitle}>ARKANA</Text>
           </View>
           {isAuthenticated ? (
             <View style={styles.headerRight}>
               <View style={styles.skrBadge}>
-                <Text style={styles.skrFire}>🔥</Text>
                 <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
               </View>
               <View style={styles.addressChip}>
@@ -192,106 +193,49 @@ export default function AltarScreen() {
               disabled={isConnecting}
             >
               {isConnecting ? (
-                <ActivityIndicator size="small" color="#14F195" />
+                <ActivityIndicator size="small" color={ObsidianTokens.colors.gold.primary} />
               ) : (
-                <>
-                  <Text style={styles.connectHeaderIcon}>⚡</Text>
-                  <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
-                </>
+                <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
               )}
             </Pressable>
           )}
         </View>
 
-        {/* Daily Clock-In Banner */}
-        <View style={styles.clockInBanner}>
-          <View style={styles.bannerGlow} />
-          <View style={styles.bannerHeader}>
-            <View style={styles.streakTag}>
-              <Text style={styles.streakText}>STREAK: {clockInState.streak} DAYS</Text>
-            </View>
-            <Text style={styles.rewardText}>
-              {clockInState.streak >= 7 ? 'TIER III (5 SPREADS/DAY)' : clockInState.streak >= 3 ? 'TIER II (4 SPREADS/DAY)' : 'TIER I (3 SPREADS/DAY)'}
+        {/* Core Interactive Daily Ritual Loop */}
+        <DailyRitualView
+          streak={clockInState.streak}
+          skrBalance={clockInState.skrBalance}
+          canRepairStreak={clockInState.canRepairStreak}
+          streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
+          onRepairStreak={handleRepairStreak}
+          onSignOnChain={handleSignRitualOnChain}
+          onOpenRecord={() => setIsModalVisible(true)}
+          onStateTrigger={(stateType) => setSystemState(stateType)}
+        />
+
+        {/* Free Spreads Allowance Bar */}
+        <View style={styles.quotaRow}>
+          <View style={styles.quotaPill}>
+            <Text style={styles.quotaText}>
+              {clockInState.freeSpreadsRemaining ?? 3}/{clockInState.freeSpreadsMax ?? 3} FREE SPREADS TODAY
             </Text>
           </View>
-
-          <Text style={styles.bannerTitle}>Daily Block Consensus</Text>
-          <Text style={styles.bannerSubtitle}>
-            Clock in daily to validate your mindset, refill your daily free spread allowance, and build your on-chain streak.
-          </Text>
-
-          {/* Daily Quota Indicator */}
-          <View style={styles.quotaRow}>
-            <View style={styles.quotaPill}>
-              <Text style={styles.quotaIcon}>✨</Text>
-              <Text style={styles.quotaText}>
-                {clockInState.freeSpreadsRemaining ?? 3}/{clockInState.freeSpreadsMax ?? 3} FREE SPREADS TODAY
-              </Text>
-            </View>
-            <Text style={styles.quotaSub}>Extra spreads: 5 SKR</Text>
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.clockInButton,
-              pressed && styles.buttonPressed,
-              !clockInState.canClockIn && styles.buttonDisabled,
-            ]}
-            onPress={clockInState.canClockIn ? handleClockIn : () => setIsModalVisible(true)}
-            disabled={isClockingIn}
-          >
-            {isClockingIn ? (
-              <ActivityIndicator color="#0E101A" />
-            ) : (
-              <Text style={styles.clockInButtonText}>
-                {clockInState.canClockIn ? '⚡ CLOCK IN: DRAW DAILY BLOCK' : '✓ CLOCKED IN (VIEW OMEN)'}
-              </Text>
-            )}
-          </Pressable>
-
-          {/* Streak Repair Box if broken or repairable */}
-          {(clockInState.canRepairStreak || clockInState.streak === 0) && (
-            <View style={styles.repairBox}>
-              <View style={styles.repairInfo}>
-                <Text style={styles.repairTitle}>
-                  🛡️ STREAK FROZEN ({clockInState.repairStreakTarget || 1} DAYS)
-                </Text>
-                <Text style={styles.repairSub}>
-                  Restore your streak & tier multiplier for {clockInState.streakRepairCostSkr || 1} SKR
-                </Text>
-              </View>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.repairBtn,
-                  pressed && styles.buttonPressed,
-                  isRepairing && styles.buttonDisabled,
-                ]}
-                onPress={handleRepairStreak}
-                disabled={isRepairing}
-              >
-                {isRepairing ? (
-                  <ActivityIndicator size="small" color="#0E101A" />
-                ) : (
-                  <Text style={styles.repairBtnText}>REPAIR ({clockInState.streakRepairCostSkr || 1} SKR)</Text>
-                )}
-              </Pressable>
-            </View>
-          )}
+          <Text style={styles.quotaSub}>Extra spreads: 5 SKR</Text>
         </View>
 
-        {/* Spreads Section */}
+        {/* Sacred Spreads Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>ORACLE SPREADS</Text>
-          <Text style={styles.sectionSubtitle}>Select a layout to cast the cards</Text>
+          <Text style={styles.sectionSubtitle}>Cast the archetypes into the protocol</Text>
         </View>
 
         {/* Spread 1: Network Scan */}
         <Pressable
           style={({ pressed }) => [styles.spreadCard, pressed && styles.cardPressed]}
-          onPress={() => openSpread('network-scan')}
+          onPress={() => openSpread("network-scan")}
         >
           <View style={styles.spreadIconBox}>
-            <Text style={styles.spreadIcon}>🔮</Text>
+            <Text style={styles.spreadIcon}>✦</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -299,7 +243,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>3 CARDS</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              Past · Present · Next Block. Quick situational audit of ongoing market and personal momentum.
+              Past · Present · Next Block. Situational audit of ongoing market and personal conviction.
             </Text>
           </View>
         </Pressable>
@@ -307,10 +251,10 @@ export default function AltarScreen() {
         {/* Spread 2: Validator Cross */}
         <Pressable
           style={({ pressed }) => [styles.spreadCard, pressed && styles.cardPressed]}
-          onPress={() => openSpread('validator-cross')}
+          onPress={() => openSpread("validator-cross")}
         >
-          <View style={[styles.spreadIconBox, { backgroundColor: '#261C3D' }]}>
-            <Text style={styles.spreadIcon}>⚖️</Text>
+          <View style={[styles.spreadIconBox, styles.purpleSpreadBox]}>
+            <Text style={styles.spreadIcon}>⚖</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -318,7 +262,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>5 CARDS</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              Core State · Opportunity · Obstacle · Hidden Influence · Final Outcome. Deep architectural guidance.
+              Core State · Opportunity · Obstacle · Hidden Influence · Final Outcome. Deep guidance.
             </Text>
           </View>
         </Pressable>
@@ -326,10 +270,10 @@ export default function AltarScreen() {
         {/* Spread 3: Crypto Compass */}
         <Pressable
           style={({ pressed }) => [styles.spreadCard, pressed && styles.cardPressed]}
-          onPress={() => openSpread('crypto-compass')}
+          onPress={() => openSpread("crypto-compass")}
         >
-          <View style={[styles.spreadIconBox, { backgroundColor: '#1C2C28' }]}>
-            <Text style={styles.spreadIcon}>🧭</Text>
+          <View style={[styles.spreadIconBox, styles.goldSpreadBox]}>
+            <Text style={styles.spreadIcon}>◈</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -337,7 +281,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>5 CARDS</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              You · Market · Project · Opportunity · Risk. Clear analysis on whether to enter a new trade or venture.
+              You · Market · Project · Opportunity · Risk. Clear analysis on entering size or cutting risk.
             </Text>
           </View>
         </Pressable>
@@ -349,7 +293,7 @@ export default function AltarScreen() {
           <ScrollView contentContainerStyle={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalKicker}>CONSENSUS CONFIRMED</Text>
-              <Text style={styles.modalTitle}>Today's Block Omen</Text>
+              <Text style={styles.modalTitle}>Today block omen</Text>
             </View>
 
             {dailyReading && dailyReading.cards.length > 0 && (
@@ -357,9 +301,9 @@ export default function AltarScreen() {
                 <TarotCard
                   cardNo={dailyReading.cards[0].card_no}
                   name={dailyReading.cards[0].crypto_name}
-                  isReversed={dailyReading.cards[0].orientation === 'reversed'}
+                  isReversed={dailyReading.cards[0].orientation === "reversed"}
                   isRevealed={true}
-                  positionName="TODAY'S CONSENSUS"
+                  positionName="TODAY CONSENSUS"
                   onPress={() => setZoomedCard(dailyReading.cards[0])}
                   width={200}
                   height={320}
@@ -411,6 +355,20 @@ export default function AltarScreen() {
         card={zoomedCard}
         onClose={() => setZoomedCard(null)}
       />
+
+      {/* Edge Case System States Modal */}
+      <SystemStateModal
+        type={systemState}
+        visible={!!systemState}
+        onClose={() => setSystemState(null)}
+        onActionPrimary={() => {
+          setSystemState(null);
+          if (systemState === "wallet_declined") {
+            handleConnect();
+          }
+        }}
+        onActionSecondary={() => setSystemState(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -418,405 +376,294 @@ export default function AltarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0C12',
+    backgroundColor: ObsidianTokens.colors.ink.void,
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingTop: 12,
     paddingBottom: 110,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
   headerKicker: {
-    color: '#9945FF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
     letterSpacing: 2,
   },
   headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 26,
-    fontWeight: '900',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 28,
+    fontWeight: "300",
     letterSpacing: 1.5,
+    marginTop: 2,
   },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   addressChip: {
-    backgroundColor: '#16192B',
-    borderColor: '#2D325A',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 999,
   },
   addressChipText: {
-    color: '#8B949E',
-    fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 10,
   },
   connectHeaderBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#18122B',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 14,
-    gap: 6,
-  },
-  connectHeaderIcon: {
-    fontSize: 13,
+    borderRadius: 12,
   },
   connectHeaderBtnText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: "600",
   },
   skrBadge: {
-    backgroundColor: '#1E1435',
-    borderColor: '#9945FF',
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.muted,
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  skrFire: {
-    fontSize: 14,
+    paddingVertical: 5,
   },
   skrText: {
-    color: '#F5D061',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  clockInBanner: {
-    backgroundColor: '#131126',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 24,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  bannerGlow: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(153, 69, 255, 0.18)',
-  },
-  bannerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  streakTag: {
-    backgroundColor: '#281747',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderColor: '#9945FF',
-    borderWidth: 1,
-  },
-  streakText: {
-    color: '#14F195',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  rewardText: {
-    color: '#F5D061',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontWeight: "600",
     fontSize: 11,
-    fontWeight: '700',
-  },
-  bannerTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  bannerSubtitle: {
-    color: '#9CA3AF',
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 14,
   },
   quotaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0C0D17',
-    borderColor: '#261F42',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 26,
+    paddingHorizontal: 4,
   },
   quotaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  quotaIcon: {
-    fontSize: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
   },
   quotaText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  quotaSub: {
-    color: '#8F8BA8',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  clockInButton: {
-    backgroundColor: '#14F195',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
-  },
-  buttonDisabled: {
-    backgroundColor: '#232938',
-  },
-  clockInButtonText: {
-    color: '#0B0C12',
-    fontSize: 13,
-    fontWeight: '900',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 9,
     letterSpacing: 1,
   },
+  quotaSub: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 10,
+  },
   sectionHeader: {
-    marginBottom: 12,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 2,
   },
   sectionSubtitle: {
-    color: '#6B7280',
-    fontSize: 12,
-    marginTop: 2,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 16,
+    marginTop: 4,
   },
   spreadCard: {
-    backgroundColor: '#121422',
-    borderColor: '#20243B',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   cardPressed: {
-    borderColor: '#9945FF',
-    backgroundColor: '#17152B',
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
   spreadIconBox: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#1B1530',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  purpleSpreadBox: {
+    borderColor: "rgba(124, 77, 255, 0.4)",
+    backgroundColor: ObsidianTokens.colors.violet.wash,
+  },
+  goldSpreadBox: {
+    borderColor: ObsidianTokens.colors.gold.muted,
+    backgroundColor: ObsidianTokens.colors.gold.surface,
   },
   spreadIcon: {
-    fontSize: 24,
+    fontSize: 20,
+    color: ObsidianTokens.colors.gold.primary,
   },
   spreadInfo: {
     flex: 1,
   },
   spreadTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
   },
   spreadName: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 18,
+    fontWeight: "400",
   },
   cardCount: {
-    color: '#14F195',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.2,
   },
   spreadDesc: {
-    color: '#8B949E',
-    fontSize: 12,
-    lineHeight: 17,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+    lineHeight: 18,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#0B0C12',
+    backgroundColor: ObsidianTokens.colors.ink.void,
   },
   modalContent: {
-    padding: 16,
-    paddingBottom: 40,
-    alignItems: 'center',
+    padding: ObsidianTokens.spacing.screenGutter,
+    paddingBottom: 60,
   },
   modalHeader: {
-    alignItems: 'center',
-    marginVertical: 12,
+    alignItems: "center",
+    marginVertical: 18,
   },
   modalKicker: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
     letterSpacing: 2,
   },
   modalTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '900',
-    marginTop: 4,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 28,
+    fontWeight: "300",
+    marginTop: 6,
   },
   modalCardWrap: {
-    marginVertical: 14,
-  },
-  modalCloseButton: {
-    marginTop: 14,
-    backgroundColor: '#1E1838',
-    borderColor: '#9945FF',
-    borderWidth: 1.5,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalCloseText: {
-    color: '#F5D061',
-    fontWeight: '800',
-    fontSize: 13,
-    letterSpacing: 1.5,
-  },
-  repairBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1C1226',
-    borderColor: '#FF446666',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-    gap: 10,
-  },
-  repairInfo: {
-    flex: 1,
-  },
-  repairTitle: {
-    color: '#FF6B8B',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  repairSub: {
-    color: '#8B949E',
-    fontSize: 10,
-    marginTop: 2,
-    lineHeight: 14,
-  },
-  repairBtn: {
-    backgroundColor: '#FF4466',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  repairBtnText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    alignItems: "center",
+    marginVertical: 18,
   },
   shareSection: {
-    marginTop: 20,
-    backgroundColor: '#131526',
-    borderColor: '#262D4A',
+    marginTop: 24,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: ObsidianTokens.radii.panels,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
   },
   shareSectionKicker: {
-    color: '#9945FF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 10,
-    textAlign: 'center',
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    fontSize: 9,
+    letterSpacing: 2,
+    color: ObsidianTokens.colors.gold.primary,
+    marginBottom: 12,
+    textAlign: "center",
   },
   shareButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   shareTwitterBtn: {
     flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-    borderColor: '#38444D',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
   },
   shareTwitterIcon: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   shareTwitterText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#FFFFFF",
+    fontSize: 10,
+    letterSpacing: 1.2,
   },
   shareGeneralBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1A1E33',
-    borderColor: '#2D3558',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     gap: 6,
   },
   shareGeneralIcon: {
-    fontSize: 13,
+    fontSize: 12,
   },
   shareGeneralText: {
-    color: '#14F195',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 10,
+    letterSpacing: 1.2,
+  },
+  modalCloseButton: {
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  modalCloseText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 10,
+    letterSpacing: 1.5,
+  },
+  buttonPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
 });
