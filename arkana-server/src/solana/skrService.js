@@ -121,6 +121,7 @@ function getClockInStatus(walletAddress) {
   const dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
   const maxFree = getDailyFreeAllowance(currentStreak);
   const remainingFree = Math.max(0, maxFree - dailySpreadsUsed);
+  const todayCard = (!canClockIn && user.history && user.history[0]) ? user.history[0] : null;
 
   return {
     canClockIn,
@@ -130,6 +131,7 @@ function getClockInStatus(walletAddress) {
     repairStreakTarget,
     streakRepairCostSkr: repairCost,
     lastClockIn: user.lastClockIn,
+    todayCard,
     totalReadings: user.totalReadings || 0,
     skrBalance: user.skrBalance !== undefined ? user.skrBalance : 25,
     freeSpreadsRemaining: remainingFree,
@@ -172,6 +174,7 @@ function recordClockIn(walletAddress, drawnCard) {
     timestamp: now.toISOString(),
     type: "daily-block",
     card: drawnCard.crypto_name,
+    card_no: drawnCard.card_no,
     orientation: drawnCard.orientation,
     image: drawnCard.image
   });
