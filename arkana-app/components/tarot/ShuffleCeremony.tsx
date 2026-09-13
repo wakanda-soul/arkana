@@ -8,7 +8,9 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { ObsidianTokens } from '@/constants/theme';
+import { CARD_BACK } from '@/assets/cards';
 
 interface ShuffleCeremonyProps {
   compact?: boolean;
@@ -85,19 +87,20 @@ export function ShuffleCeremony({
               styles.cardLayerBottom,
               { transform: [{ rotate: shuffleTransA }] },
             ]}
-          />
+          >
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+          </Animated.View>
           <Animated.View
             style={[
               styles.compactCardBack,
               styles.cardLayerMiddle,
               { transform: [{ rotate: shuffleTransC }] },
             ]}
-          />
+          >
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+          </Animated.View>
           <Animated.View style={[styles.compactCardBack, styles.compactCardTop, styles.glowBorder]}>
-            <View style={styles.compactEmblem}>
-              <View style={styles.compactInnerDiamond} />
-            </View>
-            <Text style={styles.compactLabel}>ARKANA</Text>
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
           </Animated.View>
         </View>
 
@@ -125,19 +128,20 @@ export function ShuffleCeremony({
               styles.cardLayerBottom,
               { transform: [{ rotate: shuffleTransA }] },
             ]}
-          />
+          >
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+          </Animated.View>
           <Animated.View
             style={[
               styles.fullCardBack,
               styles.cardLayerMiddle,
               { transform: [{ rotate: shuffleTransC }] },
             ]}
-          />
+          >
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
+          </Animated.View>
           <Animated.View style={[styles.fullCardBack, styles.fullCardTop, styles.glowBorder]}>
-            <View style={styles.fullEmblem}>
-              <View style={styles.fullInnerDiamond} />
-            </View>
-            <Text style={styles.fullLabel}>ARKANA</Text>
+            <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
           </Animated.View>
         </View>
       </View>
@@ -192,6 +196,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 14,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   cardLayerBottom: {
     borderColor: 'rgba(200, 162, 74, 0.3)',
@@ -204,9 +209,6 @@ const styles = StyleSheet.create({
   fullCardTop: {
     borderColor: ObsidianTokens.colors.gold.primary,
     backgroundColor: '#0E0B16',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 14,
     shadowColor: ObsidianTokens.colors.violet.glow,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
@@ -217,26 +219,9 @@ const styles = StyleSheet.create({
     borderColor: ObsidianTokens.colors.gold.primary,
     borderWidth: 1.5,
   },
-  fullEmblem: {
-    width: 42,
-    height: 42,
-    borderWidth: 1,
-    borderColor: ObsidianTokens.colors.gold.primary,
-    transform: [{ rotate: '45deg' }],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullInnerDiamond: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderColor: ObsidianTokens.colors.gold.muted,
-  },
-  fullLabel: {
-    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 9,
-    letterSpacing: 2,
-    color: ObsidianTokens.colors.gold.primary,
+  cardImageFill: {
+    width: '100%',
+    height: '100%',
   },
   statusRow: {
     flexDirection: 'row',
@@ -277,34 +262,11 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 8,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   compactCardTop: {
     borderColor: ObsidianTokens.colors.gold.primary,
     backgroundColor: '#0E0B16',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  compactEmblem: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: ObsidianTokens.colors.gold.primary,
-    transform: [{ rotate: '45deg' }],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  compactInnerDiamond: {
-    width: 8,
-    height: 8,
-    borderWidth: 1,
-    borderColor: ObsidianTokens.colors.gold.muted,
-  },
-  compactLabel: {
-    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 6,
-    letterSpacing: 1.2,
-    color: ObsidianTokens.colors.gold.primary,
   },
   compactInfo: {
     flex: 1,

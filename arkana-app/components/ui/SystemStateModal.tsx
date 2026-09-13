@@ -10,6 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { ObsidianTokens } from '@/constants/theme';
+import { Image } from 'expo-image';
+import { CARD_BACK } from '@/assets/cards';
 
 export type SystemStateType =
   | 'ai_generating'
@@ -193,10 +195,17 @@ export function SystemStateModal({
           {type === 'limit_reached' && (
             <View style={styles.contentBox}>
               <View style={styles.miniCardsRow}>
-                <View style={styles.miniCardBack} />
-                <View style={styles.miniCardBack} />
+                <View style={styles.miniCardBack}>
+                  <Image source={CARD_BACK} style={styles.miniCardImage} contentFit="cover" />
+                </View>
+                <View style={styles.miniCardBack}>
+                  <Image source={CARD_BACK} style={styles.miniCardImage} contentFit="cover" />
+                </View>
                 <View style={[styles.miniCardBack, styles.miniCardDashed]}>
-                  <Text style={styles.miniLockText}>LOCK</Text>
+                  <Image source={CARD_BACK} style={[styles.miniCardImage, { opacity: 0.28 }]} contentFit="cover" />
+                  <View style={styles.miniCardOverlay}>
+                    <Text style={styles.miniLockText}>LOCK</Text>
+                  </View>
                 </View>
               </View>
               <Text style={styles.titleSerif}>
@@ -441,12 +450,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ObsidianTokens.colors.gold.muted,
     backgroundColor: ObsidianTokens.colors.ink.surface,
+    overflow: 'hidden',
+  },
+  miniCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  miniCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(6, 7, 10, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   miniCardDashed: {
     borderStyle: 'dashed',
     borderColor: ObsidianTokens.colors.ink.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   miniLockText: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
