@@ -6,6 +6,10 @@ export const API_BASE_URL = 'http://184.174.39.62:3001';
 export interface ClockInResult {
   canClockIn: boolean;
   streak: number;
+  brokenStreak?: number | null;
+  canRepairStreak?: boolean;
+  repairStreakTarget?: number;
+  streakRepairCostSkr?: number;
   lastClockIn: string | null;
   totalReadings: number;
   skrBalance: number;
@@ -231,3 +235,18 @@ export async function consumeSpreadQuota(wallet?: string): Promise<QuotaConsumeR
     return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
   }
 }
+
+export async function repairStreak(wallet: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/streak/repair`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e: any) {
+    return { success: false, streak: 1, skrBalance: 25, error: e.message || 'Streak repair network error' };
+  }
+}
+

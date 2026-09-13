@@ -12,12 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/components/auth/auth-provider';
-import { fetchClockInStatus, executeClockIn, ClockInResult, ReadingResponse } from '@/services/oracleApi';
+import { fetchClockInStatus, executeClockIn, repairStreak, ClockInResult, ReadingResponse } from '@/services/oracleApi';
 import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
 import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
 import { ellipsify } from '@/utils/ellipsify';
 import { showError } from '@/utils/show-error';
+import { shareToTwitter, shareGeneral } from '@/utils/shareOmen';
+import { unlockCards } from '@/services/codexService';
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function AltarScreen() {
   const walletAddress = account?.publicKey?.toString() || 'SeekerDemoWallet1111111111111111111';
 
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -56,6 +59,9 @@ export default function AltarScreen() {
     try {
       const res = await executeClockIn(walletAddress);
       setDailyReading(res.reading);
+      if (res.reading?.cards && res.reading.cards.length > 0) {
+        unlockCards([res.reading.cards[0].card_no]);
+      }
       setClockInState(prev => ({
         ...prev,
         canClockIn: false,
@@ -71,6 +77,69 @@ export default function AltarScreen() {
     } finally {
       setIsClockingIn(false);
     }
+  };
+
+  const handleRepairStreak = async () => {
+    if (isRepairing) return;
+    const cost = clockInState.streakRepairCostSkr || 1;
+    if ((clockInState.skrBalance || 0) < cost) {
+      showError('Insufficient SKR', `You need ${cost} SKR to repair your streak.`);
+      return;
+    }
+    setIsRepairing(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      const res = await repairStreak(walletAddress);
+      if (res.success) {
+        setClockInState(prev => ({
+          ...prev,
+          streak: res.streak,
+          skrBalance: res.skrBalance,
+          canRepairStreak: false,
+        }));
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+      } else {
+        showError('Streak Repair', res.error || 'Failed to repair streak.');
+      }
+    } catch (e) {
+      showError('Streak Repair', e);
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  const handleShareX = async () => {
+    if (!dailyReading || !dailyReading.cards || dailyReading.cards.length === 0) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    const card = dailyReading.cards[0];
+    await shareToTwitter({
+      cardName: card.crypto_name,
+      cardNo: card.card_no,
+      orientation: card.orientation,
+      streak: clockInState.streak,
+      proseOmen: dailyReading.prose?.finalOmen || card.advice,
+      spreadName: 'Daily Consensus Block'
+    });
+  };
+
+  const handleShareMore = async () => {
+    if (!dailyReading || !dailyReading.cards || dailyReading.cards.length === 0) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    const card = dailyReading.cards[0];
+    await shareGeneral({
+      cardName: card.crypto_name,
+      cardNo: card.card_no,
+      orientation: card.orientation,
+      streak: clockInState.streak,
+      proseOmen: dailyReading.prose?.finalOmen || card.advice,
+      spreadName: 'Daily Consensus Block'
+    });
   };
 
   const handleConnect = async () => {
@@ -179,6 +248,35 @@ export default function AltarScreen() {
               </Text>
             )}
           </Pressable>
+
+          {/* Streak Repair Box if broken or repairable */}
+          {(clockInState.canRepairStreak || clockInState.streak === 0) && (
+            <View style={styles.repairBox}>
+              <View style={styles.repairInfo}>
+                <Text style={styles.repairTitle}>
+                  🛡️ STREAK FROZEN ({clockInState.repairStreakTarget || 1} DAYS)
+                </Text>
+                <Text style={styles.repairSub}>
+                  Restore your streak & tier multiplier for {clockInState.streakRepairCostSkr || 1} SKR
+                </Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.repairBtn,
+                  pressed && styles.buttonPressed,
+                  isRepairing && styles.buttonDisabled,
+                ]}
+                onPress={handleRepairStreak}
+                disabled={isRepairing}
+              >
+                {isRepairing ? (
+                  <ActivityIndicator size="small" color="#0E101A" />
+                ) : (
+                  <Text style={styles.repairBtnText}>REPAIR ({clockInState.streakRepairCostSkr || 1} SKR)</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
 
         {/* Spreads Section */}
@@ -275,6 +373,28 @@ export default function AltarScreen() {
                 metrics={dailyReading.engine_metrics}
               />
             )}
+
+            {/* Transmit / Share Section */}
+            <View style={styles.shareSection}>
+              <Text style={styles.shareSectionKicker}>TRANSMIT CONSENSUS</Text>
+              <View style={styles.shareButtonsRow}>
+                <Pressable
+                  style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.buttonPressed]}
+                  onPress={handleShareX}
+                >
+                  <Text style={styles.shareTwitterIcon}>𝕏</Text>
+                  <Text style={styles.shareTwitterText}>SHARE ON X</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.buttonPressed]}
+                  onPress={handleShareMore}
+                >
+                  <Text style={styles.shareGeneralIcon}>📤</Text>
+                  <Text style={styles.shareGeneralText}>MORE</Text>
+                </Pressable>
+              </View>
+            </View>
 
             <Pressable
               style={styles.modalCloseButton}
@@ -580,7 +700,7 @@ const styles = StyleSheet.create({
     marginVertical: 14,
   },
   modalCloseButton: {
-    marginTop: 20,
+    marginTop: 14,
     backgroundColor: '#1E1838',
     borderColor: '#9945FF',
     borderWidth: 1.5,
@@ -595,5 +715,108 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 1.5,
+  },
+  repairBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1C1226',
+    borderColor: '#FF446666',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    gap: 10,
+  },
+  repairInfo: {
+    flex: 1,
+  },
+  repairTitle: {
+    color: '#FF6B8B',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  repairSub: {
+    color: '#8B949E',
+    fontSize: 10,
+    marginTop: 2,
+    lineHeight: 14,
+  },
+  repairBtn: {
+    backgroundColor: '#FF4466',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  repairBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  shareSection: {
+    marginTop: 20,
+    backgroundColor: '#131526',
+    borderColor: '#262D4A',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+  },
+  shareSectionKicker: {
+    color: '#9945FF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  shareButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  shareTwitterBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    borderColor: '#38444D',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  shareTwitterIcon: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  shareTwitterText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  shareGeneralBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A1E33',
+    borderColor: '#2D3558',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  shareGeneralIcon: {
+    fontSize: 13,
+  },
+  shareGeneralText: {
+    color: '#14F195',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
 });

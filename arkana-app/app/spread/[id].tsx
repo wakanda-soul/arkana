@@ -17,6 +17,8 @@ import { TarotCard } from '@/components/tarot/TarotCard';
 import { SevenBeatsView } from '@/components/tarot/SevenBeatsView';
 import { CardZoomModal, ZoomCardData } from '@/components/tarot/CardZoomModal';
 import { SpreadTableView } from '@/components/tarot/SpreadTableView';
+import { shareToTwitter, shareGeneral } from '@/utils/shareOmen';
+import { unlockCards } from '@/services/codexService';
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,6 +53,9 @@ export default function SpreadScreen() {
       setReading(res);
       setHasDrawn(true);
       setRevealedMap({});
+      if (res.cards && res.cards.length > 0) {
+        unlockCards(res.cards.map(c => c.card_no));
+      }
       if (res.quota) {
         setQuotaInfo(prev => prev ? {
           ...prev,
@@ -67,6 +72,38 @@ export default function SpreadScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleShareX = async () => {
+    if (!reading || !reading.cards || reading.cards.length === 0) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    const lead = reading.cards[0];
+    await shareToTwitter({
+      cardName: lead.crypto_name,
+      cardNo: lead.card_no,
+      orientation: lead.orientation,
+      streak: quotaInfo?.streak || 1,
+      proseOmen: reading.prose?.finalOmen || reading.prose?.oracleAdvice || lead.advice,
+      spreadName: reading.spread_name
+    });
+  };
+
+  const handleShareMore = async () => {
+    if (!reading || !reading.cards || reading.cards.length === 0) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    const lead = reading.cards[0];
+    await shareGeneral({
+      cardName: lead.crypto_name,
+      cardNo: lead.card_no,
+      orientation: lead.orientation,
+      streak: quotaInfo?.streak || 1,
+      proseOmen: reading.prose?.finalOmen || reading.prose?.oracleAdvice || lead.advice,
+      spreadName: reading.spread_name
+    });
   };
 
   const flipCard = (index: number) => {
@@ -217,6 +254,28 @@ export default function SpreadScreen() {
               <View style={styles.readingWrap}>
                 <View style={styles.divider} />
                 <SevenBeatsView beats={reading.prose} metrics={reading.engine_metrics} />
+
+                {/* Transmit / Share Section */}
+                <View style={styles.shareSection}>
+                  <Text style={styles.shareSectionKicker}>TRANSMIT SPREAD OMEN</Text>
+                  <View style={styles.shareButtonsRow}>
+                    <Pressable
+                      style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.buttonPressed]}
+                      onPress={handleShareX}
+                    >
+                      <Text style={styles.shareTwitterIcon}>𝕏</Text>
+                      <Text style={styles.shareTwitterText}>SHARE ON X</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.buttonPressed]}
+                      onPress={handleShareMore}
+                    >
+                      <Text style={styles.shareGeneralIcon}>📤</Text>
+                      <Text style={styles.shareGeneralText}>MORE</Text>
+                    </Pressable>
+                  </View>
+                </View>
 
                 {/* Reset Button */}
                 <Pressable
@@ -449,5 +508,69 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 12,
     letterSpacing: 1.5,
+  },
+  shareSection: {
+    marginTop: 20,
+    backgroundColor: '#131526',
+    borderColor: '#262D4A',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+  },
+  shareSectionKicker: {
+    color: '#9945FF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  shareButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  shareTwitterBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    borderColor: '#38444D',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  shareTwitterIcon: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  shareTwitterText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  shareGeneralBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A1E33',
+    borderColor: '#2D3558',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  shareGeneralIcon: {
+    fontSize: 13,
+  },
+  shareGeneralText: {
+    color: '#14F195',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
 });

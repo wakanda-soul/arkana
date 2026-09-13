@@ -1,0 +1,7 @@
+{
+  "streakRepairCostSkr": 1,
+  "extraSpreadCostSkr": 5,
+  "freeDailyAllowanceBase": 3,
+  "streakTier2Threshold": 3,
+  "streakTier3Threshold": 7
+}

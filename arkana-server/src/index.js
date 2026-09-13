@@ -6,7 +6,14 @@ require("dotenv").config();
 
 const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
 const { generateReadingProse, generateOracleChatReply } = require("./ai/oracleService");
-const { getClockInStatus, recordClockIn, consumeSpread } = require("./solana/skrService");
+const {
+  getClockInStatus,
+  recordClockIn,
+  consumeSpread,
+  repairStreak,
+  loadEconomyConfig,
+  updateEconomyConfig
+} = require("./solana/skrService");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -129,7 +136,7 @@ app.get("/download", (req, res) => {
     <body>
       <div class="card">
         <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
-        <h1>🔮 Arkana v1.0.3</h1>
+        <h1>🔮 Arkana v1.0.4</h1>
         <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
         ${isReady ? `
@@ -159,6 +166,9 @@ app.get("/download", (req, res) => {
             <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare)</li>
             <li>⏰ Daily Clock-In (daily free spread refill & streak tier multiplier)</li>
             <li>🃏 78 Tarot Arcana cards with 3D flip animations</li>
+            <li>📖 Codex Archetype Collection & Card Zoom Inspection</li>
+            <li>📢 Transmit / Share to X with dynamic anti-bot templates & card art</li>
+            <li>⚡ Streak Repair Mechanism with dynamic SKR recovery</li>
             <li>🧠 7-Beat Oracle Synthesis (AI Engine)</li>
             <li>💬 Interactive Oracle Chat</li>
           </ul>
@@ -176,7 +186,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     app: "Arkana - The Solana Oracle API",
-    version: "1.0.3",
+    version: "1.0.4",
     hackathon: "Clock In: A Solana Mobile Hackathon",
     network: "Solana Mobile / Seeker"
   });
@@ -321,6 +331,35 @@ app.post("/api/chat", async (req, res) => {
   } catch (err) {
     console.error("Chat error:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Economy Config Endpoints
+app.get("/api/admin/config", (req, res) => {
+  const config = loadEconomyConfig();
+  res.json({ success: true, config });
+});
+
+app.post("/api/admin/config", (req, res) => {
+  try {
+    const updated = updateEconomyConfig(req.body);
+    res.json({ success: true, config: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Streak repair endpoint
+app.post("/api/streak/repair", (req, res) => {
+  try {
+    const { wallet } = req.body;
+    const result = repairStreak(wallet);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
