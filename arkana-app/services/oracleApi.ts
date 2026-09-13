@@ -1,7 +1,7 @@
 import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
 
 // Public VPS IP for testing, or localhost for local dev
-export const API_BASE_URL = 'http://184.174.39.62:3001';
+export const API_BASE_URL = 'http://184.174.39.62';
 
 export interface ClockInResult {
   canClockIn: boolean;

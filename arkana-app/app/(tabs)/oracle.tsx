@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { API_BASE_URL } from "@/services/oracleApi";
 import { ObsidianTokens } from "@/constants/theme";
+import { ALL_CARDS } from "@/data/cardsData";
 
 interface ChatMessage {
   id: string;
@@ -88,14 +89,15 @@ export default function OracleScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
     } catch (e) {
-      console.warn("Chat error:", e);
-      const errorMsg: ChatMessage = {
+      console.warn("Chat error, engaging offline oracle synthesis:", e);
+      const fallbackCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+      const oracleMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: "oracle",
-        text: "The mempool is momentarily congested. But remember: stoic conviction outlasts market noise.",
+        text: `Consensus has drawn **${fallbackCard.crypto_name}** (${fallbackCard.suit}) for your inquiry.\n\n${fallbackCard.advice || fallbackCard.upright_full}\n\n*The ledger remembers all: build with conviction.*`,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => [...prev, oracleMsg]);
     } finally {
       setIsTyping(false);
     }
