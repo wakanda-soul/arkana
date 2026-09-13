@@ -5,7 +5,17 @@ const fs = require("fs");
 require("dotenv").config();
 
 const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
-const { generateReadingProse, generateOracleChatReply } = require("./ai/oracleService");
+const {
+  generateReadingProse,
+  generateOracleChatReply,
+  evaluateSafetyFilter
+} = require("./ai/oracleService");
+const {
+  logDialogue,
+  queryLogs,
+  getLogStats,
+  LOG_FILE
+} = require("./logging/dialogueLogger");
 const {
   getClockInStatus,
   recordClockIn,
@@ -245,6 +255,16 @@ app.post("/api/clock-in", async (req, res) => {
       clockInResult = recordClockIn(wallet, reading.cards[0]);
     }
 
+    logDialogue({
+      type: "clock-in",
+      wallet: wallet || "anonymous",
+      user_message: "Daily Consensus Clock-In",
+      oracle_reply: reading.cards && reading.cards[0] ? reading.cards[0].crypto_name : "Consensus",
+      status: "success",
+      latency_ms: 0,
+      client_ip: String(req.ip || req.headers["x-forwarded-for"] || "unknown")
+    });
+
     res.json({
       success: true,
       clockIn: clockInResult,
@@ -292,6 +312,22 @@ app.post("/api/reading", async (req, res) => {
 
     const prose = await generateReadingProse(reading, question, language);
 
+    // Audit log reading query and check for injection attempts in question
+    const questionSafety = question ? evaluateSafetyFilter(question) : { blocked: false };
+    logDialogue({
+      type: "reading",
+      wallet: wallet || "anonymous",
+      user_message: question || `spread:${spread}`,
+      oracle_reply: prose.beats ? prose.beats.story : "",
+      is_injection_attempt: Boolean(questionSafety.blocked && questionSafety.reason === "injection"),
+      is_code_attempt: Boolean(questionSafety.blocked && questionSafety.reason === "coding"),
+      blocked_by_safety: Boolean(questionSafety.blocked),
+      safety_reason: questionSafety.reason || null,
+      status: "success",
+      latency_ms: 0,
+      client_ip: String(req.ip || req.headers["x-forwarded-for"] || "unknown")
+    });
+
     res.json({
       success: true,
       question,
@@ -317,14 +353,34 @@ app.post("/api/reading", async (req, res) => {
 
 // Interactive Oracle chat follow-up (proxied to live Oracle AI via agy)
 app.post("/api/chat", async (req, res) => {
-  try {
-    const { message, history = [] } = req.body;
-    if (!message || !message.trim()) {
-      return res.status(400).json({ error: "Message is required" });
-    }
+  const startTime = Date.now();
+  const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const { message, history = [], wallet = "anonymous" } = req.body;
 
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+
+  try {
     // Call live Oracle AI agent proxy
-    const reply = await generateOracleChatReply(message.trim(), history);
+    const chatResult = await generateOracleChatReply(message.trim(), history);
+    const reply = typeof chatResult === "string" ? chatResult : chatResult.reply;
+    const safety = (chatResult && chatResult.safety) || {};
+
+    // Audit log dialogue interaction
+    logDialogue({
+      type: "chat",
+      wallet,
+      user_message: message.trim(),
+      oracle_reply: reply,
+      is_injection_attempt: Boolean(safety.is_injection_attempt),
+      is_code_attempt: Boolean(safety.is_code_attempt),
+      blocked_by_safety: Boolean(safety.blocked),
+      safety_reason: safety.reason || null,
+      status: "success",
+      latency_ms: Date.now() - startTime,
+      client_ip: String(clientIp)
+    });
 
     res.json({
       reply,
@@ -332,6 +388,20 @@ app.post("/api/chat", async (req, res) => {
     });
   } catch (err) {
     console.error("Chat error:", err);
+    logDialogue({
+      type: "chat",
+      wallet,
+      user_message: message.trim(),
+      oracle_reply: "",
+      is_injection_attempt: false,
+      is_code_attempt: false,
+      blocked_by_safety: false,
+      safety_reason: null,
+      status: "error",
+      error: err.message,
+      latency_ms: Date.now() - startTime,
+      client_ip: String(clientIp)
+    });
     res.status(500).json({ error: err.message });
   }
 });
@@ -349,6 +419,32 @@ app.post("/api/admin/config", (req, res) => {
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
+});
+
+// Admin Dialogue Audit Log Endpoints
+app.get("/api/admin/logs", (req, res) => {
+  try {
+    const result = queryLogs(req.query);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/api/admin/logs/stats", (req, res) => {
+  try {
+    const stats = getLogStats();
+    res.json({ success: true, stats });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/api/admin/logs/export", (req, res) => {
+  if (!fs.existsSync(LOG_FILE)) {
+    return res.status(404).json({ error: "No log file found" });
+  }
+  res.download(LOG_FILE, "arkana-dialogues.jsonl");
 });
 
 // Streak repair endpoint
