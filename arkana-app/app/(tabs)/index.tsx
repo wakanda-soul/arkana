@@ -24,6 +24,7 @@ import { ellipsify } from "@/utils/ellipsify";
 import { showError } from "@/utils/show-error";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
+import { Image } from "expo-image";
 import { CardData } from "@/data/cardsData";
 
 export default function AltarScreen() {
@@ -173,9 +174,16 @@ export default function AltarScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Obsidian Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
-            <Text style={styles.headerTitle}>ARKANA</Text>
+          <View style={styles.brandRow}>
+            <Image
+              source={require("@/assets/images/app_logo.png")}
+              style={styles.headerLogo}
+              contentFit="contain"
+            />
+            <View>
+              <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
+              <Text style={styles.headerTitle}>ARKANA</Text>
+            </View>
           </View>
           {isAuthenticated ? (
             <View style={styles.headerRight}>
@@ -388,6 +396,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  headerLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
   },
   headerKicker: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
