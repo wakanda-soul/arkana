@@ -66,10 +66,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-beta
-          name: "Arkana v1.0.5 - Solana Mobile Build"
+          name: "Arkana v1.0.6 - Solana Mobile Build"
           body: |
-            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.5)
-            - Built for **Solana Mobile & Seeker** (versionCode 6, versionName 1.0.5)
+            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.6)
+            - Built for **Solana Mobile & Seeker** (versionCode 7, versionName 1.0.6)
+            - Fixed Android soft keyboard overlapping text input on Ask screen.
+            - Added tabBarHideOnKeyboard and reactive scroll-to-end on keyboard show.
             - Complete **Obsidian Ritual** design system (#08070B void, #120E1A surface, #C8A24A gold).
             - Interactive Daily Ritual Core Loop: Tap &rarr; Shuffle &rarr; Pick &rarr; Reveal &rarr; Sign on Solana &rarr; Sealed.
             - Full System Edge States: AI Generating, Tx Failed, Wallet Declined, Limit Reached, Offline.
