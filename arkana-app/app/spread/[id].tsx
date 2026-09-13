@@ -160,7 +160,12 @@ export default function SpreadScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {!hasDrawn ? (
           <View style={styles.inputCard}>
             <Text style={styles.inputKicker}>FORMULATE YOUR INTENT</Text>

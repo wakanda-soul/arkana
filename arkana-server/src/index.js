@@ -146,7 +146,7 @@ app.get("/download", (req, res) => {
     <body>
       <div class="card">
         <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
-        <h1>🔮 Arkana v1.0.5</h1>
+        <h1>🔮 Arkana v1.0.6</h1>
         <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
         ${isReady ? `
@@ -174,6 +174,7 @@ app.get("/download", (req, res) => {
           <p style="font-weight:600; color:#fff; margin-bottom:8px;">What's inside this build:</p>
           <ul>
             <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare) & Seed Vault</li>
+            <li>⌨️ Native Soft-Keyboard Avoidance for Android and Ask input field</li>
             <li>✨ Obsidian Ritual Design & Interactive Core Loop (Tap &rarr; Shuffle &rarr; Pick &rarr; Reveal &rarr; Sign)</li>
             <li>🛡️ Full System Edge States (AI Generating, Tx Failed, Wallet Declined, Limit Reached, Offline)</li>
             <li>⏰ Daily Clock-In (daily free spread refill & streak tier multiplier)</li>
@@ -198,7 +199,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     app: "Arkana - The Solana Oracle API",
-    version: "1.0.5",
+    version: "1.0.6",
     hackathon: "Clock In: A Solana Mobile Hackathon",
     network: "Solana Mobile / Seeker"
   });
