@@ -13,6 +13,7 @@ import {
 import { ObsidianTokens } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { CARD_BACK } from '@/assets/cards';
+import { useLanguage } from '@/services/i18n';
 
 export type SystemStateType =
   | 'ai_generating'
@@ -40,6 +41,7 @@ export function SystemStateModal({
   onActionSecondary,
   customError,
 }: SystemStateModalProps) {
+  const { t } = useLanguage();
   const pulseAnim = useRef(new Animated.Value(0.35)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -164,20 +166,22 @@ export function SystemStateModal({
           {(type === 'wallet_declined' || type === 'wallet_not_found') && (
             <View style={styles.contentBox}>
               <View style={styles.symbolRing}>
-                <Text style={styles.dimSymbol}>✦</Text>
+                <Text style={styles.dimSymbol}>{'\u2726'}</Text>
               </View>
               <Text style={styles.titleSerif}>
-                {type === 'wallet_not_found' ? 'No Solana wallet detected' : 'Wallet connection needed'}
+                {type === 'wallet_not_found'
+                  ? t('wallet_not_found_title', 'No Solana wallet detected')
+                  : t('wallet_declined_title', 'Wallet connection needed')}
               </Text>
               <Text style={styles.bodySerif}>
                 {type === 'wallet_not_found'
-                  ? 'On Android, Arkana connects via Mobile Wallet Adapter. Install a verified Solana wallet or explore in Seeker Demo mode.'
-                  : 'Connection did not complete. If you do not have a wallet installed yet, get one from official verified sources below:'}
+                  ? t('wallet_not_found_desc', 'On Android, Arkana connects via Mobile Wallet Adapter. Install a verified Solana wallet or explore in Seeker Demo mode.')
+                  : t('wallet_declined_desc', 'Connection did not complete. If you do not have a wallet installed yet, get one from official verified sources below:')}
               </Text>
 
               {/* Official Wallets Section */}
               <View style={styles.walletSourcesContainer}>
-                <Text style={styles.walletSourcesHeader}>OFFICIAL VERIFIED WALLETS</Text>
+                <Text style={styles.walletSourcesHeader}>{t('official_verified_wallets', 'OFFICIAL VERIFIED WALLETS')}</Text>
 
                 {/* Phantom */}
                 <View style={styles.walletSourceCard}>
@@ -190,13 +194,13 @@ export function SystemStateModal({
                       style={styles.walletPillBtn}
                       onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {})}
                     >
-                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                      <Text style={styles.walletPillBtnText}>{t('play_store', 'PLAY STORE')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.walletPillGhostBtn}
                       onPress={() => Linking.openURL('https://phantom.com/download').catch(() => {})}
                     >
-                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                      <Text style={styles.walletPillGhostText}>{t('website', 'WEBSITE')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -212,13 +216,13 @@ export function SystemStateModal({
                       style={styles.walletPillBtn}
                       onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {})}
                     >
-                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                      <Text style={styles.walletPillBtnText}>{t('play_store', 'PLAY STORE')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.walletPillGhostBtn}
                       onPress={() => Linking.openURL('https://solflare.com').catch(() => {})}
                     >
-                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                      <Text style={styles.walletPillGhostText}>{t('website', 'WEBSITE')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -234,13 +238,13 @@ export function SystemStateModal({
                       style={styles.walletPillBtn}
                       onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.backpack.wallet').catch(() => {})}
                     >
-                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                      <Text style={styles.walletPillBtnText}>{t('play_store', 'PLAY STORE')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.walletPillGhostBtn}
                       onPress={() => Linking.openURL('https://backpack.app').catch(() => {})}
                     >
-                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                      <Text style={styles.walletPillGhostText}>{t('website', 'WEBSITE')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -251,13 +255,13 @@ export function SystemStateModal({
                   style={styles.primaryGoldButton}
                   onPress={onActionPrimary || onClose}
                 >
-                  <Text style={styles.primaryButtonText}>TRY CONNECTING AGAIN</Text>
+                  <Text style={styles.primaryButtonText}>{t('try_connecting_again', 'TRY CONNECTING AGAIN')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.ghostButton}
                   onPress={onActionSecondary || onClose}
                 >
-                  <Text style={styles.ghostButtonText}>CONTINUE IN SEEKER DEMO MODE</Text>
+                  <Text style={styles.ghostButtonText}>{t('continue_seeker_demo', 'CONTINUE IN SEEKER DEMO MODE')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

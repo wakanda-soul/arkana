@@ -21,7 +21,7 @@ import { useLanguage } from "@/services/i18n";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
-  const { openLanguageModal, currentOption } = useLanguage();
+  const { openLanguageModal, currentOption, t } = useLanguage();
   const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
@@ -90,10 +90,10 @@ export default function WalletScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Obsidian Header */}
         <View style={styles.header}>
-          <Text style={styles.headerKicker}>ME · IDENTITY & RECORD</Text>
+          <Text style={styles.headerKicker}>{t('tab_me', 'ME')} {'\u00B7'} {t('identity_and_record', 'IDENTITY & RECORD')}</Text>
           <Text style={styles.headerTitle}>seeker.sol</Text>
           <Text style={styles.headerSub}>
-            On-chain proof of your rites, seed vault status, and oracle fuel.
+            {t('wallet_sub', 'On-chain proof of your rites, seed vault status, and oracle fuel.')}
           </Text>
         </View>
 
@@ -103,25 +103,25 @@ export default function WalletScreen() {
             <View style={styles.walletCard}>
               <View style={styles.walletCardHeader}>
                 <View style={styles.seekerBadge}>
-                  <Text style={styles.seekerBadgeText}>SEEKER GENESIS HOLDER</Text>
+                  <Text style={styles.seekerBadgeText}>{t('seeker_genesis_holder', 'SEEKER GENESIS HOLDER')}</Text>
                 </View>
                 <View style={styles.statusDotRow}>
                   <View style={styles.liveDot} />
-                  <Text style={styles.statusText}>Connected</Text>
+                  <Text style={styles.statusText}>{t('connected', 'Connected')}</Text>
                 </View>
               </View>
 
-              <Text style={styles.addressLabel}>CONNECTED PUBLIC KEY</Text>
+              <Text style={styles.addressLabel}>{t('connected_pubkey', 'CONNECTED PUBLIC KEY')}</Text>
               <Pressable style={styles.addressBox} onPress={copyAddress}>
                 <Text style={styles.addressText}>{ellipsify(address, 8)}</Text>
-                <Text style={styles.copyText}>{copied ? "COPIED" : "COPY"}</Text>
+                <Text style={styles.copyText}>{copied ? t('copied', 'COPIED') : t('copy', 'COPY')}</Text>
               </Pressable>
 
               {/* Seed Vault Notice */}
               <View style={styles.seedVaultBox}>
-                <Text style={styles.seedVaultIcon}>&#x2756;</Text>
+                <Text style={styles.seedVaultIcon}>{'\u2756'}</Text>
                 <Text style={styles.seedVaultText}>
-                  Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.
+                  {t('seed_vault_notice', 'Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.')}
                 </Text>
               </View>
             </View>
@@ -130,39 +130,39 @@ export default function WalletScreen() {
             <View style={styles.row}>
               {/* SOL Card */}
               <View style={styles.assetCard}>
-                <Text style={styles.assetLabel}>SOL BALANCE</Text>
+                <Text style={styles.assetLabel}>{t('sol_balance', 'SOL BALANCE')}</Text>
                 <Text style={styles.assetValue}>1.45 SOL</Text>
-                <Text style={styles.assetSub}>Gas & Minting</Text>
+                <Text style={styles.assetSub}>{t('gas_and_minting', 'Gas & Minting')}</Text>
               </View>
 
               {/* SKR Card */}
               <View style={[styles.assetCard, styles.skrCard]}>
-                <Text style={styles.assetLabel}>SKR BALANCE</Text>
+                <Text style={styles.assetLabel}>{t('skr_balance', 'SKR BALANCE')}</Text>
                 <Text style={[styles.assetValue, { color: ObsidianTokens.colors.gold.primary }]}>
                   {clockInState.skrBalance} SKR
                 </Text>
-                <Text style={styles.assetSub}>Seeker Oracle Fuel</Text>
+                <Text style={styles.assetSub}>{t('seeker_oracle_fuel', 'Seeker Oracle Fuel')}</Text>
               </View>
             </View>
 
             {/* Clock In Stats */}
             <View style={styles.statsCard}>
-              <Text style={styles.statsTitle}>CLOCK-IN REPUTATION</Text>
+              <Text style={styles.statsTitle}>{t('clockin_reputation', 'CLOCK-IN REPUTATION')}</Text>
 
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>✦ {clockInState.streak}</Text>
-                  <Text style={styles.statLabel}>Day Streak</Text>
+                  <Text style={styles.statValue}>{'\u2726'} {clockInState.streak}</Text>
+                  <Text style={styles.statLabel}>{t('day_streak', 'Day Streak')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>◈ {clockInState.totalReadings}</Text>
-                  <Text style={styles.statLabel}>Rites Sealed</Text>
+                  <Text style={styles.statValue}>{'\u25C8'} {clockInState.totalReadings}</Text>
+                  <Text style={styles.statLabel}>{t('rites_sealed', 'Rites Sealed')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>100%</Text>
-                  <Text style={styles.statLabel}>Consensus Rate</Text>
+                  <Text style={styles.statLabel}>{t('consensus_rate', 'Consensus Rate')}</Text>
                 </View>
               </View>
             </View>
@@ -170,10 +170,10 @@ export default function WalletScreen() {
             {/* Membership / Order Box */}
             <View style={styles.membershipCard}>
               <View>
-                <Text style={styles.membershipTitle}>Join the Order</Text>
-                <Text style={styles.membershipSub}>Unlimited asks · Unbroken record · 0.045 SOL/mo or 15 SKR</Text>
+                <Text style={styles.membershipTitle}>{t('join_the_order', 'Join the Order')}</Text>
+                <Text style={styles.membershipSub}>{t('join_order_sub', 'Unlimited asks \u00B7 Unbroken record \u00B7 0.045 SOL/mo or 15 SKR')}</Text>
               </View>
-              <Text style={styles.membershipArrow}>→</Text>
+              <Text style={styles.membershipArrow}>{'\u2192'}</Text>
             </View>
 
             {/* Action Buttons */}
@@ -181,7 +181,7 @@ export default function WalletScreen() {
               style={({ pressed }) => [styles.disconnectBtn, pressed && styles.btnPressed]}
               onPress={handleDisconnect}
             >
-              <Text style={styles.disconnectText}>DISCONNECT WALLET</Text>
+              <Text style={styles.disconnectText}>{t('disconnect_wallet', 'DISCONNECT WALLET')}</Text>
             </Pressable>
           </>
         ) : (
@@ -194,13 +194,13 @@ export default function WalletScreen() {
                 </View>
                 <View style={styles.statusDotRow}>
                   <View style={[styles.liveDot, { backgroundColor: ObsidianTokens.colors.ink.text42 }]} />
-                  <Text style={styles.statusText}>Not Connected</Text>
+                  <Text style={styles.statusText}>{t('not_connected', 'Not Connected')}</Text>
                 </View>
               </View>
 
-              <Text style={styles.disconnectedTitle}>Connect Your Wallet</Text>
+              <Text style={styles.disconnectedTitle}>{t('connect_wallet_title', 'Connect Your Wallet')}</Text>
               <Text style={styles.disconnectedDesc}>
-                Connect with Seeker Seed Vault or any Solana Mobile wallet to persist your oracle streaks, verify on-chain readings, and manage your SKR balance.
+                {t('connect_wallet_desc', 'Connect with Seeker Seed Vault or any Solana Mobile wallet to persist your oracle streaks, verify on-chain readings, and manage your SKR balance.')}
               </Text>
 
               <Pressable
@@ -215,20 +215,20 @@ export default function WalletScreen() {
                 {isConnecting ? (
                   <ActivityIndicator color="#100C06" />
                 ) : (
-                  <Text style={styles.connectMainBtnText}>CONNECT WALLET (MWA)</Text>
+                  <Text style={styles.connectMainBtnText}>{t('connect_wallet_mwa', 'CONNECT WALLET (MWA)')}</Text>
                 )}
               </Pressable>
 
               {/* Official Wallets Quick Links */}
               <View style={styles.walletsQuickSection}>
-                <Text style={styles.walletsQuickKicker}>OFFICIAL COMPATIBLE WALLETS</Text>
+                <Text style={styles.walletsQuickKicker}>{t('official_compatible_wallets', 'OFFICIAL COMPATIBLE WALLETS')}</Text>
                 <View style={styles.walletsQuickRow}>
                   <Pressable
                     style={styles.walletQuickBadge}
                     onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {})}
                   >
                     <Text style={styles.walletQuickName}>PHANTOM</Text>
-                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                    <Text style={styles.walletQuickStore}>{t('play_store', 'PLAY STORE')} {'\u2197'}</Text>
                   </Pressable>
 
                   <Pressable
@@ -236,7 +236,7 @@ export default function WalletScreen() {
                     onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {})}
                   >
                     <Text style={styles.walletQuickName}>SOLFLARE</Text>
-                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                    <Text style={styles.walletQuickStore}>{t('play_store', 'PLAY STORE')} {'\u2197'}</Text>
                   </Pressable>
 
                   <Pressable
@@ -244,7 +244,7 @@ export default function WalletScreen() {
                     onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.backpack.wallet').catch(() => {})}
                   >
                     <Text style={styles.walletQuickName}>BACKPACK</Text>
-                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                    <Text style={styles.walletQuickStore}>{t('play_store', 'PLAY STORE')} {'\u2197'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -260,15 +260,15 @@ export default function WalletScreen() {
                 openLanguageModal();
               }}
             >
-              <Text style={styles.featureIcon}>✦</Text>
+              <Text style={styles.featureIcon}>{'\u2726'}</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Sacred Dialect / Language</Text>
+                <Text style={styles.featureTitle}>{t('dialect_card_title', 'Sacred Dialect / Language')}</Text>
                 <Text style={styles.featureDesc}>
-                  Active: {currentOption.nativeName} ({currentOption.name}) · Tap to change
+                  {t('dialect_card_desc', 'Active: {name} \u00B7 Tap to change', { name: `${currentOption.nativeName} (${currentOption.name})` })}
                 </Text>
               </View>
               <View style={styles.langPillBadge}>
-                <Text style={styles.langPillText}>{currentOption.tag} &#x2197;</Text>
+                <Text style={styles.langPillText}>{currentOption.tag} {'\u2197'}</Text>
               </View>
             </Pressable>
 
@@ -276,29 +276,29 @@ export default function WalletScreen() {
             <View style={styles.featureBox}>
               <Text style={styles.featureIcon}>&#x2756;</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Seed Vault Enclave</Text>
+                <Text style={styles.featureTitle}>{t('seed_vault_enclave', 'Seed Vault Enclave')}</Text>
                 <Text style={styles.featureDesc}>
-                  Hardware-isolated security for Solana Mobile Seeker. Seed phrases never touch Android memory.
+                  {t('seed_vault_enclave_desc', 'Hardware-isolated security for Solana Mobile Seeker. Seed phrases never touch Android memory.')}
                 </Text>
               </View>
             </View>
 
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>✦</Text>
+              <Text style={styles.featureIcon}>{'\u2726'}</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Daily Block Consensus</Text>
+                <Text style={styles.featureTitle}>{t('daily_consensus_block_title', 'Daily Block Consensus')}</Text>
                 <Text style={styles.featureDesc}>
-                  Validate daily block consensus on the Altar to refill your daily readings allowance without spending SKR.
+                  {t('daily_consensus_block_desc', 'Validate daily block consensus on the Altar to refill your daily readings allowance without spending SKR.')}
                 </Text>
               </View>
             </View>
 
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>◈</Text>
+              <Text style={styles.featureIcon}>{'\u25C8'}</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>78 Solana Archetypes</Text>
+                <Text style={styles.featureTitle}>{t('archetypes_title', '78 Solana Archetypes')}</Text>
                 <Text style={styles.featureDesc}>
-                  Full collection of 78 crypto-tarot arcana reflecting decentralized market cycles.
+                  {t('archetypes_desc', 'Full collection of 78 crypto-tarot arcana reflecting decentralized market cycles.')}
                 </Text>
               </View>
             </View>

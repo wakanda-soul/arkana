@@ -27,6 +27,7 @@ import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ShuffleCeremony } from "@/components/tarot/ShuffleCeremony";
 import { MarkdownText } from "@/components/ui/MarkdownText";
 import { unlockCards } from "@/services/codexService";
+import { useLanguage } from "@/services/i18n";
 
 interface ChatMessage {
   id: string;
@@ -78,6 +79,7 @@ const DIVERSE_PROMPTS: RitualPrompt[] = [
 
 export default function OracleScreen() {
   const { account } = useAuth();
+  const { t, language } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
@@ -161,6 +163,7 @@ export default function OracleScreen() {
         message: query,
         wallet: walletAddress,
         payWithSol,
+        language,
       });
 
       let cardPayload: ZoomCardData | null = null;
@@ -496,7 +499,7 @@ export default function OracleScreen() {
         <View style={styles.inputBar}>
           <TextInput
             style={styles.textInput}
-            placeholder="Inscribe a question on destiny, work, or risk..."
+            placeholder={t('ask_oracle_placeholder', 'Inscribe a question on destiny, work, or risk...')}
             placeholderTextColor={ObsidianTokens.colors.ink.text42}
             value={input}
             onChangeText={setInput}

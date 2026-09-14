@@ -16,6 +16,7 @@ import { CardImages, CARD_BACK } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
 import { shareToTwitter } from '@/utils/shareOmen';
 import { unlockCards } from '@/services/codexService';
+import { useLanguage } from '@/services/i18n';
 
 export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
 
@@ -57,6 +58,7 @@ export function DailyRitualView({
   onInspectCard,
   onStateTrigger,
 }: DailyRitualViewProps) {
+  const { t } = useLanguage();
   const [stage, setStage] = useState<RitualStage>(
     isAlreadyClockedIn ? 'sealed' : 'idle'
   );
@@ -371,14 +373,14 @@ export function DailyRitualView({
 
       {/* Stage Tracker Header */}
       <View style={styles.topStageRow}>
-        <Text style={styles.brandTitle}>DAILY CONSENSUS BLOCK</Text>
+        <Text style={styles.brandTitle}>{t('daily_consensus_block', 'DAILY CONSENSUS BLOCK')}</Text>
         <Text style={styles.stageIndicator}>
-          {stage === 'idle' && 'UNREAD'}
-          {stage === 'shuffle' && 'SHUFFLING'}
-          {stage === 'pick' && 'CHOOSE'}
-          {stage === 'read' && 'REVEALED'}
-          {stage === 'sign' && 'SIGNING'}
-          {stage === 'sealed' && 'SEALED ON-CHAIN'}
+          {stage === 'idle' && t('stage_unread', 'UNREAD')}
+          {stage === 'shuffle' && t('stage_shuffling', 'SHUFFLING')}
+          {stage === 'pick' && t('stage_choose', 'CHOOSE')}
+          {stage === 'read' && t('stage_revealed', 'REVEALED')}
+          {stage === 'sign' && t('stage_signing', 'SIGNING')}
+          {stage === 'sealed' && t('stage_sealed', 'SEALED ON-CHAIN')}
         </Text>
       </View>
 
@@ -388,10 +390,10 @@ export function DailyRitualView({
           <View style={styles.headerBlock}>
             <Text style={styles.heroTitle}>
               {todayName} Rite{'\n'}
-              <Text style={styles.goldItalic}>draw consensus</Text>
+              <Text style={styles.goldItalic}>{t('draw_consensus', 'draw consensus')}</Text>
             </Text>
             <Text style={styles.heroSub}>
-              One card per block. Touch the deck to cast your intent into the protocol.
+              {t('one_card_per_block', 'One card per block. Touch the deck to cast your intent into the protocol.')}
             </Text>
           </View>
 
@@ -415,14 +417,18 @@ export function DailyRitualView({
               style={({ pressed }) => [styles.touchDeckBtn, pressed && styles.btnPressed]}
               onPress={startShuffle}
             >
-              <Text style={styles.touchDeckText}>TOUCH THE DECK</Text>
+              <Text style={styles.touchDeckText}>{t('touch_the_deck', 'TOUCH THE DECK')}</Text>
             </Pressable>
 
             <View style={styles.streakIndicatorRow}>
-              <Text style={styles.streakLabel}>DAY {streak} UNBROKEN</Text>
+              <Text style={styles.streakLabel}>
+                {t('day_unbroken', 'DAY {n} UNBROKEN', { n: streak })}
+              </Text>
               {canRepairStreak && (
                 <Pressable onPress={onRepairStreak} style={styles.repairTag}>
-                  <Text style={styles.repairTagText}>Repair ({streakRepairCostSkr} SKR)</Text>
+                  <Text style={styles.repairTagText}>
+                    {t('repair_skr', 'Repair ({cost} SKR)', { cost: streakRepairCostSkr })}
+                  </Text>
                 </Pressable>
               )}
             </View>
@@ -434,7 +440,7 @@ export function DailyRitualView({
       {stage === 'shuffle' && (
         <View style={styles.stageContent}>
           <View style={styles.headerBlock}>
-            <Text style={styles.shufflingTitle}>The network is shuffling</Text>
+            <Text style={styles.shufflingTitle}>{t('network_is_shuffling', 'The network is shuffling')}</Text>
           </View>
 
           <View style={styles.deckStackContainer}>
@@ -452,7 +458,7 @@ export function DailyRitualView({
           </View>
 
           <View style={styles.bottomActions}>
-            <Text style={styles.shufflingMono}>SAMPLING VALIDATOR ENTROPY_</Text>
+            <Text style={styles.shufflingMono}>{t('sampling_entropy', 'SAMPLING VALIDATOR ENTROPY_')}</Text>
           </View>
         </View>
       )}
@@ -462,10 +468,11 @@ export function DailyRitualView({
         <View style={styles.stageContent}>
           <View style={styles.headerBlock}>
             <Text style={styles.heroTitle}>
-              Select your{'\n'}
-              <Text style={styles.goldItalic}>consensus card</Text>
+              {t('select_consensus_card', 'Select your consensus card')}
             </Text>
-            <Text style={styles.heroSub}>Choose one of the three archetypes drawn from the slot.</Text>
+            <Text style={styles.heroSub}>
+              {t('choose_three_sub', 'Choose one of the three archetypes drawn from the slot.')}
+            </Text>
           </View>
 
           {/* Fan of 3 interactive cards */}
@@ -508,7 +515,7 @@ export function DailyRitualView({
           </View>
 
           <View style={styles.bottomActions}>
-            <Text style={styles.tapCardLabel}>TAP TO REVEAL</Text>
+            <Text style={styles.tapCardLabel}>{t('reveal_all', 'TAP TO REVEAL')}</Text>
           </View>
         </View>
       )}
@@ -532,19 +539,20 @@ export function DailyRitualView({
                 transition={200}
               />
               <View style={styles.zoomAffordanceBadge}>
-                <Text style={styles.zoomAffordanceText}>TAP TO ZOOM</Text>
+                <Text style={styles.zoomAffordanceText}>{t('inspect_card', 'TAP TO INSPECT')}</Text>
               </View>
               {orientation === 'REVERSED' && (
                 <View style={styles.reversedBadge}>
-                  <Text style={styles.reversedBadgeText}>▼ REVERSED</Text>
+                  <Text style={styles.reversedBadgeText}>{'\u25BC'} REVERSED</Text>
                 </View>
               )}
             </Animated.View>
           </Pressable>
 
+          {/* Card Details Block */}
           <View style={styles.cardInfoBox}>
             <Text style={styles.cardNumeralLabel}>
-              {getRomanNumeral(selectedCard.card_no)} · {selectedCard.suit.toUpperCase()}
+              {getRomanNumeral(selectedCard.card_no)} {'\u00B7'} {selectedCard.suit.toUpperCase()}
             </Text>
             <Text style={styles.cardTitleSerif}>{selectedCard.crypto_name}</Text>
             <View
@@ -559,7 +567,7 @@ export function DailyRitualView({
                   orientation === 'REVERSED' ? styles.orientationTextRev : styles.orientationTextUp,
                 ]}
               >
-                {orientation === 'REVERSED' ? '▼ DRAWN REVERSED' : '▲ DRAWN UPRIGHT'}
+                {orientation === 'REVERSED' ? '\u25BC DRAWN REVERSED' : '\u25B2 DRAWN UPRIGHT'}
               </Text>
             </View>
 
@@ -581,13 +589,13 @@ export function DailyRitualView({
               style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
               onPress={() => onInspectCard && onInspectCard(selectedCard, orientation)}
             >
-              <Text style={styles.secondaryBtnText}>INSPECT</Text>
+              <Text style={styles.secondaryBtnText}>{t('inspect_card', 'INSPECT')}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.primaryGoldBtn, pressed && styles.btnPressed]}
               onPress={handleSign}
             >
-              <Text style={styles.primaryGoldBtnText}>SIGN ON-CHAIN</Text>
+              <Text style={styles.primaryGoldBtnText}>{t('seal_in_blockchain', 'SIGN ON-CHAIN')}</Text>
             </Pressable>
           </View>
         </View>
