@@ -445,6 +445,20 @@ function generateAIReadingProse(reading, userQuestion = "", language = "en") {
     }
 
     const isRu = isCyrillic(userQuestion);
+    const LANG_MAP = {
+      zh: "Mandarin Chinese (\\u7B80\\u4F53\\u4E2D\\u6587)",
+      hi: "Hindi (\\u0939\\u093F\\u0928\\u094D\\u0926\\u0940)",
+      es: "Spanish (Espa\\u00F1ol)",
+      ar: "Arabic (\\u0627\\u0644\\u0639\\u0631\\u0628\\u064A\\u0629)",
+      fr: "French (Fran\\u00E7ais)",
+      bn: "Bengali (\\u09AC\\u09BE\\u0982\\u09B2\\u09BE)",
+      pt: "Portuguese (Portugu\\u00EAs)",
+      ru: "Russian (\\u0420\\u0443\\u0441\\u0441\\u043A\\u0438\\u0439)",
+      id: "Indonesian (Bahasa Indonesia)",
+      en: "English"
+    };
+    const targetLang = (language && LANG_MAP[language]) ? LANG_MAP[language] : (isRu ? "Russian (\\u0420\\u0443\\u0441\\u0441\\u043A\\u0438\\u0439)" : "English");
+
     const cardDescriptions = cards.map((c, idx) => {
       const pos = c.position || `Position ${idx + 1}`;
       const hint = c.position_hint ? ` (${c.position_hint})` : "";
@@ -465,7 +479,7 @@ ${cardDescriptions}
 CRITICAL RULES (IMMUTABLE):
 1. DEEP IMMERSION: ${userQuestion ? `You MUST deeply, thoroughly, and directly answer the querent's question ("${userQuestion.trim()}"). Do NOT output generic boilerplate. Relate every position and card directly to their specific dilemma, decision, or situation.` : `Provide deep strategic insight into the currents of the network.`}
 2. STRICTLY ARKANA DECK: NEVER mention or compare with any classic tarot card, traditional tarot name, or classic suit (NEVER say "classic equivalent", "\\u044D\\u043A\\u0432\\u0438\\u0432\\u0430\\u043B\\u0435\\u043D\\u0442", "Rider-Waite", etc.). The querent must ONLY see and know the Arkana crypto deck.
-3. LANGUAGE: ${isRu ? "Respond entirely in RUSSIAN. Canonical card names stay in English." : "Respond in English."}
+3. LANGUAGE: Respond entirely in ${targetLang}. Canonical card names MUST ALWAYS remain in English (e.g. "The Validator", "The Mempool", "Mainnet Launch").
 4. TONE: Calm, wise, cyberpunk-mystical, speaking in blockchain metaphors (consensus, mempool, validators, liquidity, confirmation, next block).
 5. FORMAT: Output STRICTLY a valid JSON object with the following keys. No markdown code blocks, no other text:
 {

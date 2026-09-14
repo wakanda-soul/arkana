@@ -15,12 +15,13 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
 import { fetchClockInStatus, ClockInResult } from "@/services/oracleApi";
 import { ellipsify } from "@/utils/ellipsify";
-import { showError } from "@/utils/show-error";
 import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
+import { useLanguage } from "@/services/i18n";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
+  const { openLanguageModal, currentOption } = useLanguage();
   const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
@@ -248,6 +249,28 @@ export default function WalletScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Language Selection Card */}
+            <Pressable
+              style={({ pressed }) => [styles.featureBox, styles.langBox, pressed && styles.cardPressed]}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                openLanguageModal();
+              }}
+            >
+              <Text style={styles.featureIcon}>✦</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>Sacred Dialect / Language</Text>
+                <Text style={styles.featureDesc}>
+                  Active: {currentOption.nativeName} ({currentOption.name}) · Tap to change
+                </Text>
+              </View>
+              <View style={styles.langPillBadge}>
+                <Text style={styles.langPillText}>{currentOption.tag} &#x2197;</Text>
+              </View>
+            </Pressable>
 
             {/* Feature & Security Cards */}
             <View style={styles.featureBox}>
@@ -671,5 +694,28 @@ const styles = StyleSheet.create({
     fontSize: 8,
     marginTop: 4,
     letterSpacing: 0.5,
+  },
+  langBox: {
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+  },
+  langPillBadge: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  langPillText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  cardPressed: {
+    transform: [{ scale: ObsidianTokens.motion.pressScale }],
   },
 });

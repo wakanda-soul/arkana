@@ -216,13 +216,14 @@ export async function fetchReading(
   spread: string,
   question: string = '',
   wallet?: string,
-  payWithSol: boolean = false
+  payWithSol: boolean = false,
+  language: string = 'en'
 ): Promise<ReadingResponse> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ spread, question, wallet, payWithSol }),
+      body: JSON.stringify({ spread, question, wallet, payWithSol, language }),
     });
     if (res.status === 402) {
       const errData = await res.json();
@@ -279,12 +280,14 @@ export async function sendOracleChatMessage({
   history = [],
   payWithSol = false,
   txSignature = null,
+  language = 'en',
 }: {
   message: string;
   wallet?: string;
   history?: any[];
   payWithSol?: boolean;
   txSignature?: string | null;
+  language?: string;
 }): Promise<{
   reply: string;
   card?: any;
@@ -294,7 +297,7 @@ export async function sendOracleChatMessage({
   const res = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature }),
+    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, language }),
   });
 
   const data = await res.json();

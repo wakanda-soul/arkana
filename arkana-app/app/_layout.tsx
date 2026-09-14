@@ -10,6 +10,8 @@ import { View } from 'react-native'
 import { useTrackLocations } from '@/hooks/use-track-locations'
 import { AppSplashController } from '@/components/app-splash-controller'
 
+import { LanguageSelectionModal } from '@/components/onboarding/LanguageSelectionModal'
+
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
@@ -45,6 +47,7 @@ export default function RootLayout() {
       <AppProviders>
         <AppSplashController />
         <RootNavigator />
+        <LanguageSelectionModal />
         <StatusBar style="auto" />
       </AppProviders>
       <PortalHost />
