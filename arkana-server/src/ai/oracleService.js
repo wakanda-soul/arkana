@@ -209,6 +209,67 @@ function validateModelOutput(reply, originalMessage) {
   return reply;
 }
 
+function classifyUserIntent(message) {
+  const text = (message || "").trim().toLowerCase();
+  if (!text) return "gibberish";
+
+  // Clean tokens
+  const clean = text.replace(/[^a-zA-Z\u0400-\u04FF0-9\s?]/g, " ").trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+
+  if (words.length === 0) return "gibberish";
+
+  // 1. Gibberish / keyboard mash / single word without vowels / test
+  if (clean.length < 3 || /^(test|\u0442\u0435\u0441\u0442|asdf|qwer|1234?)$/i.test(clean)) return "gibberish";
+  if (words.length === 1 && words[0].length > 4 && !/[aeiouy\u0430\u0435\u0451\u0438\u043E\u0443\u044B\u044D\u044E\u044F]/i.test(words[0])) return "gibberish";
+
+  // 2. Greetings
+  const greetings = [
+    "\u043F\u0440\u0438\u0432\u0435\u0442",
+    "\u043F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044E",
+    "\u0437\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439",
+    "\u0437\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435",
+    "\u0434\u043E\u0431\u0440\u044B\u0439",
+    "\u0445\u0430\u0439",
+    "\u0445\u0435\u043B\u043B\u043E",
+    "\u0441\u0430\u043B\u044E\u0442",
+    "\u043A\u0443",
+    "\u0434\u0430\u0440\u043E\u0432",
+    "hello", "hi", "hey", "greetings", "gm", "good", "yo", "sup"
+  ];
+  if (greetings.includes(words[0]) && words.length <= 4) return "greeting";
+  if (/^(\u0434\u043E\u0431\u0440\u043E\u0435\s+\u0443\u0442\u0440\u043E|\u0434\u043E\u0431\u0440\u044B\u0439\s+(\u0434\u0435\u043D\u044C|\u0432\u0435\u0447\u0435\u0440))/i.test(clean)) return "greeting";
+
+  // 3. Identity / "who are you" / "what is this"
+  if (/(\u043A\u0442\u043E\s+\u0442\u044B|\u0447\u0442\u043E\s+\u0442\u044B|\u043A\u0430\u043A\s+\u0442\u0435\u0431\u044F|\u043A\u0430\u043A\s+\u044D\u0442\u043E\s+\u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442|\u0447\u0442\u043E\s+\u0437\u0434\u0435\u0441\u044C|who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do|what\s+is\s+this|how\s+does\s+this\s+work|what\s+is\s+arkana)/i.test(clean)) {
+    return "identity";
+  }
+
+  // 4. Gratitude / Acknowledgment
+  const thanks = [
+    "\u0441\u043F\u0430\u0441\u0438\u0431\u043E",
+    "\u0431\u043B\u0430\u0433\u043E\u0434\u0430\u0440\u044E",
+    "\u043F\u043E\u043D\u044F\u043B",
+    "\u044F\u0441\u043D\u043E",
+    "\u0445\u043E\u0440\u043E\u0448\u043E",
+    "\u043E\u043A",
+    "\u043B\u0430\u0434\u043D\u043E",
+    "\u043E\u0442\u043B\u0438\u0447\u043D\u043E",
+    "thanks", "thank", "understood", "okay", "ok", "cool", "great", "alright"
+  ];
+  if (thanks.includes(words[0]) && words.length <= 4) return "acknowledgment";
+
+  // 5. Inquiry vs random statement
+  const hasQuestionMark = message.includes("?");
+  const inquiryRegex = /(\u0441\u0442\u043E\u0438\u0442|\u043D\u0443\u0436\u043D\u043E|\u043C\u043E\u0436\u043D\u043E|\u0431\u0443\u0434\u0435\u0442|\u043A\u0430\u043A|\u0447\u0442\u043E|\u043F\u043E\u0447\u0435\u043C\u0443|\u0437\u0430\u0447\u0435\u043C|\u0433\u0434\u0435|\u043A\u0443\u0434\u0430|\u043A\u043E\u0433\u0434\u0430|\u043F\u043E\u0434\u0441\u043A\u0430\u0436|\u043F\u043E\u0441\u043E\u0432\u0435\u0442\u0443\u0439|\u0440\u0430\u0441\u0441\u043A\u0430\u0436|\u043F\u043E\u043C\u043E\u0433\u0438|\u0440\u0430\u0441\u043A\u043B\u0430\u0434|\u043A\u0430\u0440\u0442|\u043F\u0440\u043E\u0433\u043D\u043E\u0437|\u043F\u0440\u043E\u0435\u043A\u0442|\u0432\u044B\u0431\u043E\u0440|\u0440\u0435\u0448\u0435\u043D|\u0434\u0438\u043B\u0435\u043C\u043C|\u0440\u0438\u0441\u043A|\u043F\u0443\u0442\u044C|\u0446\u0435\u043B\u044C|\u043E\u0442\u043D\u043E\u0448\u0435\u043D|\u0440\u0430\u0431\u043E\u0442|\u0434\u0435\u043D\u044C\u0433|\u0438\u043D\u0432\u0435\u0441\u0442|\u043A\u0443\u043F\u0438\u0442|\u043F\u0440\u043E\u0434\u0430\u0442|should|how|what|why|where|when|could|would|will|can|is|are|advise|advice|guide|reading|spread|cards|project|choice|dilemma|risk|career|path|invest|buy|sell|token)/i;
+
+  if (hasQuestionMark || inquiryRegex.test(clean) || words.length >= 7) {
+    return "inquiry";
+  }
+
+  return "statement";
+}
+
 function generateOracleChatReply(message, history = []) {
   return new Promise((resolve) => {
     // Layer 1: Fast safety & injection interceptor
@@ -227,33 +288,75 @@ function generateOracleChatReply(message, history = []) {
     }
 
     const cleanMessage = sanitizeUserInput(message);
+    const intent = classifyUserIntent(cleanMessage);
 
-    // Draw a card from the 78 Arcana deck for this chat inquiry
+    // Only draw a card from the 78 Arcana deck if the querent is actually asking a question/inquiry
     let drawnCard = null;
     let orientation = "upright";
-    try {
-      const { getDeck } = require("../engine/oracleEngine");
-      const deck = getDeck();
-      if (deck && deck.length > 0) {
-        drawnCard = deck[Math.floor(Math.random() * deck.length)];
-        orientation = Math.random() > 0.75 ? "reversed" : "upright";
+    if (intent === "inquiry") {
+      try {
+        const { getDeck } = require("../engine/oracleEngine");
+        const deck = getDeck();
+        if (deck && deck.length > 0) {
+          drawnCard = deck[Math.floor(Math.random() * deck.length)];
+          orientation = Math.random() > 0.75 ? "reversed" : "upright";
+        }
+      } catch (e) {
+        console.warn("Could not draw card for chat:", e);
       }
-    } catch (e) {
-      console.warn("Could not draw card for chat:", e);
     }
 
     // Layer 2: Secure boundary-isolated prompt
     let fullPrompt = `${ORACLE_CHAT_PROMPT}\n\n`;
 
-    if (drawnCard) {
-      fullPrompt += `ARCHETYPE DRAWN FOR THIS QUERY:
+    if (intent === "greeting") {
+      fullPrompt += `CONTEXT: The querent greeted you (e.g. "hello", "\\u043F\\u0440\\u0438\\u0432\\u0435\\u0442").
+INSTRUCTIONS:
+1. Greet the querent with calm, mystical dignity as Arkana, the Solana Oracle.
+2. DO NOT name or invent any drawn card. Do NOT produce a tarot reading.
+3. Briefly explain that you interpret the 78 Arcana of the Chain to reveal hidden patterns across life, craft, relationships, and decisions.
+4. Invite them to pose their question or dilemma so the cards can be drawn.
+5. Format naturally with clean paragraphs. Do NOT use markdown headers like "###".\n\n`;
+    } else if (intent === "identity") {
+      fullPrompt += `CONTEXT: The querent asks who you are or what this oracle does.
+INSTRUCTIONS:
+1. Introduce yourself as Arkana: The Solana Oracle, an ancient digital seer reading the currents of the decentralized network and human intent.
+2. Explain that you do not predict the future, but interpret archetypes from your 78-card crypto-tarot deck to give clarity on projects, crossroads, relationships, and choices.
+3. DO NOT draw or name any card.
+4. Invite them to ask what is currently on their mind or what decision they are facing.
+5. Format in clean, elegant prose without clunky markdown headers.\n\n`;
+    } else if (intent === "acknowledgment") {
+      fullPrompt += `CONTEXT: The querent is acknowledging your prior reading or saying thanks.
+INSTRUCTIONS:
+1. Reply graciously in-character ("May consensus confirm your clarity", "The ledger remembers your intent").
+2. Remind them that whenever a new crossroad arises, the Arcana are ready to be consulted.
+3. Keep it brief (1-2 sentences). DO NOT draw any card.\n\n`;
+    } else if (intent === "gibberish") {
+      fullPrompt += `CONTEXT: The querent entered incomplete, unclear, or random text without a question.
+INSTRUCTIONS:
+1. In character as Arkana, note with serene composure that the signal in the mempool is faint or fragmented.
+2. Ask them to clearly state their question, situation, or dilemma so the cards can speak.
+3. DO NOT draw any card.\n\n`;
+    } else if (intent === "statement") {
+      fullPrompt += `CONTEXT: The querent entered a statement, comment, or non-question text (e.g. general remarks, banter, or incomplete thoughts).
+INSTRUCTIONS:
+1. Speak in-character as Arkana, the Solana Oracle, with calm warmth and mystical presence.
+2. Acknowledge what they said, but clearly explain that the 78 Arcana of the Chain are drawn only in response to a sincere question, crossroad, project dilemma, or path decision.
+3. DO NOT draw or name any card. Do NOT invent a tarot reading.
+4. Invite them to pose their specific question or situation so the consensus of the cards can be invoked.
+5. Format naturally in clean prose without markdown headers.\n\n`;
+    } else if (drawnCard) {
+      fullPrompt += `ARCHETYPE DRAWN FOR THIS INQUIRY:
 Card: ${drawnCard.crypto_name} (${drawnCard.card_no}, ${orientation})
 Classic Equivalent: ${drawnCard.classic || "None"}
 Suit: ${drawnCard.suit}
 Meaning: ${orientation === "reversed" ? drawnCard.reversed_full : drawnCard.upright_full}
 Advice: ${drawnCard.advice || ""}
 
-Explicitly name this card at the beginning of your response (e.g. "The Card Drawn: ${drawnCard.crypto_name} (${orientation === "reversed" ? "Reversed" : "Upright"})") and weave its archetype directly into your guidance.\n\n`;
+INSTRUCTIONS:
+1. Interpret the situation using the archetype of ${drawnCard.crypto_name} (${orientation === "reversed" ? "Reversed" : "Upright"}).
+2. Do NOT use markdown headers like "###" or raw hashtags. Format naturally with clean paragraphs.
+3. Weave the card's advice directly into your guidance.\n\n`;
     }
 
     if (history && Array.isArray(history) && history.length > 0) {
@@ -297,6 +400,7 @@ Arkana, speak:`;
 
         let reply = stdout.trim();
         reply = reply.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+        reply = reply.replace(/^#{1,6}\s*/gm, "").trim();
 
         // Layer 3: Post-inference output validation
         const validatedReply = validateModelOutput(reply, message);
