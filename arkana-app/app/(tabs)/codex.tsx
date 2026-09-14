@@ -194,7 +194,6 @@ export default function CodexScreen() {
                   {selectedCard.arcana.toUpperCase()} ARCANA · {selectedCard.suit.toUpperCase()}
                 </Text>
                 <Text style={styles.modalTitle}>{selectedCard.crypto_name}</Text>
-                <Text style={styles.modalClassic}>Classic: {selectedCard.classic}</Text>
               </View>
 
               <Pressable

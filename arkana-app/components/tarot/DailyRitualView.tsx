@@ -547,9 +547,6 @@ export function DailyRitualView({
               {getRomanNumeral(selectedCard.card_no)} · {selectedCard.suit.toUpperCase()}
             </Text>
             <Text style={styles.cardTitleSerif}>{selectedCard.crypto_name}</Text>
-            {selectedCard.classic && (
-              <Text style={styles.classicSubtitle}>Classic: {selectedCard.classic}</Text>
-            )}
             <View
               style={[
                 styles.orientationPill,

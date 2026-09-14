@@ -151,11 +151,6 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
             <View style={styles.detailsCard}>
               <Text style={styles.cardNoLabel}>ARCHETYPE #{card.card_no}</Text>
               <Text style={styles.cardTitle}>{card.crypto_name}</Text>
-              {card.classic && (
-                <Text style={styles.classicSubtitle}>
-                  Classic Archetype: <Text style={styles.classicAccent}>{card.classic}</Text>
-                </Text>
-              )}
 
               {card.position_hint && (
                 <View style={styles.positionHintBox}>
