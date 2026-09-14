@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
   Platform,
+  Linking,
 } from 'react-native';
 import { ObsidianTokens } from '@/constants/theme';
 import { Image } from 'expo-image';
@@ -17,6 +18,7 @@ export type SystemStateType =
   | 'ai_generating'
   | 'tx_failed'
   | 'wallet_declined'
+  | 'wallet_not_found'
   | 'limit_reached'
   | 'offline'
   | null;
@@ -186,6 +188,49 @@ export function SystemStateModal({
                   onPress={onActionSecondary || onClose}
                 >
                   <Text style={styles.ghostButtonText}>CONTINUE WITHOUT A WALLET</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Wallet Not Found State (Android device without MWA wallet) */}
+          {type === 'wallet_not_found' && (
+            <View style={styles.contentBox}>
+              <View style={styles.symbolRing}>
+                <Text style={styles.dimSymbol}>✦</Text>
+              </View>
+              <Text style={styles.titleSerif}>No Solana wallet detected</Text>
+              <Text style={styles.bodySerif}>
+                On Android, Arkana connects via Mobile Wallet Adapter. Install Phantom or Solflare from Google Play to link your on-chain keys, or explore freely in Seeker Demo mode.
+              </Text>
+              <View style={styles.italicPanel}>
+                <Text style={styles.italicText}>
+                  Standard Android devices require Phantom, Solflare, or Backpack to sign Solana transactions.
+                </Text>
+              </View>
+
+              <View style={styles.actionFooterColumn}>
+                <TouchableOpacity
+                  style={styles.primaryGoldButton}
+                  onPress={() => {
+                    Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {});
+                  }}
+                >
+                  <Text style={styles.primaryButtonText}>INSTALL PHANTOM (GOOGLE PLAY)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.primaryGoldBorderButton}
+                  onPress={() => {
+                    Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {});
+                  }}
+                >
+                  <Text style={styles.primaryGoldBorderText}>INSTALL SOLFLARE (GOOGLE PLAY)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.ghostButton}
+                  onPress={onActionSecondary || onClose}
+                >
+                  <Text style={styles.ghostButtonText}>CONTINUE IN SEEKER DEMO MODE</Text>
                 </TouchableOpacity>
               </View>
             </View>

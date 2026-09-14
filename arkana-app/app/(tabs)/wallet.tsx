@@ -16,11 +16,13 @@ import { fetchClockInStatus, ClockInResult } from "@/services/oracleApi";
 import { ellipsify } from "@/utils/ellipsify";
 import { showError } from "@/utils/show-error";
 import { ObsidianTokens } from "@/constants/theme";
+import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
   const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
+  const [systemState, setSystemState] = useState<SystemStateType>(null);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -55,8 +57,18 @@ export default function WalletScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await signIn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {
-      showError("Could not connect wallet", e);
+    } catch (e: any) {
+      const errStr = String(e?.message || e || "");
+      if (
+        errStr.includes("WALLET_NOT_FOUND") ||
+        errStr.includes("ActivityNotFound") ||
+        errStr.includes("no installed wallet") ||
+        errStr.includes("not found")
+      ) {
+        setSystemState("wallet_not_found");
+      } else {
+        setSystemState("wallet_declined");
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -239,6 +251,14 @@ export default function WalletScreen() {
           </>
         )}
       </ScrollView>
+
+      <SystemStateModal
+        type={systemState}
+        visible={!!systemState}
+        onClose={() => setSystemState(null)}
+        onActionPrimary={handleConnect}
+        onActionSecondary={() => setSystemState(null)}
+      />
     </SafeAreaView>
   );
 }

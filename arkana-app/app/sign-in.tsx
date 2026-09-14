@@ -7,10 +7,12 @@ import { useState } from 'react'
 import * as Haptics from 'expo-haptics'
 import { showError } from '@/utils/show-error'
 import { ObsidianTokens } from '@/constants/theme'
+import { SystemStateModal, SystemStateType } from '@/components/ui/SystemStateModal'
 
 export default function SignIn() {
   const { signIn } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [systemState, setSystemState] = useState<SystemStateType>(null)
 
   // Sign-in goes through the wallet, which can decline or fail the request.
   async function handleSignIn() {
@@ -24,8 +26,18 @@ export default function SignIn() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       // We only get here when sign-in succeeded, so it is safe to navigate.
       router.replace('/')
-    } catch (error) {
-      showError('Could not sign in', error)
+    } catch (error: any) {
+      const errStr = String(error?.message || error || '')
+      if (
+        errStr.includes('WALLET_NOT_FOUND') ||
+        errStr.includes('ActivityNotFound') ||
+        errStr.includes('no installed wallet') ||
+        errStr.includes('not found')
+      ) {
+        setSystemState('wallet_not_found')
+      } else {
+        setSystemState('wallet_declined')
+      }
     } finally {
       setIsSigningIn(false)
     }
@@ -68,11 +80,30 @@ export default function SignIn() {
               {isSigningIn ? 'CONNECTING WALLET...' : 'CONNECT WALLET'}
             </Text>
           </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.guestBtn,
+              pressed && styles.guestBtnPressed,
+            ]}
+            onPress={() => router.replace('/')}
+          >
+            <Text style={styles.guestBtnText}>CONTINUE AS GUEST (SEEKER DEMO)</Text>
+          </Pressable>
+
           <Text style={styles.securityNote}>
             Secured by Mobile Wallet Adapter & Hardware Keystore
           </Text>
         </View>
       </SafeAreaView>
+
+      <SystemStateModal
+        type={systemState}
+        visible={!!systemState}
+        onClose={() => setSystemState(null)}
+        onActionPrimary={() => void handleSignIn()}
+        onActionSecondary={() => router.replace('/')}
+      />
     </View>
   )
 }
@@ -166,5 +197,25 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 0.5,
     marginTop: 12,
+  },
+  guestBtn: {
+    width: '100%',
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  guestBtnPressed: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+  },
+  guestBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: '600',
   },
 })
