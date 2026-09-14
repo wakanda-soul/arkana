@@ -26,6 +26,7 @@ unzipped/
 scripts/
 hackathon_raw_chunk.txt
 hackathon_info.txt
+screenshot_*.jpg
 
 # Environment
 .env

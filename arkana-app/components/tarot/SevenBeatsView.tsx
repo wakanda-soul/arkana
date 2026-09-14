@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Platform } from 'react-native';
 import { ObsidianTokens } from '@/constants/theme';
 
 interface SevenBeatsProps {
-  beats: {
+  beats?: {
     story?: string;
     hiddenForces?: string;
     strengthens?: string;
@@ -18,14 +18,29 @@ interface SevenBeatsProps {
     dominant_energy?: string | null;
     arcana_note?: string;
   };
+  question?: string;
 }
 
-export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
+export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
   if (!beats) return null;
+
+  const hasIntent = question && question.trim().length > 0;
 
   return (
     <View style={styles.container}>
-      {/* Metrics Banner */}
+      {/* 1. Inscribed Intent Card */}
+      {hasIntent && (
+        <View style={styles.intentPanel}>
+          <View style={styles.intentHeaderRow}>
+            <Text style={styles.intentGlyph}>&#9672;</Text>
+            <Text style={styles.intentLabel}>INSCRIBED INTENT</Text>
+            <View style={styles.intentHairline} />
+          </View>
+          <Text style={styles.intentQuestion}>"{question!.trim()}"</Text>
+        </View>
+      )}
+
+      {/* 2. Protocol Metrics Strip */}
       {metrics && (
         <View style={styles.metricsContainer}>
           <View style={styles.metricPill}>
@@ -40,86 +55,138 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
           )}
           {metrics.dominant_energy && (
             <View style={styles.metricPill}>
-              <Text style={styles.metricLabel}>ENERGY</Text>
+              <Text style={styles.metricLabel}>CONSENSUS</Text>
               <Text style={styles.metricValue}>{metrics.dominant_energy.toUpperCase()}</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Beat 1: The Story */}
-      {beats.story && (
-        <View style={[styles.beatCard, styles.storyBorder]}>
-          <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>✦</Text>
-            <Text style={styles.beatTitle}>THE NARRATIVE SYNTHESIS</Text>
-          </View>
-          <Text style={styles.beatContent}>{beats.story}</Text>
+      {/* 3. The Continuous Obsidian Consensus Scroll */}
+      <View style={styles.scrollContainer}>
+        {/* Scroll Header Seal */}
+        <View style={styles.scrollHeader}>
+          <Text style={styles.sealGlyphs}>&#10022; &#10070; &#10022;</Text>
+          <Text style={styles.sealTitle}>CONSENSUS SYNTHESIS</Text>
+          <View style={styles.sealDivider} />
         </View>
-      )}
 
-      {/* Beat 2: Hidden Forces */}
-      {beats.hiddenForces && (
-        <View style={styles.beatCard}>
-          <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>👁</Text>
-            <Text style={styles.beatTitle}>HIDDEN MEMPOOL FORCES</Text>
-          </View>
-          <Text style={styles.beatContent}>{beats.hiddenForces}</Text>
-        </View>
-      )}
-
-      {/* Grid: Strengthens vs Weakens */}
-      <View style={styles.row}>
-        {beats.strengthens && (
-          <View style={[styles.beatCard, styles.halfCard, styles.successBorder]}>
-            <View style={styles.beatHeader}>
-              <Text style={styles.beatIcon}>⚡</Text>
-              <Text style={styles.beatTitleSmall}>CONSENSUS TAILWINDS</Text>
+        {/* Chapter I: The Narrative Synthesis */}
+        {beats.story && (
+          <View style={styles.chapterSection}>
+            <View style={styles.chapterHeader}>
+              <Text style={styles.chapterNumeral}>I</Text>
+              <Text style={styles.chapterTitle}>THE CONSENSUS NARRATIVE</Text>
             </View>
-            <Text style={styles.beatContentSmall}>{beats.strengthens}</Text>
+            <Text style={styles.serifBody}>{beats.story}</Text>
           </View>
         )}
-        {beats.weakens && (
-          <View style={[styles.beatCard, styles.halfCard, styles.dangerBorder]}>
-            <View style={styles.beatHeader}>
-              <Text style={styles.beatIcon}>🛡</Text>
-              <Text style={styles.beatTitleSmall}>LIQUIDITY FRICTION</Text>
+
+        {/* Chapter II: Hidden Mempool Dynamics */}
+        {beats.hiddenForces && (
+          <View style={styles.chapterSection}>
+            <View style={styles.dividerBox}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerSymbol}>&#9671;</Text>
+              <View style={styles.dividerLine} />
             </View>
-            <Text style={styles.beatContentSmall}>{beats.weakens}</Text>
+            <View style={styles.chapterHeader}>
+              <Text style={styles.chapterNumeral}>II</Text>
+              <Text style={styles.chapterTitle}>HIDDEN MEMPOOL DYNAMICS</Text>
+            </View>
+            <Text style={styles.serifBody}>{beats.hiddenForces}</Text>
+          </View>
+        )}
+
+        {/* Chapter III: Vectors of Influence */}
+        {(beats.strengthens || beats.weakens) && (
+          <View style={styles.chapterSection}>
+            <View style={styles.dividerBox}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerSymbol}>&#9671;</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <View style={styles.chapterHeader}>
+              <Text style={styles.chapterNumeral}>III</Text>
+              <Text style={styles.chapterTitle}>CONVERGENCE & FRICTION</Text>
+            </View>
+
+            {beats.strengthens && (
+              <View style={styles.vectorItem}>
+                <View style={styles.vectorHeader}>
+                  <Text style={styles.vectorGlyphUp}>&#9650;</Text>
+                  <Text style={styles.vectorLabel}>CONSENSUS TAILWINDS</Text>
+                </View>
+                <Text style={styles.serifBodySecondary}>{beats.strengthens}</Text>
+              </View>
+            )}
+
+            {beats.weakens && (
+              <View style={[styles.vectorItem, styles.vectorFriction]}>
+                <View style={styles.vectorHeader}>
+                  <Text style={styles.vectorGlyphDown}>&#9660;</Text>
+                  <Text style={[styles.vectorLabel, { color: '#FFA595' }]}>LIQUIDITY RESISTANCE</Text>
+                </View>
+                <Text style={styles.serifBodySecondary}>{beats.weakens}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Chapter IV: Oracle Directive */}
+        {beats.oracleAdvice && (
+          <View style={styles.chapterSection}>
+            <View style={styles.dividerBox}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerSymbol}>&#9671;</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <View style={styles.chapterHeader}>
+              <Text style={styles.chapterNumeral}>IV</Text>
+              <Text style={[styles.chapterTitle, { color: ObsidianTokens.colors.gold.primary }]}>
+                ORACLE DIRECTIVE
+              </Text>
+            </View>
+            <View style={styles.directiveCallout}>
+              <Text style={styles.directiveText}>{beats.oracleAdvice}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Chapter V: Protocol Risk Warning */}
+        {beats.warning && (
+          <View style={styles.chapterSection}>
+            <View style={styles.dividerBox}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerSymbol}>&#9671;</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <View style={styles.chapterHeader}>
+              <Text style={styles.chapterNumeral}>V</Text>
+              <Text style={[styles.chapterTitle, { color: '#FFA595' }]}>
+                PROTOCOL RISK PARAMETER
+              </Text>
+            </View>
+            <Text style={[styles.serifBody, { color: 'rgba(255, 165, 149, 0.92)' }]}>
+              {beats.warning}
+            </Text>
+          </View>
+        )}
+
+        {/* Chapter VI: Final Immutable Omen */}
+        {beats.finalOmen && (
+          <View style={styles.omenWrapper}>
+            <View style={styles.dividerBox}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerSymbol}>&#10022;</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <Text style={styles.omenKicker}>FINAL IMMUTABLE OMEN</Text>
+            <Text style={styles.omenQuote}>"{beats.finalOmen}"</Text>
+            <Text style={styles.omenBottomGlyph}>&#10022; &#10022; &#10022;</Text>
           </View>
         )}
       </View>
-
-      {/* Beat 5: Oracle Advice */}
-      {beats.oracleAdvice && (
-        <View style={[styles.beatCard, styles.adviceBorder]}>
-          <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>🔮</Text>
-            <Text style={[styles.beatTitle, { color: ObsidianTokens.colors.gold.primary }]}>ORACLE DIRECTIVE</Text>
-          </View>
-          <Text style={styles.beatContent}>{beats.oracleAdvice}</Text>
-        </View>
-      )}
-
-      {/* Beat 6: Warning */}
-      {beats.warning && (
-        <View style={[styles.beatCard, styles.warningBorder]}>
-          <View style={styles.beatHeader}>
-            <Text style={styles.beatIcon}>⚠️</Text>
-            <Text style={[styles.beatTitle, { color: '#FFA595' }]}>WARNING (HARD-FORK RISK)</Text>
-          </View>
-          <Text style={styles.beatContent}>{beats.warning}</Text>
-        </View>
-      )}
-
-      {/* Beat 7: Final Omen */}
-      {beats.finalOmen && (
-        <View style={[styles.beatCard, styles.omenCard]}>
-          <Text style={styles.omenBadge}>FINAL IMMUTABLE OMEN</Text>
-          <Text style={styles.omenQuote}>"{beats.finalOmen}"</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -127,13 +194,48 @@ export function SevenBeatsView({ beats, metrics }: SevenBeatsProps) {
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 12,
-    gap: 12,
+    gap: 14,
+  },
+  intentPanel: {
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 16,
+  },
+  intentHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  intentGlyph: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 12,
+  },
+  intentLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 2,
+    fontWeight: '700',
+  },
+  intentHairline: {
+    flex: 1,
+    height: 1,
+    backgroundColor: ObsidianTokens.colors.gold.subtle,
+  },
+  intentQuestion: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 15,
+    fontStyle: 'italic',
+    lineHeight: 22,
   },
   metricsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 4,
   },
   metricPill: {
     backgroundColor: ObsidianTokens.colors.ink.surface,
@@ -158,89 +260,145 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  beatCard: {
+  scrollContainer: {
     backgroundColor: ObsidianTokens.colors.ink.surface,
-    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
     borderRadius: ObsidianTokens.radii.panels,
-    padding: 16,
+    padding: 20,
   },
-  storyBorder: {
-    borderColor: ObsidianTokens.colors.gold.subtle,
-    backgroundColor: ObsidianTokens.colors.ink.fill,
-  },
-  successBorder: {
-    borderColor: 'rgba(200, 162, 74, 0.25)',
-    backgroundColor: ObsidianTokens.colors.gold.surface,
-  },
-  dangerBorder: {
-    borderColor: 'rgba(212, 82, 64, 0.25)',
-    backgroundColor: 'rgba(212, 82, 64, 0.08)',
-  },
-  adviceBorder: {
-    borderColor: ObsidianTokens.colors.gold.primary,
-    backgroundColor: ObsidianTokens.colors.ink.surface,
-  },
-  warningBorder: {
-    borderColor: 'rgba(212, 82, 64, 0.35)',
-    backgroundColor: 'rgba(212, 82, 64, 0.1)',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  halfCard: {
-    flex: 1,
-  },
-  beatHeader: {
-    flexDirection: 'row',
+  scrollHeader: {
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 20,
   },
-  beatIcon: {
-    fontSize: 14,
+  sealGlyphs: {
     color: ObsidianTokens.colors.gold.primary,
+    fontSize: 12,
+    letterSpacing: 4,
+    marginBottom: 6,
   },
-  beatTitle: {
+  sealTitle: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 10,
+    letterSpacing: 2.5,
+    fontWeight: '700',
+  },
+  sealDivider: {
+    width: 60,
+    height: 1,
+    backgroundColor: ObsidianTokens.colors.gold.subtle,
+    marginTop: 10,
+  },
+  chapterSection: {
+    marginBottom: 4,
+  },
+  chapterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  chapterNumeral: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chapterTitle: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
     letterSpacing: 1.5,
     fontWeight: '700',
   },
-  beatTitleSmall: {
+  serifBody: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 14,
+    lineHeight: 23,
+  },
+  serifBodySecondary: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text82,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  dividerBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginVertical: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: ObsidianTokens.colors.ink.hairline,
+  },
+  dividerSymbol: {
+    color: ObsidianTokens.colors.gold.muted,
+    fontSize: 10,
+  },
+  vectorItem: {
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: 'rgba(200, 162, 74, 0.2)',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  vectorFriction: {
+    borderColor: 'rgba(212, 82, 64, 0.25)',
+    backgroundColor: 'rgba(212, 82, 64, 0.05)',
+  },
+  vectorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  vectorGlyphUp: {
+    fontSize: 9,
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  vectorGlyphDown: {
+    fontSize: 9,
+    color: '#D45240',
+  },
+  vectorLabel: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 9,
     letterSpacing: 1,
     fontWeight: '700',
   },
-  beatContent: {
+  directiveCallout: {
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderLeftColor: ObsidianTokens.colors.gold.primary,
+    borderLeftWidth: 3,
+    paddingLeft: 14,
+    paddingVertical: 10,
+    paddingRight: 10,
+    borderRadius: 4,
+  },
+  directiveText: {
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
-    color: ObsidianTokens.colors.ink.text82,
+    color: ObsidianTokens.colors.ink.text,
     fontSize: 14,
     lineHeight: 22,
+    fontStyle: 'italic',
   },
-  beatContentSmall: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
-    color: ObsidianTokens.colors.ink.text82,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  omenCard: {
-    backgroundColor: ObsidianTokens.colors.ink.surface,
-    borderColor: ObsidianTokens.colors.gold.primary,
-    borderWidth: 1.5,
+  omenWrapper: {
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 10,
   },
-  omenBadge: {
+  omenKicker: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 9,
     letterSpacing: 2,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   omenQuote: {
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
@@ -248,6 +406,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 25,
+    paddingHorizontal: 8,
+  },
+  omenBottomGlyph: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 4,
+    marginTop: 12,
   },
 });

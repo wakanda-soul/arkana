@@ -436,7 +436,7 @@ export default function AltarScreen() {
                   style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.buttonPressed]}
                   onPress={handleShareMore}
                 >
-                  <Text style={styles.shareGeneralIcon}>📤</Text>
+                  <Text style={styles.shareGeneralIcon}>&#x2197;</Text>
                   <Text style={styles.shareGeneralText}>MORE</Text>
                 </Pressable>
               </View>

@@ -298,7 +298,11 @@ export default function SpreadScreen() {
             {isAllRevealed && reading && (
               <View style={styles.readingWrap}>
                 <View style={styles.divider} />
-                <SevenBeatsView beats={reading.prose} metrics={reading.engine_metrics} />
+                <SevenBeatsView
+                  beats={reading.prose}
+                  metrics={reading.engine_metrics}
+                  question={reading.question || question}
+                />
 
                 {/* Transmit / Share Section */}
                 <View style={styles.shareSection}>
@@ -316,7 +320,7 @@ export default function SpreadScreen() {
                       style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.cardPressed]}
                       onPress={handleShareMore}
                     >
-                      <Text style={styles.shareGeneralIcon}>📤</Text>
+                      <Text style={styles.shareGeneralIcon}>&#x2197;</Text>
                       <Text style={styles.shareGeneralText}>MORE</Text>
                     </Pressable>
                   </View>

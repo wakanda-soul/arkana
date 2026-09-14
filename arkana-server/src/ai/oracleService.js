@@ -437,9 +437,88 @@ Arkana, speak:`;
   });
 }
 
-async function generateReadingProse(reading, userQuestion = "") {
-  // Standalone mode: Instant deterministic engine
-  return generateOfflineSynthesis(reading, userQuestion);
+function generateAIReadingProse(reading, userQuestion = "", language = "en") {
+  return new Promise((resolve) => {
+    const cards = reading.cards || [];
+    if (cards.length === 0) {
+      return resolve(generateOfflineSynthesis(reading, userQuestion));
+    }
+
+    const isRu = isCyrillic(userQuestion);
+    const cardDescriptions = cards.map((c, idx) => {
+      const pos = c.position || `Position ${idx + 1}`;
+      const hint = c.position_hint ? ` (${c.position_hint})` : "";
+      const orient = c.orientation === "reversed" ? "Reversed" : "Upright";
+      const meaning = c.orientation === "reversed" ? c.reversed_full : c.upright_full;
+      return `${idx + 1}. [${pos}${hint}]: ${c.crypto_name} (${c.card_no}, ${orient}) - ${meaning}. Advice: ${c.advice || ""}`;
+    }).join("\n");
+
+    const prompt = `You are Arkana, the Solana Oracle: an ancient, calm, slightly-cyberpunk female oracle and seer reading the 78-card Arcana of the Chain deck.
+You are strictly female (she/her). In Russian, always use feminine inflections (ya uvidela, ya issledovala, ya gotova).
+
+Spread: ${reading.spread_name || "Sacred Oracle Spread"} (${cards.length} cards)
+${userQuestion ? `QUERENT SPECIFIC QUESTION / INTENT:\n"${userQuestion.trim()}"` : "The querent is seeking general strategic clarity on the current state of consensus."}
+
+Cards Drawn in Spread Positions:
+${cardDescriptions}
+
+CRITICAL RULES (IMMUTABLE):
+1. DEEP IMMERSION: ${userQuestion ? `You MUST deeply, thoroughly, and directly answer the querent's question ("${userQuestion.trim()}"). Do NOT output generic boilerplate. Relate every position and card directly to their specific dilemma, decision, or situation.` : `Provide deep strategic insight into the currents of the network.`}
+2. STRICTLY ARKANA DECK: NEVER mention or compare with any classic tarot card, traditional tarot name, or classic suit (NEVER say "classic equivalent", "\\u044D\\u043A\\u0432\\u0438\\u0432\\u0430\\u043B\\u0435\\u043D\\u0442", "Rider-Waite", etc.). The querent must ONLY see and know the Arkana crypto deck.
+3. LANGUAGE: ${isRu ? "Respond entirely in RUSSIAN. Canonical card names stay in English." : "Respond in English."}
+4. TONE: Calm, wise, cyberpunk-mystical, speaking in blockchain metaphors (consensus, mempool, validators, liquidity, confirmation, next block).
+5. FORMAT: Output STRICTLY a valid JSON object with the following keys. No markdown code blocks, no other text:
+{
+  "story": "Deep narrative synthesis directly answering the querent question through the spread trajectory.",
+  "hiddenForces": "The latent mempool currents and hidden resistance or unseen allies.",
+  "strengthens": "What gives power and stability to the querent's position.",
+  "weakens": "Protocol vulnerabilities, friction, or risks to eliminate.",
+  "oracleAdvice": "Actionable, clear, stoic counsel on how to proceed.",
+  "warning": "Critical risk parameter or warning if moving forward unhedged.",
+  "finalOmen": "One memorable, powerful closing aphorism."
+}
+
+JSON:`;
+
+    execFile(
+      "agy",
+      ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", prompt],
+      { timeout: 35000 },
+      (err, stdout) => {
+        if (err || !stdout || !stdout.trim()) {
+          console.warn("[Oracle AI Reading] agy fallback triggered:", err ? err.message : "empty");
+          return resolve(generateOfflineSynthesis(reading, userQuestion));
+        }
+
+        try {
+          let raw = stdout.trim();
+          raw = raw.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.story) {
+            Object.keys(parsed).forEach((k) => {
+              if (typeof parsed[k] === "string") {
+                parsed[k] = parsed[k].replace(/\s*\(?\s*(\u043A\u043B\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043A\u0438\u0439\s+\u044D\u043A\u0432\u0438\u0432\u0430\u043B\u0435\u043D\u0442|\u044D\u043A\u0432\u0438\u0432\u0430\u043B\u0435\u043D\u0442|classic\s+equivalent)[^)\n.]*\)?/gi, "").trim();
+              }
+            });
+            console.log("[Oracle AI Reading] agy generated live spread prose for:", (userQuestion || "spread").slice(0, 30));
+            return resolve({
+              mode: "ai-consensus",
+              beats: parsed,
+              raw: Object.entries(parsed).map(([k, v]) => `**${k}**:\n${v}`).join("\n\n")
+            });
+          }
+        } catch (parseErr) {
+          console.warn("[Oracle AI Reading] JSON parse failed, falling back:", parseErr.message);
+        }
+
+        resolve(generateOfflineSynthesis(reading, userQuestion));
+      }
+    );
+  });
+}
+
+async function generateReadingProse(reading, userQuestion = "", language = "en") {
+  return generateAIReadingProse(reading, userQuestion, language);
 }
 
 module.exports = {

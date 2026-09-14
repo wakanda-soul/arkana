@@ -74,7 +74,7 @@ export function TarotCard({
   const imageSource = CardImages[cardNo] || CardImages['00'];
 
   return (
-    <View style={[styles.container, compact && styles.containerCompact, { width, height }]}>
+    <View style={[styles.container, compact && styles.containerCompact, { width }]}>
       {positionName && (
         <View style={[styles.positionBadge, compact && styles.positionBadgeCompact]}>
           <Text style={[styles.positionText, compact && styles.positionTextCompact]} numberOfLines={1}>
@@ -83,7 +83,7 @@ export function TarotCard({
         </View>
       )}
 
-      <Pressable onPress={handlePress} style={styles.pressable}>
+      <Pressable onPress={handlePress} style={[styles.pressable, { width, height }]}>
         {/* Card Front - container remains upright, image rotates if reversed */}
         <Animated.View style={[styles.card, frontStyle, { width, height }]}>
           <Image
@@ -101,7 +101,7 @@ export function TarotCard({
           )}
           <View style={[styles.zoomAffordance, compact && styles.zoomAffordanceCompact]}>
             <Text style={[styles.zoomAffordanceText, compact && styles.zoomAffordanceTextCompact]}>
-              🔍
+              &#x2922;
             </Text>
           </View>
         </Animated.View>
@@ -122,7 +122,7 @@ export function TarotCard({
             {name}
           </Text>
           <Text style={[styles.cardMeta, compact && styles.cardMetaCompact]}>
-            {isReversed ? '▼ Rev' : '▲ Up'} · 🔍 Zoom
+            {isReversed ? '▼ Rev' : '▲ Up'} · &#x2922; Zoom
           </Text>
         </View>
       )}
@@ -152,8 +152,6 @@ const styles = StyleSheet.create({
   },
   pressable: {
     position: 'relative',
-    width: '100%',
-    height: '100%',
   },
   card: {
     position: 'absolute',
