@@ -140,7 +140,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                     onPress={handleToggleOrientation}
                   >
                     <Text style={styles.flipBtnText}>
-                      {flippedUpright ? '🔄 VIEW REVERSED' : '🔄 VIEW UPRIGHT'}
+                      {flippedUpright ? '\u27F3 VIEW REVERSED' : '\u27F3 VIEW UPRIGHT'}
                     </Text>
                   </Pressable>
                 )}

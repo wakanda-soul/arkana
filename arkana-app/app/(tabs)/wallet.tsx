@@ -118,7 +118,7 @@ export default function WalletScreen() {
 
               {/* Seed Vault Notice */}
               <View style={styles.seedVaultBox}>
-                <Text style={styles.seedVaultIcon}>🛡</Text>
+                <Text style={styles.seedVaultIcon}>&#x2756;</Text>
                 <Text style={styles.seedVaultText}>
                   Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.
                 </Text>
@@ -251,7 +251,7 @@ export default function WalletScreen() {
 
             {/* Feature & Security Cards */}
             <View style={styles.featureBox}>
-              <Text style={styles.featureIcon}>🛡</Text>
+              <Text style={styles.featureIcon}>&#x2756;</Text>
               <View style={styles.featureContent}>
                 <Text style={styles.featureTitle}>Seed Vault Enclave</Text>
                 <Text style={styles.featureDesc}>

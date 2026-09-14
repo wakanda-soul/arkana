@@ -47,7 +47,7 @@ export function SpreadTableView({
 
         {/* Row 0: Top Opportunity */}
         <View style={styles.gridRow}>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <TarotCard
             cardNo={cards[1].card_no}
             name={cards[1].crypto_name}
@@ -59,7 +59,7 @@ export function SpreadTableView({
             height={CARD_HEIGHT}
             compact
           />
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
         </View>
 
         {/* Row 1: Horizontal Bar (Left -> Center -> Right) */}
@@ -101,7 +101,7 @@ export function SpreadTableView({
 
         {/* Row 2: Bottom Hidden Influence */}
         <View style={styles.gridRow}>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <TarotCard
             cardNo={cards[3].card_no}
             name={cards[3].crypto_name}
@@ -113,7 +113,7 @@ export function SpreadTableView({
             height={CARD_HEIGHT}
             compact
           />
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
         </View>
       </View>
     );
@@ -136,10 +136,10 @@ export function SpreadTableView({
 
         {/* Compass Row 0: North Market */}
         <View style={styles.gridRow}>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerNorth}>
-              <Text style={styles.compassMarkerText}>▲ NORTH</Text>
+              <Text style={styles.compassMarkerText}>&#9650; NORTH</Text>
             </View>
             <TarotCard
               cardNo={cards[1].card_no}
@@ -153,14 +153,14 @@ export function SpreadTableView({
               compact
             />
           </View>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
         </View>
 
         {/* Compass Row 1: West Project | Center You | East Opportunity */}
         <View style={styles.gridRow}>
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerWest}>
-              <Text style={styles.compassMarkerText}>◄ WEST</Text>
+              <Text style={styles.compassMarkerText}>&#9668; WEST</Text>
             </View>
             <TarotCard
               cardNo={cards[2].card_no}
@@ -177,7 +177,7 @@ export function SpreadTableView({
 
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerCenter}>
-              <Text style={styles.compassMarkerText}>● CORE</Text>
+              <Text style={styles.compassMarkerText}>&#9679; CORE</Text>
             </View>
             <TarotCard
               cardNo={cards[0].card_no}
@@ -194,7 +194,7 @@ export function SpreadTableView({
 
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerEast}>
-              <Text style={styles.compassMarkerText}>EAST ►</Text>
+              <Text style={styles.compassMarkerText}>EAST &#9658;</Text>
             </View>
             <TarotCard
               cardNo={cards[3].card_no}
@@ -212,10 +212,10 @@ export function SpreadTableView({
 
         {/* Compass Row 2: South Risk */}
         <View style={styles.gridRow}>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerSouth}>
-              <Text style={styles.compassMarkerText}>▼ SOUTH</Text>
+              <Text style={styles.compassMarkerText}>&#9660; SOUTH</Text>
             </View>
             <TarotCard
               cardNo={cards[4].card_no}
@@ -229,7 +229,7 @@ export function SpreadTableView({
               compact
             />
           </View>
-          <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, margin: 2 }} />
+          <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
         </View>
       </View>
     );
@@ -292,9 +292,10 @@ const styles = StyleSheet.create({
   },
   gridRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    marginVertical: 2,
+    marginVertical: 8,
+    gap: 4,
   },
   scanRow: {
     flexDirection: 'row',
@@ -335,12 +336,9 @@ const styles = StyleSheet.create({
   },
   cardWithCompassBadge: {
     alignItems: 'center',
-    position: 'relative',
   },
   compassMarkerNorth: {
-    position: 'absolute',
-    top: -8,
-    zIndex: 10,
+    marginBottom: 4,
     backgroundColor: '#121A15',
     borderColor: 'rgba(46, 213, 115, 0.7)',
     borderWidth: 1,
@@ -348,9 +346,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   compassMarkerSouth: {
-    position: 'absolute',
-    bottom: -6,
-    zIndex: 10,
+    marginBottom: 4,
     backgroundColor: '#1F1012',
     borderColor: '#D45240',
     borderWidth: 1,
@@ -358,9 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   compassMarkerWest: {
-    position: 'absolute',
-    top: -8,
-    zIndex: 10,
+    marginBottom: 4,
     backgroundColor: '#120E1A',
     borderColor: '#C8A24A',
     borderWidth: 1,
@@ -368,9 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   compassMarkerEast: {
-    position: 'absolute',
-    top: -8,
-    zIndex: 10,
+    marginBottom: 4,
     backgroundColor: '#120E1A',
     borderColor: '#C8A24A',
     borderWidth: 1,
@@ -378,9 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   compassMarkerCenter: {
-    position: 'absolute',
-    top: -8,
-    zIndex: 10,
+    marginBottom: 4,
     backgroundColor: '#1C1608',
     borderColor: '#E8C872',
     borderWidth: 1,
