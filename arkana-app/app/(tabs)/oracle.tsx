@@ -390,12 +390,6 @@ export default function OracleScreen() {
                       {msg.card.crypto_name}
                     </Text>
 
-                    {msg.card.classic && (
-                      <Text style={styles.chatCardClassic} numberOfLines={1}>
-                        {msg.card.classic}
-                      </Text>
-                    )}
-
                     <View style={styles.chatInspectButton}>
                       <Text style={styles.chatInspectText}>INSPECT ARCHETYPE ⤢</Text>
                     </View>
