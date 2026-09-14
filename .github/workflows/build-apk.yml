@@ -21,15 +21,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure Swap Space
-        run: |
-          echo "=== Configuring 4GB Swap Space ==="
-          sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          free -h
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -44,10 +35,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         continue-on-error: true
-
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | sdkmanager --licenses || true
 
       - name: Install App Dependencies
         working-directory: ./arkana-app
@@ -83,8 +70,6 @@ jobs:
             echo "=========================================="
             echo "=== SYSTEM MEMORY STATUS ==="
             free -h
-            echo "=== DMESG OOM KILLER CHECK ==="
-            dmesg | tail -n 50 | grep -i -E "oom|killed|memory" || true
             exit 1
           }
 
