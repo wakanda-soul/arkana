@@ -34,6 +34,7 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        continue-on-error: true
 
       - name: Install App Dependencies
         working-directory: ./arkana-app
@@ -74,7 +75,7 @@ jobs:
           tag_name: v1.0.0-beta
           name: "Arkana v1.0.6 - Solana Mobile Build"
           body: |
-            ### 🔮 Arkana: The Solana Oracle (Mobile Release v1.0.6)
+            ### Arkana: The Solana Oracle (Mobile Release v1.0.6)
             - Built for **Solana Mobile & Seeker** (versionCode 7, versionName 1.0.6)
             - Fixed Android soft keyboard overlapping text input on Ask screen.
             - Added tabBarHideOnKeyboard and reactive scroll-to-end on keyboard show.
