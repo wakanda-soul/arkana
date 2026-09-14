@@ -23,6 +23,7 @@ import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateMo
 import { ObsidianTokens } from "@/constants/theme";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
+import { useLanguage } from "@/services/i18n";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +31,7 @@ export default function SpreadScreen() {
   const spreadKey = id || "network-scan";
 
   const { account } = useAuth();
+  const { language, t } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
   const [question, setQuestion] = useState("");
@@ -61,7 +63,7 @@ export default function SpreadScreen() {
     setIsShuffling(true);
     setIsLoading(true);
     try {
-      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol);
+      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language);
       const minShuffleWait = new Promise((resolve) => setTimeout(resolve, 1800));
 
       const [res] = await Promise.all([readingPromise, minShuffleWait]);

@@ -4,19 +4,26 @@ import { PropsWithChildren } from 'react'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { ClusterProvider, useCluster } from '@/components/cluster/cluster-provider'
 import { AppTheme } from '@/components/app-theme'
+import { LanguageProvider } from '@/services/i18n'
 
-const identity = { name: 'Arkana App' }
+const identity = {
+  name: 'Arkana: The Solana Oracle',
+  uri: 'https://arkana-oracle.com',
+  icon: 'favicon.ico',
+}
 const queryClient = new QueryClient()
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <AppTheme>
-      <QueryClientProvider client={queryClient}>
-        <ClusterProvider>
-          <SolanaProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </SolanaProvider>
-        </ClusterProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ClusterProvider>
+            <SolanaProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </SolanaProvider>
+          </ClusterProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </AppTheme>
   )
 }
