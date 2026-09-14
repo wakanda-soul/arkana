@@ -27,10 +27,12 @@ import { unlockCards } from "@/services/codexService";
 import { Image } from "expo-image";
 import { ALL_CARDS, CardData } from "@/data/cardsData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLanguage } from "@/services/i18n";
 
 export default function AltarScreen() {
   const router = useRouter();
   const { account, isAuthenticated, signIn } = useAuth();
+  const { t, language } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
   const [isConnecting, setIsConnecting] = useState(false);
@@ -92,7 +94,7 @@ export default function AltarScreen() {
 
   const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
-      const res = await executeClockIn(walletAddress, card.card_no, orientation.toLowerCase());
+      const res = await executeClockIn(walletAddress, card.card_no, orientation.toLowerCase(), language);
       setDailyReading(res.reading);
       if (res.reading?.cards && res.reading.cards.length > 0) {
         unlockCards([res.reading.cards[0].card_no]);
@@ -277,7 +279,7 @@ export default function AltarScreen() {
                 {isConnecting ? (
                   <ActivityIndicator size="small" color={ObsidianTokens.colors.gold.primary} />
                 ) : (
-                  <Text style={styles.connectHeaderBtnText}>CONNECT</Text>
+                  <Text style={styles.connectHeaderBtnText}>{t('connect', 'CONNECT')}</Text>
                 )}
               </Pressable>
             )}
@@ -290,7 +292,7 @@ export default function AltarScreen() {
                 <Text style={styles.addressChipText}>{ellipsify(walletAddress, 6)}</Text>
               </View>
               <View style={styles.skrBadge}>
-                <Text style={styles.skrBadgeLabel}>BALANCE</Text>
+                <Text style={styles.skrBadgeLabel}>{t('balance', 'BALANCE')}</Text>
                 <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
               </View>
             </View>
@@ -319,16 +321,19 @@ export default function AltarScreen() {
         <View style={styles.quotaRow}>
           <View style={styles.quotaPill}>
             <Text style={styles.quotaText}>
-              {clockInState.freeSpreadsRemaining ?? 3}/{clockInState.freeSpreadsMax ?? 3} FREE SPREADS TODAY
+              {t('free_spreads_today', '{rem}/{max} FREE SPREADS TODAY', {
+                rem: clockInState.freeSpreadsRemaining ?? 3,
+                max: clockInState.freeSpreadsMax ?? 3,
+              })}
             </Text>
           </View>
-          <Text style={styles.quotaSub}>Extra spreads: 5 SKR</Text>
+          <Text style={styles.quotaSub}>{t('extra_spreads_skr', 'Extra spreads: 5 SKR')}</Text>
         </View>
 
         {/* Sacred Spreads Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>ORACLE SPREADS</Text>
-          <Text style={styles.sectionSubtitle}>Cast the archetypes into the protocol</Text>
+          <Text style={styles.sectionTitle}>{t('oracle_spreads', 'ORACLE SPREADS')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('oracle_spreads_sub', 'Cast the archetypes into the protocol')}</Text>
         </View>
 
         {/* Spread 1: Network Scan */}
@@ -341,11 +346,11 @@ export default function AltarScreen() {
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
-              <Text style={styles.spreadName}>The Network Scan</Text>
-              <Text style={styles.cardCount}>3 CARDS</Text>
+              <Text style={styles.spreadName}>{t('spread_net_scan', 'The Network Scan')}</Text>
+              <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 3 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              Past · Present · Next Block. Situational audit of ongoing market and personal conviction.
+              {t('spread_net_scan_desc', 'Past · Present · Next Block. Situational audit of ongoing market and personal conviction.')}
             </Text>
           </View>
         </Pressable>
@@ -360,11 +365,11 @@ export default function AltarScreen() {
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
-              <Text style={styles.spreadName}>The Validator Cross</Text>
-              <Text style={styles.cardCount}>5 CARDS</Text>
+              <Text style={styles.spreadName}>{t('spread_val_cross', 'The Validator Cross')}</Text>
+              <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 5 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              Core State · Opportunity · Obstacle · Hidden Influence · Final Outcome. Deep guidance.
+              {t('spread_val_cross_desc', 'Core State · Opportunity · Obstacle · Hidden Influence · Final Outcome. Deep guidance.')}
             </Text>
           </View>
         </Pressable>
@@ -379,11 +384,11 @@ export default function AltarScreen() {
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
-              <Text style={styles.spreadName}>The Crypto Compass</Text>
-              <Text style={styles.cardCount}>5 CARDS</Text>
+              <Text style={styles.spreadName}>{t('spread_compass', 'The Crypto Compass')}</Text>
+              <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 5 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              You · Market · Project · Opportunity · Risk. Clear analysis on entering size or cutting risk.
+              {t('spread_compass_desc', 'You · Market · Project · Opportunity · Risk. Clear analysis on entering size or cutting risk.')}
             </Text>
           </View>
         </Pressable>

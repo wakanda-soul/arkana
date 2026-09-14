@@ -19,18 +19,11 @@ import { CardImages, CARD_BACK } from "@/assets/cards";
 import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from "@/services/codexService";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
-
-const FILTER_TABS = [
-  { id: "all", label: "ALL (78)" },
-  { id: "major", label: "MAJORS (22)" },
-  { id: "Protocols", label: "PROTOCOLS (14)" },
-  { id: "Liquidity", label: "LIQUIDITY (14)" },
-  { id: "Nodes", label: "NODES (14)" },
-  { id: "Assets", label: "ASSETS (14)" },
-];
+import { useLanguage } from "@/services/i18n";
 
 export default function CodexScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
@@ -69,19 +62,28 @@ export default function CodexScreen() {
     return roman[num] || numStr;
   };
 
+  const filterTabs = [
+    { id: "all", label: t('filter_all', 'ALL (78)') },
+    { id: "major", label: t('filter_major', 'MAJORS (22)') },
+    { id: "Protocols", label: t('filter_protocols', 'PROTOCOLS (14)') },
+    { id: "Liquidity", label: t('filter_liquidity', 'LIQUIDITY (14)') },
+    { id: "Nodes", label: t('filter_nodes', 'NODES (14)') },
+    { id: "Assets", label: t('filter_assets', 'ASSETS (14)') },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* Obsidian Header */}
       <View style={styles.header}>
-        <Text style={styles.headerKicker}>DECK · 78 ARCANA</Text>
-        <Text style={styles.headerTitle}>{unlockedCount} of 78 known</Text>
-        <Text style={styles.headerSub}>Cards unlock when you draw them: a record, not a catalogue.</Text>
+        <Text style={styles.headerKicker}>{t('tab_deck', 'DECK')} · 78 ARCANA</Text>
+        <Text style={styles.headerTitle}>{t('deck_progress', '{unlocked} of 78 known', { unlocked: unlockedCount })}</Text>
+        <Text style={styles.headerSub}>{t('deck_record_sub', 'Cards unlock when you draw them: a record, not a catalogue.')}</Text>
       </View>
 
       {/* Collection Progress Card */}
       <View style={styles.progressCard}>
         <View style={styles.progressTopRow}>
-          <Text style={styles.progressLabel}>RECORD PROGRESS</Text>
+          <Text style={styles.progressLabel}>{t('record_progress', 'RECORD PROGRESS')}</Text>
           <Text style={styles.progressFraction}>
             {unlockedCount} / 78 ({progressPercent}%)
           </Text>
@@ -99,7 +101,7 @@ export default function CodexScreen() {
       {/* Filter Tabs */}
       <View style={styles.filtersWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-          {FILTER_TABS.map(tab => (
+          {filterTabs.map(tab => (
             <Pressable
               key={tab.id}
               style={[

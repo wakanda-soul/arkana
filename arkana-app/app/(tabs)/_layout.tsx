@@ -3,9 +3,11 @@ import React from 'react'
 import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
+import { useLanguage } from '@/services/i18n'
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets()
+  const { t } = useLanguage()
   // Android navigation bar or gesture indicator safe area
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 0)
 
@@ -35,14 +37,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'TODAY',
+          title: t('tab_today', 'TODAY'),
           tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="sparkles" color={color} />,
         }}
       />
       <Tabs.Screen
         name="oracle"
         options={{
-          title: 'ASK',
+          title: t('tab_ask', 'ASK'),
           tabBarIcon: ({ color }) => (
             <UiIconSymbol size={22} name="bubble.left.and.bubble.right.fill" color={color} />
           ),
@@ -51,14 +53,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="codex"
         options={{
-          title: 'DECK',
+          title: t('tab_deck', 'DECK'),
           tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="book.closed.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'ME',
+          title: t('tab_me', 'ME'),
           tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="wallet.pass.fill" color={color} />,
         }}
       />
