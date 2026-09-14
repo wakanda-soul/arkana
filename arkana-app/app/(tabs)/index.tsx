@@ -224,8 +224,18 @@ export default function AltarScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await signIn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {
-      setSystemState("wallet_declined");
+    } catch (e: any) {
+      const errStr = String(e?.message || e || "");
+      if (
+        errStr.includes("WALLET_NOT_FOUND") ||
+        errStr.includes("ActivityNotFound") ||
+        errStr.includes("no installed wallet") ||
+        errStr.includes("not found")
+      ) {
+        setSystemState("wallet_not_found");
+      } else {
+        setSystemState("wallet_declined");
+      }
     } finally {
       setIsConnecting(false);
     }
