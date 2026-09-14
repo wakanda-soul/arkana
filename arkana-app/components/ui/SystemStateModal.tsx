@@ -160,20 +160,90 @@ export function SystemStateModal({
             </View>
           )}
 
-          {/* Wallet Declined State */}
-          {type === 'wallet_declined' && (
+          {/* Wallet Connection States (Declined or Not Found) */}
+          {(type === 'wallet_declined' || type === 'wallet_not_found') && (
             <View style={styles.contentBox}>
               <View style={styles.symbolRing}>
-                <Text style={styles.dimSymbol}>⌀</Text>
+                <Text style={styles.dimSymbol}>✦</Text>
               </View>
-              <Text style={styles.titleSerif}>Wallet stayed shut</Text>
-              <Text style={styles.bodySerif}>
-                You declined the connection. That's a valid answer - Arkana works without it, you just cannot seal anything.
+              <Text style={styles.titleSerif}>
+                {type === 'wallet_not_found' ? 'No Solana wallet detected' : 'Wallet connection needed'}
               </Text>
-              <View style={styles.italicPanel}>
-                <Text style={styles.italicText}>
-                  Read-only access. We never request transfer permissions, and we cannot move funds.
-                </Text>
+              <Text style={styles.bodySerif}>
+                {type === 'wallet_not_found'
+                  ? 'On Android, Arkana connects via Mobile Wallet Adapter. Install a verified Solana wallet or explore in Seeker Demo mode.'
+                  : 'Connection did not complete. If you do not have a wallet installed yet, get one from official verified sources below:'}
+              </Text>
+
+              {/* Official Wallets Section */}
+              <View style={styles.walletSourcesContainer}>
+                <Text style={styles.walletSourcesHeader}>OFFICIAL VERIFIED WALLETS</Text>
+
+                {/* Phantom */}
+                <View style={styles.walletSourceCard}>
+                  <View style={styles.walletSourceInfo}>
+                    <Text style={styles.walletSourceName}>Phantom</Text>
+                    <Text style={styles.walletSourceType}>Solana Mobile standard</Text>
+                  </View>
+                  <View style={styles.walletSourceButtons}>
+                    <TouchableOpacity
+                      style={styles.walletPillBtn}
+                      onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.walletPillGhostBtn}
+                      onPress={() => Linking.openURL('https://phantom.com/download').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Solflare */}
+                <View style={styles.walletSourceCard}>
+                  <View style={styles.walletSourceInfo}>
+                    <Text style={styles.walletSourceName}>Solflare</Text>
+                    <Text style={styles.walletSourceType}>Native MWA & Ledger</Text>
+                  </View>
+                  <View style={styles.walletSourceButtons}>
+                    <TouchableOpacity
+                      style={styles.walletPillBtn}
+                      onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.walletPillGhostBtn}
+                      onPress={() => Linking.openURL('https://solflare.com').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Backpack */}
+                <View style={styles.walletSourceCard}>
+                  <View style={styles.walletSourceInfo}>
+                    <Text style={styles.walletSourceName}>Backpack</Text>
+                    <Text style={styles.walletSourceType}>xNFT & Seeker ready</Text>
+                  </View>
+                  <View style={styles.walletSourceButtons}>
+                    <TouchableOpacity
+                      style={styles.walletPillBtn}
+                      onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.backpack.wallet').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillBtnText}>PLAY STORE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.walletPillGhostBtn}
+                      onPress={() => Linking.openURL('https://backpack.app').catch(() => {})}
+                    >
+                      <Text style={styles.walletPillGhostText}>WEBSITE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
 
               <View style={styles.actionFooterColumn}>
@@ -182,49 +252,6 @@ export function SystemStateModal({
                   onPress={onActionPrimary || onClose}
                 >
                   <Text style={styles.primaryButtonText}>TRY CONNECTING AGAIN</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.ghostButton}
-                  onPress={onActionSecondary || onClose}
-                >
-                  <Text style={styles.ghostButtonText}>CONTINUE WITHOUT A WALLET</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Wallet Not Found State (Android device without MWA wallet) */}
-          {type === 'wallet_not_found' && (
-            <View style={styles.contentBox}>
-              <View style={styles.symbolRing}>
-                <Text style={styles.dimSymbol}>✦</Text>
-              </View>
-              <Text style={styles.titleSerif}>No Solana wallet detected</Text>
-              <Text style={styles.bodySerif}>
-                On Android, Arkana connects via Mobile Wallet Adapter. Install Phantom or Solflare from Google Play to link your on-chain keys, or explore freely in Seeker Demo mode.
-              </Text>
-              <View style={styles.italicPanel}>
-                <Text style={styles.italicText}>
-                  Standard Android devices require Phantom, Solflare, or Backpack to sign Solana transactions.
-                </Text>
-              </View>
-
-              <View style={styles.actionFooterColumn}>
-                <TouchableOpacity
-                  style={styles.primaryGoldButton}
-                  onPress={() => {
-                    Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {});
-                  }}
-                >
-                  <Text style={styles.primaryButtonText}>INSTALL PHANTOM (GOOGLE PLAY)</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.primaryGoldBorderButton}
-                  onPress={() => {
-                    Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {});
-                  }}
-                >
-                  <Text style={styles.primaryGoldBorderText}>INSTALL SOLFLARE (GOOGLE PLAY)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.ghostButton}
@@ -638,6 +665,80 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     color: ObsidianTokens.colors.ink.text42,
+  },
+  walletSourcesContainer: {
+    width: '100%',
+    marginTop: 14,
+    gap: 8,
+  },
+  walletSourcesHeader: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  walletSourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  walletSourceInfo: {
+    flex: 1,
+  },
+  walletSourceName: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  walletSourceType: {
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 10,
+    fontStyle: 'italic',
+    marginTop: 1,
+  },
+  walletSourceButtons: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  walletPillBtn: {
+    backgroundColor: 'rgba(200, 162, 74, 0.15)',
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  walletPillBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 0.8,
+    fontWeight: '600',
+  },
+  walletPillGhostBtn: {
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  walletPillGhostText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 8,
+    letterSpacing: 0.8,
   },
 });
 

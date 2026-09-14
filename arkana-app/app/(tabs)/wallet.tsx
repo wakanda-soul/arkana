@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -216,6 +217,36 @@ export default function WalletScreen() {
                   <Text style={styles.connectMainBtnText}>CONNECT WALLET (MWA)</Text>
                 )}
               </Pressable>
+
+              {/* Official Wallets Quick Links */}
+              <View style={styles.walletsQuickSection}>
+                <Text style={styles.walletsQuickKicker}>OFFICIAL COMPATIBLE WALLETS</Text>
+                <View style={styles.walletsQuickRow}>
+                  <Pressable
+                    style={styles.walletQuickBadge}
+                    onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=app.phantom').catch(() => {})}
+                  >
+                    <Text style={styles.walletQuickName}>PHANTOM</Text>
+                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.walletQuickBadge}
+                    onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.solflare.mobile').catch(() => {})}
+                  >
+                    <Text style={styles.walletQuickName}>SOLFLARE</Text>
+                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.walletQuickBadge}
+                    onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.backpack.wallet').catch(() => {})}
+                  >
+                    <Text style={styles.walletQuickName}>BACKPACK</Text>
+                    <Text style={styles.walletQuickStore}>PLAY STORE ↗</Text>
+                  </Pressable>
+                </View>
+              </View>
             </View>
 
             {/* Feature & Security Cards */}
@@ -598,5 +629,47 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.6,
+  },
+  walletsQuickSection: {
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: ObsidianTokens.colors.ink.hairline,
+  },
+  walletsQuickKicker: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  walletsQuickRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  walletQuickBadge: {
+    flex: 1,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    alignItems: "center",
+  },
+  walletQuickName: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  walletQuickStore: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8,
+    marginTop: 4,
+    letterSpacing: 0.5,
   },
 });
