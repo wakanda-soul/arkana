@@ -21,6 +21,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Configure Swap Space
+        run: |
+          echo "=== Configuring 4GB Swap Space ==="
+          sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,30 +45,68 @@ jobs:
         uses: android-actions/setup-android@v3
         continue-on-error: true
 
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
       - name: Install App Dependencies
         working-directory: ./arkana-app
         run: npm ci || npm install --legacy-peer-deps
 
-      - name: Expo Prebuild
+      - name: Expo Prebuild & Configure Build Environment
         working-directory: ./arkana-app
         run: |
           npx expo prebuild --platform android --no-install
-          sed -i 's/debuggableVariants = .*/debuggableVariants = []/' android/app/build.gradle || true
-          sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml || true
+          
+          # Increase Gradle JVM heap and disable parallel task execution to prevent compiler OOM crashes
+          sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError/' android/gradle.properties
+          sed -i 's/org.gradle.parallel=true/org.gradle.parallel=false/' android/gradle.properties
+          
+          # Target ARM architectures: arm64-v8a (Solana Mobile / Seeker / modern phones) and armeabi-v7a (legacy)
+          # Eliminating unused x86 and x86_64 cuts build time in half and keeps APK size sleek for fast downloads
+          sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a,armeabi-v7a/' android/gradle.properties
+          
+          # Cleartext traffic for local/dev RPC fallback if needed
+          grep -q 'android:usesCleartextTraffic' android/app/src/main/AndroidManifest.xml || sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml || true
+          
+          # MWA queries for Solana Wallets (Phantom, Solflare, Backpack)
           grep -q 'solana-wallet' android/app/src/main/AndroidManifest.xml || sed -i 's#</queries>#  <intent><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="solana-wallet"/></intent>\n    <package android:name="app.phantom"/>\n    <package android:name="com.solflare.mobile"/>\n    <package android:name="com.backpack.wallet"/>\n  </queries>#' android/app/src/main/AndroidManifest.xml || true
 
       - name: Build Android APK (Release Standalone)
         working-directory: ./arkana-app/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --stacktrace --max-workers=2 2>&1 | tee gradle_build.log || {
+            BUILD_STATUS=$?
+            echo "=========================================="
+            echo "GRADLE BUILD FAILED WITH STATUS: $BUILD_STATUS"
+            echo "=========================================="
+            echo "=== SYSTEM MEMORY STATUS ==="
+            free -h
+            echo "=== DMESG OOM KILLER CHECK ==="
+            dmesg | tail -n 50 | grep -i -E "oom|killed|memory" || true
+            exit 1
+          }
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-failure-log
+          path: arkana-app/android/gradle_build.log
+          if-no-files-found: ignore
 
       - name: Rename APK for Release
         run: |
-          if [ -f arkana-app/android/app/build/outputs/apk/release/app-release.apk ]; then
-            cp arkana-app/android/app/build/outputs/apk/release/app-release.apk arkana-v1.0.0-beta.apk
-          elif [ -f arkana-app/android/app/build/outputs/apk/release/app-release-unsigned.apk ]; then
-            cp arkana-app/android/app/build/outputs/apk/release/app-release-unsigned.apk arkana-v1.0.0-beta.apk
+          APK_FILE=$(find arkana-app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -n "$APK_FILE" ]; then
+            echo "Found APK at: $APK_FILE"
+            cp "$APK_FILE" arkana-v1.0.0-beta.apk
+            ls -lh arkana-v1.0.0-beta.apk
+          else
+            echo "No APK found in release output directory!"
+            find arkana-app/android/app/build/outputs -name "*.apk" || true
+            exit 1
           fi
 
       - name: Upload Artifact
@@ -77,16 +124,13 @@ jobs:
           body: |
             ### Arkana: The Solana Oracle (Mobile Release v1.0.6)
             - Built for **Solana Mobile & Seeker** (versionCode 7, versionName 1.0.6)
-            - Fixed Android soft keyboard overlapping text input on Ask screen.
-            - Added tabBarHideOnKeyboard and reactive scroll-to-end on keyboard show.
-            - Complete **Obsidian Ritual** design system (#08070B void, #120E1A surface, #C8A24A gold).
-            - Interactive Daily Ritual Core Loop: Tap &rarr; Shuffle &rarr; Pick &rarr; Reveal &rarr; Sign on Solana &rarr; Sealed.
-            - Full System Edge States: AI Generating, Tx Failed, Wallet Declined, Limit Reached, Offline.
-            - Adaptive Android app icon & splash screen from design system kit.
-            - Codex Archetype Collection: 78-card progress bar, full card zoom/inspection, locked teaser cards.
-            - Streak Repair: on-chain SKR streak recovery mechanism with dynamic admin pricing.
-            - Mobile Wallet Adapter (MWA) & Seed Vault security for Solana Seeker.
-            - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Seeker emulator.
+            - Multilingual Sacred Dialect Onboarding: 10 global languages with persistent dialect switching.
+            - Deep Immersion AI Oracle: Live contextual spreads generated for specific querent questions.
+            - Continuous Obsidian Consensus Scroll: 6-beat uninterrupted spiritual oracle synthesis.
+            - Fixed position badge card overlap in spread layouts.
+            - Purged all consumer emojis across the sacred interface.
+            - Streamlined high-performance ARM64 and ARMv7 binary packaging for fast mobile downloads.
+            - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Solana Seeker.
           files: arkana-v1.0.0-beta.apk
           overwrite: true
         env:
