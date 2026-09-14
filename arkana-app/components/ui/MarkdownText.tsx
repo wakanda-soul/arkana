@@ -17,7 +17,7 @@ export function MarkdownText({
 
   const renderInline = (text: string, keyPrefix: string, isHeader: boolean = false) => {
     const parts: React.ReactNode[] = [];
-    const tokenRegex = /(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_)/g;
+    const tokenRegex = /(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|`[^`]+`)/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     let index = 0;
@@ -69,6 +69,12 @@ export function MarkdownText({
             {matchText.slice(1, -1)}
           </Text>
         );
+      } else if (matchText.startsWith('`') && matchText.endsWith('`')) {
+        parts.push(
+          <Text key={`${keyPrefix}-c-${index++}`} style={styles.codeText}>
+            {matchText.slice(1, -1)}
+          </Text>
+        );
       }
       lastIndex = tokenRegex.lastIndex;
     }
@@ -97,25 +103,20 @@ export function MarkdownText({
           return <View key={lineIdx} style={styles.divider} />;
         }
 
-        // Headers: #### or ###
-        if (trimmed.startsWith('#### ') || trimmed.startsWith('### ')) {
-          const headerText = trimmed.replace(/^#{3,4}\s+/, '');
+        // Headers: #, ##, ###, ####, etc.
+        const headerMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+        if (headerMatch) {
+          const level = headerMatch[1].length;
+          let headerText = headerMatch[2].trim();
+          // Strip redundant surrounding ** if present in header
+          if (headerText.startsWith('**') && headerText.endsWith('**') && headerText.length > 4) {
+            headerText = headerText.slice(2, -2).trim();
+          }
+          const isH2 = level <= 2;
           return (
-            <View key={lineIdx} style={styles.header3Box}>
-              <Text style={styles.header3Text}>
-                {renderInline(headerText, `h3-${lineIdx}`, true)}
-              </Text>
-            </View>
-          );
-        }
-
-        // Headers: # or ##
-        if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
-          const headerText = trimmed.replace(/^#{1,2}\s+/, '');
-          return (
-            <View key={lineIdx} style={styles.header2Box}>
-              <Text style={styles.header2Text}>
-                {renderInline(headerText, `h2-${lineIdx}`, true)}
+            <View key={lineIdx} style={isH2 ? styles.header2Box : styles.header3Box}>
+              <Text style={isH2 ? styles.header2Text : styles.header3Text}>
+                {renderInline(headerText, `h-${lineIdx}`, true)}
               </Text>
             </View>
           );
@@ -227,5 +228,13 @@ const styles = StyleSheet.create({
   italicText: {
     fontStyle: 'italic',
     color: ObsidianTokens.colors.gold.muted,
+  },
+  codeText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    backgroundColor: 'rgba(200, 162, 74, 0.12)',
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 12,
+    paddingHorizontal: 4,
+    borderRadius: 3,
   },
 });
