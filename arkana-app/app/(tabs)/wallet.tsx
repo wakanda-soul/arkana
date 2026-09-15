@@ -152,7 +152,7 @@ export default function WalletScreen() {
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{'\u2726'} {clockInState.streak}</Text>
-                  <Text style={styles.statLabel}>{t('day_streak', 'Day Streak')}</Text>
+                  <Text style={styles.statLabel}>{t('day_streak_label', 'Day Streak')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
@@ -162,10 +162,36 @@ export default function WalletScreen() {
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>100%</Text>
-                  <Text style={styles.statLabel}>{t('consensus_rate', 'Consensus Rate')}</Text>
+                  <Text style={styles.statLabel}>{t('consensus_rate_label', 'Consensus Rate')}</Text>
                 </View>
               </View>
+
+              <Text style={styles.statsNote}>
+                {t('consensus_rate', '1 SKR per extra inquiry \u00B7 Daily Consensus grants +25 SKR')}
+              </Text>
             </View>
+
+            {/* Language Selection Card (Accessible when authenticated) */}
+            <Pressable
+              style={({ pressed }) => [styles.featureBox, styles.langBox, pressed && styles.cardPressed]}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                openLanguageModal();
+              }}
+            >
+              <Text style={styles.featureIcon}>{'\u2726'}</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>{t('dialect_card_title', 'Sacred Dialect / Language')}</Text>
+                <Text style={styles.featureDesc}>
+                  {t('dialect_card_desc', 'Active: {name} \u00B7 Tap to change', { name: `${currentOption.nativeName} (${currentOption.name})` })}
+                </Text>
+              </View>
+              <View style={styles.langPillBadge}>
+                <Text style={styles.langPillText}>{currentOption.tag} {'\u2197'}</Text>
+              </View>
+            </Pressable>
 
             {/* Membership / Order Box */}
             <View style={styles.membershipCard}>
@@ -324,11 +350,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: ObsidianTokens.spacing.screenGutter,
-    paddingTop: 12,
+    paddingTop: Platform.select({ ios: 12, android: 18, default: 12 }),
     paddingBottom: 110,
   },
   header: {
     marginBottom: 20,
+    marginTop: Platform.select({ android: 4, default: 0 }),
   },
   headerKicker: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
@@ -516,6 +543,16 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
     color: ObsidianTokens.colors.ink.text42,
     fontSize: 11,
+    textAlign: "center",
+  },
+  statsNote: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 9.5,
+    lineHeight: 14,
+    letterSpacing: 0.5,
+    marginTop: 14,
+    textAlign: "center",
   },
   statDivider: {
     width: 1,

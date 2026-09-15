@@ -595,12 +595,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
     marginBottom: 26,
     paddingHorizontal: 4,
   },
   quotaPill: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: 999,
     backgroundColor: ObsidianTokens.colors.ink.fill,
     borderWidth: 1,
@@ -609,13 +611,13 @@ const styles = StyleSheet.create({
   quotaText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.ink.text55,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: 8.5,
+    letterSpacing: 0.8,
   },
   quotaSub: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.ink.text42,
-    fontSize: 10,
+    fontSize: 9.5,
   },
   sectionHeader: {
     marginBottom: 16,

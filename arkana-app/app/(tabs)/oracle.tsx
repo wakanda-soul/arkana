@@ -28,6 +28,7 @@ import { ShuffleCeremony } from "@/components/tarot/ShuffleCeremony";
 import { MarkdownText } from "@/components/ui/MarkdownText";
 import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
+import { localizeZoomCard } from "@/services/cardLocalization";
 
 interface ChatMessage {
   id: string;
@@ -113,6 +114,7 @@ export default function OracleScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [solModalVisible, setSolModalVisible] = useState(false);
+  const [promptsModalVisible, setPromptsModalVisible] = useState(false);
   const [pendingQuery, setPendingQuery] = useState("");
   const scrollRef = useRef<ScrollView>(null);
 
@@ -367,7 +369,7 @@ export default function OracleScreen() {
                     try {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     } catch {}
-                    setZoomedCard(msg.card!);
+                    setZoomedCard(localizeZoomCard(msg.card!, language));
                   }}
                 >
                   <View style={styles.chatCardImageWrap}>
@@ -406,7 +408,7 @@ export default function OracleScreen() {
                     </View>
 
                     <Text style={styles.chatCardName} numberOfLines={1}>
-                      {msg.card.crypto_name}
+                      {localizeZoomCard(msg.card, language).crypto_name}
                     </Text>
 
                     <View style={styles.chatInspectButton}>
@@ -438,18 +440,160 @@ export default function OracleScreen() {
             </View>
           )}
 
-          {/* Diverse Categorized Ritual Prompts */}
-          <View style={styles.presetsWrap}>
-            <View style={styles.presetsHeaderRow}>
-              <Text style={styles.presetsLabel}>{t("archetypal_inquiries", "ARCHETYPAL INQUIRIES")}</Text>
-              <Text style={styles.presetsCount}>{t("prompts_count", "{count} PROMPTS", { count: filteredPrompts.length })}</Text>
+          {/* Diverse Categorized Ritual Prompts - shown only on welcome state when messages.length <= 1 */}
+          {messages.length <= 1 && (
+            <View style={styles.presetsWrap}>
+              <View style={styles.presetsHeaderRow}>
+                <Text style={styles.presetsLabel}>{t("archetypal_inquiries", "ARCHETYPAL INQUIRIES")}</Text>
+                <Text style={styles.presetsCount}>{t("prompts_count", "{count} PROMPTS", { count: filteredPrompts.length })}</Text>
+              </View>
+
+              {/* Category Filter Chips */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryScroll}
+              >
+                {RITUAL_CATEGORIES.map((cat) => {
+                  const isActive = selectedCategory === cat.key;
+                  return (
+                    <Pressable
+                      key={cat.key}
+                      style={({ pressed }) => [
+                        styles.categoryTab,
+                        isActive && styles.categoryTabActive,
+                        pressed && styles.chipPressed,
+                      ]}
+                      onPress={() => {
+                        try {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        } catch {}
+                        setSelectedCategory(cat.key);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryTabText,
+                          isActive && styles.categoryTabTextActive,
+                        ]}
+                      >
+                        {t(cat.labelKey, cat.defaultLabel)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              {/* Prompts Grid */}
+              <View style={styles.presetsGrid}>
+                {filteredPrompts.map((p) => (
+                  <Pressable
+                    key={p.id}
+                    style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
+                    onPress={() => handleInitiateSend(t("prompt_" + p.id, p.text))}
+                  >
+                    <Text style={styles.presetCategoryTag}>{p.category}</Text>
+                    <Text style={styles.presetText}>{t("prompt_" + p.id, p.text)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Quota Status Bar above Input */}
+        <View style={styles.inputStatusRow}>
+          <View style={styles.inputStatusBadge}>
+            <Text style={styles.inputStatusDot}>{'\u2726'}</Text>
+            <Text style={styles.inputStatusText}>
+              {hasFreeRemaining
+                ? t('free_inquiries_remaining', '{n} free daily inquiries remaining (shared with spreads)', { n: freeRemaining })
+                : skrBalance >= askCostSkr
+                ? t('skr_per_inquiry', '{cost} SKR per inquiry \u00B7 Balance: {balance} SKR', { cost: askCostSkr, balance: skrBalance })
+                : t('sol_per_inquiry', '{cost} SOL per inquiry (SKR balance: 0)', { cost: askCostSol })}
+            </Text>
+          </View>
+        </View>
+
+        {/* Input Footer */}
+        <View style={styles.inputBar}>
+          <Pressable
+            style={({ pressed }) => [styles.inspirationButton, pressed && styles.chipPressed]}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              setPromptsModalVisible(true);
+            }}
+            accessibilityLabel="Prompts"
+          >
+            <Text style={styles.inspirationIcon}>{'\u2726'}</Text>
+          </Pressable>
+
+          <TextInput
+            style={styles.textInput}
+            placeholder={t('ask_oracle_placeholder', 'Ask Arkana...')}
+            placeholderTextColor={ObsidianTokens.colors.ink.text42}
+            value={input}
+            onChangeText={setInput}
+            onSubmitEditing={() => handleInitiateSend()}
+            returnKeyType="send"
+            onFocus={() => {
+              setTimeout(() => {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }, 120);
+            }}
+          />
+          <Pressable
+            style={({ pressed }) => [styles.sendButton, pressed && styles.chipPressed]}
+            onPress={() => handleInitiateSend()}
+          >
+            <Text style={styles.sendIcon}>{'\u2191'}</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Card Zoom Modal */}
+      <CardZoomModal
+        card={zoomedCard}
+        onClose={() => setZoomedCard(null)}
+      />
+
+      {/* Archetypal Inquiries Bottom Sheet Modal */}
+      <Modal
+        visible={promptsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPromptsModalVisible(false)}
+      >
+        <View style={styles.promptsModalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setPromptsModalVisible(false)}
+          />
+          <View style={styles.promptsModalCard}>
+            <View style={styles.promptsModalHeader}>
+              <View style={styles.promptsModalTitleRow}>
+                <Text style={styles.promptsModalEmblem}>{'\u2726'}</Text>
+                <Text style={styles.promptsModalTitle}>
+                  {t("archetypal_inquiries", "ARCHETYPAL INQUIRIES")}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setPromptsModalVisible(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.promptsModalCloseBtn}
+              >
+                <Text style={styles.promptsModalCloseText}>{'\u2715'}</Text>
+              </Pressable>
             </View>
 
-            {/* Category Filter Chips */}
+            {/* Category Tabs */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryScroll}
+              style={{ maxHeight: 44, marginBottom: 8 }}
             >
               {RITUAL_CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat.key;
@@ -481,66 +625,35 @@ export default function OracleScreen() {
               })}
             </ScrollView>
 
-            {/* Prompts Grid */}
-            <View style={styles.presetsGrid}>
+            {/* Prompts list in bottom sheet */}
+            <ScrollView
+              style={styles.promptsModalScroll}
+              contentContainerStyle={styles.promptsModalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               {filteredPrompts.map((p) => (
                 <Pressable
                   key={p.id}
-                  style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
-                  onPress={() => handleInitiateSend(t("prompt_" + p.id, p.text))}
+                  style={({ pressed }) => [
+                    styles.promptsModalItem,
+                    pressed && styles.chipPressed,
+                  ]}
+                  onPress={() => {
+                    setPromptsModalVisible(false);
+                    handleInitiateSend(t("prompt_" + p.id, p.text));
+                  }}
                 >
-                  <Text style={styles.presetCategoryTag}>{p.category}</Text>
+                  <View style={styles.promptsModalItemTop}>
+                    <Text style={styles.presetCategoryTag}>{p.category}</Text>
+                    <Text style={styles.promptsModalItemArrow}>{'\u2192'}</Text>
+                  </View>
                   <Text style={styles.presetText}>{t("prompt_" + p.id, p.text)}</Text>
                 </Pressable>
               ))}
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Quota Status Bar above Input */}
-        <View style={styles.inputStatusRow}>
-          <View style={styles.inputStatusBadge}>
-            <Text style={styles.inputStatusDot}>{'\u2726'}</Text>
-            <Text style={styles.inputStatusText}>
-              {hasFreeRemaining
-                ? t('free_inquiries_remaining', '{n} free daily inquiries remaining (shared with spreads)', { n: freeRemaining })
-                : skrBalance >= askCostSkr
-                ? t('skr_per_inquiry', '{cost} SKR per inquiry \u00B7 Balance: {balance} SKR', { cost: askCostSkr, balance: skrBalance })
-                : t('sol_per_inquiry', '{cost} SOL per inquiry (SKR balance: 0)', { cost: askCostSol })}
-            </Text>
+            </ScrollView>
           </View>
         </View>
-
-        {/* Input Footer */}
-        <View style={styles.inputBar}>
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('ask_oracle_placeholder', 'Inscribe a question on destiny, work, or risk...')}
-            placeholderTextColor={ObsidianTokens.colors.ink.text42}
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={() => handleInitiateSend()}
-            returnKeyType="send"
-            onFocus={() => {
-              setTimeout(() => {
-                scrollRef.current?.scrollToEnd({ animated: true });
-              }, 120);
-            }}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.sendButton, pressed && styles.chipPressed]}
-            onPress={() => handleInitiateSend()}
-          >
-            <Text style={styles.sendIcon}>{'\u2726'}</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Card Zoom Modal */}
-      <CardZoomModal
-        card={zoomedCard}
-        onClose={() => setZoomedCard(null)}
-      />
+      </Modal>
 
       {/* Mystical Quota Limit Warning Modal */}
       <Modal
@@ -978,6 +1091,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
   },
+  inspirationButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inspirationIcon: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 16,
+  },
   sendButton: {
     width: 44,
     height: 44,
@@ -990,6 +1117,76 @@ const styles = StyleSheet.create({
     color: "#100C06",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  promptsModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(3, 2, 6, 0.8)",
+    justifyContent: "flex-end",
+  },
+  promptsModalCard: {
+    backgroundColor: "#0E0B16",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingTop: 16,
+    paddingBottom: Platform.select({ ios: 36, android: 24, default: 20 }),
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    maxHeight: "75%",
+  },
+  promptsModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  promptsModalTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  promptsModalEmblem: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 14,
+  },
+  promptsModalTitle: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: "600",
+  },
+  promptsModalCloseBtn: {
+    padding: 6,
+  },
+  promptsModalCloseText: {
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 16,
+  },
+  promptsModalScroll: {
+    marginTop: 6,
+  },
+  promptsModalScrollContent: {
+    gap: 8,
+    paddingBottom: 16,
+  },
+  promptsModalItem: {
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+  },
+  promptsModalItemTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  promptsModalItemArrow: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 12,
   },
   modalBackdrop: {
     flex: 1,
