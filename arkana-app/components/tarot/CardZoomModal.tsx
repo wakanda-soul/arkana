@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { CardImages } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage, localizePosition, localizePositionHint } from '@/services/i18n';
+import { localizeZoomCard } from '@/services/cardLocalization';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_ZOOM_WIDTH = Math.min(SCREEN_WIDTH - 48, 320);
@@ -42,10 +43,14 @@ interface CardZoomModalProps {
 }
 
 export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [flippedUpright, setFlippedUpright] = useState(false);
 
-  if (!card) return null;
+  const displayCard = useMemo(() => {
+    return card ? localizeZoomCard(card, language) : null;
+  }, [card, language]);
+
+  if (!card || !displayCard) return null;
 
   const isDrawnReversed = card.orientation === 'reversed';
   const effectiveReversed = isDrawnReversed && !flippedUpright;
@@ -151,26 +156,26 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 
             {/* In-depth Archetype Info */}
             <View style={styles.detailsCard}>
-              <Text style={styles.cardNoLabel}>{t('archetype_num_label', `ARCHETYPE #${card.card_no}`, { num: card.card_no })}</Text>
-              <Text style={styles.cardTitle}>{card.crypto_name}</Text>
+              <Text style={styles.cardNoLabel}>{t('archetype_num_label', `ARCHETYPE #${displayCard.card_no}`, { num: displayCard.card_no })}</Text>
+              <Text style={styles.cardTitle}>{displayCard.crypto_name}</Text>
 
-              {card.position_hint && (
+              {displayCard.position_hint && (
                 <View style={styles.positionHintBox}>
                   <Text style={styles.positionHintTitle}>{t('spread_context', 'SPREAD CONTEXT')}</Text>
-                  <Text style={styles.positionHintText}>{localizePositionHint(card.position_hint, t)}</Text>
+                  <Text style={styles.positionHintText}>{localizePositionHint(displayCard.position_hint, t)}</Text>
                 </View>
               )}
 
-              {card.oriented_meaning && (
+              {displayCard.oriented_meaning && (
                 <View style={styles.sectionBox}>
                   <Text style={styles.sectionHeader}>{t('consensus_interpretation', 'CONSENSUS INTERPRETATION')}</Text>
-                  <Text style={styles.bodyText}>{card.oriented_meaning}</Text>
+                  <Text style={styles.bodyText}>{displayCard.oriented_meaning}</Text>
                 </View>
               )}
 
-              {card.keywords && card.keywords.length > 0 && (
+              {displayCard.keywords && displayCard.keywords.length > 0 && (
                 <View style={styles.keywordsWrap}>
-                  {card.keywords.map((kw, i) => (
+                  {displayCard.keywords.map((kw, i) => (
                     <View key={i} style={styles.keywordTag}>
                       <Text style={styles.keywordText}>{kw}</Text>
                     </View>
@@ -178,17 +183,17 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                 </View>
               )}
 
-              {card.advice && (
+              {displayCard.advice && (
                 <View style={styles.sectionBox}>
                   <Text style={styles.sectionHeader}>{t('oracle_advice_title', 'ORACLE ADVICE')}</Text>
-                  <Text style={styles.bodyText}>{card.advice}</Text>
+                  <Text style={styles.bodyText}>{displayCard.advice}</Text>
                 </View>
               )}
 
-              {card.shadow && (
+              {displayCard.shadow && (
                 <View style={[styles.sectionBox, styles.shadowSectionBox]}>
                   <Text style={styles.shadowHeader}>{t('shadow_warning', 'SHADOW WARNING')}</Text>
-                  <Text style={styles.bodyText}>{card.shadow}</Text>
+                  <Text style={styles.bodyText}>{displayCard.shadow}</Text>
                 </View>
               )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   StyleSheet,
   View,
@@ -20,10 +20,11 @@ import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from "@/services/codexServic
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
 import { useLanguage, localizeArcana, localizeSuit } from "@/services/i18n";
+import { localizeCard } from "@/services/cardLocalization";
 
 export default function CodexScreen() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
@@ -37,11 +38,21 @@ export default function CodexScreen() {
   const unlockedCount = unlockedCardNos.length;
   const progressPercent = Math.min(100, Math.round((unlockedCount / 78) * 100));
 
-  const filteredCards = ALL_CARDS.filter(card => {
-    if (selectedFilter === "all") return true;
-    if (selectedFilter === "major") return card.arcana === "major" || card.suit === "Major Arcana";
-    return card.suit === selectedFilter;
-  });
+  const localizedCards = useMemo(() => {
+    return ALL_CARDS.map(c => localizeCard(c, language));
+  }, [language]);
+
+  const filteredCards = useMemo(() => {
+    return localizedCards.filter(card => {
+      if (selectedFilter === "all") return true;
+      if (selectedFilter === "major") return card.arcana === "major" || card.suit === "Major Arcana";
+      return card.suit === selectedFilter;
+    });
+  }, [localizedCards, selectedFilter]);
+
+  const activeSelectedCard = useMemo(() => {
+    return selectedCard ? localizeCard(selectedCard, language) : null;
+  }, [selectedCard, language]);
 
   const handleCardPress = (card: CardData) => {
     const isUnlocked = unlockedCardNos.includes(card.card_no);
@@ -189,33 +200,33 @@ export default function CodexScreen() {
       {/* Card Detail Modal for Unlocked Cards */}
       <Modal visible={!!selectedCard} animationType="slide" transparent={false}>
         <SafeAreaView style={styles.modalContainer}>
-          {selectedCard && (
+          {activeSelectedCard && (
             <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalSuit}>
                   {t('arcana_suit_kicker', '{arcana} ARCANA \u00B7 {suit}', {
-                    arcana: localizeArcana(selectedCard.arcana, t),
-                    suit: localizeSuit(selectedCard.suit, t).toUpperCase(),
+                    arcana: localizeArcana(activeSelectedCard.arcana, t),
+                    suit: localizeSuit(activeSelectedCard.suit, t).toUpperCase(),
                   })}
                 </Text>
-                <Text style={styles.modalTitle}>{selectedCard.crypto_name}</Text>
+                <Text style={styles.modalTitle}>{activeSelectedCard.crypto_name}</Text>
               </View>
 
               <Pressable
                 style={styles.modalImageWrap}
                 onPress={() => {
                   setZoomedCard({
-                    card_no: selectedCard.card_no,
-                    crypto_name: selectedCard.crypto_name,
-                    classic: selectedCard.classic,
-                    keywords: selectedCard.keywords,
-                    advice: selectedCard.advice,
-                    symbolism: selectedCard.symbolism,
+                    card_no: activeSelectedCard.card_no,
+                    crypto_name: activeSelectedCard.crypto_name,
+                    classic: activeSelectedCard.classic,
+                    keywords: activeSelectedCard.keywords,
+                    advice: activeSelectedCard.advice,
+                    symbolism: activeSelectedCard.symbolism,
                   });
                 }}
               >
                 <Image
-                  source={CardImages[selectedCard.card_no as keyof typeof CardImages]}
+                  source={CardImages[activeSelectedCard.card_no as keyof typeof CardImages]}
                   style={styles.modalImage}
                   contentFit="cover"
                 />
@@ -225,7 +236,7 @@ export default function CodexScreen() {
               </Pressable>
 
               <View style={styles.keywordsWrap}>
-                {selectedCard.keywords.map((kw, i) => (
+                {activeSelectedCard.keywords.map((kw, i) => (
                   <View key={i} style={styles.keywordTag}>
                     <Text style={styles.keywordText}>{kw}</Text>
                   </View>
@@ -234,17 +245,17 @@ export default function CodexScreen() {
 
               <View style={styles.sectionBox}>
                 <Text style={styles.sectionTitle}>{t('oracle_advice_title', 'ORACLE ADVICE')}</Text>
-                <Text style={styles.sectionText}>{selectedCard.advice}</Text>
+                <Text style={styles.sectionText}>{activeSelectedCard.advice}</Text>
               </View>
 
               <View style={styles.sectionBox}>
                 <Text style={styles.sectionTitle}>{t('upright_synthesis_title', 'UPRIGHT SYNTHESIS')}</Text>
-                <Text style={styles.sectionText}>{selectedCard.upright_full}</Text>
+                <Text style={styles.sectionText}>{activeSelectedCard.upright_full}</Text>
               </View>
 
               <View style={styles.sectionBox}>
                 <Text style={styles.sectionTitle}>{t('reversed_synthesis_title', 'REVERSED SYNTHESIS')}</Text>
-                <Text style={styles.sectionText}>{selectedCard.reversed_full}</Text>
+                <Text style={styles.sectionText}>{activeSelectedCard.reversed_full}</Text>
               </View>
 
               <Pressable

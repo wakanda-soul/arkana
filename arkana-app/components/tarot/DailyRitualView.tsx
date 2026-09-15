@@ -18,6 +18,7 @@ import { ObsidianTokens } from '@/constants/theme';
 import { shareToTwitter } from '@/utils/shareOmen';
 import { unlockCards } from '@/services/codexService';
 import { useLanguage, localizeSuit } from '@/services/i18n';
+import { localizeCard } from '@/services/cardLocalization';
 
 export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
 
@@ -59,7 +60,7 @@ export function DailyRitualView({
   onInspectCard,
   onStateTrigger,
 }: DailyRitualViewProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { width: screenWidth } = useWindowDimensions();
 
   // Dynamically adapt fan card dimensions to screen size
@@ -84,6 +85,9 @@ export function DailyRitualView({
   const [selectedCard, setSelectedCard] = useState<CardData>(
     initialSealedCard || ALL_CARDS[0]
   );
+  const activeSelectedCard = useMemo(() => {
+    return selectedCard ? localizeCard(selectedCard, language) : ALL_CARDS[0];
+  }, [selectedCard, language]);
   const [orientation, setOrientation] = useState<'UPRIGHT' | 'REVERSED'>(
     initialOrientation
   );
@@ -596,9 +600,9 @@ export function DailyRitualView({
           {/* Card Details Block */}
           <View style={styles.cardInfoBox}>
             <Text style={styles.cardNumeralLabel}>
-              {getRomanNumeral(selectedCard.card_no)} {'\u00B7'} {localizeSuit(selectedCard.suit, t).toUpperCase()}
+              {getRomanNumeral(activeSelectedCard.card_no)} {'\u00B7'} {localizeSuit(activeSelectedCard.suit, t).toUpperCase()}
             </Text>
-            <Text style={styles.cardTitleSerif}>{selectedCard.crypto_name}</Text>
+            <Text style={styles.cardTitleSerif}>{activeSelectedCard.crypto_name}</Text>
             <View
               style={[
                 styles.orientationPill,
@@ -616,16 +620,16 @@ export function DailyRitualView({
             </View>
 
             <Text style={styles.cardBodySerif}>
-              {orientation === 'REVERSED' && selectedCard.reversed_full
-                ? selectedCard.reversed_full
-                : selectedCard.upright_full || selectedCard.advice}
+              {orientation === 'REVERSED' && activeSelectedCard.reversed_full
+                ? activeSelectedCard.reversed_full
+                : activeSelectedCard.upright_full || activeSelectedCard.advice}
             </Text>
           </View>
 
           {/* The One Action Box */}
           <View style={styles.actionPanel}>
             <Text style={styles.actionPanelLabel}>{t('oracle_directive', 'ORACLE DIRECTIVE')}</Text>
-            <Text style={styles.actionPanelText}>{selectedCard.advice}</Text>
+            <Text style={styles.actionPanelText}>{activeSelectedCard.advice}</Text>
           </View>
 
           <View style={styles.readActionsRow}>
@@ -684,7 +688,7 @@ export function DailyRitualView({
         <View style={styles.stageContent}>
           {/* Top Confirmed Celebration Toast */}
           <View style={styles.celebrationBanner}>
-            <Text style={styles.celebrationGlyph}>\u2713</Text>
+            <Text style={styles.celebrationGlyph}>{'\u2713'}</Text>
             <View style={styles.celebrationTextWrap}>
               <Text style={styles.celebrationTitle}>{t('block_finalized_solana', 'BLOCK FINALIZED ON SOLANA')}</Text>
               <Text style={styles.celebrationSub}>
@@ -720,16 +724,16 @@ export function DailyRitualView({
             </Animated.View>
           </Pressable>
 
-          <Text style={styles.sealedCardName}>{selectedCard.crypto_name}</Text>
+          <Text style={styles.sealedCardName}>{activeSelectedCard.crypto_name}</Text>
           <Text style={styles.sealedCardMeta}>
-            {getRomanNumeral(selectedCard.card_no)} \u00B7 {orientation === 'REVERSED' ? t('reversed_tag', '\u25BC Reversed') : t('upright_tag', '\u25B2 Upright')}
+            {getRomanNumeral(activeSelectedCard.card_no)} {'\u00B7'} {orientation === 'REVERSED' ? t('reversed_tag', '\u25BC Reversed') : t('upright_tag', '\u25B2 Upright')}
           </Text>
 
           {/* Streak & Proof Card */}
           <View style={styles.sealedRecordCard}>
             <View style={styles.recordRow}>
               <Text style={styles.recordKey}>{t('current_streak', 'CURRENT STREAK')}</Text>
-              <Text style={styles.recordValGold}>\u2726 {t('day_unbroken_val', 'Day {n} Unbroken', { n: streak })}</Text>
+              <Text style={styles.recordValGold}>{'\u2726'} {t('day_unbroken_val', 'Day {n} Unbroken', { n: streak })}</Text>
             </View>
             <View style={styles.recordDivider} />
             <View style={styles.recordRow}>
@@ -748,7 +752,7 @@ export function DailyRitualView({
           {/* Daily Guidance Quote */}
           <View style={styles.adviceQuoteBox}>
             <Text style={styles.adviceQuoteLabel}>{t('today_oracle_guidance', "TODAY'S ORACLE GUIDANCE")}</Text>
-            <Text style={styles.adviceQuoteText}>"{selectedCard.advice}"</Text>
+            <Text style={styles.adviceQuoteText}>"{activeSelectedCard.advice}"</Text>
           </View>
 
           {/* Countdown Pill */}
@@ -824,18 +828,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    gap: 8,
   },
   brandTitle: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 8.5,
+    letterSpacing: 1.2,
     color: ObsidianTokens.colors.gold.primary,
+    flexShrink: 1,
   },
   stageIndicator: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: 8.5,
+    letterSpacing: 1,
     color: ObsidianTokens.colors.ink.text42,
+    flexShrink: 0,
   },
   stageContent: {
     alignItems: 'center',
