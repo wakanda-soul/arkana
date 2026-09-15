@@ -19,7 +19,7 @@ import { CardImages, CARD_BACK } from "@/assets/cards";
 import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from "@/services/codexService";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
-import { useLanguage } from "@/services/i18n";
+import { useLanguage, localizeArcana, localizeSuit } from "@/services/i18n";
 
 export default function CodexScreen() {
   const router = useRouter();
@@ -193,7 +193,10 @@ export default function CodexScreen() {
             <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalSuit}>
-                  {selectedCard.arcana.toUpperCase()} ARCANA \u00B7 {selectedCard.suit.toUpperCase()}
+                  {t('arcana_suit_kicker', '{arcana} ARCANA \u00B7 {suit}', {
+                    arcana: localizeArcana(selectedCard.arcana, t),
+                    suit: localizeSuit(selectedCard.suit, t).toUpperCase(),
+                  })}
                 </Text>
                 <Text style={styles.modalTitle}>{selectedCard.crypto_name}</Text>
               </View>
@@ -266,7 +269,7 @@ export default function CodexScreen() {
 
               <Text style={styles.lockedModalKicker}>{t('unrevealed_archetype_title', 'UNREVEALED ARCHETYPE')}</Text>
               <Text style={styles.lockedModalTitle}>{t('card_num_label', `Card #${lockedPreviewCard.card_no}`, { num: lockedPreviewCard.card_no })}</Text>
-              <Text style={styles.lockedModalClassic}>{t('suit_label', `Suit: ${lockedPreviewCard.suit}`, { suit: lockedPreviewCard.suit })}</Text>
+              <Text style={styles.lockedModalClassic}>{t('suit_label', `Suit: ${lockedPreviewCard.suit}`, { suit: localizeSuit(lockedPreviewCard.suit, t) })}</Text>
 
               <View style={styles.lockedSilhouetteBox}>
                 <View style={styles.lockedSilhouetteShade}>

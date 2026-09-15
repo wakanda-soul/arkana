@@ -9,8 +9,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { CardImages, CARD_BACK } from '@/assets/cards';
-import { ObsidianTokens } from '@/constants/theme';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizePosition } from '@/services/i18n';
 
 interface TarotCardProps {
   cardNo: string;
@@ -80,7 +79,7 @@ export function TarotCard({
       {positionName && (
         <View style={[styles.positionBadge, compact && styles.positionBadgeCompact]}>
           <Text style={[styles.positionText, compact && styles.positionTextCompact]} numberOfLines={1}>
-            {positionName.toUpperCase()}
+            {localizePosition(positionName, t).toUpperCase()}
           </Text>
         </View>
       )}
