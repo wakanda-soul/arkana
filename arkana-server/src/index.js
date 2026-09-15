@@ -406,7 +406,7 @@ app.post("/api/reading", async (req, res) => {
 app.post("/api/chat", async (req, res) => {
   const startTime = Date.now();
   const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
-  const { message, history = [], wallet = "anonymous", payWithSol = false, txSignature = null } = req.body;
+  const { message, history = [], wallet = "anonymous", payWithSol = false, txSignature = null, language = "en" } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({ error: "Message is required" });
@@ -433,7 +433,7 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     // Call live Oracle AI agent proxy
-    const chatResult = await generateOracleChatReply(message.trim(), history);
+    const chatResult = await generateOracleChatReply(message.trim(), history, language);
     const reply = typeof chatResult === "string" ? chatResult : chatResult.reply;
     const safety = (chatResult && chatResult.safety) || {};
 

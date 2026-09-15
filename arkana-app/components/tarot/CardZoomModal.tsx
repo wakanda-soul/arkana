@@ -14,7 +14,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { CardImages } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizePosition, localizePositionHint } from '@/services/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_ZOOM_WIDTH = Math.min(SCREEN_WIDTH - 48, 320);
@@ -80,7 +80,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
             <View style={styles.headerInfo}>
               <View style={styles.positionBadge}>
                 <Text style={styles.positionBadgeText}>
-                  {card.position ? card.position.toUpperCase() : t('inspect_artifact', 'INSPECT ARTIFACT')}
+                  {card.position ? localizePosition(card.position, t).toUpperCase() : t('inspect_artifact', 'INSPECT ARTIFACT')}
                 </Text>
               </View>
             </View>
@@ -157,7 +157,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
               {card.position_hint && (
                 <View style={styles.positionHintBox}>
                   <Text style={styles.positionHintTitle}>{t('spread_context', 'SPREAD CONTEXT')}</Text>
-                  <Text style={styles.positionHintText}>{card.position_hint}</Text>
+                  <Text style={styles.positionHintText}>{localizePositionHint(card.position_hint, t)}</Text>
                 </View>
               )}
 

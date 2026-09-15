@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Easing,
   Platform,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -16,7 +17,7 @@ import { CardImages, CARD_BACK } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
 import { shareToTwitter } from '@/utils/shareOmen';
 import { unlockCards } from '@/services/codexService';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizeSuit } from '@/services/i18n';
 
 export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
 
@@ -59,6 +60,24 @@ export function DailyRitualView({
   onStateTrigger,
 }: DailyRitualViewProps) {
   const { t } = useLanguage();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Dynamically adapt fan card dimensions to screen size
+  const fanConfig = useMemo(() => {
+    // Large screens (e.g. Solana Seeker: ~411.4dp)
+    if (screenWidth >= 410) {
+      return { cardW: 94, cardH: 146, gap: 9, rotateDeg: 6 };
+    }
+    // Medium screens (e.g. Poco X3 Pro: ~392.7dp)
+    if (screenWidth >= 385) {
+      return { cardW: 88, cardH: 136, gap: 8, rotateDeg: 5 };
+    }
+    // Compact screens (<= 375dp)
+    const availInner = Math.max(240, screenWidth - 76);
+    const cardW = Math.min(80, Math.floor((availInner - 24) / 3.1));
+    const cardH = Math.round(cardW * 1.55);
+    return { cardW, cardH, gap: 6, rotateDeg: 4 };
+  }, [screenWidth]);
   const [stage, setStage] = useState<RitualStage>(
     isAlreadyClockedIn ? 'sealed' : 'idle'
   );
@@ -477,9 +496,17 @@ export function DailyRitualView({
           </View>
 
           {/* Fan of 3 interactive cards */}
-          <View style={styles.fanContainer}>
+          <View style={[styles.fanContainer, { gap: fanConfig.gap }]}>
             <Pressable
-              style={({ pressed }) => [styles.fanCard, styles.fanCardLeft, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.fanCard,
+                {
+                  width: fanConfig.cardW,
+                  height: fanConfig.cardH,
+                  transform: [{ rotate: `-${fanConfig.rotateDeg}deg` }, { translateY: 2 }],
+                },
+                pressed && styles.btnPressed,
+              ]}
               onPress={() => handlePickCard(-1)}
             >
               <View style={styles.fanInnerWrapper}>
@@ -491,7 +518,15 @@ export function DailyRitualView({
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.fanCard, styles.fanCardCenter, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.fanCard,
+                {
+                  width: fanConfig.cardW,
+                  height: fanConfig.cardH,
+                  transform: [{ rotate: '0deg' }, { translateY: -6 }],
+                },
+                pressed && styles.btnPressed,
+              ]}
               onPress={() => handlePickCard(0)}
             >
               <View style={styles.fanInnerWrapper}>
@@ -503,7 +538,15 @@ export function DailyRitualView({
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.fanCard, styles.fanCardRight, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.fanCard,
+                {
+                  width: fanConfig.cardW,
+                  height: fanConfig.cardH,
+                  transform: [{ rotate: `${fanConfig.rotateDeg}deg` }, { translateY: 2 }],
+                },
+                pressed && styles.btnPressed,
+              ]}
               onPress={() => handlePickCard(1)}
             >
               <View style={styles.fanInnerWrapper}>
@@ -544,7 +587,7 @@ export function DailyRitualView({
               </View>
               {orientation === 'REVERSED' && (
                 <View style={styles.reversedBadge}>
-                  <Text style={styles.reversedBadgeText}>{'\u25BC'} REVERSED</Text>
+                  <Text style={styles.reversedBadgeText}>{'\u25BC'} {t('card_reversed', 'REVERSED')}</Text>
                 </View>
               )}
             </Animated.View>
@@ -553,7 +596,7 @@ export function DailyRitualView({
           {/* Card Details Block */}
           <View style={styles.cardInfoBox}>
             <Text style={styles.cardNumeralLabel}>
-              {getRomanNumeral(selectedCard.card_no)} {'\u00B7'} {selectedCard.suit.toUpperCase()}
+              {getRomanNumeral(selectedCard.card_no)} {'\u00B7'} {localizeSuit(selectedCard.suit, t).toUpperCase()}
             </Text>
             <Text style={styles.cardTitleSerif}>{selectedCard.crypto_name}</Text>
             <View

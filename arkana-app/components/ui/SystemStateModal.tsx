@@ -110,12 +110,12 @@ export function SystemStateModal({
           {type === 'ai_generating' && (
             <View style={styles.contentBox}>
               <Animated.View style={[styles.spinRing, { transform: [{ rotate: spin }] }]} />
-              <Text style={styles.titleSerif}>Reading your record</Text>
+              <Text style={styles.titleSerif}>{t('reading_record_title', 'Reading your record')}</Text>
               <Text style={styles.bodySerif}>
-                Six past pulls, thirty days of mood, one open position.
+                {t('reading_record_sub', 'Six past pulls, thirty days of mood, one open position.')}
               </Text>
               <View style={styles.timeBadge}>
-                <Text style={styles.timeBadgeText}>~4 SECONDS</Text>
+                <Text style={styles.timeBadgeText}>{t('approx_4_sec', '~4 SECONDS')}</Text>
               </View>
 
               <View style={styles.actionFooter}>
@@ -123,7 +123,7 @@ export function SystemStateModal({
                   style={styles.ghostButton}
                   onPress={onActionSecondary || onClose}
                 >
-                  <Text style={styles.ghostButtonText}>CANCEL</Text>
+                  <Text style={styles.ghostButtonText}>{t('cancel', 'CANCEL')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -135,9 +135,9 @@ export function SystemStateModal({
               <View style={[styles.symbolRing, styles.lossBorder]}>
                 <Text style={styles.lossSymbol}>{'\u2715'}</Text>
               </View>
-              <Text style={styles.titleSerif}>The seal didn't take</Text>
+              <Text style={styles.titleSerif}>{t('seal_didnt_take_title', "The seal didn't take")}</Text>
               <Text style={styles.bodySerif}>
-                Transaction dropped before confirmation. Your reading is saved locally - nothing was charged.
+                {t('seal_didnt_take_sub', 'Transaction dropped before confirmation. Your reading is saved locally - nothing was charged.')}
               </Text>
               <View style={styles.codePanel}>
                 <Text style={styles.codeText}>
@@ -150,13 +150,13 @@ export function SystemStateModal({
                   style={styles.primaryGoldButton}
                   onPress={onActionPrimary || onClose}
                 >
-                  <Text style={styles.primaryButtonText}>TRY THE SEAL AGAIN</Text>
+                  <Text style={styles.primaryButtonText}>{t('try_seal_again', 'TRY THE SEAL AGAIN')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.ghostButton}
                   onPress={onActionSecondary || onClose}
                 >
-                  <Text style={styles.ghostButtonText}>KEEP IT LOCAL FOR NOW</Text>
+                  <Text style={styles.ghostButtonText}>{t('keep_it_local', 'KEEP IT LOCAL FOR NOW')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -285,15 +285,15 @@ export function SystemStateModal({
                 </View>
               </View>
               <Text style={styles.titleSerif}>
-                Three questions, <Text style={styles.goldItalic}>this month</Text>
+                {t('three_questions_title', 'Three inquiries daily')}
               </Text>
               <Text style={styles.bodySerif}>
-                Free members ask three times. Your daily card is untouched and always will be.
+                {t('three_questions_sub', 'Free seekers receive 3 inquiries daily. Your daily card is always free.')}
               </Text>
               <View style={styles.orderPanel}>
                 <View>
-                  <Text style={styles.orderTitle}>Unlimited asks</Text>
-                  <Text style={styles.orderSub}>ORDER \u00B7 0.045 SOL OR 15 SKR</Text>
+                  <Text style={styles.orderTitle}>{t('unlimited_asks', 'Unlimited Inquiries')}</Text>
+                  <Text style={styles.orderSub}>{t('order_sub', 'ALLOWANCE \u00B7 0.001 SOL OR 5 SKR')}</Text>
                 </View>
                 <Text style={styles.orderArrow}>{'\u2192'}</Text>
               </View>
@@ -303,13 +303,13 @@ export function SystemStateModal({
                   style={styles.primaryGoldButton}
                   onPress={onActionPrimary || onClose}
                 >
-                  <Text style={styles.primaryButtonText}>JOIN THE ORDER</Text>
+                  <Text style={styles.primaryButtonText}>{t('join_order', 'EXTEND ALLOWANCE')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.ghostButton}
                   onPress={onActionSecondary || onClose}
                 >
-                  <Text style={styles.ghostButtonText}>CONTINUE WITH DAILY CARDS</Text>
+                  <Text style={styles.ghostButtonText}>{t('continue_daily', 'CONTINUE WITH DAILY RECORD')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -324,18 +324,18 @@ export function SystemStateModal({
               <View style={[styles.symbolRing, styles.dashedRing]}>
                 <View style={styles.diamondSquare} />
               </View>
-              <Text style={styles.titleSerif}>No chain, no chart</Text>
+              <Text style={styles.titleSerif}>{t('offline_title', 'No chain, no chart')}</Text>
               <Text style={styles.bodySerif}>
-                You can still read the cards you have drawn and write in your journal. Draws resume when you are back.
+                {t('offline_sub', 'You can still read the cards you have drawn and consult your saved codex. On-chain draws resume when you are reconnected.')}
               </Text>
               <View style={styles.statsRow}>
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>CACHED</Text>
-                  <Text style={styles.statVal}>78 cards</Text>
+                  <Text style={styles.statLabel}>{t('stat_cached', 'CACHED')}</Text>
+                  <Text style={styles.statVal}>{t('stat_cached_val', '78 cards')}</Text>
                 </View>
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>QUEUED</Text>
-                  <Text style={styles.statVal}>1 seal</Text>
+                  <Text style={styles.statLabel}>{t('stat_queued', 'QUEUED')}</Text>
+                  <Text style={styles.statVal}>{t('stat_queued_val', '1 seal')}</Text>
                 </View>
               </View>
 
@@ -344,7 +344,7 @@ export function SystemStateModal({
                   style={styles.primaryGoldBorderButton}
                   onPress={onClose}
                 >
-                  <Text style={styles.primaryGoldBorderText}>OPEN MY JOURNAL</Text>
+                  <Text style={styles.primaryGoldBorderText}>{t('open_codex_btn', 'OPEN MY CODEX')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

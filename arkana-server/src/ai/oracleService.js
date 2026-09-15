@@ -271,7 +271,7 @@ function classifyUserIntent(message) {
   return "statement";
 }
 
-function generateOracleChatReply(message, history = []) {
+function generateOracleChatReply(message, history = [], language = "en") {
   return new Promise((resolve) => {
     // Layer 1: Fast safety & injection interceptor
     const safetyCheck = evaluateSafetyFilter(message);
@@ -291,6 +291,20 @@ function generateOracleChatReply(message, history = []) {
     const cleanMessage = sanitizeUserInput(message);
     const intent = classifyUserIntent(cleanMessage);
 
+    const LANG_NAMES = {
+      en: "English",
+      zh: "Chinese (Simplified)",
+      hi: "Hindi",
+      es: "Spanish",
+      ar: "Arabic",
+      fr: "French",
+      bn: "Bengali",
+      pt: "Portuguese",
+      ru: "Russian",
+      id: "Indonesian",
+    };
+    const targetLang = LANG_NAMES[language] || "English";
+
     // Only draw a card from the 78 Arcana deck if the querent is actually asking a question/inquiry
     let drawnCard = null;
     let orientation = "upright";
@@ -309,6 +323,9 @@ function generateOracleChatReply(message, history = []) {
 
     // Layer 2: Secure boundary-isolated prompt
     let fullPrompt = `${ORACLE_CHAT_PROMPT}\n\n`;
+
+    fullPrompt += `CRITICAL LANGUAGE MANDATE:
+You MUST formulate your response in ${targetLang}. All explanations, dialogue, guidance, and synthesis MUST be in ${targetLang}. Canonical archetype names and Solana technical terms may remain in their canonical English form, but all surrounding prose, advice, and guidance MUST be strictly in ${targetLang}.\n\n`;
 
     if (intent === "greeting") {
       fullPrompt += `CONTEXT: The querent greeted you (e.g. "hello", "\\u043F\\u0440\\u0438\\u0432\\u0435\\u0442").
@@ -386,7 +403,7 @@ Arkana, speak:`;
       (err, stdout) => {
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI] agy fallback triggered:", err ? err.message : "empty response");
-          const fallback = isCyrillic(message) ? RU_CODING_REFUSAL : EN_CODING_REFUSAL;
+          const fallback = (language === "ru" || isCyrillic(message)) ? RU_CODING_REFUSAL : EN_CODING_REFUSAL;
           return resolve({
             reply: fallback,
             card: null,
