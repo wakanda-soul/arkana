@@ -9,6 +9,7 @@ import {
   Modal,
   Dimensions,
   Platform,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -26,6 +27,8 @@ export default function CodexScreen() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterUnlockedOnly, setFilterUnlockedOnly] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [lockedPreviewCard, setLockedPreviewCard] = useState<CardData | null>(null);
@@ -44,11 +47,35 @@ export default function CodexScreen() {
 
   const filteredCards = useMemo(() => {
     return localizedCards.filter(card => {
-      if (selectedFilter === "all") return true;
-      if (selectedFilter === "major") return card.arcana === "major" || card.suit === "Major Arcana";
-      return card.suit === selectedFilter;
+      // Suit filter
+      if (selectedFilter !== "all") {
+        if (selectedFilter === "major") {
+          if (card.arcana !== "major" && card.suit !== "Major Arcana") return false;
+        } else if (card.suit !== selectedFilter) {
+          return false;
+        }
+      }
+
+      // Unlocked only filter
+      if (filterUnlockedOnly && !unlockedCardNos.includes(card.card_no)) {
+        return false;
+      }
+
+      // Search query filter (matches crypto_name, classic, card_no, keywords)
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchesName = card.crypto_name?.toLowerCase().includes(q);
+        const matchesClassic = card.classic?.toLowerCase().includes(q);
+        const matchesNo = card.card_no?.toLowerCase().includes(q);
+        const matchesKeywords = card.keywords?.some(k => k.toLowerCase().includes(q));
+        if (!matchesName && !matchesClassic && !matchesNo && !matchesKeywords) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [localizedCards, selectedFilter]);
+  }, [localizedCards, selectedFilter, filterUnlockedOnly, searchQuery, unlockedCardNos]);
 
   const activeSelectedCard = useMemo(() => {
     return selectedCard ? localizeCard(selectedCard, language) : null;
@@ -109,6 +136,64 @@ export default function CodexScreen() {
         </Text>
       </View>
 
+      {/* Search & Scope Filter Section */}
+      <View style={styles.searchSection}>
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Text style={styles.searchIcon}>{'\u2315'}</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('search_codex_placeholder', 'Search archetype, keyword or number...')}
+            placeholderTextColor={ObsidianTokens.colors.ink.text42}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable
+              onPress={() => setSearchQuery('')}
+              hitSlop={8}
+              style={styles.searchClearBtn}
+            >
+              <Text style={styles.searchClearText}>{'\u2715'}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Scope Toggle: All vs Only Unlocked */}
+        <View style={styles.scopeToggleRow}>
+          <Pressable
+            style={[
+              styles.scopePill,
+              !filterUnlockedOnly && styles.scopePillActive,
+            ]}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setFilterUnlockedOnly(false);
+            }}
+          >
+            <Text style={[styles.scopeText, !filterUnlockedOnly && styles.scopeTextActive]}>
+              {t('scope_all', 'ALL (78)')}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.scopePill,
+              filterUnlockedOnly && styles.scopePillActive,
+            ]}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setFilterUnlockedOnly(true);
+            }}
+          >
+            <Text style={[styles.scopeText, filterUnlockedOnly && styles.scopeTextActive]}>
+              {t('scope_unlocked', 'UNLOCKED ({n})', { n: unlockedCount })}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       {/* Filter Tabs */}
       <View style={styles.filtersWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
@@ -145,8 +230,30 @@ export default function CodexScreen() {
         keyExtractor={item => item.card_no}
         numColumns={3}
         contentContainerStyle={styles.gridContent}
-        columnWrapperStyle={styles.columnWrapper}
+        columnWrapperStyle={filteredCards.length > 0 ? styles.columnWrapper : undefined}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyGlyph}>{'\u2726'}</Text>
+            <Text style={styles.emptyTitle}>{t('no_archetypes_found', 'No Archetypes Found')}</Text>
+            <Text style={styles.emptySub}>
+              {t('no_archetypes_sub', 'The Consensus found no cards matching your query.')}
+            </Text>
+            {(searchQuery.length > 0 || filterUnlockedOnly || selectedFilter !== 'all') && (
+              <Pressable
+                style={styles.resetFiltersBtn}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  setSearchQuery('');
+                  setFilterUnlockedOnly(false);
+                  setSelectedFilter('all');
+                }}
+              >
+                <Text style={styles.resetFiltersBtnText}>{t('reset_filters', 'RESET SEARCH')}</Text>
+              </Pressable>
+            )}
+          </View>
+        }
         renderItem={({ item }) => {
           const isUnlocked = unlockedCardNos.includes(item.card_no);
           return (
@@ -396,6 +503,110 @@ const styles = StyleSheet.create({
     color: ObsidianTokens.colors.ink.text42,
     fontSize: 12,
     lineHeight: 16,
+  },
+  searchSection: {
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    marginBottom: 12,
+    gap: 10,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 42,
+  },
+  searchIcon: {
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 14,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 12,
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    paddingVertical: 0,
+  },
+  searchClearBtn: {
+    padding: 4,
+  },
+  searchClearText: {
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 12,
+  },
+  scopeToggleRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  scopePill: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scopePillActive: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+  },
+  scopeText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 9.5,
+    letterSpacing: 1,
+    fontWeight: "600",
+  },
+  scopeTextActive: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontWeight: "700",
+  },
+  emptyContainer: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  emptyGlyph: {
+    color: ObsidianTokens.colors.gold.subtle,
+    fontSize: 24,
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 17,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  emptySub: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 10,
+    textAlign: "center",
+    lineHeight: 16,
+    marginBottom: 16,
+  },
+  resetFiltersBtn: {
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  resetFiltersBtnText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: "700",
   },
   filtersWrapper: {
     marginBottom: 12,

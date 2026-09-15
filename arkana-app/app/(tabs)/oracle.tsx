@@ -126,9 +126,10 @@ export default function OracleScreen() {
     const query = (textToSend || input).trim();
     if (!query) return;
 
-    const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
+    const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
+    const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
 
-    // If 3 free daily attempts are exhausted: ALWAYS prompt user with mystical warning popup!
+    // If 3 free daily attempts are exhausted or user is not a Seeker SBT holder: ALWAYS prompt user with mystical warning popup!
     if (!hasFree) {
       setPendingQuery(query);
       setSolModalVisible(true);
@@ -290,8 +291,9 @@ export default function OracleScreen() {
     };
   }, []);
 
-  const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
-  const freeRemaining = quotaInfo?.freeSpreadsRemaining ?? 3;
+  const isSeekerHolder = Boolean(quotaInfo?.isSeekerHolder);
+  const hasFreeRemaining = isSeekerHolder && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
+  const freeRemaining = isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0;
   const askCostSkr = quotaInfo?.askCostSkr || 1;
   const askCostSol = quotaInfo?.askCostSol || 0.0002;
   const skrBalance = quotaInfo?.skrBalance ?? 0;
@@ -676,10 +678,16 @@ export default function OracleScreen() {
               </Pressable>
             </View>
 
-            <Text style={styles.modalKicker}>{t('quota_modal_kicker', 'CONSENSUS QUOTA \u00B7 3/3 USED TODAY')}</Text>
+            <Text style={styles.modalKicker}>
+              {isSeekerHolder
+                ? t('quota_modal_kicker', 'CONSENSUS QUOTA \u00B7 3/3 USED TODAY')
+                : t('seeker_sbt_required_kicker', 'SEEKER GENESIS SBT PRIVILEGE')}
+            </Text>
             <Text style={styles.modalTitle}>{t('quota_veil_drawn_title', 'The Veil Has Drawn')}</Text>
             <Text style={styles.modalSub}>
-              {t('quota_veil_drawn_desc', 'You have exhausted the 3 sacred inquiries granted to you by the ledger today.\n\nThe cards now require an offering of energy to part the veil once more. Will you commune now, or return tomorrow when the next UTC block seals?')}
+              {isSeekerHolder
+                ? t('quota_veil_drawn_desc', 'You have exhausted the 3 sacred inquiries granted to you by the ledger today.\n\nThe cards now require an offering of energy to part the veil once more. Will you commune now, or return tomorrow when the next UTC block seals?')
+                : t('seeker_sbt_privilege_desc', 'Free daily readings are an exclusive privilege of Solana Seeker Genesis SBT holders.\n\nPart the veil by offering SKR or SOL to commune with Arkana.')}
             </Text>
 
             <View style={styles.modalInfoPanel}>

@@ -18,6 +18,7 @@ import { ellipsify } from "@/utils/ellipsify";
 import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
 import { useLanguage } from "@/services/i18n";
+import { soundService } from "@/services/soundService";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
@@ -25,6 +26,7 @@ export default function WalletScreen() {
   const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -36,6 +38,23 @@ export default function WalletScreen() {
   });
 
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    soundService.init().then((unmuted) => {
+      setIsSoundMuted(!unmuted);
+    });
+  }, []);
+
+  const handleToggleSound = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    const muted = await soundService.toggleMute();
+    setIsSoundMuted(muted);
+    if (!muted) {
+      soundService.playCardFlip();
+    }
+  };
 
   useEffect(() => {
     const targetAddress = address || "SeekerDemoWallet1111111111111111111";
@@ -193,6 +212,27 @@ export default function WalletScreen() {
               </View>
             </Pressable>
 
+            {/* Sound FX Toggle Card */}
+            <Pressable
+              style={({ pressed }) => [styles.featureBox, pressed && styles.cardPressed]}
+              onPress={handleToggleSound}
+            >
+              <Text style={styles.featureIcon}>{isSoundMuted ? '\u25C8' : '\u2726'}</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>{t('sound_effects_title', 'Acoustic Resonance / SFX')}</Text>
+                <Text style={styles.featureDesc}>
+                  {isSoundMuted
+                    ? t('sound_effects_muted_desc', 'Muted -- silent contemplation mode')
+                    : t('sound_effects_active_desc', 'Card flips, sacred shuffles, and consensus chime active')}
+                </Text>
+              </View>
+              <View style={[styles.soundPillBadge, isSoundMuted && styles.soundPillBadgeMuted]}>
+                <Text style={[styles.soundPillText, isSoundMuted && styles.soundPillTextMuted]}>
+                  {isSoundMuted ? t('sound_off', 'MUTED') : t('sound_on', 'SOUND ON')}
+                </Text>
+              </View>
+            </Pressable>
+
             {/* Membership / Order Box */}
             <View style={styles.membershipCard}>
               <View>
@@ -295,6 +335,27 @@ export default function WalletScreen() {
               </View>
               <View style={styles.langPillBadge}>
                 <Text style={styles.langPillText}>{currentOption.tag} {'\u2197'}</Text>
+              </View>
+            </Pressable>
+
+            {/* Sound FX Toggle Card */}
+            <Pressable
+              style={({ pressed }) => [styles.featureBox, pressed && styles.cardPressed]}
+              onPress={handleToggleSound}
+            >
+              <Text style={styles.featureIcon}>{isSoundMuted ? '\u25C8' : '\u2726'}</Text>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>{t('sound_effects_title', 'Acoustic Resonance / SFX')}</Text>
+                <Text style={styles.featureDesc}>
+                  {isSoundMuted
+                    ? t('sound_effects_muted_desc', 'Muted -- silent contemplation mode')
+                    : t('sound_effects_active_desc', 'Card flips, sacred shuffles, and consensus chime active')}
+                </Text>
+              </View>
+              <View style={[styles.soundPillBadge, isSoundMuted && styles.soundPillBadgeMuted]}>
+                <Text style={[styles.soundPillText, isSoundMuted && styles.soundPillTextMuted]}>
+                  {isSoundMuted ? t('sound_off', 'MUTED') : t('sound_on', 'SOUND ON')}
+                </Text>
               </View>
             </Pressable>
 
@@ -751,6 +812,29 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "700",
     letterSpacing: 1,
+  },
+  soundPillBadge: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  soundPillBadgeMuted: {
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+  },
+  soundPillText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  soundPillTextMuted: {
+    color: ObsidianTokens.colors.ink.text42,
   },
   cardPressed: {
     transform: [{ scale: ObsidianTokens.motion.pressScale }],

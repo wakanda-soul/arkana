@@ -28,10 +28,13 @@ import { Image } from "expo-image";
 import { ALL_CARDS, CardData } from "@/data/cardsData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage } from "@/services/i18n";
+import { useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { submitConsensusProofOnChain } from "@/services/solanaService";
 
 export default function AltarScreen() {
   const router = useRouter();
   const { account, isAuthenticated, signIn } = useAuth();
+  const { connection, signAndSendTransactions } = useMobileWallet();
   const { t, language } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
@@ -94,7 +97,39 @@ export default function AltarScreen() {
 
   const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
-      const res = await executeClockIn(walletAddress, card.card_no, orientation.toLowerCase(), language);
+      let signature: string | undefined;
+      let slot: number | undefined;
+
+      // Real on-chain Solana SPL Memo transaction when wallet is connected
+      if (isAuthenticated && account?.publicKey) {
+        try {
+          const onChainRes = await submitConsensusProofOnChain({
+            connection,
+            walletPublicKey: account.publicKey,
+            signAndSendTransactions,
+            cardNo: card.card_no,
+            orientation,
+          });
+          signature = onChainRes.signature;
+          slot = onChainRes.slot;
+        } catch (txErr: any) {
+          console.warn('[Solana] On-chain signing rejected or failed:', txErr);
+          return {
+            success: false,
+            error: txErr?.message || "Transaction was canceled in wallet",
+          };
+        }
+      }
+
+      const res = await executeClockIn(
+        walletAddress,
+        card.card_no,
+        orientation.toLowerCase(),
+        language,
+        signature,
+        slot
+      );
+
       setDailyReading(res.reading);
       if (res.reading?.cards && res.reading.cards.length > 0) {
         unlockCards([res.reading.cards[0].card_no]);
@@ -103,11 +138,11 @@ export default function AltarScreen() {
         ...prev,
         canClockIn: false,
         streak: res.streak,
-        freeSpreadsRemaining: prev.freeSpreadsMax ?? 3,
+        freeSpreadsRemaining: prev.isSeekerHolder ? (prev.freeSpreadsMax ?? 3) : 0,
       }));
 
-      const signature = res.txSignature || '5xK' + Math.random().toString(36).substring(2, 10);
-      const slot = res.slot || 289441200 + Math.floor(Math.random() * 500);
+      const finalSignature = signature || res.txSignature || ('5xK' + Math.random().toString(36).substring(2, 10));
+      const finalSlot = slot || res.slot || (289441200 + Math.floor(Math.random() * 500));
 
       // Persist to local storage for today
       try {
@@ -116,20 +151,20 @@ export default function AltarScreen() {
           dateStr: todayDate,
           cardNo: card.card_no,
           orientation,
-          txHash: signature,
-          slot,
+          txHash: finalSignature,
+          slot: finalSlot,
         }));
       } catch {}
 
       setSavedSealedCard(card);
       setSavedOrientation(orientation);
-      setSavedTxSig(signature);
-      setSavedSlot(slot);
+      setSavedTxSig(finalSignature);
+      setSavedSlot(finalSlot);
 
       return {
         success: true,
-        signature,
-        slot,
+        signature: finalSignature,
+        slot: finalSlot,
       };
     } catch (err: any) {
       return {
@@ -319,15 +354,21 @@ export default function AltarScreen() {
 
         {/* Free Spreads Allowance Bar */}
         <View style={styles.quotaRow}>
-          <View style={styles.quotaPill}>
-            <Text style={styles.quotaText}>
-              {t('free_spreads_today', '{rem}/{max} FREE SPREADS TODAY', {
-                rem: clockInState.freeSpreadsRemaining ?? 3,
-                max: clockInState.freeSpreadsMax ?? 3,
-              })}
+          <View style={[styles.quotaPill, !clockInState.isSeekerHolder && styles.quotaPillLocked]}>
+            <Text style={[styles.quotaText, !clockInState.isSeekerHolder && styles.quotaTextLocked]}>
+              {clockInState.isSeekerHolder
+                ? t('free_spreads_today', '{rem}/{max} FREE SPREADS TODAY', {
+                    rem: clockInState.freeSpreadsRemaining ?? 3,
+                    max: clockInState.freeSpreadsMax ?? 3,
+                  })
+                : t('seeker_exclusive_spreads', 'SEEKER GENESIS EXCLUSIVE \u00B7 0 FREE')}
             </Text>
           </View>
-          <Text style={styles.quotaSub}>{t('extra_spreads_skr', 'Extra spreads: 5 SKR')}</Text>
+          <Text style={styles.quotaSub}>
+            {clockInState.isSeekerHolder
+              ? t('extra_spreads_skr', 'Extra spreads: 5 SKR')
+              : t('spreads_fee_note', 'Offer 5 SKR or 0.001 SOL per reading')}
+          </Text>
         </View>
 
         {/* Sacred Spreads Section */}
@@ -613,6 +654,13 @@ const styles = StyleSheet.create({
     color: ObsidianTokens.colors.ink.text55,
     fontSize: 8.5,
     letterSpacing: 0.8,
+  },
+  quotaPillLocked: {
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+  },
+  quotaTextLocked: {
+    color: ObsidianTokens.colors.gold.primary,
   },
   quotaSub: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),

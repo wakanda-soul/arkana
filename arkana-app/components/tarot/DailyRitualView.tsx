@@ -19,6 +19,8 @@ import { shareToTwitter } from '@/utils/shareOmen';
 import { unlockCards } from '@/services/codexService';
 import { useLanguage, localizeSuit } from '@/services/i18n';
 import { localizeCard } from '@/services/cardLocalization';
+import { soundService } from '@/services/soundService';
+import { notificationService } from '@/services/notificationService';
 
 export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
 
@@ -218,6 +220,7 @@ export function DailyRitualView({
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
+    soundService.playCardShuffle();
     setStage('shuffle');
 
     // Shuffle loop
@@ -254,6 +257,7 @@ export function DailyRitualView({
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
+    soundService.playCardFlip();
 
     // Pick a card pseudo-randomly
     const randomCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
@@ -315,6 +319,8 @@ export function DailyRitualView({
         spinLoop.stop();
 
         setStage('sealed');
+        soundService.playConsensusSeal();
+        notificationService.scheduleDailyConsensusReminder(86400).catch(() => {});
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}

@@ -66,8 +66,31 @@ function getDailyFreeAllowance(streak = 0) {
   return 3;                  // Base daily free allowance
 }
 
+function checkSeekerStatus(user, walletAddress) {
+  if (user && user.isSeekerHolder !== undefined) {
+    return Boolean(user.isSeekerHolder);
+  }
+  if (!walletAddress) return false;
+  if (walletAddress.startsWith("DemoSeeker") || walletAddress.startsWith("SeekerDemo") || walletAddress.startsWith("SeekerTest")) {
+    return true;
+  }
+  return false;
+}
+
+function setSeekerHolderStatus(walletAddress, isHolder) {
+  if (!walletAddress) return false;
+  const users = loadUsers();
+  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  user.isSeekerHolder = Boolean(isHolder);
+  users[walletAddress] = user;
+  saveUsers(users);
+  return user.isSeekerHolder;
+}
+
 /**
- * Check wallet Clock-In, spread quota, and streak repair status
+ * Check wallet Clock-In, spread quota, and streak repair status.
+ * Notice: Free daily spreads (3 to 5) are an exclusive privilege of Seeker Genesis SBT holders.
+ * Non-Seeker wallets have freeSpreadsRemaining: 0 and must offer SKR or SOL.
  */
 function getClockInStatus(walletAddress) {
   const config = loadEconomyConfig();
@@ -85,20 +108,21 @@ function getClockInStatus(walletAddress) {
       repairStreakTarget: 1,
       streakRepairCostSkr: repairCost,
       lastClockIn: null,
-      freeSpreadsRemaining: 3,
-      freeSpreadsMax: 3,
+      freeSpreadsRemaining: 0,
+      freeSpreadsMax: 0,
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
       askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
       extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
-      skrBalance: 25,
-      isSeekerHolder: true
+      skrBalance: 0,
+      isSeekerHolder: false
     };
   }
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  const isSeekerHolder = checkSeekerStatus(user, walletAddress);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
@@ -125,11 +149,11 @@ function getClockInStatus(walletAddress) {
 
   const repairStreakTarget = user.brokenStreak || user.previousStreak || (currentStreak > 0 ? currentStreak : 1);
 
-  // Daily free quota calculation
+  // Daily free quota calculation: ONLY Seeker Genesis SBT holders get free daily spreads!
   const lastSpreadDate = user.lastSpreadDate || "";
   const dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
-  const maxFree = getDailyFreeAllowance(currentStreak);
-  const remainingFree = Math.max(0, maxFree - dailySpreadsUsed);
+  const maxFree = isSeekerHolder ? getDailyFreeAllowance(currentStreak) : 0;
+  const remainingFree = isSeekerHolder ? Math.max(0, maxFree - dailySpreadsUsed) : 0;
   const todayCard = (!canClockIn && user.history && user.history[0]) ? user.history[0] : null;
 
   return {
@@ -150,7 +174,7 @@ function getClockInStatus(walletAddress) {
     skrToSolRate,
     askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
     extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
-    isSeekerHolder: true
+    isSeekerHolder
   };
 }
 
@@ -197,7 +221,8 @@ function recordClockIn(walletAddress, drawnCard) {
   users[walletAddress] = user;
   saveUsers(users);
 
-  const maxFree = getDailyFreeAllowance(user.streak);
+  const isSeekerHolder = checkSeekerStatus(user, walletAddress);
+  const maxFree = isSeekerHolder ? getDailyFreeAllowance(user.streak) : 0;
 
   return {
     success: true,
@@ -205,7 +230,8 @@ function recordClockIn(walletAddress, drawnCard) {
     lastClockIn: user.lastClockIn,
     rewardSkr,
     freeSpreadsMax: maxFree,
-    skrBalance: user.skrBalance
+    skrBalance: user.skrBalance,
+    isSeekerHolder
   };
 }
 
@@ -226,28 +252,30 @@ function consumeSpread(walletAddress, options = {}) {
 
   if (!walletAddress) {
     return {
-      allowed: true,
-      isFree: true,
-      cost: 0,
-      costSkr: 0,
-      costSol: 0,
-      paidWith: "free",
-      remainingFree: 3,
-      balance: 25
+      allowed: false,
+      isFree: false,
+      cost: costSkr,
+      costSkr,
+      costSol,
+      isSeekerHolder: false,
+      remainingFree: 0,
+      balance: 0,
+      reason: "Connect your wallet to consult the oracle."
     };
   }
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  const isSeekerHolder = checkSeekerStatus(user, walletAddress);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
   const lastSpreadDate = user.lastSpreadDate || "";
   let dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
-  const maxFree = getDailyFreeAllowance(user.streak || 0);
+  const maxFree = isSeekerHolder ? getDailyFreeAllowance(user.streak || 0) : 0;
 
-  if (dailySpreadsUsed < maxFree) {
-    // Within free daily allowance (shared between Spreads and ASK)
+  if (isSeekerHolder && dailySpreadsUsed < maxFree) {
+    // Within free daily allowance (Seeker Genesis SBT holders only)
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
@@ -263,7 +291,8 @@ function consumeSpread(walletAddress, options = {}) {
       costSol: 0,
       paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
-      balance: user.skrBalance
+      balance: user.skrBalance,
+      isSeekerHolder: true
     };
   }
 
@@ -331,7 +360,10 @@ function consumeSpread(walletAddress, options = {}) {
     remainingFree: 0,
     balance: user.skrBalance || 0,
     canPayWithSol: true,
-    error: `Daily free allowance reached (${maxFree}/${maxFree}). ${costSkr} SKR or ${costSol} SOL required.`
+    isSeekerHolder,
+    error: isSeekerHolder
+      ? `Daily free allowance reached (${maxFree}/${maxFree}). ${costSkr} SKR or ${costSol} SOL required.`
+      : `Free daily readings are an exclusive privilege of Seeker Genesis SBT holders. ${costSkr} SKR or ${costSol} SOL required.`
   };
 }
 
@@ -379,6 +411,7 @@ function repairStreak(walletAddress) {
 
 module.exports = {
   getClockInStatus,
+  setSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
   repairStreak,
