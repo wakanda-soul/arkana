@@ -90,7 +90,8 @@ export function DailyRitualView({
 
   // Day name
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const todayName = dayNames[new Date().getDay()];
+  const todayIndex = new Date().getDay();
+  const todayName = dayNames[todayIndex];
 
   // Sync if isAlreadyClockedIn changes externally
   useEffect(() => {
@@ -484,7 +485,7 @@ export function DailyRitualView({
               <View style={styles.fanInnerWrapper}>
                 <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
                 <View style={styles.fanSlotBadge}>
-                  <Text style={styles.fanCardLabel}>SLOT A</Text>
+                  <Text style={styles.fanCardLabel}>{t('slot_a', 'SLOT A')}</Text>
                 </View>
               </View>
             </Pressable>
@@ -496,7 +497,7 @@ export function DailyRitualView({
               <View style={styles.fanInnerWrapper}>
                 <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
                 <View style={styles.fanSlotBadge}>
-                  <Text style={styles.fanCardLabel}>SLOT B</Text>
+                  <Text style={styles.fanCardLabel}>{t('slot_b', 'SLOT B')}</Text>
                 </View>
               </View>
             </Pressable>
@@ -508,14 +509,14 @@ export function DailyRitualView({
               <View style={styles.fanInnerWrapper}>
                 <Image source={CARD_BACK} style={styles.cardImageFill} contentFit="cover" />
                 <View style={styles.fanSlotBadge}>
-                  <Text style={styles.fanCardLabel}>SLOT C</Text>
+                  <Text style={styles.fanCardLabel}>{t('slot_c', 'SLOT C')}</Text>
                 </View>
               </View>
             </Pressable>
           </View>
 
           <View style={styles.bottomActions}>
-            <Text style={styles.tapCardLabel}>{t('reveal_all', 'TAP TO REVEAL')}</Text>
+            <Text style={styles.tapCardLabel}>{t('tap_to_reveal', 'TAP TO REVEAL')}</Text>
           </View>
         </View>
       )}
@@ -567,7 +568,7 @@ export function DailyRitualView({
                   orientation === 'REVERSED' ? styles.orientationTextRev : styles.orientationTextUp,
                 ]}
               >
-                {orientation === 'REVERSED' ? '\u25BC DRAWN REVERSED' : '\u25B2 DRAWN UPRIGHT'}
+                {orientation === 'REVERSED' ? t('drawn_reversed', '\u25BC DRAWN REVERSED') : t('drawn_upright', '\u25B2 DRAWN UPRIGHT')}
               </Text>
             </View>
 
@@ -580,7 +581,7 @@ export function DailyRitualView({
 
           {/* The One Action Box */}
           <View style={styles.actionPanel}>
-            <Text style={styles.actionPanelLabel}>ORACLE DIRECTIVE</Text>
+            <Text style={styles.actionPanelLabel}>{t('oracle_directive', 'ORACLE DIRECTIVE')}</Text>
             <Text style={styles.actionPanelText}>{selectedCard.advice}</Text>
           </View>
 
@@ -607,17 +608,17 @@ export function DailyRitualView({
           <View style={styles.signingCenter}>
             <Animated.View style={[styles.spinRingBig, { transform: [{ rotate: spinInterpolate }] }]} />
             <Text style={styles.signingTitle}>
-              {signStep === 1 ? 'Broadcasting to Mempool' : 'Consensus Confirmed!'}
+              {signStep === 1 ? t('broadcasting_mempool', 'Broadcasting to Mempool') : t('consensus_confirmed', 'Consensus Confirmed!')}
             </Text>
             <Text style={styles.signingSub}>
               {signStep === 1
-                ? 'Submitting transaction payload to Solana network. Gas fee 0.00021 SOL.'
-                : `Block finalized on-chain · Slot #${slotNumber} confirmed by network validators.`}
+                ? t('submitting_tx_payload', 'Submitting transaction payload to Solana network. Gas fee 0.00021 SOL.')
+                : t('block_finalized_slot', 'Block finalized on-chain \u00B7 Slot #{slot} confirmed by network validators.', { slot: slotNumber })}
             </Text>
             <View style={styles.signingBadge}>
               <View style={[styles.signingDot, signStep === 2 && styles.dotGreen]} />
               <Text style={styles.awaitingMono}>
-                {signStep === 1 ? 'AWAITING SOLANA CONSENSUS_' : 'LEDGER ENGRAVED_'}
+                {signStep === 1 ? t('awaiting_consensus', 'AWAITING SOLANA CONSENSUS_') : t('ledger_engraved', 'LEDGER ENGRAVED_')}
               </Text>
             </View>
           </View>
@@ -628,7 +629,7 @@ export function DailyRitualView({
                 style={({ pressed }) => [styles.ghostCancelBtn, pressed && styles.btnPressed]}
                 onPress={() => setStage('read')}
               >
-                <Text style={styles.ghostCancelText}>CANCEL</Text>
+                <Text style={styles.ghostCancelText}>{t('cancel', 'CANCEL')}</Text>
               </Pressable>
             </View>
           )}
@@ -640,18 +641,20 @@ export function DailyRitualView({
         <View style={styles.stageContent}>
           {/* Top Confirmed Celebration Toast */}
           <View style={styles.celebrationBanner}>
-            <Text style={styles.celebrationGlyph}>✓</Text>
+            <Text style={styles.celebrationGlyph}>\u2713</Text>
             <View style={styles.celebrationTextWrap}>
-              <Text style={styles.celebrationTitle}>BLOCK FINALIZED ON SOLANA</Text>
-              <Text style={styles.celebrationSub}>Slot #{slotNumber} confirmed · +25 SKR claimed</Text>
+              <Text style={styles.celebrationTitle}>{t('block_finalized_solana', 'BLOCK FINALIZED ON SOLANA')}</Text>
+              <Text style={styles.celebrationSub}>
+                {t('slot_confirmed_skr', 'Slot #{slot} confirmed \u00B7 +25 SKR claimed', { slot: slotNumber })}
+              </Text>
             </View>
           </View>
 
           {/* Header Status */}
           <View style={styles.sealedHeaderRow}>
             <View style={styles.sealedLiveDot} />
-            <Text style={styles.sealedHeaderStatus}>SEALED ON SOLANA</Text>
-            <Text style={styles.sealedSlotTag}>SLOT #{slotNumber}</Text>
+            <Text style={styles.sealedHeaderStatus}>{t('sealed_on_solana', 'SEALED ON SOLANA')}</Text>
+            <Text style={styles.sealedSlotTag}>{t('slot_tag', 'SLOT #{slot}', { slot: slotNumber })}</Text>
           </View>
 
           {/* Prominently Displayed Sealed Card */}
@@ -669,46 +672,46 @@ export function DailyRitualView({
                 contentFit="cover"
               />
               <View style={styles.sealedStampBadge}>
-                <Text style={styles.sealedStampText}>FINALIZED</Text>
+                <Text style={styles.sealedStampText}>{t('finalized_stamp', 'FINALIZED')}</Text>
               </View>
             </Animated.View>
           </Pressable>
 
           <Text style={styles.sealedCardName}>{selectedCard.crypto_name}</Text>
           <Text style={styles.sealedCardMeta}>
-            {getRomanNumeral(selectedCard.card_no)} · {orientation === 'REVERSED' ? '▼ Reversed' : '▲ Upright'}
+            {getRomanNumeral(selectedCard.card_no)} \u00B7 {orientation === 'REVERSED' ? t('reversed_tag', '\u25BC Reversed') : t('upright_tag', '\u25B2 Upright')}
           </Text>
 
           {/* Streak & Proof Card */}
           <View style={styles.sealedRecordCard}>
             <View style={styles.recordRow}>
-              <Text style={styles.recordKey}>CURRENT STREAK</Text>
-              <Text style={styles.recordValGold}>🔥 Day {streak} Unbroken</Text>
+              <Text style={styles.recordKey}>{t('current_streak', 'CURRENT STREAK')}</Text>
+              <Text style={styles.recordValGold}>\u2726 {t('day_unbroken_val', 'Day {n} Unbroken', { n: streak })}</Text>
             </View>
             <View style={styles.recordDivider} />
             <View style={styles.recordRow}>
-              <Text style={styles.recordKey}>TX SIGNATURE</Text>
+              <Text style={styles.recordKey}>{t('tx_signature', 'TX SIGNATURE')}</Text>
               <Text style={styles.recordValMono} numberOfLines={1}>
                 {txHash.substring(0, 12)}...{txHash.substring(txHash.length - 6)}
               </Text>
             </View>
             <View style={styles.recordDivider} />
             <View style={styles.recordRow}>
-              <Text style={styles.recordKey}>ORACLE FUEL</Text>
-              <Text style={styles.recordValGold}>+25 SKR Claimed</Text>
+              <Text style={styles.recordKey}>{t('oracle_fuel', 'ORACLE FUEL')}</Text>
+              <Text style={styles.recordValGold}>{t('fuel_claimed', '+25 SKR Claimed')}</Text>
             </View>
           </View>
 
           {/* Daily Guidance Quote */}
           <View style={styles.adviceQuoteBox}>
-            <Text style={styles.adviceQuoteLabel}>TODAY'S ORACLE GUIDANCE</Text>
+            <Text style={styles.adviceQuoteLabel}>{t('today_oracle_guidance', "TODAY'S ORACLE GUIDANCE")}</Text>
             <Text style={styles.adviceQuoteText}>"{selectedCard.advice}"</Text>
           </View>
 
           {/* Countdown Pill */}
           <View style={styles.countdownRow}>
             <Text style={styles.countdownText}>
-              NEXT RITE UNLOCKS IN {countdownText}
+              {t('next_rite_unlocks', 'NEXT RITE UNLOCKS IN {time}', { time: countdownText })}
             </Text>
           </View>
 
@@ -718,19 +721,19 @@ export function DailyRitualView({
               style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
               onPress={() => onInspectCard && onInspectCard(selectedCard, orientation)}
             >
-              <Text style={styles.secondaryBtnText}>INSPECT CODEX</Text>
+              <Text style={styles.secondaryBtnText}>{t('inspect_codex', 'INSPECT CODEX')}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.primaryGoldBtn, pressed && styles.btnPressed]}
               onPress={handleShareX}
             >
-              <Text style={styles.primaryGoldBtnText}>TRANSMIT OMEN</Text>
+              <Text style={styles.primaryGoldBtnText}>{t('transmit_omen', 'TRANSMIT OMEN')}</Text>
             </Pressable>
           </View>
 
           {/* Contextual Note */}
           <Text style={styles.sealedNoteText}>
-            Today's block is permanently recorded in consensus. To consult the oracle further, cast a Spread below.
+            {t('sealed_consensus_note', "Today's block is permanently recorded in consensus. To consult the oracle further, cast a Spread below.")}
           </Text>
         </View>
       )}
@@ -746,7 +749,7 @@ const styles = StyleSheet.create({
     borderColor: ObsidianTokens.colors.gold.subtle,
     paddingTop: 18,
     paddingBottom: 24,
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     marginVertical: 14,
     overflow: 'hidden',
     position: 'relative',
@@ -960,13 +963,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
-    marginVertical: 24,
+    gap: 8,
+    marginVertical: 20,
   },
   fanCard: {
-    width: 98,
-    height: 152,
-    borderRadius: 12,
+    width: 86,
+    height: 134,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: 'rgba(200, 162, 74, 0.45)',
     backgroundColor: ObsidianTokens.colors.ink.surface,
@@ -980,13 +983,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fanCardLeft: {
-    transform: [{ rotate: '-8deg' }],
+    transform: [{ rotate: '-5deg' }, { translateY: 2 }],
   },
   fanCardCenter: {
     transform: [{ rotate: '0deg' }, { translateY: -6 }],
   },
   fanCardRight: {
-    transform: [{ rotate: '8deg' }],
+    transform: [{ rotate: '5deg' }, { translateY: 2 }],
   },
   fanInnerWrapper: {
     width: '100%',

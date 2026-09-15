@@ -53,7 +53,7 @@ export function LanguageSelectionModal() {
                 onPress={closeLanguageModal}
                 hitSlop={12}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Text style={styles.closeIcon}>{'\u2715'}</Text>
               </Pressable>
             ) : (
               <View style={{ width: 36 }} />

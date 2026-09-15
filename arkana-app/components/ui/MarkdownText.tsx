@@ -123,11 +123,11 @@ export function MarkdownText({
         }
 
         // Bullet lists
-        if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
-          const bulletContent = trimmed.replace(/^(\*|-|•)\s+/, '');
+        if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('\u2022 ')) {
+          const bulletContent = trimmed.replace(/^(\*|-|\u2022)\s+/, '');
           return (
             <View key={lineIdx} style={styles.bulletRow}>
-              <Text style={styles.bulletGlyph}>✦</Text>
+              <Text style={styles.bulletGlyph}>{'\u2726'}</Text>
               <Text style={[styles.bodyText, { color: baseColor, fontSize, flex: 1 }]}>
                 {renderInline(bulletContent, `b-${lineIdx}`)}
               </Text>

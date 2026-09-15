@@ -100,9 +100,9 @@ export function SystemStateModal({
 
           {/* Status bar mock */}
           <View style={styles.statusRow}>
-            <Text style={styles.monoDim}>SEEKER · 5G</Text>
+            <Text style={styles.monoDim}>SEEKER \u00B7 5G</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Text style={styles.closeGlyph}>✕</Text>
+              <Text style={styles.closeGlyph}>{'\u2715'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -133,7 +133,7 @@ export function SystemStateModal({
           {type === 'tx_failed' && (
             <View style={styles.contentBox}>
               <View style={[styles.symbolRing, styles.lossBorder]}>
-                <Text style={styles.lossSymbol}>✕</Text>
+                <Text style={styles.lossSymbol}>{'\u2715'}</Text>
               </View>
               <Text style={styles.titleSerif}>The seal didn't take</Text>
               <Text style={styles.bodySerif}>
@@ -141,7 +141,7 @@ export function SystemStateModal({
               </Text>
               <View style={styles.codePanel}>
                 <Text style={styles.codeText}>
-                  {customError || 'ERR: BLOCKHASH_EXPIRED · SLOT 289,441,209'}
+                  {customError || 'ERR: BLOCKHASH_EXPIRED \u00B7 SLOT 289,441,209'}
                 </Text>
               </View>
 
@@ -293,9 +293,9 @@ export function SystemStateModal({
               <View style={styles.orderPanel}>
                 <View>
                   <Text style={styles.orderTitle}>Unlimited asks</Text>
-                  <Text style={styles.orderSub}>ORDER · 0.045 SOL OR 15 SKR</Text>
+                  <Text style={styles.orderSub}>ORDER \u00B7 0.045 SOL OR 15 SKR</Text>
                 </View>
-                <Text style={styles.orderArrow}>→</Text>
+                <Text style={styles.orderArrow}>{'\u2192'}</Text>
               </View>
 
               <View style={styles.actionFooterColumn}>
@@ -319,7 +319,7 @@ export function SystemStateModal({
           {type === 'offline' && (
             <View style={styles.contentBox}>
               <View style={styles.statusPill}>
-                <Text style={styles.statusPillText}>OFFLINE · SHOWING YOUR RECORD</Text>
+                <Text style={styles.statusPillText}>OFFLINE \u00B7 SHOWING YOUR RECORD</Text>
               </View>
               <View style={[styles.symbolRing, styles.dashedRing]}>
                 <View style={styles.diamondSquare} />

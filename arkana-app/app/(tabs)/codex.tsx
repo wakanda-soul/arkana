@@ -75,7 +75,7 @@ export default function CodexScreen() {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* Obsidian Header */}
       <View style={styles.header}>
-        <Text style={styles.headerKicker}>{t('tab_deck', 'DECK')} · 78 ARCANA</Text>
+        <Text style={styles.headerKicker}>{t('tab_deck', 'DECK')} \u00B7 {t('cards_count', '78 CARDS', { n: 78 })}</Text>
         <Text style={styles.headerTitle}>{t('deck_progress', '{unlocked} of 78 known', { unlocked: unlockedCount })}</Text>
         <Text style={styles.headerSub}>{t('deck_record_sub', 'Cards unlock when you draw them: a record, not a catalogue.')}</Text>
       </View>
@@ -93,8 +93,8 @@ export default function CodexScreen() {
         </View>
         <Text style={styles.progressSub}>
           {unlockedCount >= 78
-            ? "Full Arcana Mastered: All 78 archetypes in consensus."
-            : `Clock in daily on the Altar to unveil the remaining ${78 - unlockedCount} cards.`}
+            ? t('full_arcana_mastered', 'Full Arcana Mastered: All 78 archetypes in consensus.')
+            : t('clock_in_remaining_sub', `Clock in daily on the Altar to unveil the remaining ${78 - unlockedCount} cards.`, { rem: 78 - unlockedCount })}
         </Text>
       </View>
 
@@ -164,7 +164,7 @@ export default function CodexScreen() {
                     />
                     <View style={styles.lockedCardOverlay}>
                       <View style={styles.lockedDiamond}>
-                        <Text style={styles.lockGlyph}>✦</Text>
+                        <Text style={styles.lockGlyph}>{'\u2726'}</Text>
                       </View>
                       <Text style={styles.lockedCardNo}>{item.card_no}</Text>
                     </View>
@@ -179,7 +179,7 @@ export default function CodexScreen() {
                 style={[styles.cardName, !isUnlocked && styles.cardNameDim]}
                 numberOfLines={1}
               >
-                {isUnlocked ? item.crypto_name : "Locked"}
+                {isUnlocked ? item.crypto_name : t('locked_tag', 'Locked')}
               </Text>
             </Pressable>
           );
@@ -193,7 +193,7 @@ export default function CodexScreen() {
             <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalSuit}>
-                  {selectedCard.arcana.toUpperCase()} ARCANA · {selectedCard.suit.toUpperCase()}
+                  {selectedCard.arcana.toUpperCase()} ARCANA \u00B7 {selectedCard.suit.toUpperCase()}
                 </Text>
                 <Text style={styles.modalTitle}>{selectedCard.crypto_name}</Text>
               </View>
@@ -217,7 +217,7 @@ export default function CodexScreen() {
                   contentFit="cover"
                 />
                 <View style={styles.zoomTapBadge}>
-                  <Text style={styles.zoomTapText}>TAP TO ZOOM</Text>
+                  <Text style={styles.zoomTapText}>{t('tap_to_zoom', 'TAP TO ZOOM')}</Text>
                 </View>
               </Pressable>
 
@@ -230,17 +230,17 @@ export default function CodexScreen() {
               </View>
 
               <View style={styles.sectionBox}>
-                <Text style={styles.sectionTitle}>ORACLE ADVICE</Text>
+                <Text style={styles.sectionTitle}>{t('oracle_advice_title', 'ORACLE ADVICE')}</Text>
                 <Text style={styles.sectionText}>{selectedCard.advice}</Text>
               </View>
 
               <View style={styles.sectionBox}>
-                <Text style={styles.sectionTitle}>UPRIGHT SYNTHESIS</Text>
+                <Text style={styles.sectionTitle}>{t('upright_synthesis_title', 'UPRIGHT SYNTHESIS')}</Text>
                 <Text style={styles.sectionText}>{selectedCard.upright_full}</Text>
               </View>
 
               <View style={styles.sectionBox}>
-                <Text style={styles.sectionTitle}>REVERSED SYNTHESIS</Text>
+                <Text style={styles.sectionTitle}>{t('reversed_synthesis_title', 'REVERSED SYNTHESIS')}</Text>
                 <Text style={styles.sectionText}>{selectedCard.reversed_full}</Text>
               </View>
 
@@ -248,7 +248,7 @@ export default function CodexScreen() {
                 style={styles.closeButton}
                 onPress={() => setSelectedCard(null)}
               >
-                <Text style={styles.closeButtonText}>RETURN TO DECK</Text>
+                <Text style={styles.closeButtonText}>{t('return_to_deck', 'RETURN TO DECK')}</Text>
               </Pressable>
             </ScrollView>
           )}
@@ -261,21 +261,21 @@ export default function CodexScreen() {
           {lockedPreviewCard && (
             <View style={styles.lockedModalCard}>
               <View style={styles.lockedIconBadge}>
-                <Text style={styles.lockedIconText}>✦</Text>
+                <Text style={styles.lockedIconText}>{'\u2726'}</Text>
               </View>
 
-              <Text style={styles.lockedModalKicker}>UNREVEALED ARCHETYPE</Text>
-              <Text style={styles.lockedModalTitle}>Card #{lockedPreviewCard.card_no}</Text>
-              <Text style={styles.lockedModalClassic}>Suit: {lockedPreviewCard.suit}</Text>
+              <Text style={styles.lockedModalKicker}>{t('unrevealed_archetype_title', 'UNREVEALED ARCHETYPE')}</Text>
+              <Text style={styles.lockedModalTitle}>{t('card_num_label', `Card #${lockedPreviewCard.card_no}`, { num: lockedPreviewCard.card_no })}</Text>
+              <Text style={styles.lockedModalClassic}>{t('suit_label', `Suit: ${lockedPreviewCard.suit}`, { suit: lockedPreviewCard.suit })}</Text>
 
               <View style={styles.lockedSilhouetteBox}>
                 <View style={styles.lockedSilhouetteShade}>
-                  <Text style={styles.lockedSilhouetteNotice}>SEALED ON-CHAIN</Text>
+                  <Text style={styles.lockedSilhouetteNotice}>{t('sealed_on_chain', 'SEALED ON-CHAIN')}</Text>
                 </View>
               </View>
 
               <Text style={styles.lockedModalDesc}>
-                This archetype has not been unveiled yet. Draw your Daily Consensus Block or cast a spread on the Altar to awaken this archetype.
+                {t('unrevealed_desc', 'This archetype has not been unveiled yet. Draw your Daily Consensus Block or cast a spread on the Altar to awaken this archetype.')}
               </Text>
 
               <Pressable
@@ -285,14 +285,14 @@ export default function CodexScreen() {
                   router.push("/(tabs)");
                 }}
               >
-                <Text style={styles.lockedGoAltarText}>CONSULT THE ALTAR</Text>
+                <Text style={styles.lockedGoAltarText}>{t('consult_the_altar', 'CONSULT THE ALTAR')}</Text>
               </Pressable>
 
               <Pressable
                 style={styles.lockedCloseBtn}
                 onPress={() => setLockedPreviewCard(null)}
               >
-                <Text style={styles.lockedCloseText}>CLOSE</Text>
+                <Text style={styles.lockedCloseText}>{t('close', 'CLOSE')}</Text>
               </Pressable>
             </View>
           )}

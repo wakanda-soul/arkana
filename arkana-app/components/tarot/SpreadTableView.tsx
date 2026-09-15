@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { TarotCard } from './TarotCard';
+import { useLanguage } from '@/services/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export function SpreadTableView({
   revealedMap,
   onCardPress,
 }: SpreadTableViewProps) {
+  const { t } = useLanguage();
   if (!cards || cards.length === 0) return null;
 
   // 1. THE VALIDATOR CROSS (5 Cards: 3x3 Cross Layout)
@@ -139,7 +141,7 @@ export function SpreadTableView({
           <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerNorth}>
-              <Text style={styles.compassMarkerText}>&#9650; NORTH</Text>
+              <Text style={styles.compassMarkerText}>&#9650; {t('compass_north', 'NORTH')}</Text>
             </View>
             <TarotCard
               cardNo={cards[1].card_no}
@@ -160,7 +162,7 @@ export function SpreadTableView({
         <View style={styles.gridRow}>
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerWest}>
-              <Text style={styles.compassMarkerText}>&#9668; WEST</Text>
+              <Text style={styles.compassMarkerText}>&#9668; {t('compass_west', 'WEST')}</Text>
             </View>
             <TarotCard
               cardNo={cards[2].card_no}
@@ -177,7 +179,7 @@ export function SpreadTableView({
 
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerCenter}>
-              <Text style={styles.compassMarkerText}>&#9679; CORE</Text>
+              <Text style={styles.compassMarkerText}>&#9679; {t('compass_core', 'CORE')}</Text>
             </View>
             <TarotCard
               cardNo={cards[0].card_no}
@@ -194,7 +196,7 @@ export function SpreadTableView({
 
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerEast}>
-              <Text style={styles.compassMarkerText}>EAST &#9658;</Text>
+              <Text style={styles.compassMarkerText}>{t('compass_east', 'EAST')} &#9658;</Text>
             </View>
             <TarotCard
               cardNo={cards[3].card_no}
@@ -215,7 +217,7 @@ export function SpreadTableView({
           <View style={{ width: CARD_WIDTH, marginHorizontal: 2 }} />
           <View style={styles.cardWithCompassBadge}>
             <View style={styles.compassMarkerSouth}>
-              <Text style={styles.compassMarkerText}>&#9660; SOUTH</Text>
+              <Text style={styles.compassMarkerText}>&#9660; {t('compass_south', 'SOUTH')}</Text>
             </View>
             <TarotCard
               cardNo={cards[4].card_no}

@@ -44,11 +44,11 @@ interface RitualPrompt {
 }
 
 const RITUAL_CATEGORIES = [
-  { key: "ALL", label: "ALL PROMPTS" },
-  { key: "LIFE", label: "PATH & DESTINY" },
-  { key: "CRAFT", label: "CREATION & WORK" },
-  { key: "BONDS", label: "RELATIONSHIPS" },
-  { key: "CAPITAL", label: "RISK & CAPITAL" },
+  { key: "ALL", labelKey: "cat_all_prompts", defaultLabel: "ALL PROMPTS" },
+  { key: "LIFE", labelKey: "cat_path_destiny", defaultLabel: "PATH & DESTINY" },
+  { key: "CRAFT", labelKey: "cat_creation_work", defaultLabel: "CREATION & WORK" },
+  { key: "BONDS", labelKey: "cat_relationships", defaultLabel: "RELATIONSHIPS" },
+  { key: "CAPITAL", labelKey: "cat_risk_capital", defaultLabel: "RISK & CAPITAL" },
 ] as const;
 
 const DIVERSE_PROMPTS: RitualPrompt[] = [
@@ -88,10 +88,26 @@ export default function OracleScreen() {
     {
       id: "1",
       sender: "oracle",
-      text: "The network remembers every block. The deck reflects human nature across market cycles, life thresholds, and internal conflicts. I am Arkana, The Solana Oracle. Name what you are sitting with: consensus shall respond.",
+      text: t("oracle_initial_message", "The network remembers every block. The deck reflects human nature across market cycles, life thresholds, and internal conflicts. I am Arkana, The Solana Oracle. Name what you are sitting with: consensus shall respond."),
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length <= 1) {
+        return [
+          {
+            id: "1",
+            sender: "oracle",
+            text: t("oracle_initial_message", "The network remembers every block. The deck reflects human nature across market cycles, life thresholds, and internal conflicts. I am Arkana, The Solana Oracle. Name what you are sitting with: consensus shall respond."),
+            timestamp: prev[0]?.timestamp || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [language]);
 
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -291,20 +307,20 @@ export default function OracleScreen() {
         </View>
         <View style={styles.headerTextWrap}>
           <View style={styles.headerKickerRow}>
-            <Text style={styles.headerKicker}>ASK · ORACLE CONVERSATION</Text>
+            <Text style={styles.headerKicker}>{t('oracle_tab_kicker', 'ASK \u00B7 ORACLE CONVERSATION')}</Text>
             <View style={styles.quotaPill}>
               <Text style={styles.quotaPillText}>
                 {hasFreeRemaining
-                  ? `${freeRemaining} FREE`
+                  ? `${freeRemaining} ${t('free_badge', 'FREE')}`
                   : skrBalance >= askCostSkr
                   ? `${askCostSkr} SKR`
                   : `${askCostSol} SOL`}
               </Text>
             </View>
           </View>
-          <Text style={styles.headerTitle}>What are you sitting with?</Text>
+          <Text style={styles.headerTitle}>{t('oracle_header_title', 'What are you sitting with?')}</Text>
           <Text style={styles.headerSub}>
-            Arkana reads patterns beyond charts: life thresholds, craft, bonds, and conviction.
+            {t('oracle_header_sub', 'Arkana reads patterns beyond charts: life thresholds, craft, bonds, and conviction.')}
           </Text>
         </View>
       </View>
@@ -334,7 +350,7 @@ export default function OracleScreen() {
                   <Text style={styles.senderKicker}>ARKANA</Text>
                   {msg.card && (
                     <Text style={styles.cardDrawnKicker}>
-                      ARCHETYPE: {msg.card.crypto_name.toUpperCase()}
+                      {t("archetype_drawn_kicker", "ARCHETYPE: {name}", { name: msg.card.crypto_name.toUpperCase() })}
                     </Text>
                   )}
                 </View>
@@ -384,7 +400,7 @@ export default function OracleScreen() {
                               : styles.badgeTextUpright,
                           ]}
                         >
-                          {msg.card.orientation === "reversed" ? "▼ REVERSED" : "▲ UPRIGHT"}
+                          {msg.card.orientation === "reversed" ? t("drawn_reversed", "\u25BC REVERSED") : t("drawn_upright", "\u25B2 UPRIGHT")}
                         </Text>
                       </View>
                     </View>
@@ -394,7 +410,7 @@ export default function OracleScreen() {
                     </Text>
 
                     <View style={styles.chatInspectButton}>
-                      <Text style={styles.chatInspectText}>INSPECT ARCHETYPE ⤢</Text>
+                      <Text style={styles.chatInspectText}>{t("inspect_archetype", "INSPECT ARCHETYPE \u2922")}</Text>
                     </View>
                   </View>
                 </Pressable>
@@ -416,8 +432,8 @@ export default function OracleScreen() {
             <View style={[styles.messageBubble, styles.oracleBubble, styles.typingCeremonyBubble]}>
               <ShuffleCeremony
                 compact
-                title="Arkana is consulting the deck..."
-                subtitle="DRAWING ARCHETYPE_"
+                title={t("arkana_consulting_deck", "Arkana is consulting the deck...")}
+                subtitle={t("drawing_archetype", "DRAWING ARCHETYPE_")}
               />
             </View>
           )}
@@ -425,8 +441,8 @@ export default function OracleScreen() {
           {/* Diverse Categorized Ritual Prompts */}
           <View style={styles.presetsWrap}>
             <View style={styles.presetsHeaderRow}>
-              <Text style={styles.presetsLabel}>ARCHETYPAL INQUIRIES</Text>
-              <Text style={styles.presetsCount}>{filteredPrompts.length} PROMPTS</Text>
+              <Text style={styles.presetsLabel}>{t("archetypal_inquiries", "ARCHETYPAL INQUIRIES")}</Text>
+              <Text style={styles.presetsCount}>{t("prompts_count", "{count} PROMPTS", { count: filteredPrompts.length })}</Text>
             </View>
 
             {/* Category Filter Chips */}
@@ -458,7 +474,7 @@ export default function OracleScreen() {
                         isActive && styles.categoryTabTextActive,
                       ]}
                     >
-                      {cat.label}
+                      {t(cat.labelKey, cat.defaultLabel)}
                     </Text>
                   </Pressable>
                 );
@@ -471,10 +487,10 @@ export default function OracleScreen() {
                 <Pressable
                   key={p.id}
                   style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
-                  onPress={() => handleInitiateSend(p.text)}
+                  onPress={() => handleInitiateSend(t("prompt_" + p.id, p.text))}
                 >
                   <Text style={styles.presetCategoryTag}>{p.category}</Text>
-                  <Text style={styles.presetText}>{p.text}</Text>
+                  <Text style={styles.presetText}>{t("prompt_" + p.id, p.text)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -484,13 +500,13 @@ export default function OracleScreen() {
         {/* Quota Status Bar above Input */}
         <View style={styles.inputStatusRow}>
           <View style={styles.inputStatusBadge}>
-            <Text style={styles.inputStatusDot}>✦</Text>
+            <Text style={styles.inputStatusDot}>{'\u2726'}</Text>
             <Text style={styles.inputStatusText}>
               {hasFreeRemaining
-                ? `${freeRemaining} free daily inquiries remaining (shared with spreads)`
+                ? t('free_inquiries_remaining', '{n} free daily inquiries remaining (shared with spreads)', { n: freeRemaining })
                 : skrBalance >= askCostSkr
-                ? `1 SKR per inquiry · Balance: ${skrBalance} SKR`
-                : `${askCostSol} SOL per inquiry (SKR balance: 0)`}
+                ? t('skr_per_inquiry', '{cost} SKR per inquiry \u00B7 Balance: {balance} SKR', { cost: askCostSkr, balance: skrBalance })
+                : t('sol_per_inquiry', '{cost} SOL per inquiry (SKR balance: 0)', { cost: askCostSol })}
             </Text>
           </View>
         </View>
@@ -515,7 +531,7 @@ export default function OracleScreen() {
             style={({ pressed }) => [styles.sendButton, pressed && styles.chipPressed]}
             onPress={() => handleInitiateSend()}
           >
-            <Text style={styles.sendIcon}>✦</Text>
+            <Text style={styles.sendIcon}>{'\u2726'}</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -537,28 +553,26 @@ export default function OracleScreen() {
           <View style={styles.modalCard}>
             <View style={styles.modalHeaderRow}>
               <View style={styles.modalEmblem}>
-                <Text style={styles.modalEmblemText}>✦</Text>
+                <Text style={styles.modalEmblemText}>{'\u2726'}</Text>
               </View>
               <Pressable
                 onPress={handleReturnTomorrow}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.modalCloseText}>✕</Text>
+                <Text style={styles.modalCloseText}>{'\u2715'}</Text>
               </Pressable>
             </View>
 
-            <Text style={styles.modalKicker}>CONSENSUS QUOTA · 3/3 USED TODAY</Text>
-            <Text style={styles.modalTitle}>The Veil Has Drawn</Text>
+            <Text style={styles.modalKicker}>{t('quota_modal_kicker', 'CONSENSUS QUOTA \u00B7 3/3 USED TODAY')}</Text>
+            <Text style={styles.modalTitle}>{t('quota_veil_drawn_title', 'The Veil Has Drawn')}</Text>
             <Text style={styles.modalSub}>
-              You have exhausted the 3 sacred inquiries granted to you by the ledger today.
-              {"\n\n"}
-              The cards now require an offering of energy to part the veil once more. Will you commune now, or return tomorrow when the next UTC block seals?
+              {t('quota_veil_drawn_desc', 'You have exhausted the 3 sacred inquiries granted to you by the ledger today.\n\nThe cards now require an offering of energy to part the veil once more. Will you commune now, or return tomorrow when the next UTC block seals?')}
             </Text>
 
             <View style={styles.modalInfoPanel}>
               <View style={styles.modalPriceRow}>
                 <Text style={styles.modalPriceLabel}>
-                  {skrBalance >= askCostSkr ? "SACRED OFFERING (SKR)" : "SACRED OFFERING (SOL)"}
+                  {skrBalance >= askCostSkr ? t('sacred_offering_skr', 'SACRED OFFERING (SKR)') : t('sacred_offering_sol', 'SACRED OFFERING (SOL)')}
                 </Text>
                 <Text style={styles.modalPriceValue}>
                   {skrBalance >= askCostSkr ? `${askCostSkr} SKR` : `${askCostSol} SOL`}
@@ -566,14 +580,14 @@ export default function OracleScreen() {
               </View>
               <Text style={styles.modalPriceSub}>
                 {skrBalance >= askCostSkr
-                  ? `Wallet balance: ${skrBalance} SKR · Inscribed on-chain`
-                  : `Zero SKR on wallet · Paid in SOL via Solana consensus (${askCostSol} SOL)`}
+                  ? t('offering_skr_sub', 'Wallet balance: {balance} SKR \u00B7 Inscribed on-chain', { balance: skrBalance })
+                  : t('offering_sol_sub', 'Zero SKR on wallet \u00B7 Paid in SOL via Solana consensus ({cost} SOL)', { cost: askCostSol })}
               </Text>
             </View>
 
             {pendingQuery ? (
               <View style={styles.modalPromptPreview}>
-                <Text style={styles.modalPromptLabel}>PENDING INQUIRY:</Text>
+                <Text style={styles.modalPromptLabel}>{t('pending_inquiry_label', 'PENDING INQUIRY:')}</Text>
                 <Text style={styles.modalPromptText} numberOfLines={2}>
                   &quot;{pendingQuery}&quot;
                 </Text>
@@ -586,14 +600,16 @@ export default function OracleScreen() {
                 onPress={handleConfirmPaidCommune}
               >
                 <Text style={styles.modalPayBtnText}>
-                  ASK NOW · OFFER {skrBalance >= askCostSkr ? `${askCostSkr} SKR` : `${askCostSol} SOL`}
+                  {skrBalance >= askCostSkr
+                    ? t('ask_now_offer_skr', 'ASK NOW \u00B7 OFFER {cost} SKR', { cost: askCostSkr })
+                    : t('ask_now_offer_sol', 'ASK NOW \u00B7 OFFER {cost} SOL', { cost: askCostSol })}
                 </Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.modalCancelBtn, pressed && styles.chipPressed]}
                 onPress={handleReturnTomorrow}
               >
-                <Text style={styles.modalCancelBtnText}>RETURN TOMORROW (NEXT UTC BLOCK)</Text>
+                <Text style={styles.modalCancelBtnText}>{t('return_tomorrow_btn', 'RETURN TOMORROW (NEXT UTC BLOCK)')}</Text>
               </Pressable>
             </View>
           </View>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 import { ObsidianTokens } from '@/constants/theme';
+import { useLanguage } from '@/services/i18n';
 
 interface SevenBeatsProps {
   beats?: {
@@ -22,6 +23,7 @@ interface SevenBeatsProps {
 }
 
 export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
+  const { t } = useLanguage();
   if (!beats) return null;
 
   const hasIntent = question && question.trim().length > 0;
@@ -33,7 +35,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
         <View style={styles.intentPanel}>
           <View style={styles.intentHeaderRow}>
             <Text style={styles.intentGlyph}>&#9672;</Text>
-            <Text style={styles.intentLabel}>INSCRIBED INTENT</Text>
+            <Text style={styles.intentLabel}>{t('inscribed_intent', 'INSCRIBED INTENT')}</Text>
             <View style={styles.intentHairline} />
           </View>
           <Text style={styles.intentQuestion}>"{question!.trim()}"</Text>
@@ -44,18 +46,18 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
       {metrics && (
         <View style={styles.metricsContainer}>
           <View style={styles.metricPill}>
-            <Text style={styles.metricLabel}>MAJORS</Text>
+            <Text style={styles.metricLabel}>{t('metric_majors', 'MAJORS')}</Text>
             <Text style={styles.metricValue}>{metrics.majors_count ?? 0}</Text>
           </View>
           {metrics.dominant_suit && (
             <View style={styles.metricPill}>
-              <Text style={styles.metricLabel}>DOMINANT SUIT</Text>
+              <Text style={styles.metricLabel}>{t('metric_dominant_suit', 'DOMINANT SUIT')}</Text>
               <Text style={styles.metricValue}>{metrics.dominant_suit.toUpperCase()}</Text>
             </View>
           )}
           {metrics.dominant_energy && (
             <View style={styles.metricPill}>
-              <Text style={styles.metricLabel}>CONSENSUS</Text>
+              <Text style={styles.metricLabel}>{t('metric_consensus', 'CONSENSUS')}</Text>
               <Text style={styles.metricValue}>{metrics.dominant_energy.toUpperCase()}</Text>
             </View>
           )}
@@ -67,7 +69,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
         {/* Scroll Header Seal */}
         <View style={styles.scrollHeader}>
           <Text style={styles.sealGlyphs}>&#10022; &#10070; &#10022;</Text>
-          <Text style={styles.sealTitle}>CONSENSUS SYNTHESIS</Text>
+          <Text style={styles.sealTitle}>{t('consensus_synthesis', 'CONSENSUS SYNTHESIS')}</Text>
           <View style={styles.sealDivider} />
         </View>
 
@@ -76,7 +78,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
           <View style={styles.chapterSection}>
             <View style={styles.chapterHeader}>
               <Text style={styles.chapterNumeral}>I</Text>
-              <Text style={styles.chapterTitle}>THE CONSENSUS NARRATIVE</Text>
+              <Text style={styles.chapterTitle}>{t('beat_story_title', 'I. THE CONSENSUS NARRATIVE')}</Text>
             </View>
             <Text style={styles.serifBody}>{beats.story}</Text>
           </View>
@@ -92,7 +94,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
             </View>
             <View style={styles.chapterHeader}>
               <Text style={styles.chapterNumeral}>II</Text>
-              <Text style={styles.chapterTitle}>HIDDEN MEMPOOL DYNAMICS</Text>
+              <Text style={styles.chapterTitle}>{t('beat_hidden_title', 'II. HIDDEN MEMPOOL DYNAMICS')}</Text>
             </View>
             <Text style={styles.serifBody}>{beats.hiddenForces}</Text>
           </View>
@@ -108,14 +110,14 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
             </View>
             <View style={styles.chapterHeader}>
               <Text style={styles.chapterNumeral}>III</Text>
-              <Text style={styles.chapterTitle}>CONVERGENCE & FRICTION</Text>
+              <Text style={styles.chapterTitle}>{t('beat_vectors_title', 'III. CONVERGENCE & FRICTION')}</Text>
             </View>
 
             {beats.strengthens && (
               <View style={styles.vectorItem}>
                 <View style={styles.vectorHeader}>
                   <Text style={styles.vectorGlyphUp}>&#9650;</Text>
-                  <Text style={styles.vectorLabel}>CONSENSUS TAILWINDS</Text>
+                  <Text style={styles.vectorLabel}>{t('beat_tailwinds_title', 'CONSENSUS TAILWINDS')}</Text>
                 </View>
                 <Text style={styles.serifBodySecondary}>{beats.strengthens}</Text>
               </View>
@@ -125,7 +127,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
               <View style={[styles.vectorItem, styles.vectorFriction]}>
                 <View style={styles.vectorHeader}>
                   <Text style={styles.vectorGlyphDown}>&#9660;</Text>
-                  <Text style={[styles.vectorLabel, { color: '#FFA595' }]}>LIQUIDITY RESISTANCE</Text>
+                  <Text style={[styles.vectorLabel, { color: '#FFA595' }]}>{t('beat_resistance_title', 'LIQUIDITY RESISTANCE')}</Text>
                 </View>
                 <Text style={styles.serifBodySecondary}>{beats.weakens}</Text>
               </View>
@@ -144,7 +146,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
             <View style={styles.chapterHeader}>
               <Text style={styles.chapterNumeral}>IV</Text>
               <Text style={[styles.chapterTitle, { color: ObsidianTokens.colors.gold.primary }]}>
-                ORACLE DIRECTIVE
+                {t('beat_directive_title', 'IV. ORACLE DIRECTIVE')}
               </Text>
             </View>
             <View style={styles.directiveCallout}>
@@ -164,7 +166,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
             <View style={styles.chapterHeader}>
               <Text style={styles.chapterNumeral}>V</Text>
               <Text style={[styles.chapterTitle, { color: '#FFA595' }]}>
-                PROTOCOL RISK PARAMETER
+                {t('beat_warning_title', 'V. PROTOCOL RISK PARAMETER')}
               </Text>
             </View>
             <Text style={[styles.serifBody, { color: 'rgba(255, 165, 149, 0.92)' }]}>
@@ -181,7 +183,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
               <Text style={styles.dividerSymbol}>&#10022;</Text>
               <View style={styles.dividerLine} />
             </View>
-            <Text style={styles.omenKicker}>FINAL IMMUTABLE OMEN</Text>
+            <Text style={styles.omenKicker}>{t('beat_omen_title', 'VI. FINAL IMMUTABLE OMEN')}</Text>
             <Text style={styles.omenQuote}>"{beats.finalOmen}"</Text>
             <Text style={styles.omenBottomGlyph}>&#10022; &#10022; &#10022;</Text>
           </View>
