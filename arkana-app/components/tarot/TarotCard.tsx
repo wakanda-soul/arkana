@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CardImages, CARD_BACK } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
+import { useLanguage } from '@/services/i18n';
 
 interface TarotCardProps {
   cardNo: string;
@@ -36,6 +37,7 @@ export function TarotCard({
   compact = false,
   hideName = false,
 }: TarotCardProps) {
+  const { t } = useLanguage();
   const flipAnim = useSharedValue(isRevealed ? 1 : 0);
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export function TarotCard({
           {isReversed && (
             <View style={[styles.reversedBadge, compact && styles.reversedBadgeCompact]}>
               <Text style={[styles.reversedText, compact && styles.reversedTextCompact]}>
-                ▼ REVERSED
+                {'\u25BC'} {t('reversed_short', 'REVERSED')}
               </Text>
             </View>
           )}
@@ -122,7 +124,7 @@ export function TarotCard({
             {name}
           </Text>
           <Text style={[styles.cardMeta, compact && styles.cardMetaCompact]}>
-            {isReversed ? '▼ Rev' : '▲ Up'} · &#x2922; Zoom
+            {isReversed ? '\u25BC Rev' : '\u25B2 Up'} {'\u00B7'} &#x2922; Zoom
           </Text>
         </View>
       )}

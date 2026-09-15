@@ -266,7 +266,7 @@ export default function AltarScreen() {
                 contentFit="contain"
               />
               <View>
-                <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
+                <Text style={styles.headerKicker}>SOLANA MOBILE \u00B7 SEEKER</Text>
                 <Text style={styles.headerTitle}>ARKANA</Text>
               </View>
             </View>
@@ -342,7 +342,7 @@ export default function AltarScreen() {
           onPress={() => openSpread("network-scan")}
         >
           <View style={styles.spreadIconBox}>
-            <Text style={styles.spreadIcon}>✦</Text>
+            <Text style={styles.spreadIcon}>{'\u2726'}</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -350,7 +350,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 3 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              {t('spread_net_scan_desc', 'Past · Present · Next Block. Situational audit of ongoing market and personal conviction.')}
+              {t('spread_net_scan_desc', 'Past \u00B7 Present \u00B7 Next Block. Situational audit of ongoing market and personal conviction.')}
             </Text>
           </View>
         </Pressable>
@@ -361,7 +361,7 @@ export default function AltarScreen() {
           onPress={() => openSpread("validator-cross")}
         >
           <View style={[styles.spreadIconBox, styles.purpleSpreadBox]}>
-            <Text style={styles.spreadIcon}>⚖</Text>
+            <Text style={styles.spreadIcon}>{'\u2696'}</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -369,7 +369,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 5 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              {t('spread_val_cross_desc', 'Core State · Opportunity · Obstacle · Hidden Influence · Final Outcome. Deep guidance.')}
+              {t('spread_val_cross_desc', 'Core State \u00B7 Opportunity \u00B7 Obstacle \u00B7 Hidden Influence \u00B7 Final Outcome. Deep guidance.')}
             </Text>
           </View>
         </Pressable>
@@ -380,7 +380,7 @@ export default function AltarScreen() {
           onPress={() => openSpread("crypto-compass")}
         >
           <View style={[styles.spreadIconBox, styles.goldSpreadBox]}>
-            <Text style={styles.spreadIcon}>◈</Text>
+            <Text style={styles.spreadIcon}>{'\u25C8'}</Text>
           </View>
           <View style={styles.spreadInfo}>
             <View style={styles.spreadTitleRow}>
@@ -388,7 +388,7 @@ export default function AltarScreen() {
               <Text style={styles.cardCount}>{t('cards_count', '{n} CARDS', { n: 5 })}</Text>
             </View>
             <Text style={styles.spreadDesc}>
-              {t('spread_compass_desc', 'You · Market · Project · Opportunity · Risk. Clear analysis on entering size or cutting risk.')}
+              {t('spread_compass_desc', 'You \u00B7 Market \u00B7 Project \u00B7 Opportunity \u00B7 Risk. Clear analysis on entering size or cutting risk.')}
             </Text>
           </View>
         </Pressable>
@@ -399,8 +399,8 @@ export default function AltarScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <ScrollView contentContainerStyle={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalKicker}>CONSENSUS CONFIRMED</Text>
-              <Text style={styles.modalTitle}>Today block omen</Text>
+              <Text style={styles.modalKicker}>{t('consensus_confirmed', 'CONSENSUS CONFIRMED')}</Text>
+              <Text style={styles.modalTitle}>{t('daily_omen_title', "Today's Block Omen")}</Text>
             </View>
 
             {dailyReading && dailyReading.cards.length > 0 && (
@@ -410,7 +410,7 @@ export default function AltarScreen() {
                   name={dailyReading.cards[0].crypto_name}
                   isReversed={dailyReading.cards[0].orientation === "reversed"}
                   isRevealed={true}
-                  positionName="TODAY CONSENSUS"
+                  positionName={t('today_consensus_pos', 'TODAY CONSENSUS')}
                   onPress={() => setZoomedCard(dailyReading.cards[0])}
                   width={200}
                   height={320}
@@ -427,22 +427,22 @@ export default function AltarScreen() {
 
             {/* Transmit / Share Section */}
             <View style={styles.shareSection}>
-              <Text style={styles.shareSectionKicker}>TRANSMIT CONSENSUS</Text>
+              <Text style={styles.shareSectionKicker}>{t('transmit_consensus', 'TRANSMIT CONSENSUS')}</Text>
               <View style={styles.shareButtonsRow}>
                 <Pressable
                   style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.buttonPressed]}
                   onPress={handleShareX}
                 >
-                  <Text style={styles.shareTwitterIcon}>𝕏</Text>
-                  <Text style={styles.shareTwitterText}>SHARE ON X</Text>
+                  <Text style={styles.shareTwitterIcon}>{'\uD835\uDD4F'}</Text>
+                  <Text style={styles.shareTwitterText}>{t('share_on_x', 'SHARE ON X')}</Text>
                 </Pressable>
 
                 <Pressable
                   style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.buttonPressed]}
                   onPress={handleShareMore}
                 >
-                  <Text style={styles.shareGeneralIcon}>&#x2197;</Text>
-                  <Text style={styles.shareGeneralText}>MORE</Text>
+                  <Text style={styles.shareGeneralIcon}>{'\u2197'}</Text>
+                  <Text style={styles.shareGeneralText}>{t('share_more', 'MORE')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -451,7 +451,7 @@ export default function AltarScreen() {
               style={styles.modalCloseButton}
               onPress={() => setIsModalVisible(false)}
             >
-              <Text style={styles.modalCloseText}>CLOSE ALTAR</Text>
+              <Text style={styles.modalCloseText}>{t('close_altar', 'CLOSE ALTAR')}</Text>
             </Pressable>
           </ScrollView>
         </SafeAreaView>

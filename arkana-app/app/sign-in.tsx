@@ -58,7 +58,7 @@ export default function SignIn() {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.kicker}>SOLANA MOBILE · SEED VAULT</Text>
+          <Text style={styles.kicker}>SOLANA MOBILE \u00B7 SEED VAULT</Text>
           <Text style={styles.title}>ARKANA</Text>
           <Text style={styles.subtitle}>
             Algorithmic oracle and decentralized tarot on Solana. Connect your Seeker wallet to consult the cards and seal your rites.

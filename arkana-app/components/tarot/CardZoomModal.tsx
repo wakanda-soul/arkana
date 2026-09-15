@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { CardImages } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
+import { useLanguage } from '@/services/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_ZOOM_WIDTH = Math.min(SCREEN_WIDTH - 48, 320);
@@ -41,6 +42,7 @@ interface CardZoomModalProps {
 }
 
 export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
+  const { t } = useLanguage();
   const [flippedUpright, setFlippedUpright] = useState(false);
 
   if (!card) return null;
@@ -78,7 +80,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
             <View style={styles.headerInfo}>
               <View style={styles.positionBadge}>
                 <Text style={styles.positionBadgeText}>
-                  {card.position ? card.position.toUpperCase() : 'INSPECT ARTIFACT'}
+                  {card.position ? card.position.toUpperCase() : t('inspect_artifact', 'INSPECT ARTIFACT')}
                 </Text>
               </View>
             </View>
@@ -88,7 +90,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
               onPress={handleClose}
               hitSlop={14}
             >
-              <Text style={styles.closeIcon}>✕</Text>
+              <Text style={styles.closeIcon}>{'\u2715'}</Text>
             </Pressable>
           </View>
 
@@ -130,7 +132,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                       isDrawnReversed ? styles.orientationTextReversed : styles.orientationTextUpright,
                     ]}
                   >
-                    {isDrawnReversed ? '▼ DRAWN REVERSED' : '▲ DRAWN UPRIGHT'}
+                    {isDrawnReversed ? t('drawn_reversed', '\u25BC DRAWN REVERSED') : t('drawn_upright', '\u25B2 DRAWN UPRIGHT')}
                   </Text>
                 </View>
 
@@ -140,7 +142,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                     onPress={handleToggleOrientation}
                   >
                     <Text style={styles.flipBtnText}>
-                      {flippedUpright ? '\u27F3 VIEW REVERSED' : '\u27F3 VIEW UPRIGHT'}
+                      {flippedUpright ? `\u27F3 ${t('view_reversed', 'VIEW REVERSED')}` : `\u27F3 ${t('view_upright', 'VIEW UPRIGHT')}`}
                     </Text>
                   </Pressable>
                 )}
@@ -149,19 +151,19 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 
             {/* In-depth Archetype Info */}
             <View style={styles.detailsCard}>
-              <Text style={styles.cardNoLabel}>ARCHETYPE #{card.card_no}</Text>
+              <Text style={styles.cardNoLabel}>{t('archetype_num_label', `ARCHETYPE #${card.card_no}`, { num: card.card_no })}</Text>
               <Text style={styles.cardTitle}>{card.crypto_name}</Text>
 
               {card.position_hint && (
                 <View style={styles.positionHintBox}>
-                  <Text style={styles.positionHintTitle}>SPREAD CONTEXT</Text>
+                  <Text style={styles.positionHintTitle}>{t('spread_context', 'SPREAD CONTEXT')}</Text>
                   <Text style={styles.positionHintText}>{card.position_hint}</Text>
                 </View>
               )}
 
               {card.oriented_meaning && (
                 <View style={styles.sectionBox}>
-                  <Text style={styles.sectionHeader}>CONSENSUS INTERPRETATION</Text>
+                  <Text style={styles.sectionHeader}>{t('consensus_interpretation', 'CONSENSUS INTERPRETATION')}</Text>
                   <Text style={styles.bodyText}>{card.oriented_meaning}</Text>
                 </View>
               )}
@@ -178,14 +180,14 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
 
               {card.advice && (
                 <View style={styles.sectionBox}>
-                  <Text style={styles.sectionHeader}>ORACLE ADVICE</Text>
+                  <Text style={styles.sectionHeader}>{t('oracle_advice_title', 'ORACLE ADVICE')}</Text>
                   <Text style={styles.bodyText}>{card.advice}</Text>
                 </View>
               )}
 
               {card.shadow && (
                 <View style={[styles.sectionBox, styles.shadowSectionBox]}>
-                  <Text style={styles.shadowHeader}>SHADOW WARNING</Text>
+                  <Text style={styles.shadowHeader}>{t('shadow_warning', 'SHADOW WARNING')}</Text>
                   <Text style={styles.bodyText}>{card.shadow}</Text>
                 </View>
               )}
@@ -195,7 +197,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
                 style={({ pressed }) => [styles.doneButton, pressed && styles.doneButtonPressed]}
                 onPress={handleClose}
               >
-                <Text style={styles.doneButtonText}>RETURN TO DECK</Text>
+                <Text style={styles.doneButtonText}>{t('return_to_deck', 'RETURN TO DECK')}</Text>
               </Pressable>
             </View>
           </ScrollView>

@@ -156,13 +156,13 @@ export default function SpreadScreen() {
   const getSpreadTitle = () => {
     switch (spreadKey) {
       case "network-scan":
-        return "The Network Scan";
+        return t("spread_network_scan", "The Network Scan");
       case "validator-cross":
-        return "The Validator Cross";
+        return t("spread_validator_cross", "The Validator Cross");
       case "crypto-compass":
-        return "The Crypto Compass";
+        return t("spread_crypto_compass", "The Crypto Compass");
       default:
-        return "Oracle Spread";
+        return t("oracle_spread_generic", "Oracle Spread");
     }
   };
 
@@ -177,7 +177,7 @@ export default function SpreadScreen() {
       {/* Obsidian Nav Bar */}
       <View style={styles.navBar}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>← ALTAR</Text>
+          <Text style={styles.backText}>{t("nav_altar", "\u2190 ALTAR")}</Text>
         </Pressable>
         <Text style={styles.navTitle}>{getSpreadTitle()}</Text>
         <View style={{ width: 60 }} />
@@ -192,19 +192,19 @@ export default function SpreadScreen() {
         {isShuffling ? (
           <View style={styles.shuffleWrapper}>
             <ShuffleCeremony
-              title="The network is shuffling"
-              kicker="CONSENSUS RITUAL"
-              subtitle="SAMPLING VALIDATOR ENTROPY_"
+              title={t("network_is_shuffling", "The network is shuffling")}
+              kicker={t("consensus_ritual", "CONSENSUS RITUAL")}
+              subtitle={t("sampling_entropy", "SAMPLING VALIDATOR ENTROPY_")}
             />
           </View>
         ) : !hasDrawn ? (
           <View style={styles.inputCard}>
-            <Text style={styles.inputKicker}>FORMULATE YOUR INTENT</Text>
-            <Text style={styles.inputTitle}>What question do you present to the ledger?</Text>
+            <Text style={styles.inputKicker}>{t("formulate_intent_kicker", "FORMULATE YOUR INTENT")}</Text>
+            <Text style={styles.inputTitle}>{t("present_question_title", "What question do you present to the ledger?")}</Text>
 
             <TextInput
               style={styles.textInput}
-              placeholder="Inscribe a question about capital allocation, execution, or conviction..."
+              placeholder={t("intent_placeholder", "Inscribe a question about capital allocation, execution, or conviction...")}
               placeholderTextColor={ObsidianTokens.colors.ink.text42}
               value={question}
               onChangeText={setQuestion}
@@ -215,13 +215,13 @@ export default function SpreadScreen() {
             <View style={styles.quotaBox}>
               <View style={styles.quotaRow}>
                 <View style={styles.quotaBadge}>
-                  <Text style={styles.quotaIcon}>✦</Text>
+                  <Text style={styles.quotaIcon}>{'\u2726'}</Text>
                   <Text style={styles.quotaTitle}>
                     {hasFreeRemaining
-                      ? `${quotaInfo?.freeSpreadsRemaining ?? 3} Free Spreads Available`
+                      ? t('free_spreads_avail', '{n} Free Spreads Available', { n: quotaInfo?.freeSpreadsRemaining ?? 3 })
                       : balance >= extraCost
-                      ? `Daily free allowance reached (${extraCost} SKR / spread)`
-                      : `Daily free allowance reached (${extraCostSol} SOL / spread)`}
+                      ? t('daily_allowance_reached_skr', 'Daily free allowance reached ({cost} SKR / spread)', { cost: extraCost })
+                      : t('daily_allowance_reached_sol', 'Daily free allowance reached ({cost} SOL / spread)', { cost: extraCostSol })}
                   </Text>
                 </View>
                 <Text style={styles.balanceText}>{balance} SKR</Text>
@@ -230,8 +230,8 @@ export default function SpreadScreen() {
               {!hasFreeRemaining && (
                 <Text style={styles.warningText}>
                   {balance >= extraCost
-                    ? `Your daily free allowance is exhausted. This casting will deduct ${extraCost} SKR from your balance.`
-                    : `Your daily free allowance is exhausted and SKR balance is 0. Paying ${extraCostSol} SOL.`}
+                    ? t('exhausted_skr_desc', 'Your daily free allowance is exhausted. This casting will deduct {cost} SKR from your balance.', { cost: extraCost })
+                    : t('exhausted_sol_desc', 'Your daily free allowance is exhausted and SKR balance is 0. Paying {cost} SOL.', { cost: extraCostSol })}
                 </Text>
               )}
             </View>
@@ -255,10 +255,10 @@ export default function SpreadScreen() {
               ) : (
                 <Text style={styles.drawButtonText}>
                   {hasFreeRemaining
-                    ? "CAST THE SPREAD"
+                    ? t('cast_the_spread', 'CAST THE SPREAD')
                     : balance >= extraCost
-                    ? `CAST FOR ${extraCost} SKR`
-                    : `CAST FOR ${extraCostSol} SOL`}
+                    ? t('cast_for_skr', 'CAST FOR {cost} SKR', { cost: extraCost })
+                    : t('cast_for_sol', 'CAST FOR {cost} SOL', { cost: extraCostSol })}
                 </Text>
               )}
             </Pressable>
@@ -269,10 +269,10 @@ export default function SpreadScreen() {
             {!isAllRevealed && (
               <View style={styles.instructionBanner}>
                 <Text style={styles.instructionText}>
-                  Tap each card to unveil the archetype ({revealedCount}/{totalCards})
+                  {t("tap_to_unveil_count", "Tap each card to unveil the archetype ({current}/{total})", { current: revealedCount, total: totalCards })}
                 </Text>
                 <Pressable style={styles.revealAllBtn} onPress={revealAll}>
-                  <Text style={styles.revealAllText}>REVEAL ALL</Text>
+                  <Text style={styles.revealAllText}>{t("reveal_all", "REVEAL ALL")}</Text>
                 </Pressable>
               </View>
             )}
@@ -308,22 +308,22 @@ export default function SpreadScreen() {
 
                 {/* Transmit / Share Section */}
                 <View style={styles.shareSection}>
-                  <Text style={styles.shareSectionKicker}>TRANSMIT CONSENSUS</Text>
+                  <Text style={styles.shareSectionKicker}>{t("transmit_consensus", "TRANSMIT CONSENSUS")}</Text>
                   <View style={styles.shareButtonsRow}>
                     <Pressable
                       style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.cardPressed]}
                       onPress={handleShareX}
                     >
-                      <Text style={styles.shareTwitterIcon}>𝕏</Text>
-                      <Text style={styles.shareTwitterText}>SHARE ON X</Text>
+                      <Text style={styles.shareTwitterIcon}>\uD835\uDD4F</Text>
+                      <Text style={styles.shareTwitterText}>{t("share_on_x", "SHARE ON X")}</Text>
                     </Pressable>
 
                     <Pressable
                       style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.cardPressed]}
                       onPress={handleShareMore}
                     >
-                      <Text style={styles.shareGeneralIcon}>&#x2197;</Text>
-                      <Text style={styles.shareGeneralText}>MORE</Text>
+                      <Text style={styles.shareGeneralIcon}>\u2197</Text>
+                      <Text style={styles.shareGeneralText}>{t("share_more", "MORE")}</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -337,7 +337,7 @@ export default function SpreadScreen() {
                     setReading(null);
                   }}
                 >
-                  <Text style={styles.resetButtonText}>CAST ANOTHER SPREAD</Text>
+                  <Text style={styles.resetButtonText}>{t("cast_another_spread", "CAST ANOTHER SPREAD")}</Text>
                 </Pressable>
               </View>
             )}
