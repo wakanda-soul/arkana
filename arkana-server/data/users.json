@@ -1,6 +1,6 @@
 {
   "DemoSeekerWallet111111111111111111111111111": {
-    "streak": 1,
+    "streak": 0,
     "history": [
       {
         "timestamp": "2026-09-12T18:27:08.253Z",
@@ -12,7 +12,9 @@
     ],
     "totalReadings": 1,
     "skrBalance": 100,
-    "lastClockIn": "2026-09-12T18:27:08.253Z"
+    "lastClockIn": "2026-09-12T18:27:08.253Z",
+    "brokenStreak": 1,
+    "previousStreak": 1
   },
   "BLLd9qdbKYrMwxtzbxVFGZpSsm19aNMuRNJDnRYDAJJj": {
     "streak": 1,
@@ -31,5 +33,12 @@
     "lastClockIn": "2026-09-13T17:33:56.045Z",
     "dailySpreadsUsed": 2,
     "lastSpreadDate": "2026-09-13"
+  },
+  "testwallet": {
+    "streak": 0,
+    "skrBalance": 20,
+    "dailySpreadsUsed": 1,
+    "lastSpreadDate": "2026-09-15",
+    "totalReadings": 1
   }
 }

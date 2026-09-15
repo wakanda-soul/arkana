@@ -161,16 +161,35 @@ export async function fetchClockInStatus(wallet: string): Promise<ClockInResult>
     streak: 1,
     lastClockIn: null,
     totalReadings: 1,
-    skrBalance: 50,
-    isSeekerHolder: true,
+    skrBalance: 25,
+    freeSpreadsRemaining: 0,
+    freeSpreadsMax: 0,
+    isSeekerHolder: false,
   };
+}
+
+export async function setRemoteSeekerStatus(wallet: string, isSeekerHolder: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/seeker/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet, isSeekerHolder }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Boolean(data.isSeekerHolder);
+    }
+  } catch {}
+  return false;
 }
 
 export async function executeClockIn(
   wallet?: string,
   cardNo?: string,
   orientation?: string,
-  language: string = 'en'
+  language: string = 'en',
+  txSignature?: string,
+  slot?: number
 ): Promise<{
   success: boolean;
   streak: number;
@@ -182,7 +201,7 @@ export async function executeClockIn(
     const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet, cardNo, orientation, language }),
+      body: JSON.stringify({ wallet, cardNo, orientation, language, txSignature, slot }),
     });
     if (res.ok) {
       const data = await res.json();

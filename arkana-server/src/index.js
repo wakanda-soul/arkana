@@ -18,6 +18,7 @@ const {
 } = require("./logging/dialogueLogger");
 const {
   getClockInStatus,
+  setSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
   repairStreak,
@@ -224,7 +225,9 @@ app.get("/api/spreads", (req, res) => {
 // Get Clock-In status for a wallet
 app.get("/api/clock-in/:wallet", (req, res) => {
   try {
-    const status = getClockInStatus(req.params.wallet);
+    const walletParam = req.params.wallet;
+    const wallet = (walletParam === "status" && req.query.wallet) ? req.query.wallet : walletParam;
+    const status = getClockInStatus(wallet);
     res.json(status);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -245,10 +248,21 @@ app.post("/api/spread/consume", (req, res) => {
   }
 });
 
+// Update or verify Seeker Genesis SBT status
+app.post("/api/seeker/status", (req, res) => {
+  try {
+    const { wallet, isSeekerHolder } = req.body;
+    const status = setSeekerHolderStatus(wallet, isSeekerHolder);
+    res.json({ success: true, wallet, isSeekerHolder: status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Perform Daily Clock In (1 card draw)
 app.post("/api/clock-in", async (req, res) => {
   try {
-    const { wallet, language = "en", cardNo, orientation = "upright" } = req.body;
+    const { wallet, language = "en", cardNo, orientation = "upright", txSignature: clientTx, slot: clientSlot } = req.body;
     let reading = null;
 
     if (cardNo) {
@@ -291,8 +305,8 @@ app.post("/api/clock-in", async (req, res) => {
     }
 
     const prose = await generateReadingProse(reading, "Daily Consensus Clock-In", language);
-    const txSignature = "5xK" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-    const slot = 289441200 + Math.floor(Math.random() * 5000);
+    const txSignature = clientTx || ("5xK" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10));
+    const slot = clientSlot || (289441200 + Math.floor(Math.random() * 5000));
 
     let clockInResult = null;
     if (wallet) {

@@ -23,13 +23,26 @@ export function LanguageSelectionModal() {
     closeLanguageModal,
   } = useLanguage();
 
+  const [selectedCode, setSelectedCode] = React.useState<LanguageCode>(language);
+
+  React.useEffect(() => {
+    setSelectedCode(language);
+  }, [language, isModalOpen]);
+
   if (!isModalOpen) return null;
 
-  const handleSelect = async (code: LanguageCode) => {
+  const handleSelect = (code: LanguageCode) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    setSelectedCode(code);
+  };
+
+  const handleConfirm = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    await setLanguage(code);
+    await setLanguage(selectedCode);
   };
 
   return (
@@ -79,7 +92,7 @@ export function LanguageSelectionModal() {
             {/* Languages Grid / List */}
             <View style={styles.langList}>
               {LANGUAGES.map((item) => {
-                const isSelected = item.code === language;
+                const isSelected = item.code === selectedCode;
                 return (
                   <Pressable
                     key={item.code}
@@ -122,6 +135,21 @@ export function LanguageSelectionModal() {
               </Text>
             </View>
           </ScrollView>
+
+          {/* Sticky Bottom Confirmation Bar */}
+          <View style={styles.confirmBar}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.confirmBtn,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmBtnText}>
+                {t('enter_arkana', 'ENTER ARKANA')} {'\u2192'}
+              </Text>
+            </Pressable>
+          </View>
         </SafeAreaView>
       </View>
     </Modal>
@@ -299,5 +327,27 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     transform: [{ scale: ObsidianTokens.motion.pressScale }],
+  },
+  confirmBar: {
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
+    paddingTop: 12,
+    paddingBottom: Platform.select({ ios: 16, android: 16, default: 12 }),
+    backgroundColor: ObsidianTokens.colors.ink.void,
+    borderTopWidth: 1,
+    borderTopColor: ObsidianTokens.colors.gold.subtle,
+  },
+  confirmBtn: {
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    color: ObsidianTokens.colors.ink.void,
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '700',
   },
 });
