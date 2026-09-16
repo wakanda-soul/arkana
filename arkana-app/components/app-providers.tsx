@@ -5,7 +5,6 @@ import { AuthProvider } from '@/components/auth/auth-provider'
 import { ClusterProvider, useCluster } from '@/components/cluster/cluster-provider'
 import { AppTheme } from '@/components/app-theme'
 import { LanguageProvider } from '@/services/i18n'
-import { walletAuthorizationCache } from '@/services/walletCache'
 
 const identity = {
   name: 'Arkana: The Solana Oracle',
@@ -35,7 +34,6 @@ function SolanaProvider({ children }: PropsWithChildren) {
   const { selectedCluster } = useCluster()
   return (
     <MobileWalletProvider
-      cache={walletAuthorizationCache}
       chain={selectedCluster.id}
       endpoint={selectedCluster.endpoint}
       identity={identity}
