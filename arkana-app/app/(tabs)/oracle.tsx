@@ -85,7 +85,7 @@ export default function OracleScreen() {
   const { account } = useAuth();
   const { connection } = useMobileWallet();
   const { t, language } = useLanguage();
-  const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
+  const walletAddress = account?.publicKey?.toString() || "";
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
@@ -123,6 +123,7 @@ export default function OracleScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
+    if (!walletAddress) return;
     const syncStatus = async () => {
       let isHolder = false;
       if (account?.publicKey) {
@@ -147,6 +148,19 @@ export default function OracleScreen() {
   const handleInitiateSend = (textToSend?: string) => {
     const query = (textToSend || input).trim();
     if (!query) return;
+
+    if (!walletAddress) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          sender: "oracle",
+          text: t("connect_wallet_for_oracle", "Connect your Solana wallet to commune with Arkana."),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+      return;
+    }
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
     const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;

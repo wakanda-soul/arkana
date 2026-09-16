@@ -32,7 +32,7 @@ const TWEET_TEMPLATES = [
 export async function shareToTwitter(data: ShareOmenData) {
   const randomIndex = Math.floor(Math.random() * TWEET_TEMPLATES.length);
   const text = TWEET_TEMPLATES[randomIndex](data);
-  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.png`;
+  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.webp`;
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(mediaUrl)}`;
 
   try {
@@ -48,7 +48,7 @@ export async function shareToTwitter(data: ShareOmenData) {
 export async function shareGeneral(data: ShareOmenData) {
   const randomIndex = Math.floor(Math.random() * TWEET_TEMPLATES.length);
   const text = TWEET_TEMPLATES[randomIndex](data);
-  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.png`;
+  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.webp`;
 
   await Share.share({
     message: `${text}\n\n${mediaUrl}`,

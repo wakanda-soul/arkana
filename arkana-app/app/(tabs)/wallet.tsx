@@ -62,8 +62,7 @@ export default function WalletScreen() {
   };
 
   useEffect(() => {
-    const targetAddress = address || "SeekerDemoWallet1111111111111111111";
-    if (account?.publicKey) {
+    if (account?.publicKey && address) {
       checkSeekerGenesisHolderOnChain(connection, account.publicKey)
         .then(async (isHolder) => {
           await setRemoteSeekerStatus(account.publicKey.toBase58(), isHolder);
@@ -71,7 +70,7 @@ export default function WalletScreen() {
           setClockInState(status);
         })
         .catch(() => {
-          fetchClockInStatus(targetAddress).then(setClockInState);
+          fetchClockInStatus(address).then(setClockInState);
         });
 
       Promise.all([
@@ -84,7 +83,6 @@ export default function WalletScreen() {
         console.warn("Failed to fetch on-chain balances in wallet tab:", err);
       });
     } else {
-      fetchClockInStatus(targetAddress).then(setClockInState);
       setRealSolBalance(null);
       setRealSkrBalance(null);
     }

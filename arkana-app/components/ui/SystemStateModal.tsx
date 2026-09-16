@@ -175,7 +175,7 @@ export function SystemStateModal({
               </Text>
               <Text style={styles.bodySerif}>
                 {type === 'wallet_not_found'
-                  ? t('wallet_not_found_desc', 'On Android, Arkana connects via Mobile Wallet Adapter. Install a verified Solana wallet or explore in Seeker Demo mode.')
+                  ? t('wallet_not_found_desc', 'No compatible Solana Mobile wallet was detected on this device. Install Phantom or Solflare from the Play Store or official portal.')
                   : t('wallet_declined_desc', 'Connection did not complete. If you do not have a wallet installed yet, get one from official verified sources below:')}
               </Text>
 
@@ -259,9 +259,9 @@ export function SystemStateModal({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.ghostButton}
-                  onPress={onActionSecondary || onClose}
+                  onPress={onClose}
                 >
-                  <Text style={styles.ghostButtonText}>{t('continue_seeker_demo', 'CONTINUE IN SEEKER DEMO MODE')}</Text>
+                  <Text style={styles.ghostButtonText}>{t('close', 'CLOSE')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

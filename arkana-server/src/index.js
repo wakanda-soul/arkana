@@ -306,8 +306,8 @@ app.post("/api/clock-in", async (req, res) => {
     }
 
     const prose = await generateReadingProse(reading, "Daily Consensus Clock-In", language);
-    const txSignature = clientTx || ("5xK" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10));
-    const slot = clientSlot || (289441200 + Math.floor(Math.random() * 5000));
+    const txSignature = clientTx || null;
+    const slot = clientSlot || null;
 
     let clockInResult = null;
     if (wallet) {
