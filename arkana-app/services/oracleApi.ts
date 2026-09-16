@@ -34,6 +34,7 @@ export interface QuotaConsumeResult {
   remainingFree: number;
   balance: number;
   canPayWithSol?: boolean;
+  isSeekerHolder?: boolean;
   error?: string;
   txSignature?: string | null;
 }
@@ -149,9 +150,12 @@ export function generateLocalReading(spreadKey: string, question: string = ''): 
   };
 }
 
-export async function fetchClockInStatus(wallet: string): Promise<ClockInResult> {
+export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Promise<ClockInResult> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=true`);
+    const url = isSeeker !== undefined
+      ? `${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=${isSeeker}`
+      : `${API_BASE_URL}/api/clock-in/${wallet}`;
+    const res = await fetch(url);
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn('API error, using local state:', e);
@@ -161,10 +165,10 @@ export async function fetchClockInStatus(wallet: string): Promise<ClockInResult>
     streak: 1,
     lastClockIn: null,
     totalReadings: 1,
-    skrBalance: 25,
-    freeSpreadsRemaining: 3,
-    freeSpreadsMax: 3,
-    isSeekerHolder: true,
+    skrBalance: 0,
+    freeSpreadsRemaining: 0,
+    freeSpreadsMax: 0,
+    isSeekerHolder: false,
   };
 }
 
@@ -241,13 +245,18 @@ export async function fetchReading(
   question: string = '',
   wallet?: string,
   payWithSol: boolean = false,
-  language: string = 'en'
+  language: string = 'en',
+  isSeeker?: boolean
 ): Promise<ReadingResponse> {
   try {
+    const payload: any = { spread, question, wallet, payWithSol, language };
+    if (isSeeker !== undefined) {
+      payload.isSeeker = isSeeker;
+    }
     const res = await fetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ spread, question, wallet, payWithSol, language, isSeeker: true }),
+      body: JSON.stringify(payload),
     });
     if (res.status === 402) {
       const errData = await res.json();
@@ -257,7 +266,7 @@ export async function fetchReading(
       return await res.json();
     }
   } catch (e: any) {
-    if (e.message && e.message.includes('5 SKR')) {
+    if (e.message && (e.message.includes('5 SKR') || e.message.includes('SOL required') || e.message.includes('Seeker Genesis'))) {
       throw e;
     }
     console.warn('Backend reading fetch error, falling back to local engine:', e);
@@ -266,21 +275,25 @@ export async function fetchReading(
   return generateLocalReading(spread, question);
 }
 
-export async function consumeSpreadQuota(wallet?: string): Promise<QuotaConsumeResult> {
+export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): Promise<QuotaConsumeResult> {
   if (!wallet) {
-    return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
+    return { allowed: true, isFree: true, cost: 0, remainingFree: 0, balance: 0, isSeekerHolder: false };
   }
   try {
+    const payload: any = { wallet };
+    if (isSeeker !== undefined) {
+      payload.isSeeker = isSeeker;
+    }
     const res = await fetch(`${API_BASE_URL}/api/spread/consume`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet, isSeeker: true }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     return data;
   } catch (e) {
     console.warn('API error consuming spread quota:', e);
-    return { allowed: true, isFree: true, cost: 0, remainingFree: 3, balance: 25 };
+    return { allowed: true, isFree: true, cost: 0, remainingFree: 0, balance: 0, isSeekerHolder: false };
   }
 }
 
