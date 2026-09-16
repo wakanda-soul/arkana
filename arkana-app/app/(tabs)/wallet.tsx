@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -133,6 +134,9 @@ export default function WalletScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await signOut();
+      try {
+        await AsyncStorage.removeItem('arkana_wallet_authorization');
+      } catch {}
     } catch (e) {
       console.warn("Sign out error:", e);
     }
