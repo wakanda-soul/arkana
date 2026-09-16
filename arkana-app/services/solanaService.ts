@@ -21,7 +21,7 @@ export function createConsensusMemoInstruction(
 ): TransactionInstruction {
   return new TransactionInstruction({
     programId: SOLANA_MEMO_PROGRAM_ID,
-    keys: [{ pubkey: walletPublicKey, isSigner: true, isWritable: true }],
+    keys: [{ pubkey: walletPublicKey, isSigner: true, isWritable: false }],
     data: buildConsensusMemoData(payload),
   });
 }
@@ -29,7 +29,7 @@ export function createConsensusMemoInstruction(
 export interface SubmitProofParams {
   connection: Connection;
   walletPublicKey: PublicKey;
-  signAndSendTransactions: (transaction: any, minContextSlot: number) => Promise<any>;
+  signAndSendTransactions: (transaction: any, minContextSlot: any) => Promise<any>;
   cardNo: string;
   orientation: 'UPRIGHT' | 'REVERSED';
 }
@@ -58,7 +58,7 @@ export async function submitConsensusProofOnChain({
 
   transaction.add(createConsensusMemoInstruction(walletPublicKey, payload));
 
-  const result = await signAndSendTransactions(transaction, 0);
+  const result = await signAndSendTransactions(transaction, undefined as any);
   const signature: string = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
 
   let slot: number | undefined;

@@ -11,7 +11,7 @@ import { submitAltarOfferingApi, API_BASE_URL } from '@/services/oracleApi';
 interface AltarOfferingCardProps {
   walletAddress: string;
   connection: Connection;
-  signAndSendTransactions?: (tx: any, minContextSlot: number) => Promise<any>;
+  signAndSendTransactions?: (tx: any, minContextSlot: any) => Promise<any>;
   onOfferingSuccess?: (amountSkr: number, txSig: string) => void;
 }
 
