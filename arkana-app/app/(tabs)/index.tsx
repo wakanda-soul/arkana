@@ -147,6 +147,12 @@ export default function AltarScreen() {
         slot = onChainRes.slot;
       } catch (txErr: any) {
         console.warn('[Solana] On-chain signing rejected or failed:', txErr);
+        const errStr = String(txErr?.message || txErr || '');
+        if (errStr.includes('authorization request failed') || errStr.includes('-1')) {
+          try {
+            await AsyncStorage.removeItem('arkana_wallet_authorization');
+          } catch {}
+        }
         return {
           success: false,
           error: txErr?.message || "Transaction was canceled in wallet",
