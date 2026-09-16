@@ -91,10 +91,18 @@ function setSeekerHolderStatus(walletAddress, isHolder) {
   return user.isSeekerHolder;
 }
 
+function isUserSubscribed(user) {
+  if (!user || !user.subscription || !user.subscription.active) return false;
+  if (!user.subscription.expiresAt) return false;
+  return new Date(user.subscription.expiresAt).getTime() > Date.now();
+}
+
 /**
  * Check wallet Clock-In, spread quota, and streak repair status.
- * Notice: Free daily spreads (3 to 5) are an exclusive privilege of Seeker Genesis SBT holders.
- * Non-Seeker wallets have freeSpreadsRemaining: 0 and must offer SKR or SOL.
+ * Notice: Free daily spreads:
+ * - Seeker Genesis SBT: 3 base (up to 5 with streak)
+ * - Seeker Oracle Pass (Subscription 333 SKR/mo): +5 spreads/day (total up to 8-10/day)
+ * - Other wallets: 0 base (require SKR/SOL or Subscription)
  */
 function getClockInStatus(walletAddress, clientHint = undefined) {
   const config = loadEconomyConfig();
@@ -102,6 +110,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   const askCost = config.askCostSkr || 1;
   const extraSpreadCost = config.extraSpreadCostSkr || 5;
   const skrToSolRate = config.skrToSolRate || 0.0002;
+  const subscriptionCostSkr = config.subscriptionCostSkr || 333;
 
   if (!walletAddress) {
     return {
@@ -119,14 +128,19 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
       skrToSolRate,
       askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
       extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
+      subscriptionCostSkr,
+      isSubscribed: false,
+      subscription: null,
       skrBalance: 0,
-      isSeekerHolder: false
+      isSeekerHolder: false,
+      totalOfferedSkr: 0
     };
   }
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0 };
   const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
+  const isSubscribed = isUserSubscribed(user);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
@@ -153,11 +167,15 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
 
   const repairStreakTarget = user.brokenStreak || user.previousStreak || (currentStreak > 0 ? currentStreak : 1);
 
-  // Daily free quota calculation: ONLY Seeker Genesis SBT holders get free daily spreads!
+  // Daily free quota calculation:
+  // Seeker Genesis holders get 3-5 base.
+  // Active subscribers get an additional +5 spreads/day (Total 5 to 8-10 spreads/day!)
   const lastSpreadDate = user.lastSpreadDate || "";
   const dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
-  const maxFree = isSeekerHolder ? getDailyFreeAllowance(currentStreak) : 0;
-  const remainingFree = isSeekerHolder ? Math.max(0, maxFree - dailySpreadsUsed) : 0;
+  const seekerBase = isSeekerHolder ? getDailyFreeAllowance(currentStreak) : 0;
+  const subscriptionBonus = isSubscribed ? 5 : 0;
+  const maxFree = seekerBase + subscriptionBonus;
+  const remainingFree = Math.max(0, maxFree - dailySpreadsUsed);
   const todayCard = (!canClockIn && user.history && user.history[0]) ? user.history[0] : null;
 
   return {
@@ -178,7 +196,11 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     skrToSolRate,
     askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
     extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
-    isSeekerHolder
+    subscriptionCostSkr,
+    isSubscribed,
+    subscription: user.subscription || null,
+    isSeekerHolder,
+    totalOfferedSkr: user.totalOfferedSkr || 0
   };
 }
 
@@ -277,10 +299,13 @@ function consumeSpread(walletAddress, options = {}) {
 
   const lastSpreadDate = user.lastSpreadDate || "";
   let dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
-  const maxFree = isSeekerHolder ? getDailyFreeAllowance(user.streak || 0) : 0;
+  const isSubscribed = isUserSubscribed(user);
+  const seekerBase = isSeekerHolder ? getDailyFreeAllowance(user.streak || 0) : 0;
+  const subscriptionBonus = isSubscribed ? 5 : 0;
+  const maxFree = seekerBase + subscriptionBonus;
 
-  if (isSeekerHolder && dailySpreadsUsed < maxFree) {
-    // Within free daily allowance (Seeker Genesis SBT holders only)
+  if (maxFree > 0 && dailySpreadsUsed < maxFree) {
+    // Within free daily allowance (Seeker Genesis SBT or Active Subscription)
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
@@ -297,7 +322,8 @@ function consumeSpread(walletAddress, options = {}) {
       paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
       balance: 0,
-      isSeekerHolder: true
+      isSeekerHolder,
+      isSubscribed
     };
   }
 
@@ -343,9 +369,10 @@ function consumeSpread(walletAddress, options = {}) {
     balance: 0,
     canPayWithSol: true,
     isSeekerHolder,
-    error: isSeekerHolder
+    isSubscribed,
+    error: isSeekerHolder || isSubscribed
       ? `Daily free allowance reached (${maxFree}/${maxFree}). ${costSkr} SKR or ${costSol} SOL required.`
-      : `Free daily readings are an exclusive privilege of Seeker Genesis SBT holders. ${costSkr} SKR or ${costSol} SOL required.`
+      : `Free daily readings require Seeker Genesis SBT or Seeker Oracle Pass. ${costSkr} SKR or ${costSol} SOL required.`
   };
 }
 
@@ -383,12 +410,77 @@ function repairStreak(walletAddress, txSignature = null) {
   };
 }
 
+/**
+ * Record an Altar Offering (Tips) with 50% Burn + 50% Treasury
+ */
+function recordOffering(walletAddress, { txSignature, amountSkr, message = "Altar Offering" }) {
+  if (!walletAddress) {
+    return { success: false, error: "Wallet is required." };
+  }
+  const users = loadUsers();
+  const user = users[walletAddress] || { streak: 0 };
+  const amount = Number(amountSkr) || 5;
+
+  user.offerings = user.offerings || [];
+  user.offerings.unshift({
+    timestamp: new Date().toISOString(),
+    amountSkr: amount,
+    treasurySkr: Number((amount * 0.5).toFixed(2)),
+    burnedSkr: Number((amount * 0.5).toFixed(2)),
+    txSignature: txSignature || "offering_" + Math.random().toString(36).slice(2, 10),
+    message
+  });
+
+  user.totalOfferedSkr = Number(((user.totalOfferedSkr || 0) + amount).toFixed(2));
+  users[walletAddress] = user;
+  saveUsers(users);
+
+  return {
+    success: true,
+    totalOfferedSkr: user.totalOfferedSkr,
+    lastOffering: user.offerings[0]
+  };
+}
+
+/**
+ * Activate Seeker Oracle Pass (Subscription): 333 SKR / 30 days (+5 spreads/day)
+ */
+function recordSubscription(walletAddress, { txSignature, durationDays = 30 }) {
+  if (!walletAddress) {
+    return { success: false, error: "Wallet is required." };
+  }
+  const users = loadUsers();
+  const user = users[walletAddress] || { streak: 0 };
+  const now = new Date();
+  const currentExpiry = user.subscription && user.subscription.expiresAt ? new Date(user.subscription.expiresAt) : now;
+  const startFrom = currentExpiry > now ? currentExpiry : now;
+  const newExpiry = new Date(startFrom.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+  user.subscription = {
+    active: true,
+    activatedAt: now.toISOString(),
+    expiresAt: newExpiry.toISOString(),
+    costSkr: 333,
+    txSignature: txSignature || "sub_" + Math.random().toString(36).slice(2, 10)
+  };
+
+  users[walletAddress] = user;
+  saveUsers(users);
+
+  return {
+    success: true,
+    subscription: user.subscription
+  };
+}
+
 module.exports = {
   getClockInStatus,
   setSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
   repairStreak,
+  recordOffering,
+  recordSubscription,
   loadEconomyConfig,
   updateEconomyConfig
 };

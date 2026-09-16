@@ -22,6 +22,8 @@ const {
   recordClockIn,
   consumeSpread,
   repairStreak,
+  recordOffering,
+  recordSubscription,
   loadEconomyConfig,
   updateEconomyConfig
 } = require("./solana/skrService");
@@ -501,6 +503,34 @@ app.get("/api/treasury", (req, res) => {
     success: true,
     treasury: config.treasury || null
   });
+});
+
+// Record Altar Offering (Tips) with 50% Burn + 50% Treasury
+app.post("/api/offering", (req, res) => {
+  try {
+    const { wallet, txSignature, amountSkr, message } = req.body;
+    if (!wallet) {
+      return res.status(400).json({ error: "Wallet address is required" });
+    }
+    const result = recordOffering(wallet, { txSignature, amountSkr, message });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Activate Seeker Oracle Pass (Subscription 333 SKR / 30 Days)
+app.post("/api/subscription/activate", (req, res) => {
+  try {
+    const { wallet, txSignature, durationDays = 30 } = req.body;
+    if (!wallet) {
+      return res.status(400).json({ error: "Wallet address is required" });
+    }
+    const result = recordSubscription(wallet, { txSignature, durationDays });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Admin Economy Config Endpoints

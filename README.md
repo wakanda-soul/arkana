@@ -22,16 +22,32 @@ Most tarot apps run generic fortune-cookie scripts in a webview. Arkana runs a n
 
 ## In-App Economy & SKR Tokenomics
 
-Arkana avoids token inflation by pairing a free daily allowance with streak progression rather than token handouts:
+Arkana incorporates the native Solana Mobile asset ($SKR) with a **strict 50/50 deflationary burn model**:
 
-| Action | Cost / Reward | Quota Impact |
-| :--- | :--- | :--- |
-| Daily Clock-In | Free (0 SKR emission) | Refills daily allowance and builds streak tier |
-| Daily free spreads | Free | 3 spreads/day (up to 5/day for 7+ day streaks) |
-| Extra spread | 5 SKR | Deducted once daily free allowance runs out |
-| Codex & Card inspection | Free | Always available offline |
+| Action | Cost | Quota / Benefit | Tokenomics Mechanism |
+| :--- | :--- | :--- | :--- |
+| **Daily Clock-In** | Free (0 SKR emission) | Refills daily free allowance | Streak building & daily consensus |
+| **Free Spreads** | Free | 3/day (Seeker SBT) / 0/day (standard) | Built-in daily allowance |
+| **Extra Spread** | 5 SKR | 1 additional oracle consultation | 50% to Treasury, **50% burned on-chain** |
+| **Altar Offering (Tips)** | 5 / 15 / 50 SKR | Oracle devotion & custom blessing | 50% to Treasury, **50% burned on-chain** |
+| **Seeker Oracle Pass** | 333 SKR / mo | **+5 spreads daily** (8/day for Seeker SBT) | 50% to Treasury, **50% burned on-chain** |
+| **Codex & Card Inspection** | Free | Offline access to all 78 arcana | Always available locally |
 
-If a user exhausts their free allowance and has fewer than 5 SKR, the app flags the balance and asks for confirmation or suggests clocking in the next day.
+### 50/50 Deflationary Burn
+All SKR payments are atomic SPL token transactions:
+- **50% SPL Transfer** to the Arkana Treasury.
+- **50% SPL Token Burn** (`createBurnInstruction`) permanently destroyed from the circulating supply.
+
+### Jupiter DEX Seamless Routing
+Users who hold only SOL can interact with any paid tier seamlessly: the app queries the Jupiter DEX `ExactOut` routing API and swaps SOL to SKR at the live market rate directly within the transaction.
+
+### Founder Master Key Treasury Attestation
+To guarantee treasury integrity against server compromise or configuration tampering:
+- The Arkana Treasury address is cryptographically attested with an Ed25519 signature generated offline by the Founder Master Keypair.
+- Client and server verify this attestation (`verifyTreasuryAttestation`) before initiating any transactions. Tampered addresses are strictly rejected.
+
+### B2B Ecosystem Decks (Roadmap)
+Arkana is architected to support sponsored partner archetypes and custom decks for Solana ecosystem protocols (e.g. Pyth, Drift, Jito, Raydium) as an additional B2B monetization and co-marketing channel.
 
 ---
 
