@@ -183,7 +183,7 @@ export async function buildSkrPaymentTransaction({
   tx.add(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
+      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
       data: Buffer.from(memoText, 'utf-8'),
     })
   );
@@ -209,7 +209,7 @@ export async function executePaymentOrSwap({
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel: string;
-  signAndSendTransactions: (tx: any, minContextSlot: number) => Promise<any>;
+  signAndSendTransactions: (tx: any, minContextSlot: any) => Promise<any>;
 }): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
   const currentSkr = await fetchRealSkrBalance(connection, userPublicKey);
 
@@ -222,7 +222,7 @@ export async function executePaymentOrSwap({
       amountSkr,
       actionLabel,
     });
-    const result = await signAndSendTransactions(tx, 0);
+    const result = await signAndSendTransactions(tx, undefined as any);
     const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
@@ -251,7 +251,7 @@ export async function executePaymentOrSwap({
         const rawTxBuffer = Buffer.from(swapData.swapTransaction, 'base64');
         const { VersionedTransaction } = await import('@solana/web3.js');
         const vTx = VersionedTransaction.deserialize(new Uint8Array(rawTxBuffer));
-        const result = await signAndSendTransactions(vTx, 0);
+        const result = await signAndSendTransactions(vTx, undefined as any);
         const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
         return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
       }
@@ -279,12 +279,12 @@ export async function executePaymentOrSwap({
   fallbackTx.add(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
+      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
       data: Buffer.from(memoText, 'utf-8'),
     })
   );
 
-  const result = await signAndSendTransactions(fallbackTx, 0);
+  const result = await signAndSendTransactions(fallbackTx, undefined as any);
   const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
   return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
 }
