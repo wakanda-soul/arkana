@@ -43,7 +43,7 @@ interface DailyRitualViewProps {
   }>;
   onOpenRecord?: () => void;
   onInspectCard?: (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => void;
-  onStateTrigger?: (type: 'wallet_declined' | 'tx_failed' | 'offline' | 'limit_reached') => void;
+  onStateTrigger?: (type: 'wallet_declined' | 'tx_failed' | 'offline' | 'limit_reached', errorMsg?: string) => void;
 }
 
 export function DailyRitualView({
@@ -336,14 +336,14 @@ export function DailyRitualView({
         spinLoop.stop();
         setStage('read');
         if (onStateTrigger) {
-          onStateTrigger('tx_failed');
+          onStateTrigger('tx_failed', res.error);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       spinLoop.stop();
       setStage('read');
       if (onStateTrigger) {
-        onStateTrigger('tx_failed');
+        onStateTrigger('tx_failed', err?.message);
       }
     }
   };

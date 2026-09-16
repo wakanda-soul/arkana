@@ -29,7 +29,7 @@ import { ALL_CARDS, CardData } from "@/data/cardsData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
-import { submitConsensusProofOnChain } from "@/services/solanaService";
+import { submitConsensusProofOnChain, fetchRealSkrBalance } from "@/services/solanaService";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -40,6 +40,8 @@ export default function AltarScreen() {
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
+  const [customError, setCustomError] = useState<string | undefined>(undefined);
+  const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -93,7 +95,12 @@ export default function AltarScreen() {
         setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
       }
     });
-  }, [walletAddress]);
+    if (account?.publicKey) {
+      fetchRealSkrBalance(connection, account.publicKey).then(val => {
+        setOnChainSkr(val);
+      }).catch(() => {});
+    }
+  }, [walletAddress, account?.publicKey, connection]);
 
   const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
@@ -301,7 +308,7 @@ export default function AltarScreen() {
                 contentFit="contain"
               />
               <View>
-                <Text style={styles.headerKicker}>SOLANA MOBILE \u00B7 SEEKER</Text>
+                <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
                 <Text style={styles.headerTitle}>ARKANA</Text>
               </View>
             </View>
@@ -328,7 +335,7 @@ export default function AltarScreen() {
               </View>
               <View style={styles.skrBadge}>
                 <Text style={styles.skrBadgeLabel}>{t('balance', 'BALANCE')}</Text>
-                <Text style={styles.skrText}>{clockInState.skrBalance} SKR</Text>
+                <Text style={styles.skrText}>{onChainSkr !== null ? onChainSkr : clockInState.skrBalance} SKR</Text>
               </View>
             </View>
           )}
@@ -337,7 +344,7 @@ export default function AltarScreen() {
         {/* Core Interactive Daily Ritual Loop */}
         <DailyRitualView
           streak={clockInState.streak}
-          skrBalance={clockInState.skrBalance}
+          skrBalance={onChainSkr !== null ? onChainSkr : clockInState.skrBalance}
           canRepairStreak={clockInState.canRepairStreak}
           streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
           isAlreadyClockedIn={!clockInState.canClockIn || !!savedSealedCard}
@@ -349,7 +356,10 @@ export default function AltarScreen() {
           onSignOnChain={handleSignRitualOnChain}
           onOpenRecord={() => setIsModalVisible(true)}
           onInspectCard={handleInspectCard}
-          onStateTrigger={(stateType) => setSystemState(stateType)}
+          onStateTrigger={(stateType, err) => {
+            setCustomError(err);
+            setSystemState(stateType);
+          }}
         />
 
         {/* Free Spreads Allowance Bar */}
@@ -474,7 +484,7 @@ export default function AltarScreen() {
                   style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.buttonPressed]}
                   onPress={handleShareX}
                 >
-                  <Text style={styles.shareTwitterIcon}>{'\uD835\uDD4F'}</Text>
+                  <Text style={styles.shareTwitterIcon}>X</Text>
                   <Text style={styles.shareTwitterText}>{t('share_on_x', 'SHARE ON X')}</Text>
                 </Pressable>
 
@@ -508,14 +518,22 @@ export default function AltarScreen() {
       <SystemStateModal
         type={systemState}
         visible={!!systemState}
-        onClose={() => setSystemState(null)}
+        customError={customError}
+        onClose={() => {
+          setSystemState(null);
+          setCustomError(undefined);
+        }}
         onActionPrimary={() => {
           setSystemState(null);
+          setCustomError(undefined);
           if (systemState === "wallet_declined") {
             handleConnect();
           }
         }}
-        onActionSecondary={() => setSystemState(null)}
+        onActionSecondary={() => {
+          setSystemState(null);
+          setCustomError(undefined);
+        }}
       />
     </SafeAreaView>
   );
@@ -539,15 +557,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
   brandLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
+    flexShrink: 1,
   },
   headerLogo: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: ObsidianTokens.colors.gold.subtle,
@@ -555,13 +575,13 @@ const styles = StyleSheet.create({
   headerKicker: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: 9.5,
+    letterSpacing: 1.5,
   },
   headerTitle: {
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
     color: ObsidianTokens.colors.ink.text,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "300",
     letterSpacing: 1.5,
     marginTop: 2,
@@ -598,15 +618,16 @@ const styles = StyleSheet.create({
     backgroundColor: ObsidianTokens.colors.ink.fill,
     borderColor: ObsidianTokens.colors.gold.primary,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
+    flexShrink: 0,
   },
   connectHeaderBtnText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
-    fontSize: 10,
-    letterSpacing: 1.5,
+    fontSize: 9.5,
+    letterSpacing: 0.8,
     fontWeight: "600",
   },
   skrBadge: {

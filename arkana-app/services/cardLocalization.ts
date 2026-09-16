@@ -47,7 +47,7 @@ export function localizeCard(card: CardData, lang: SupportedLanguage): CardData 
 
   return {
     ...card,
-    crypto_name: t.crypto_name || card.crypto_name,
+    crypto_name: card.crypto_name, // Archetype titles remain in canonical English
     keywords: t.keywords && t.keywords.length > 0 ? t.keywords : card.keywords,
     symbolism: t.symbolism || card.symbolism,
     advice: t.advice || card.advice,
@@ -81,7 +81,7 @@ export function localizeZoomCard<T extends {
 
   return {
     ...card,
-    crypto_name: t.crypto_name || card.crypto_name,
+    crypto_name: card.crypto_name, // Archetype titles remain in canonical English
     keywords: t.keywords && t.keywords.length > 0 ? t.keywords : card.keywords,
     symbolism: t.symbolism || card.symbolism,
     advice: t.advice || card.advice,

@@ -70,3 +70,43 @@ export async function submitConsensusProofOnChain({
 
   return { signature, slot };
 }
+
+export const SKR_MINT = new PublicKey('SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3');
+
+export async function fetchRealSkrBalance(
+  connection: Connection,
+  walletPublicKey: PublicKey
+): Promise<number> {
+  try {
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPublicKey, {
+      mint: SKR_MINT,
+    });
+    if (!tokenAccounts.value || tokenAccounts.value.length === 0) {
+      return 0;
+    }
+    let total = 0;
+    for (const item of tokenAccounts.value) {
+      const amount = item.account.data.parsed?.info?.tokenAmount?.uiAmount;
+      if (typeof amount === 'number') {
+        total += amount;
+      }
+    }
+    return total;
+  } catch (err) {
+    console.warn('Error fetching SKR balance:', err);
+    return 0;
+  }
+}
+
+export async function fetchRealSolBalance(
+  connection: Connection,
+  walletPublicKey: PublicKey
+): Promise<number> {
+  try {
+    const lamports = await connection.getBalance(walletPublicKey, 'confirmed');
+    return lamports / 1e9;
+  } catch (err) {
+    console.warn('Error fetching SOL balance:', err);
+    return 0;
+  }
+}

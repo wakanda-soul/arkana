@@ -99,7 +99,7 @@ export function MarkdownText({
         }
 
         // Horizontal divider
-        if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+        if (trimmed === '--' || trimmed === '***' || trimmed === '___') {
           return <View key={lineIdx} style={styles.divider} />;
         }
 
