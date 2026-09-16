@@ -22,6 +22,10 @@ export interface ClockInResult {
   skrToSolRate?: number;
   askCostSol?: number;
   extraSpreadCostSol?: number;
+  subscriptionCostSkr?: number;
+  isSubscribed?: boolean;
+  subscription?: { active: boolean; expiresAt: string; costSkr?: number } | null;
+  totalOfferedSkr?: number;
 }
 
 export interface QuotaConsumeResult {
@@ -246,10 +250,11 @@ export async function fetchReading(
   wallet?: string,
   payWithSol: boolean = false,
   language: string = 'en',
-  isSeeker?: boolean
+  isSeeker?: boolean,
+  txSignature?: string | null
 ): Promise<ReadingResponse> {
   try {
-    const payload: any = { spread, question, wallet, payWithSol, language };
+    const payload: any = { spread, question, wallet, payWithSol, language, txSignature };
     if (isSeeker !== undefined) {
       payload.isSeeker = isSeeker;
     }
@@ -348,4 +353,49 @@ export async function sendOracleChatMessage({
   }
   return data;
 }
+
+export async function submitAltarOfferingApi({
+  wallet,
+  txSignature,
+  amountSkr,
+  message,
+}: {
+  wallet: string;
+  txSignature: string;
+  amountSkr: number;
+  message?: string;
+}): Promise<{ success: boolean; totalOfferedSkr: number; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/offering`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet, txSignature, amountSkr, message }),
+    });
+    return await res.json();
+  } catch (e: any) {
+    return { success: false, totalOfferedSkr: 0, error: e.message || 'Network error submitting offering' };
+  }
+}
+
+export async function activateSubscriptionApi({
+  wallet,
+  txSignature,
+  durationDays = 30,
+}: {
+  wallet: string;
+  txSignature: string;
+  durationDays?: number;
+}): Promise<{ success: boolean; subscription?: any; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/subscription/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet, txSignature, durationDays }),
+    });
+    return await res.json();
+  } catch (e: any) {
+    return { success: false, error: e.message || 'Network error activating subscription' };
+  }
+}
+
 

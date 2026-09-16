@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   Linking,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -21,6 +22,9 @@ import { useLanguage } from "@/services/i18n";
 import { soundService } from "@/services/soundService";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
+import { LinearGradient } from "expo-linear-gradient";
+import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from "@/services/treasuryService";
+import { activateSubscriptionApi, API_BASE_URL } from "@/services/oracleApi";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
@@ -31,7 +35,10 @@ export default function WalletScreen() {
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [realSolBalance, setRealSolBalance] = useState<number | null>(null);
   const [realSkrBalance, setRealSkrBalance] = useState<number | null>(null);
-  const { connection } = useMobileWallet();
+  const { connection, signAndSendTransactions } = useMobileWallet();
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [subSuccessModal, setSubSuccessModal] = useState(false);
+  const [subSolEstimate, setSubSolEstimate] = useState("~0.066 SOL");
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -131,6 +138,56 @@ export default function WalletScreen() {
     }
   };
 
+  useEffect(() => {
+    getLiveSolQuoteForSkr(333).then(q => {
+      setSubSolEstimate(`~${q.solAmount} SOL`);
+    }).catch(() => {});
+  }, []);
+
+  const handlePurchaseSubscription = async () => {
+    if (!account?.publicKey || !address || !signAndSendTransactions) return;
+    setIsSubscribing(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
+      const paymentResult = await executePaymentOrSwap({
+        connection,
+        userPublicKey: account.publicKey,
+        treasuryPublicKey: treasuryPubkey,
+        amountSkr: 333,
+        actionLabel: 'SUBSCRIPTION_PASS',
+        signAndSendTransactions,
+      });
+
+      const res = await activateSubscriptionApi({
+        wallet: address,
+        txSignature: paymentResult.signature,
+        durationDays: 30,
+      });
+
+      if (res.success) {
+        setClockInState(prev => ({
+          ...prev,
+          isSubscribed: true,
+          subscription: res.subscription,
+          freeSpreadsMax: (prev.isSeekerHolder ? 3 : 0) + 5,
+          freeSpreadsRemaining: (prev.freeSpreadsRemaining || 0) + 5,
+        }));
+        setSubSuccessModal(true);
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+      }
+    } catch (e: any) {
+      console.warn('Subscription purchase error:', e);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } catch {}
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -217,7 +274,7 @@ export default function WalletScreen() {
               </View>
 
               <Text style={styles.statsNote}>
-                {t('consensus_rate', '1 SKR per extra inquiry \u00B7 Daily Consensus grants +25 SKR')}
+                {t('consensus_rate', '1 SKR per extra inquiry \u00B7 Sealed on Solana')}
               </Text>
             </View>
 
@@ -264,13 +321,64 @@ export default function WalletScreen() {
               </View>
             </Pressable>
 
-            {/* Membership / Order Box */}
-            <View style={styles.membershipCard}>
-              <View>
-                <Text style={styles.membershipTitle}>{t('join_the_order', 'Join the Order')}</Text>
-                <Text style={styles.membershipSub}>{t('join_order_sub', 'Unlimited asks \u00B7 Unbroken record \u00B7 0.045 SOL/mo or 15 SKR')}</Text>
-              </View>
-              <Text style={styles.membershipArrow}>{'\u2192'}</Text>
+            {/* Seeker Oracle Pass (Subscription) Card */}
+            <View style={styles.subCardContainer}>
+              <LinearGradient
+                colors={['rgba(212, 175, 55, 0.12)', 'rgba(17, 13, 7, 0.95)']}
+                style={styles.subCardGradient}
+              >
+                <View style={styles.subCardHeader}>
+                  <View style={styles.subCardTitleCol}>
+                    <View style={styles.subCardBadgeRow}>
+                      <Text style={styles.subCardKicker}>SACRED COVENANT</Text>
+                      <View style={[styles.subStatusBadge, clockInState.isSubscribed && styles.subStatusBadgeActive]}>
+                        <Text style={[styles.subStatusText, clockInState.isSubscribed && styles.subStatusTextActive]}>
+                          {clockInState.isSubscribed ? t('oracle_pass_active', 'ACTIVE PASS') : '333 SKR / MO'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.subCardTitle}>{t('seeker_oracle_pass', 'SEEKER ORACLE PASS')}</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.subCardDesc}>
+                  {t('oracle_pass_sub', '+5 spreads daily (8 total with Seeker SBT) \u00B7 50% burned on-chain')}
+                </Text>
+
+                <View style={styles.subCardFooter}>
+                  <View style={styles.subTokenomicsInfo}>
+                    <Text style={styles.subTokenomicsText}>
+                      {'\u25C8'} 50% Treasury \u00B7 50% Burned on Solana
+                    </Text>
+                    {subSolEstimate && !clockInState.isSubscribed ? (
+                      <Text style={styles.subSolEstimateText}>
+                        Auto-swap: {subSolEstimate} via Jupiter DEX
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.subButton,
+                      clockInState.isSubscribed && styles.subButtonActive,
+                      pressed && !clockInState.isSubscribed && styles.btnPressed,
+                      isSubscribing && styles.btnDisabled,
+                    ]}
+                    onPress={handlePurchaseSubscription}
+                    disabled={isSubscribing || !!clockInState.isSubscribed}
+                  >
+                    {isSubscribing ? (
+                      <ActivityIndicator color="#100C06" />
+                    ) : (
+                      <Text style={[styles.subButtonText, clockInState.isSubscribed && styles.subButtonTextActive]}>
+                        {clockInState.isSubscribed
+                          ? t('pass_active_btn', 'PASS ACTIVE \u2713')
+                          : t('activate_pass_btn', 'ACTIVATE PASS (333 SKR)')}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              </LinearGradient>
             </View>
 
             {/* Action Buttons */}
@@ -431,6 +539,40 @@ export default function WalletScreen() {
         onActionPrimary={handleConnect}
         onActionSecondary={() => setSystemState(null)}
       />
+
+      {/* Subscription Success Modal */}
+      <Modal
+        visible={subSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSubSuccessModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.subSuccessCard}>
+            <View style={styles.subSuccessGlow}>
+              <Text style={styles.subSuccessGlowIcon}>{'\u2726'}</Text>
+            </View>
+            <Text style={styles.subSuccessTitle}>{t('pass_consecrated_title', 'ORACLE PASS CONSECRATED')}</Text>
+            <Text style={styles.subSuccessDesc}>
+              {t('pass_consecrated_desc', 'Your covenant is sealed on Solana. 333 SKR accepted (50% burned, 50% to Treasury). You now have +5 sacred spreads every day.')}
+            </Text>
+            <View style={styles.subSuccessPill}>
+              <Text style={styles.subSuccessPillText}>{'\u2713'} 30 DAYS ACTIVE</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.subSuccessCloseBtn, pressed && styles.btnPressed]}
+              onPress={() => {
+                try {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } catch {}
+                setSubSuccessModal(false);
+              }}
+            >
+              <Text style={styles.subSuccessCloseBtnText}>{t('continue_ritual', 'CONTINUE RITUAL')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -658,31 +800,194 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: ObsidianTokens.colors.ink.hairline,
   },
-  membershipCard: {
-    backgroundColor: ObsidianTokens.colors.gold.surface,
-    borderColor: ObsidianTokens.colors.gold.muted,
-    borderWidth: 1,
+  subCardContainer: {
+    marginBottom: 16,
     borderRadius: ObsidianTokens.radii.panels,
-    padding: 16,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    overflow: "hidden",
+  },
+  subCardGradient: {
+    padding: 18,
+  },
+  subCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  subCardTitleCol: {
+    flex: 1,
+  },
+  subCardBadgeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 6,
   },
-  membershipTitle: {
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
-    color: ObsidianTokens.colors.ink.text,
-    fontSize: 17,
-  },
-  membershipSub: {
+  subCardKicker: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 9,
-    marginTop: 4,
+    letterSpacing: 2,
+    fontWeight: "600",
   },
-  membershipArrow: {
+  subStatusBadge: {
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  subStatusBadgeActive: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+  },
+  subStatusText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  subStatusTextActive: {
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  subCardTitle: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
     fontSize: 20,
+    letterSpacing: 0.5,
+  },
+  subCardDesc: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  subCardFooter: {
+    gap: 12,
+  },
+  subTokenomicsInfo: {
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.15)",
+  },
+  subTokenomicsText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 0.5,
+  },
+  subSolEstimateText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 8,
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  subButton: {
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subButtonActive: {
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+  },
+  subButtonText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#100C06",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  subButtonTextActive: {
+    color: ObsidianTokens.colors.gold.primary,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  subSuccessCard: {
+    width: "100%",
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    borderRadius: ObsidianTokens.radii.panels,
+    padding: 24,
+    alignItems: "center",
+  },
+  subSuccessGlow: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.primary,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  subSuccessGlowIcon: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 24,
+  },
+  subSuccessTitle: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 20,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  subSuccessDesc: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text55,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  subSuccessPill: {
+    backgroundColor: ObsidianTokens.colors.gold.surface,
+    borderColor: ObsidianTokens.colors.gold.muted,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 20,
+  },
+  subSuccessPillText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  subSuccessCloseBtn: {
+    width: "100%",
+    backgroundColor: ObsidianTokens.colors.gold.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subSuccessCloseBtnText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: "#100C06",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
   },
   disconnectBtn: {
     borderWidth: 1,

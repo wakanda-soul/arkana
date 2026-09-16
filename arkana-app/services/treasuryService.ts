@@ -1,6 +1,7 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import {
   createTransferInstruction,
+  createBurnInstruction,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
@@ -10,13 +11,11 @@ import { ed25519 } from '@noble/curves/ed25519';
 // @ts-ignore
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
-import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID } from './solanaService';
+import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance } from './solanaService';
 
 /**
  * Arkana Founder Offline Master Public Key
- * This public key is the cryptographic anchor of trust.
- * Only messages signed by the corresponding offline secret key (never stored on server)
- * are accepted as authentic Treasury destinations by the client.
+ * Cryptographic anchor of trust verified by offline Ed25519 signature.
  */
 export const FOUNDER_MASTER_PUBLIC_KEY = '4R6FtpbHdv8WhXy7gHQCaXQbEqTgetqaBcJJSLs8kjW1';
 
@@ -81,18 +80,53 @@ export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey
 }
 
 /**
- * Build an SPL Token Transfer transaction for direct SKR payments
+ * Query live Jupiter DEX rate for converting SOL to exact SKR
+ */
+export async function getLiveSolQuoteForSkr(amountSkr: number): Promise<{ solAmount: number; lamports: number }> {
+  const inputMint = 'So11111111111111111111111111111111111111112';
+  const outputMint = SKR_MINT.toBase58();
+  const rawSkr = Math.max(1, Math.round(amountSkr * 1_000_000));
+
+  try {
+    const url = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${rawSkr}&swapMode=ExactOut&slippageBps=100`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const inLamports = Number(data.inAmount) || Math.round(amountSkr * 0.0002 * 1e9);
+      return {
+        solAmount: Number((inLamports / 1e9).toFixed(5)),
+        lamports: inLamports,
+      };
+    }
+  } catch (e) {
+    console.warn('Jupiter quote fetch error, using fallback rate:', e);
+  }
+
+  // Fallback: 1 SKR = ~0.0002 SOL
+  const fallbackSol = Number((amountSkr * 0.0002).toFixed(5));
+  return {
+    solAmount: fallbackSol,
+    lamports: Math.round(fallbackSol * 1e9),
+  };
+}
+
+/**
+ * Build an SPL Token Transfer transaction for direct SKR payments:
+ * - 50% transferred to Arkana Treasury
+ * - 50% burned permanently on-chain (createBurnInstruction)
  */
 export async function buildSkrPaymentTransaction({
   connection,
   userPublicKey,
   treasuryPublicKey,
   amountSkr,
+  actionLabel = 'PAYMENT',
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
+  actionLabel?: string;
 }): Promise<Transaction> {
   const userAta = getAssociatedTokenAddressSync(SKR_MINT, userPublicKey);
   const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey);
@@ -115,21 +149,37 @@ export async function buildSkrPaymentTransaction({
     )
   );
 
-  // Transfer SKR: 6 decimals
-  const rawAmount = BigInt(Math.round(amountSkr * 1_000_000));
+  // 50% Treasury / 50% Deflationary Burn
+  const totalRaw = BigInt(Math.round(amountSkr * 1_000_000));
+  const treasuryRaw = totalRaw / 2n;
+  const burnRaw = totalRaw - treasuryRaw;
+
+  // 1. Transfer 50% to Treasury
   tx.add(
     createTransferInstruction(
       userAta,
       treasuryAta,
       userPublicKey,
-      rawAmount,
+      treasuryRaw,
       [],
       TOKEN_PROGRAM_ID
     )
   );
 
-  // Add Proof Memo
-  const memoText = `ARKANA::PAYMENT::SKR::${amountSkr}::TS=${Date.now()}`;
+  // 2. Permanently Burn 50%
+  tx.add(
+    createBurnInstruction(
+      userAta,
+      SKR_MINT,
+      userPublicKey,
+      burnRaw,
+      [],
+      TOKEN_PROGRAM_ID
+    )
+  );
+
+  // 3. Proof Memo
+  const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::TREASURY=50%::BURN=50%::TS=${Date.now()}`;
   tx.add(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
@@ -142,79 +192,99 @@ export async function buildSkrPaymentTransaction({
 }
 
 /**
- * Build a Jupiter Swap transaction to swap SOL -> SKR directly into the Treasury
+ * Universal payment or swap executor:
+ * If user has sufficient SKR -> direct 50% Treasury + 50% Burn transaction.
+ * If user has insufficient SKR -> auto-swap via Jupiter DEX or SOL Buyback transfer.
  */
-export async function buildSolSwapToSkrPayment({
+export async function executePaymentOrSwap({
   connection,
   userPublicKey,
   treasuryPublicKey,
-  amountLamports = 1_000_000, // 0.001 SOL
+  amountSkr,
+  actionLabel,
+  signAndSendTransactions,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
-  amountLamports?: number;
-}): Promise<{ swapTransaction: string | null; fallbackTx?: Transaction }> {
+  amountSkr: number;
+  actionLabel: string;
+  signAndSendTransactions: (tx: any, minContextSlot: number) => Promise<any>;
+}): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
+  const currentSkr = await fetchRealSkrBalance(connection, userPublicKey);
+
+  if (currentSkr >= amountSkr) {
+    // Direct on-chain SKR transaction: 50% Treasury + 50% Burn
+    const tx = await buildSkrPaymentTransaction({
+      connection,
+      userPublicKey,
+      treasuryPublicKey,
+      amountSkr,
+      actionLabel,
+    });
+    const result = await signAndSendTransactions(tx, 0);
+    const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+    return { signature, paidWith: 'skr', costSkr: amountSkr };
+  }
+
+  // User has insufficient SKR -> auto-swap SOL into Treasury via Jupiter / Buyback
+  const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
   const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey);
-  const inputMint = 'So11111111111111111111111111111111111111112';
-  const outputMint = SKR_MINT.toBase58();
 
   try {
-    // 1. Fetch Quote from Jupiter API
-    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountLamports}&slippageBps=100`;
+    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${lamports}&slippageBps=100`;
     const quoteRes = await fetch(quoteUrl);
-    if (!quoteRes.ok) {
-      throw new Error(`Jupiter quote failed with status ${quoteRes.status}`);
+    if (quoteRes.ok) {
+      const quoteData = await quoteRes.json();
+      const swapRes = await fetch('https://api.jup.ag/swap/v1/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteResponse: quoteData,
+          userPublicKey: userPublicKey.toBase58(),
+          destinationTokenAccount: treasuryAta.toBase58(),
+          wrapAndUnwrapSol: true,
+        }),
+      });
+      if (swapRes.ok) {
+        const swapData = await swapRes.json();
+        const rawTxBuffer = Buffer.from(swapData.swapTransaction, 'base64');
+        const { VersionedTransaction } = await import('@solana/web3.js');
+        const vTx = VersionedTransaction.deserialize(new Uint8Array(rawTxBuffer));
+        const result = await signAndSendTransactions(vTx, 0);
+        const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+        return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+      }
     }
-    const quoteData = await quoteRes.json();
-
-    // 2. Request Swap Transaction from Jupiter API
-    const swapRes = await fetch('https://api.jup.ag/swap/v1/swap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quoteResponse: quoteData,
-        userPublicKey: userPublicKey.toBase58(),
-        destinationTokenAccount: treasuryAta.toBase58(),
-        wrapAndUnwrapSol: true,
-      }),
-    });
-
-    if (!swapRes.ok) {
-      throw new Error(`Jupiter swap assembly failed with status ${swapRes.status}`);
-    }
-
-    const swapData = await swapRes.json();
-    return { swapTransaction: swapData.swapTransaction };
   } catch (err) {
-    console.warn('Jupiter Swap build error, fallback to direct SOL transfer with Buyback Memo:', err);
-    // Fallback: direct SOL transfer to treasury with on-chain Buyback Memo
-    const { blockhash } = await connection.getLatestBlockhash('confirmed');
-    const fallbackTx = new Transaction({
-      feePayer: userPublicKey,
-      recentBlockhash: blockhash,
-    });
-
-    // Native SOL transfer
-    const { SystemProgram } = await import('@solana/web3.js');
-    fallbackTx.add(
-      SystemProgram.transfer({
-        fromPubkey: userPublicKey,
-        toPubkey: treasuryPublicKey,
-        lamports: amountLamports,
-      })
-    );
-
-    // Buyback Memo
-    const memoText = `ARKANA::PAYMENT::SOL_BUYBACK::LAMPORTS=${amountLamports}::TS=${Date.now()}`;
-    fallbackTx.add(
-      new TransactionInstruction({
-        programId: SOLANA_MEMO_PROGRAM_ID,
-        keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
-        data: Buffer.from(memoText, 'utf-8'),
-      })
-    );
-
-    return { swapTransaction: null, fallbackTx };
+    console.warn('Jupiter swap assembly failed, executing fallback buyback transfer:', err);
   }
+
+  // Fallback: Direct SOL transfer with Buyback Memo to Treasury
+  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const fallbackTx = new Transaction({
+    feePayer: userPublicKey,
+    recentBlockhash: blockhash,
+  });
+
+  fallbackTx.add(
+    SystemProgram.transfer({
+      fromPubkey: userPublicKey,
+      toPubkey: treasuryPublicKey,
+      lamports,
+    })
+  );
+
+  const memoText = `ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`;
+  fallbackTx.add(
+    new TransactionInstruction({
+      programId: SOLANA_MEMO_PROGRAM_ID,
+      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
+      data: Buffer.from(memoText, 'utf-8'),
+    })
+  );
+
+  const result = await signAndSendTransactions(fallbackTx, 0);
+  const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+  return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
 }

@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchReading, fetchClockInStatus, setRemoteSeekerStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { fetchReading, fetchClockInStatus, setRemoteSeekerStatus, ClockInResult, ReadingResponse, API_BASE_URL } from "@/services/oracleApi";
 import { TarotCard } from "@/components/tarot/TarotCard";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
@@ -26,6 +26,8 @@ import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
+import { AltarOfferingCard } from "@/components/tarot/AltarOfferingCard";
+import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,7 +49,7 @@ export default function SpreadScreen() {
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
-  const { connection } = useMobileWallet();
+  const { connection, signAndSendTransactions } = useMobileWallet();
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -57,24 +59,21 @@ export default function SpreadScreen() {
         try {
           isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
           await setRemoteSeekerStatus(walletAddress, isHolder);
-        } catch (err) {
-          console.warn('[Seeker SBT] check failed in Spread:', err);
-        }
+        } catch {}
       }
       try {
         const info = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
         setQuotaInfo(info);
-      } catch (err) {
-        console.warn('Failed to fetch quota info in Spread:', err);
-      }
+      } catch {}
     };
-
     syncStatus();
+  }, [walletAddress, account?.publicKey, connection]);
 
+  useEffect(() => {
     if (account?.publicKey) {
       fetchRealSkrBalance(connection, account.publicKey).then(val => {
         setOnChainSkr(val);
-      }).catch(() => {});
+      });
     }
   }, [walletAddress, account?.publicKey, connection]);
 
@@ -90,15 +89,39 @@ export default function SpreadScreen() {
     }
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
-    const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
+    const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
     const balance = onChainSkr !== null ? onChainSkr : 0;
     const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
 
+    let txSignature: string | null = null;
+    if (!hasFree) {
+      if (!signAndSendTransactions) {
+        setQuotaError("Wallet signing is unavailable. Please reconnect wallet.");
+        return;
+      }
+      try {
+        const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
+        const paymentResult = await executePaymentOrSwap({
+          connection,
+          userPublicKey: account.publicKey,
+          treasuryPublicKey: treasuryPubkey,
+          amountSkr: extraCost,
+          actionLabel: "EXTRA_SPREAD",
+          signAndSendTransactions,
+        });
+        txSignature = paymentResult.signature;
+      } catch (payErr: any) {
+        console.warn("Payment error:", payErr);
+        setQuotaError(payErr?.message || "Payment cancelled or dropped.");
+        return;
+      }
+    }
+
     setIsShuffling(true);
     setIsLoading(true);
     try {
-      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language, isSeeker);
+      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language, isSeeker, txSignature);
       const minShuffleWait = new Promise((resolve) => setTimeout(resolve, 1800));
 
       const [res] = await Promise.all([readingPromise, minShuffleWait]);
@@ -339,6 +362,13 @@ export default function SpreadScreen() {
                   beats={reading.prose}
                   metrics={reading.engine_metrics}
                   question={reading.question || question}
+                />
+
+                {/* Altar Offering Card: 50% Burn + 50% Treasury */}
+                <AltarOfferingCard
+                  walletAddress={walletAddress}
+                  connection={connection}
+                  signAndSendTransactions={signAndSendTransactions}
                 />
 
                 {/* Transmit / Share Section */}
