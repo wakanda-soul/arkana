@@ -9,8 +9,8 @@ import { LanguageProvider } from '@/services/i18n'
 
 const identity = {
   name: 'Arkana: The Solana Oracle',
-  uri: 'https://arkana-oracle.com',
-  icon: 'favicon.ico',
+  uri: 'https://github.com/wakanda-soul/arkana',
+  icon: 'https://raw.githubusercontent.com/wakanda-soul/arkana/main/arkana-app/assets/images/icon.png',
 }
 const queryClient = new QueryClient()
 

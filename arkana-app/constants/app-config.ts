@@ -4,7 +4,7 @@ import { ClusterNetwork } from '@/components/cluster/cluster-network'
 
 export class AppConfig {
   static name = 'Arkana'
-  static uri = 'https://arkana-oracle.com'
+  static uri = 'https://github.com/wakanda-soul/arkana'
   static clusters: Cluster[] = [
     {
       id: 'solana:mainnet',

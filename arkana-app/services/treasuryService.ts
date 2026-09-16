@@ -88,7 +88,7 @@ export async function getLiveSolQuoteForSkr(amountSkr: number): Promise<{ solAmo
   const rawSkr = Math.max(1, Math.round(amountSkr * 1_000_000));
 
   try {
-    const url = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${rawSkr}&swapMode=ExactOut&slippageBps=100`;
+    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${rawSkr}&swapMode=ExactOut&slippageBps=100`;
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
@@ -232,11 +232,11 @@ export async function executePaymentOrSwap({
   const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey);
 
   try {
-    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${lamports}&slippageBps=100`;
+    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${lamports}&slippageBps=100`;
     const quoteRes = await fetch(quoteUrl);
     if (quoteRes.ok) {
       const quoteData = await quoteRes.json();
-      const swapRes = await fetch('https://api.jup.ag/swap/v1/swap', {
+      const swapRes = await fetch('https://quote-api.jup.ag/v6/swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
