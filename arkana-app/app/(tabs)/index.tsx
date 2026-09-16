@@ -36,7 +36,7 @@ export default function AltarScreen() {
   const { account, isAuthenticated, signIn } = useAuth();
   const { connection, signAndSendTransactions } = useMobileWallet();
   const { t, language } = useLanguage();
-  const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
+  const walletAddress = account?.publicKey?.toString() || "";
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
@@ -87,6 +87,9 @@ export default function AltarScreen() {
   }, []);
 
   useEffect(() => {
+    if (!walletAddress) {
+      return;
+    }
     const syncStatus = async () => {
       let isHolder = false;
       if (account?.publicKey) {
@@ -121,28 +124,33 @@ export default function AltarScreen() {
 
   const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
+      if (!isAuthenticated || !account?.publicKey || !walletAddress) {
+        return {
+          success: false,
+          error: "Wallet connection required to seal ritual on-chain",
+        };
+      }
+
       let signature: string | undefined;
       let slot: number | undefined;
 
-      // Real on-chain Solana SPL Memo transaction when wallet is connected
-      if (isAuthenticated && account?.publicKey) {
-        try {
-          const onChainRes = await submitConsensusProofOnChain({
-            connection,
-            walletPublicKey: account.publicKey,
-            signAndSendTransactions,
-            cardNo: card.card_no,
-            orientation,
-          });
-          signature = onChainRes.signature;
-          slot = onChainRes.slot;
-        } catch (txErr: any) {
-          console.warn('[Solana] On-chain signing rejected or failed:', txErr);
-          return {
-            success: false,
-            error: txErr?.message || "Transaction was canceled in wallet",
-          };
-        }
+      // Real on-chain Solana SPL Memo transaction
+      try {
+        const onChainRes = await submitConsensusProofOnChain({
+          connection,
+          walletPublicKey: account.publicKey,
+          signAndSendTransactions,
+          cardNo: card.card_no,
+          orientation,
+        });
+        signature = onChainRes.signature;
+        slot = onChainRes.slot;
+      } catch (txErr: any) {
+        console.warn('[Solana] On-chain signing rejected or failed:', txErr);
+        return {
+          success: false,
+          error: txErr?.message || "Transaction was canceled in wallet",
+        };
       }
 
       const res = await executeClockIn(
@@ -165,8 +173,8 @@ export default function AltarScreen() {
         freeSpreadsRemaining: prev.isSeekerHolder ? (prev.freeSpreadsMax ?? 3) : 0,
       }));
 
-      const finalSignature = signature || res.txSignature || ('5xK' + Math.random().toString(36).substring(2, 10));
-      const finalSlot = slot || res.slot || (289441200 + Math.floor(Math.random() * 500));
+      const finalSignature = signature || res.txSignature;
+      const finalSlot = slot || res.slot;
 
       // Persist to local storage for today
       try {

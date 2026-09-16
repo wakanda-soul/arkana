@@ -58,4 +58,16 @@ export const soundService = {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
   },
+
+  triggerHapticFlip(): void {
+    this.playCardFlip();
+  },
+
+  triggerHapticShuffle(): void {
+    this.playCardShuffle();
+  },
+
+  triggerHapticSeal(): void {
+    this.playConsensusSeal();
+  },
 };

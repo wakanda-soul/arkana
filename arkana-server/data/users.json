@@ -1,21 +1,4 @@
 {
-  "DemoSeekerWallet111111111111111111111111111": {
-    "streak": 0,
-    "history": [
-      {
-        "timestamp": "2026-09-12T18:27:08.253Z",
-        "type": "daily-block",
-        "card": "Protocol Architect",
-        "orientation": "reversed",
-        "image": "/cards/63.webp"
-      }
-    ],
-    "totalReadings": 1,
-    "skrBalance": 100,
-    "lastClockIn": "2026-09-12T18:27:08.253Z",
-    "brokenStreak": 1,
-    "previousStreak": 1
-  },
   "BLLd9qdbKYrMwxtzbxVFGZpSsm19aNMuRNJDnRYDAJJj": {
     "streak": 0,
     "history": [
@@ -35,13 +18,6 @@
     "lastSpreadDate": "2026-09-13",
     "brokenStreak": 1,
     "previousStreak": 1
-  },
-  "testwallet": {
-    "streak": 0,
-    "skrBalance": 20,
-    "dailySpreadsUsed": 1,
-    "lastSpreadDate": "2026-09-15",
-    "totalReadings": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 0,
@@ -63,13 +39,5 @@
     "dailySpreadsUsed": 2,
     "lastSpreadDate": "2026-09-16",
     "totalReadings": 2
-  },
-  "testWallet123": {
-    "streak": 0,
-    "skrBalance": 25,
-    "isSeekerHolder": true,
-    "dailySpreadsUsed": 1,
-    "lastSpreadDate": "2026-09-16",
-    "totalReadings": 1
   }
 }

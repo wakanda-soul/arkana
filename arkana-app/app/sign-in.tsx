@@ -81,16 +81,6 @@ export default function SignIn() {
             </Text>
           </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.guestBtn,
-              pressed && styles.guestBtnPressed,
-            ]}
-            onPress={() => router.replace('/')}
-          >
-            <Text style={styles.guestBtnText}>CONTINUE AS GUEST (SEEKER DEMO)</Text>
-          </Pressable>
-
           <Text style={styles.securityNote}>
             Secured by Mobile Wallet Adapter & Hardware Keystore
           </Text>
@@ -102,7 +92,7 @@ export default function SignIn() {
         visible={!!systemState}
         onClose={() => setSystemState(null)}
         onActionPrimary={() => void handleSignIn()}
-        onActionSecondary={() => router.replace('/')}
+        onActionSecondary={() => setSystemState(null)}
       />
     </View>
   )
@@ -197,25 +187,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 0.5,
     marginTop: 12,
-  },
-  guestBtn: {
-    width: '100%',
-    borderColor: ObsidianTokens.colors.gold.subtle,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  guestBtnPressed: {
-    backgroundColor: ObsidianTokens.colors.gold.surface,
-  },
-  guestBtnText: {
-    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    color: ObsidianTokens.colors.gold.primary,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    fontWeight: '600',
   },
 })

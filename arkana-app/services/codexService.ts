@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@arkana_unlocked_cards_v1';
 
-// Starter set of 5 iconic archetypes unlocked by default for every user
-export const STARTER_UNLOCKED_CARDS = ['00', '01', '04', '10', '19'];
+// Initially zero cards unlocked; cards are discovered organically through readings and rituals
+export const STARTER_UNLOCKED_CARDS: string[] = [];
 
 /**
  * Retrieve the set of card numbers unlocked by the user

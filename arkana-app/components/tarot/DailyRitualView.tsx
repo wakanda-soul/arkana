@@ -20,7 +20,6 @@ import { unlockCards } from '@/services/codexService';
 import { useLanguage, localizeSuit } from '@/services/i18n';
 import { localizeCard } from '@/services/cardLocalization';
 import { soundService } from '@/services/soundService';
-import { notificationService } from '@/services/notificationService';
 
 export type RitualStage = 'idle' | 'shuffle' | 'pick' | 'read' | 'sign' | 'sealed';
 
@@ -93,11 +92,11 @@ export function DailyRitualView({
   const [orientation, setOrientation] = useState<'UPRIGHT' | 'REVERSED'>(
     initialOrientation
   );
-  const [txHash, setTxHash] = useState(
-    initialTxSignature || '5xKz8Wk2...4Kd9'
+  const [txHash, setTxHash] = useState<string | undefined>(
+    initialTxSignature
   );
-  const [slotNumber, setSlotNumber] = useState(
-    initialSlot || 289441204
+  const [slotNumber, setSlotNumber] = useState<number | undefined>(
+    initialSlot
   );
   const [countdownText, setCountdownText] = useState('24h 00m');
 
@@ -320,7 +319,6 @@ export function DailyRitualView({
 
         setStage('sealed');
         soundService.playConsensusSeal();
-        notificationService.scheduleDailyConsensusReminder(86400).catch(() => {});
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
@@ -666,7 +664,7 @@ export function DailyRitualView({
             <Text style={styles.signingSub}>
               {signStep === 1
                 ? t('submitting_tx_payload', 'Submitting transaction payload to Solana network. Gas fee 0.00021 SOL.')
-                : t('block_finalized_slot', 'Block finalized on-chain \u00B7 Slot #{slot} confirmed by network validators.', { slot: slotNumber })}
+                : t('block_finalized_slot', 'Block finalized on-chain \u00B7 Slot #{slot} confirmed by network validators.', { slot: slotNumber ?? '' })}
             </Text>
             <View style={styles.signingBadge}>
               <View style={[styles.signingDot, signStep === 2 && styles.dotGreen]} />
@@ -698,7 +696,7 @@ export function DailyRitualView({
             <View style={styles.celebrationTextWrap}>
               <Text style={styles.celebrationTitle}>{t('block_finalized_solana', 'BLOCK FINALIZED ON SOLANA')}</Text>
               <Text style={styles.celebrationSub}>
-                {t('slot_confirmed_skr', 'Slot #{slot} confirmed \u00B7 +25 SKR claimed', { slot: slotNumber })}
+                {t('slot_confirmed_skr', 'Slot #{slot} confirmed \u00B7 +25 SKR claimed', { slot: slotNumber ?? '' })}
               </Text>
             </View>
           </View>
@@ -707,7 +705,7 @@ export function DailyRitualView({
           <View style={styles.sealedHeaderRow}>
             <View style={styles.sealedLiveDot} />
             <Text style={styles.sealedHeaderStatus}>{t('sealed_on_solana', 'SEALED ON SOLANA')}</Text>
-            <Text style={styles.sealedSlotTag}>{t('slot_tag', 'SLOT #{slot}', { slot: slotNumber })}</Text>
+            <Text style={styles.sealedSlotTag}>{t('slot_tag', 'SLOT #{slot}', { slot: slotNumber ?? '' })}</Text>
           </View>
 
           {/* Prominently Displayed Sealed Card */}
@@ -741,13 +739,17 @@ export function DailyRitualView({
               <Text style={styles.recordKey}>{t('current_streak', 'CURRENT STREAK')}</Text>
               <Text style={styles.recordValGold}>{'\u2726'} {t('day_unbroken_val', 'Day {n} Unbroken', { n: streak })}</Text>
             </View>
-            <View style={styles.recordDivider} />
-            <View style={styles.recordRow}>
-              <Text style={styles.recordKey}>{t('tx_signature', 'TX SIGNATURE')}</Text>
-              <Text style={styles.recordValMono} numberOfLines={1}>
-                {txHash.substring(0, 12)}...{txHash.substring(txHash.length - 6)}
-              </Text>
-            </View>
+            {txHash ? (
+              <>
+                <View style={styles.recordDivider} />
+                <View style={styles.recordRow}>
+                  <Text style={styles.recordKey}>{t('tx_signature', 'TX SIGNATURE')}</Text>
+                  <Text style={styles.recordValMono} numberOfLines={1}>
+                    {txHash.length > 18 ? `${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 6)}` : txHash}
+                  </Text>
+                </View>
+              </>
+            ) : null}
             <View style={styles.recordDivider} />
             <View style={styles.recordRow}>
               <Text style={styles.recordKey}>{t('oracle_fuel', 'ORACLE FUEL')}</Text>

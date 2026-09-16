@@ -34,7 +34,7 @@ export default function SpreadScreen() {
 
   const { account } = useAuth();
   const { language, t } = useLanguage();
-  const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
+  const walletAddress = account?.publicKey?.toString() || "";
 
   const [question, setQuestion] = useState("");
   const [hasDrawn, setHasDrawn] = useState(false);
@@ -50,6 +50,7 @@ export default function SpreadScreen() {
   const { connection } = useMobileWallet();
 
   useEffect(() => {
+    if (!walletAddress) return;
     const syncStatus = async () => {
       let isHolder = false;
       if (account?.publicKey) {
@@ -82,6 +83,11 @@ export default function SpreadScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
+
+    if (!account?.publicKey || !walletAddress) {
+      setQuotaError(t("connect_wallet_desc", "Connect via Solana Mobile Wallet Adapter or Phantom to seal consensus on-chain."));
+      return;
+    }
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
     const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;

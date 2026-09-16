@@ -77,11 +77,7 @@ function checkSeekerStatus(user, walletAddress, clientHint) {
     return Boolean(user.isSeekerHolder);
   }
   if (!walletAddress) return false;
-  // Demo simulation addresses
-  if (walletAddress.startsWith("DemoSeeker") || walletAddress.startsWith("SeekerDemo") || walletAddress.startsWith("SeekerTest")) {
-    return true;
-  }
-  // Real addresses require on-chain SBT verification (via checkSeekerGenesisHolderOnChain on mobile client)
+  // All addresses require genuine on-chain SBT verification (via checkSeekerGenesisHolderOnChain on mobile client)
   return false;
 }
 

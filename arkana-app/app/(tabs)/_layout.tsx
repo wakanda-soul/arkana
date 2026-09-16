@@ -64,9 +64,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="wallet.pass.fill" color={color} />,
         }}
       />
-      <Tabs.Screen name="account" options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
-      <Tabs.Screen name="demo" options={{ href: null }} />
     </Tabs>
   )
 }

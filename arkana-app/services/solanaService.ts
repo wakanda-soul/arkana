@@ -40,7 +40,7 @@ export async function submitConsensusProofOnChain({
   signAndSendTransactions,
   cardNo,
   orientation,
-}: SubmitProofParams): Promise<{ signature: string; slot: number }> {
+}: SubmitProofParams): Promise<{ signature: string; slot?: number }> {
   const todayDate = new Date().toISOString().split('T')[0];
   const payload: ConsensusProofPayload = {
     cardNo,
@@ -61,11 +61,13 @@ export async function submitConsensusProofOnChain({
   const result = await signAndSendTransactions(transaction, 0);
   const signature: string = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
 
-  let slot = 289441200;
+  let slot: number | undefined;
   try {
     slot = await connection.getSlot('confirmed');
   } catch {
-    // fallback if slot query times out
+    try {
+      slot = await connection.getSlot();
+    } catch {}
   }
 
   return { signature, slot };
