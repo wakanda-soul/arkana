@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchClockInStatus, executeClockIn, repairStreak, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { fetchClockInStatus, executeClockIn, repairStreak, setRemoteSeekerStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
 import { TarotCard } from "@/components/tarot/TarotCard";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
@@ -29,7 +29,7 @@ import { ALL_CARDS, CardData } from "@/data/cardsData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
-import { submitConsensusProofOnChain, fetchRealSkrBalance } from "@/services/solanaService";
+import { submitConsensusProofOnChain, fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -48,11 +48,11 @@ export default function AltarScreen() {
     streak: 1,
     lastClockIn: null,
     totalReadings: 1,
-    skrBalance: 25,
-    freeSpreadsRemaining: 3,
-    freeSpreadsMax: 3,
+    skrBalance: 0,
+    freeSpreadsRemaining: 0,
+    freeSpreadsMax: 0,
     extraSpreadCostSkr: 5,
-    isSeekerHolder: true,
+    isSeekerHolder: false,
   });
 
   const [savedSealedCard, setSavedSealedCard] = useState<CardData | null>(null);
@@ -87,14 +87,31 @@ export default function AltarScreen() {
   }, []);
 
   useEffect(() => {
-    fetchClockInStatus(walletAddress).then(status => {
-      setClockInState(status);
-      if (!status.canClockIn && status.todayCard) {
-        const card = ALL_CARDS.find(c => c.card_no === status.todayCard?.card_no || c.crypto_name === status.todayCard?.card) || ALL_CARDS[0];
-        setSavedSealedCard(card);
-        setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
+    const syncStatus = async () => {
+      let isHolder = false;
+      if (account?.publicKey) {
+        try {
+          isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
+          await setRemoteSeekerStatus(walletAddress, isHolder);
+        } catch (err) {
+          console.warn('[Seeker SBT] check failed in Altar:', err);
+        }
       }
-    });
+      try {
+        const status = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
+        setClockInState(status);
+        if (!status.canClockIn && status.todayCard) {
+          const card = ALL_CARDS.find(c => c.card_no === status.todayCard?.card_no || c.crypto_name === status.todayCard?.card) || ALL_CARDS[0];
+          setSavedSealedCard(card);
+          setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch clock-in status in Altar:', err);
+      }
+    };
+
+    syncStatus();
+
     if (account?.publicKey) {
       fetchRealSkrBalance(connection, account.publicKey).then(val => {
         setOnChainSkr(val);

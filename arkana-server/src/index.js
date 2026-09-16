@@ -227,7 +227,7 @@ app.get("/api/clock-in/:wallet", (req, res) => {
   try {
     const walletParam = req.params.wallet;
     const wallet = (walletParam === "status" && req.query.wallet) ? req.query.wallet : walletParam;
-    const isSeeker = req.query.isSeeker !== undefined ? (req.query.isSeeker === "true" || req.query.isSeeker === "1") : true;
+    const isSeeker = req.query.isSeeker !== undefined ? (req.query.isSeeker === "true" || req.query.isSeeker === "1") : undefined;
     const status = getClockInStatus(wallet, isSeeker);
     res.json(status);
   } catch (err) {
@@ -239,7 +239,7 @@ app.get("/api/clock-in/:wallet", (req, res) => {
 app.post("/api/spread/consume", (req, res) => {
   try {
     const { wallet, isSeeker } = req.body;
-    const result = consumeSpread(wallet, { isSeeker: isSeeker !== undefined ? Boolean(isSeeker) : true });
+    const result = consumeSpread(wallet, { isSeeker: isSeeker !== undefined ? Boolean(isSeeker) : undefined });
     if (!result.allowed) {
       return res.status(402).json(result);
     }
@@ -358,7 +358,7 @@ app.post("/api/reading", async (req, res) => {
         cost: 5,
         payWithSol: Boolean(req.body.payWithSol),
         txSignature: req.body.txSignature || null,
-        isSeeker: req.body.isSeeker !== undefined ? Boolean(req.body.isSeeker) : true
+        isSeeker: req.body.isSeeker !== undefined ? Boolean(req.body.isSeeker) : undefined
       });
       if (!quotaResult.allowed) {
         return res.status(402).json({

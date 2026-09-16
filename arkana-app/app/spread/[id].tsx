@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchReading, fetchClockInStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { fetchReading, fetchClockInStatus, setRemoteSeekerStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
 import { TarotCard } from "@/components/tarot/TarotCard";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
@@ -25,7 +25,7 @@ import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
-import { fetchRealSkrBalance } from "@/services/solanaService";
+import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,7 +50,26 @@ export default function SpreadScreen() {
   const { connection } = useMobileWallet();
 
   useEffect(() => {
-    fetchClockInStatus(walletAddress).then(setQuotaInfo);
+    const syncStatus = async () => {
+      let isHolder = false;
+      if (account?.publicKey) {
+        try {
+          isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
+          await setRemoteSeekerStatus(walletAddress, isHolder);
+        } catch (err) {
+          console.warn('[Seeker SBT] check failed in Spread:', err);
+        }
+      }
+      try {
+        const info = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
+        setQuotaInfo(info);
+      } catch (err) {
+        console.warn('Failed to fetch quota info in Spread:', err);
+      }
+    };
+
+    syncStatus();
+
     if (account?.publicKey) {
       fetchRealSkrBalance(connection, account.publicKey).then(val => {
         setOnChainSkr(val);
@@ -64,7 +83,8 @@ export default function SpreadScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch {}
 
-    const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
+    const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
+    const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
     const balance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
     const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
@@ -72,7 +92,7 @@ export default function SpreadScreen() {
     setIsShuffling(true);
     setIsLoading(true);
     try {
-      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language);
+      const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language, isSeeker);
       const minShuffleWait = new Promise((resolve) => setTimeout(resolve, 1800));
 
       const [res] = await Promise.all([readingPromise, minShuffleWait]);

@@ -77,11 +77,12 @@ function checkSeekerStatus(user, walletAddress, clientHint) {
     return Boolean(user.isSeekerHolder);
   }
   if (!walletAddress) return false;
-  // Any connected wallet via Arkana on Solana Mobile Seeker is recognized as Seeker Genesis SBT holder
-  if (user) {
-    user.isSeekerHolder = true;
+  // Demo simulation addresses
+  if (walletAddress.startsWith("DemoSeeker") || walletAddress.startsWith("SeekerDemo") || walletAddress.startsWith("SeekerTest")) {
+    return true;
   }
-  return true;
+  // Real addresses require on-chain SBT verification (via checkSeekerGenesisHolderOnChain on mobile client)
+  return false;
 }
 
 function setSeekerHolderStatus(walletAddress, isHolder) {
@@ -99,7 +100,7 @@ function setSeekerHolderStatus(walletAddress, isHolder) {
  * Notice: Free daily spreads (3 to 5) are an exclusive privilege of Seeker Genesis SBT holders.
  * Non-Seeker wallets have freeSpreadsRemaining: 0 and must offer SKR or SOL.
  */
-function getClockInStatus(walletAddress, clientHint = true) {
+function getClockInStatus(walletAddress, clientHint = undefined) {
   const config = loadEconomyConfig();
   const repairCost = config.streakRepairCostSkr || 1;
   const askCost = config.askCostSkr || 1;
@@ -115,15 +116,15 @@ function getClockInStatus(walletAddress, clientHint = true) {
       repairStreakTarget: 1,
       streakRepairCostSkr: repairCost,
       lastClockIn: null,
-      freeSpreadsRemaining: 3,
-      freeSpreadsMax: 3,
+      freeSpreadsRemaining: 0,
+      freeSpreadsMax: 0,
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
       askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
       extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
       skrBalance: 0,
-      isSeekerHolder: true
+      isSeekerHolder: false
     };
   }
 
@@ -273,7 +274,7 @@ function consumeSpread(walletAddress, options = {}) {
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
-  const clientHint = options.isSeeker !== undefined ? Boolean(options.isSeeker) : true;
+  const clientHint = options.isSeeker !== undefined ? Boolean(options.isSeeker) : undefined;
   const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];

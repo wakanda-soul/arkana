@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   fetchClockInStatus,
+  setRemoteSeekerStatus,
   ClockInResult,
   sendOracleChatMessage,
 } from "@/services/oracleApi";
@@ -29,6 +30,8 @@ import { MarkdownText } from "@/components/ui/MarkdownText";
 import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
 import { localizeZoomCard } from "@/services/cardLocalization";
+import { useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 
 interface ChatMessage {
   id: string;
@@ -80,6 +83,7 @@ const DIVERSE_PROMPTS: RitualPrompt[] = [
 
 export default function OracleScreen() {
   const { account } = useAuth();
+  const { connection } = useMobileWallet();
   const { t, language } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "SeekerDemoWallet1111111111111111111";
 
@@ -119,8 +123,26 @@ export default function OracleScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    fetchClockInStatus(walletAddress).then(setQuotaInfo);
-  }, [walletAddress]);
+    const syncStatus = async () => {
+      let isHolder = false;
+      if (account?.publicKey) {
+        try {
+          isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
+          await setRemoteSeekerStatus(walletAddress, isHolder);
+        } catch (err) {
+          console.warn('[Seeker SBT] check failed in Oracle:', err);
+        }
+      }
+      try {
+        const info = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
+        setQuotaInfo(info);
+      } catch (err) {
+        console.warn('Failed to fetch quota info in Oracle:', err);
+      }
+    };
+
+    syncStatus();
+  }, [walletAddress, account?.publicKey, connection]);
 
   const handleInitiateSend = (textToSend?: string) => {
     const query = (textToSend || input).trim();

@@ -110,3 +110,40 @@ export async function fetchRealSolBalance(
     return 0;
   }
 }
+
+export const SGT_MINT_AUTHORITY = 'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
+export const SGT_GROUP_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+export const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
+
+export async function checkSeekerGenesisHolderOnChain(
+  connection: Connection,
+  walletPublicKey: PublicKey
+): Promise<boolean> {
+  try {
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPublicKey, {
+      programId: TOKEN_2022_PROGRAM_ID,
+    });
+    if (!tokenAccounts.value || tokenAccounts.value.length === 0) {
+      return false;
+    }
+    for (const item of tokenAccounts.value) {
+      const parsed = item.account.data.parsed?.info;
+      if (!parsed) continue;
+      const amount = parsed.tokenAmount?.uiAmount;
+      const mint = parsed.mint;
+      if (amount && amount > 0 && mint) {
+        try {
+          const mintInfo = await connection.getParsedAccountInfo(new PublicKey(mint));
+          const mintParsed = (mintInfo.value?.data as any)?.parsed?.info;
+          if (mintParsed?.mintAuthority === SGT_MINT_AUTHORITY) {
+            return true;
+          }
+        } catch {}
+      }
+    }
+    return false;
+  } catch (err) {
+    console.warn('Failed to verify Seeker Genesis SBT on-chain:', err);
+    return false;
+  }
+}

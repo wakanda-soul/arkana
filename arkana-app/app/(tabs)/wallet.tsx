@@ -13,14 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Clipboard from "@react-native-clipboard/clipboard";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchClockInStatus, ClockInResult } from "@/services/oracleApi";
+import { fetchClockInStatus, setRemoteSeekerStatus, ClockInResult } from "@/services/oracleApi";
 import { ellipsify } from "@/utils/ellipsify";
 import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
 import { useLanguage } from "@/services/i18n";
 import { soundService } from "@/services/soundService";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
-import { fetchRealSkrBalance, fetchRealSolBalance } from "@/services/solanaService";
+import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
@@ -38,8 +38,8 @@ export default function WalletScreen() {
     streak: 1,
     lastClockIn: null,
     totalReadings: 1,
-    skrBalance: 100,
-    isSeekerHolder: true,
+    skrBalance: 0,
+    isSeekerHolder: false,
   });
 
   const [copied, setCopied] = useState(false);
@@ -63,8 +63,17 @@ export default function WalletScreen() {
 
   useEffect(() => {
     const targetAddress = address || "SeekerDemoWallet1111111111111111111";
-    fetchClockInStatus(targetAddress).then(setClockInState);
     if (account?.publicKey) {
+      checkSeekerGenesisHolderOnChain(connection, account.publicKey)
+        .then(async (isHolder) => {
+          await setRemoteSeekerStatus(account.publicKey.toBase58(), isHolder);
+          const status = await fetchClockInStatus(account.publicKey.toBase58(), isHolder);
+          setClockInState(status);
+        })
+        .catch(() => {
+          fetchClockInStatus(targetAddress).then(setClockInState);
+        });
+
       Promise.all([
         fetchRealSolBalance(connection, account.publicKey),
         fetchRealSkrBalance(connection, account.publicKey),
@@ -75,6 +84,7 @@ export default function WalletScreen() {
         console.warn("Failed to fetch on-chain balances in wallet tab:", err);
       });
     } else {
+      fetchClockInStatus(targetAddress).then(setClockInState);
       setRealSolBalance(null);
       setRealSkrBalance(null);
     }
@@ -140,8 +150,10 @@ export default function WalletScreen() {
             {/* Account Identity Card */}
             <View style={styles.walletCard}>
               <View style={styles.walletCardHeader}>
-                <View style={styles.seekerBadge}>
-                  <Text style={styles.seekerBadgeText}>{t('seeker_genesis_holder', 'SEEKER GENESIS HOLDER')}</Text>
+                <View style={[styles.seekerBadge, !clockInState.isSeekerHolder && styles.seekerBadgeStandard]}>
+                  <Text style={[styles.seekerBadgeText, !clockInState.isSeekerHolder && styles.seekerBadgeTextStandard]}>
+                    {clockInState.isSeekerHolder ? t('seeker_genesis_holder', 'SEEKER GENESIS HOLDER') : t('standard_wallet', 'SOLANA WALLET')}
+                  </Text>
                 </View>
                 <View style={styles.statusDotRow}>
                   <View style={styles.liveDot} />
@@ -481,12 +493,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
+  seekerBadgeStandard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
   seekerBadgeText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 8,
     letterSpacing: 1.5,
     fontWeight: "600",
+  },
+  seekerBadgeTextStandard: {
+    color: ObsidianTokens.colors.ink.text55,
   },
   statusDotRow: {
     flexDirection: "row",

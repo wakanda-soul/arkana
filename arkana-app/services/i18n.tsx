@@ -3070,6 +3070,18 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
     ru: '\u0425\u0420\u0410\u041D\u0418\u0422\u0415\u041B\u042C SEEKER GENESIS',
     id: 'PEMEGANG SEEKER GENESIS',
   },
+  "standard_wallet": {
+    en: 'SOLANA WALLET',
+    zh: 'SOLANA \u94B1\u5305',
+    hi: 'SOLANA \u0935\u0949\u0932\u0947\u091F',
+    es: 'BILLETERA SOLANA',
+    ar: '\u0645\u062D\u0641\u0638\u0629 SOLANA',
+    fr: 'PORTEFEUILLE SOLANA',
+    bn: 'SOLANA \u0993\u09DF\u09BE\u09B2\u09C7\u099F',
+    pt: 'CARTEIRA SOLANA',
+    ru: 'SOLANA \u041A\u041E\u0428\u0415\u041B\u0415\u041A',
+    id: 'DOMPET SOLANA',
+  },
   "seeker_oracle_fuel": {
     en: 'SEEKER ORACLE FUEL',
     zh: 'SEEKER \u795E\u8C15\u71C3\u6599',
