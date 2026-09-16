@@ -494,6 +494,15 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// Public Cryptographic Treasury Attestation Endpoint
+app.get("/api/treasury", (req, res) => {
+  const config = loadEconomyConfig();
+  res.json({
+    success: true,
+    treasury: config.treasury || null
+  });
+});
+
 // Admin Economy Config Endpoints
 app.get("/api/admin/config", (req, res) => {
   const config = loadEconomyConfig();
