@@ -696,7 +696,7 @@ export function DailyRitualView({
             <View style={styles.celebrationTextWrap}>
               <Text style={styles.celebrationTitle}>{t('block_finalized_solana', 'BLOCK FINALIZED ON SOLANA')}</Text>
               <Text style={styles.celebrationSub}>
-                {t('slot_confirmed_skr', 'Slot #{slot} confirmed \u00B7 +25 SKR claimed', { slot: slotNumber ?? '' })}
+                {t('slot_confirmed', 'Slot #{slot} confirmed on-chain \u00B7 Consensus Sealed', { slot: slotNumber ?? '' })}
               </Text>
             </View>
           </View>
@@ -750,11 +750,6 @@ export function DailyRitualView({
                 </View>
               </>
             ) : null}
-            <View style={styles.recordDivider} />
-            <View style={styles.recordRow}>
-              <Text style={styles.recordKey}>{t('oracle_fuel', 'ORACLE FUEL')}</Text>
-              <Text style={styles.recordValGold}>{t('fuel_claimed', '+25 SKR Claimed')}</Text>
-            </View>
           </View>
 
           {/* Daily Guidance Quote */}
@@ -1296,9 +1291,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   awaitingMono: {
-    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
     fontSize: 10,
-    letterSpacing: 2,
+    fontWeight: '700',
+    letterSpacing: 1.2,
     color: ObsidianTokens.colors.gold.primary,
     marginTop: 18,
   },
@@ -1311,9 +1306,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ghostCancelText: {
-    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 10,
-    letterSpacing: 1.4,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
     color: ObsidianTokens.colors.ink.text55,
   },
   sealedHeaderRow: {

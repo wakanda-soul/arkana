@@ -91,7 +91,7 @@ export default function SpreadScreen() {
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
     const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
-    const balance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
+    const balance = onChainSkr !== null ? onChainSkr : 0;
     const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
 
@@ -204,7 +204,7 @@ export default function SpreadScreen() {
   const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
   const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
-  const balance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
+  const balance = onChainSkr !== null ? onChainSkr : 0;
   const canAfford = true;
 
   return (

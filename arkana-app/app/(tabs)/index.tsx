@@ -226,7 +226,8 @@ export default function AltarScreen() {
   const handleRepairStreak = async () => {
     if (isRepairing) return;
     const cost = clockInState.streakRepairCostSkr || 1;
-    if ((clockInState.skrBalance || 0) < cost) {
+    const currentSkr = onChainSkr !== null ? onChainSkr : 0;
+    if (currentSkr < cost) {
       showError("Insufficient SKR", `You need ${cost} SKR to repair your streak.`);
       return;
     }
@@ -238,7 +239,7 @@ export default function AltarScreen() {
         setClockInState(prev => ({
           ...prev,
           streak: res.streak,
-          skrBalance: res.skrBalance,
+          skrBalance: currentSkr,
           canRepairStreak: false,
         }));
         try {
@@ -360,7 +361,7 @@ export default function AltarScreen() {
               </View>
               <View style={styles.skrBadge}>
                 <Text style={styles.skrBadgeLabel}>{t('balance', 'BALANCE')}</Text>
-                <Text style={styles.skrText}>{onChainSkr !== null ? onChainSkr : clockInState.skrBalance} SKR</Text>
+                <Text style={styles.skrText}>{onChainSkr !== null ? onChainSkr : 0} SKR</Text>
               </View>
             </View>
           )}
@@ -369,7 +370,7 @@ export default function AltarScreen() {
         {/* Core Interactive Daily Ritual Loop */}
         <DailyRitualView
           streak={clockInState.streak}
-          skrBalance={onChainSkr !== null ? onChainSkr : clockInState.skrBalance}
+          skrBalance={onChainSkr !== null ? onChainSkr : 0}
           canRepairStreak={clockInState.canRepairStreak}
           streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
           isAlreadyClockedIn={!clockInState.canClockIn || !!savedSealedCard}

@@ -84,7 +84,7 @@ function checkSeekerStatus(user, walletAddress, clientHint) {
 function setSeekerHolderStatus(walletAddress, isHolder) {
   if (!walletAddress) return false;
   const users = loadUsers();
-  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  const user = users[walletAddress] || { streak: 0 };
   user.isSeekerHolder = Boolean(isHolder);
   users[walletAddress] = user;
   saveUsers(users);
@@ -125,7 +125,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   }
 
   const users = loadUsers();
-  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  const user = users[walletAddress] || { streak: 0 };
   const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
@@ -170,7 +170,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     lastClockIn: user.lastClockIn,
     todayCard,
     totalReadings: user.totalReadings || 0,
-    skrBalance: user.skrBalance !== undefined ? user.skrBalance : 25,
+    skrBalance: 0,
     freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
     extraSpreadCostSkr: extraSpreadCost,
@@ -190,7 +190,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
 function recordClockIn(walletAddress, drawnCard) {
   const users = loadUsers();
   const now = new Date();
-  const user = users[walletAddress] || { streak: 0, history: [], totalReadings: 0, skrBalance: 25 };
+  const user = users[walletAddress] || { streak: 0, history: [], totalReadings: 0 };
 
   const lastDate = user.lastClockIn ? new Date(user.lastClockIn) : null;
   if (lastDate) {
@@ -234,7 +234,7 @@ function recordClockIn(walletAddress, drawnCard) {
     lastClockIn: user.lastClockIn,
     rewardSkr,
     freeSpreadsMax: maxFree,
-    skrBalance: user.skrBalance,
+    skrBalance: 0,
     isSeekerHolder
   };
 }
@@ -269,7 +269,7 @@ function consumeSpread(walletAddress, options = {}) {
   }
 
   const users = loadUsers();
-  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
+  const user = users[walletAddress] || { streak: 0 };
   const clientHint = options.isSeeker !== undefined ? Boolean(options.isSeeker) : undefined;
   const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
   const now = new Date();
@@ -296,48 +296,25 @@ function consumeSpread(walletAddress, options = {}) {
       costSol: 0,
       paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
-      balance: user.skrBalance,
+      balance: 0,
       isSeekerHolder: true
     };
   }
 
-  // Beyond free quota: check SKR balance
-  const hasEnoughSkr = (user.skrBalance || 0) >= costSkr;
-
-  if (hasEnoughSkr && !payWithSol) {
-    // Deduct SKR
-    user.skrBalance = Number(((user.skrBalance || 0) - costSkr).toFixed(2));
+  // Beyond free quota: on-chain payment verification (SKR or SOL)
+  if (txSignature || payWithSol) {
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
     user.totalReadings = (user.totalReadings || 0) + 1;
-    users[walletAddress] = user;
-    saveUsers(users);
-
-    return {
-      allowed: true,
-      isFree: false,
-      paidWith: "skr",
-      cost: costSkr,
+    user.txHistory = user.txHistory || [];
+    user.txHistory.push({
+      timestamp: now.toISOString(),
+      paidWith: payWithSol ? "sol" : "skr",
       costSkr,
       costSol,
-      remainingFree: 0,
-      balance: user.skrBalance
-    };
-  }
-
-  // If paying with SOL or if SKR is insufficient but SOL payment is confirmed
-  if (payWithSol) {
-    dailySpreadsUsed += 1;
-    user.dailySpreadsUsed = dailySpreadsUsed;
-    user.lastSpreadDate = todayKey;
-    user.totalReadings = (user.totalReadings || 0) + 1;
-    user.solTxHistory = user.solTxHistory || [];
-    user.solTxHistory.push({
-      timestamp: now.toISOString(),
-      amountSol: costSol,
       itemType,
-      txSignature: txSignature || "sol_pay_" + Math.random().toString(36).slice(2, 10)
+      txSignature: txSignature || "tx_" + Math.random().toString(36).slice(2, 10)
     });
     users[walletAddress] = user;
     saveUsers(users);
@@ -345,17 +322,17 @@ function consumeSpread(walletAddress, options = {}) {
     return {
       allowed: true,
       isFree: false,
-      paidWith: "sol",
-      cost: costSol,
+      paidWith: payWithSol ? "sol" : "skr",
+      cost: payWithSol ? costSol : costSkr,
       costSkr,
       costSol,
       remainingFree: 0,
-      balance: user.skrBalance,
+      balance: 0,
       txSignature
     };
   }
 
-  // Insufficient SKR and no SOL payment provided
+  // Insufficient payment or quota exhausted
   return {
     allowed: false,
     isFree: false,
@@ -363,7 +340,7 @@ function consumeSpread(walletAddress, options = {}) {
     costSkr,
     costSol,
     remainingFree: 0,
-    balance: user.skrBalance || 0,
+    balance: 0,
     canPayWithSol: true,
     isSeekerHolder,
     error: isSeekerHolder
@@ -376,7 +353,7 @@ function consumeSpread(walletAddress, options = {}) {
  * Repair or preserve user streak using SKR
  * Default cost is 1 SKR (configurable dynamically via loadEconomyConfig)
  */
-function repairStreak(walletAddress) {
+function repairStreak(walletAddress, txSignature = null) {
   if (!walletAddress) {
     return { success: false, error: "Wallet address is required." };
   }
@@ -384,24 +361,16 @@ function repairStreak(walletAddress) {
   const config = loadEconomyConfig();
   const cost = config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1;
   const users = loadUsers();
-  const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
-
-  if ((user.skrBalance || 0) < cost) {
-    return {
-      success: false,
-      error: `Insufficient SKR balance. ${cost} SKR required to repair streak.`,
-      balance: user.skrBalance || 0
-    };
-  }
-
-  // Deduct repair fee
-  user.skrBalance = Number(((user.skrBalance || 0) - cost).toFixed(2));
+  const user = users[walletAddress] || { streak: 0 };
 
   // Restore streak to broken streak or increment current streak
   const restoredStreak = user.brokenStreak || user.previousStreak || Math.max(1, (user.streak || 0) + 1);
   user.streak = restoredStreak;
   user.brokenStreak = null;
   user.lastClockIn = new Date().toISOString();
+  if (txSignature) {
+    user.repairTx = txSignature;
+  }
 
   users[walletAddress] = user;
   saveUsers(users);
@@ -409,7 +378,7 @@ function repairStreak(walletAddress) {
   return {
     success: true,
     streak: user.streak,
-    skrBalance: user.skrBalance,
+    skrBalance: 0,
     cost
   };
 }

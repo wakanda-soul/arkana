@@ -307,7 +307,7 @@ export async function repairStreak(wallet: string): Promise<{ success: boolean; 
     const data = await res.json();
     return data;
   } catch (e: any) {
-    return { success: false, streak: 1, skrBalance: 25, error: e.message || 'Streak repair network error' };
+    return { success: false, streak: 1, skrBalance: 0, error: e.message || 'Streak repair network error' };
   }
 }
 

@@ -31,7 +31,7 @@ import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
 import { localizeZoomCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
-import { checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
+import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
 
 interface ChatMessage {
   id: string;
@@ -88,6 +88,7 @@ export default function OracleScreen() {
   const walletAddress = account?.publicKey?.toString() || "";
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
+  const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -143,6 +144,12 @@ export default function OracleScreen() {
     };
 
     syncStatus();
+
+    if (account?.publicKey) {
+      fetchRealSkrBalance(connection, account.publicKey).then(val => {
+        setOnChainSkr(val);
+      }).catch(() => {});
+    }
   }, [walletAddress, account?.publicKey, connection]);
 
   const handleInitiateSend = (textToSend?: string) => {
@@ -182,7 +189,7 @@ export default function OracleScreen() {
     const query = pendingQuery || input;
     if (!query) return;
 
-    const skrBalance = quotaInfo?.skrBalance ?? 0;
+    const skrBalance = onChainSkr !== null ? onChainSkr : 0;
     const askCost = quotaInfo?.askCostSkr || 1;
     const payWithSol = skrBalance < askCost;
 
@@ -332,7 +339,7 @@ export default function OracleScreen() {
   const freeRemaining = isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0;
   const askCostSkr = quotaInfo?.askCostSkr || 1;
   const askCostSol = quotaInfo?.askCostSol || 0.0002;
-  const skrBalance = quotaInfo?.skrBalance ?? 0;
+  const skrBalance = onChainSkr !== null ? onChainSkr : 0;
 
   const filteredPrompts = selectedCategory === "ALL"
     ? DIVERSE_PROMPTS
@@ -631,7 +638,7 @@ export default function OracleScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryScroll}
-              style={{ maxHeight: 44, marginBottom: 8 }}
+              style={{ maxHeight: 50, marginBottom: 8 }}
             >
               {RITUAL_CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat.key;
@@ -1049,17 +1056,16 @@ const styles = StyleSheet.create({
     borderColor: ObsidianTokens.colors.ink.hairline,
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
   },
   categoryTabActive: {
     backgroundColor: ObsidianTokens.colors.gold.surface,
     borderColor: ObsidianTokens.colors.gold.primary,
   },
   categoryTabText: {
-    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
-    fontSize: 8.5,
-    letterSpacing: 0.8,
+    fontSize: 11,
+    fontWeight: "500",
     color: ObsidianTokens.colors.ink.text55,
   },
   categoryTabTextActive: {

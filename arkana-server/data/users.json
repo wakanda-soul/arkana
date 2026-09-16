@@ -12,32 +12,41 @@
       }
     ],
     "totalReadings": 3,
-    "skrBalance": 25,
     "lastClockIn": "2026-09-13T17:33:56.045Z",
-    "dailySpreadsUsed": 2,
+    "dailySpreadsUsed": 0,
     "lastSpreadDate": "2026-09-13",
     "brokenStreak": 1,
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 0,
-    "skrBalance": 23,
-    "dailySpreadsUsed": 2,
+    "dailySpreadsUsed": 0,
     "lastSpreadDate": "2026-09-16",
     "totalReadings": 2
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,
-    "skrBalance": 24,
-    "dailySpreadsUsed": 1,
+    "dailySpreadsUsed": 0,
     "lastSpreadDate": "2026-09-16",
-    "totalReadings": 1
+    "totalReadings": 1,
+    "isSeekerHolder": false
   },
   "7tPPv8qdzSp3J6fGTKpvomHL4iiT3W1PRQ6mv4qc7iQx": {
-    "streak": 0,
-    "skrBalance": 15,
-    "dailySpreadsUsed": 2,
+    "streak": 1,
+    "dailySpreadsUsed": 0,
     "lastSpreadDate": "2026-09-16",
-    "totalReadings": 2
+    "totalReadings": 6,
+    "isSeekerHolder": true,
+    "lastClockIn": "2026-09-16T17:34:50.782Z",
+    "history": [
+      {
+        "timestamp": "2026-09-16T17:34:50.782Z",
+        "type": "daily-block",
+        "card": "Financial Freedom",
+        "card_no": "45",
+        "orientation": "upright",
+        "image": "/cards/45.webp"
+      }
+    ]
   }
 }

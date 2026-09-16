@@ -189,7 +189,7 @@ export default function WalletScreen() {
               <View style={[styles.assetCard, styles.skrCard]}>
                 <Text style={styles.assetLabel}>{t('skr_balance', 'SKR BALANCE')}</Text>
                 <Text style={[styles.assetValue, { color: ObsidianTokens.colors.gold.primary }]}>
-                  {realSkrBalance !== null ? realSkrBalance : clockInState.skrBalance} SKR
+                  {realSkrBalance !== null ? realSkrBalance : 0} SKR
                 </Text>
                 <Text style={styles.assetSub}>{t('seeker_oracle_fuel', 'Seeker Oracle Fuel')}</Text>
               </View>
