@@ -24,6 +24,8 @@ import { ObsidianTokens } from "@/constants/theme";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
 import { useLanguage } from "@/services/i18n";
+import { useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { fetchRealSkrBalance } from "@/services/solanaService";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,10 +46,17 @@ export default function SpreadScreen() {
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
+  const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
+  const { connection } = useMobileWallet();
 
   useEffect(() => {
     fetchClockInStatus(walletAddress).then(setQuotaInfo);
-  }, [walletAddress]);
+    if (account?.publicKey) {
+      fetchRealSkrBalance(connection, account.publicKey).then(val => {
+        setOnChainSkr(val);
+      }).catch(() => {});
+    }
+  }, [walletAddress, account?.publicKey, connection]);
 
   const handleDraw = async () => {
     setQuotaError(null);
@@ -56,7 +65,7 @@ export default function SpreadScreen() {
     } catch {}
 
     const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
-    const balance = quotaInfo?.skrBalance ?? 0;
+    const balance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
     const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
 
@@ -169,7 +178,7 @@ export default function SpreadScreen() {
   const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
   const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
-  const balance = quotaInfo?.skrBalance ?? 0;
+  const balance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
   const canAfford = true;
 
   return (
@@ -314,7 +323,7 @@ export default function SpreadScreen() {
                       style={({ pressed }) => [styles.shareTwitterBtn, pressed && styles.cardPressed]}
                       onPress={handleShareX}
                     >
-                      <Text style={styles.shareTwitterIcon}>\uD835\uDD4F</Text>
+                      <Text style={styles.shareTwitterIcon}>X</Text>
                       <Text style={styles.shareTwitterText}>{t("share_on_x", "SHARE ON X")}</Text>
                     </Pressable>
 
@@ -322,7 +331,7 @@ export default function SpreadScreen() {
                       style={({ pressed }) => [styles.shareGeneralBtn, pressed && styles.cardPressed]}
                       onPress={handleShareMore}
                     >
-                      <Text style={styles.shareGeneralIcon}>\u2197</Text>
+                      <Text style={styles.shareGeneralIcon}>{'\u2197'}</Text>
                       <Text style={styles.shareGeneralText}>{t("share_more", "MORE")}</Text>
                     </Pressable>
                   </View>
@@ -464,6 +473,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    flex: 1,
+    marginRight: 8,
   },
   quotaIcon: {
     fontSize: 12,
@@ -474,12 +485,14 @@ const styles = StyleSheet.create({
     color: ObsidianTokens.colors.ink.text82,
     fontSize: 10,
     letterSpacing: 0.5,
+    flexShrink: 1,
   },
   balanceText: {
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.gold.primary,
     fontSize: 10,
     fontWeight: "600",
+    flexShrink: 0,
   },
   warningText: {
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),

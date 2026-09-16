@@ -227,7 +227,8 @@ app.get("/api/clock-in/:wallet", (req, res) => {
   try {
     const walletParam = req.params.wallet;
     const wallet = (walletParam === "status" && req.query.wallet) ? req.query.wallet : walletParam;
-    const status = getClockInStatus(wallet);
+    const isSeeker = req.query.isSeeker !== undefined ? (req.query.isSeeker === "true" || req.query.isSeeker === "1") : true;
+    const status = getClockInStatus(wallet, isSeeker);
     res.json(status);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -237,8 +238,8 @@ app.get("/api/clock-in/:wallet", (req, res) => {
 // Check and consume spread quota or deduct 5 SKR fee
 app.post("/api/spread/consume", (req, res) => {
   try {
-    const { wallet } = req.body;
-    const result = consumeSpread(wallet);
+    const { wallet, isSeeker } = req.body;
+    const result = consumeSpread(wallet, { isSeeker: isSeeker !== undefined ? Boolean(isSeeker) : true });
     if (!result.allowed) {
       return res.status(402).json(result);
     }
@@ -356,7 +357,8 @@ app.post("/api/reading", async (req, res) => {
         type: "spread",
         cost: 5,
         payWithSol: Boolean(req.body.payWithSol),
-        txSignature: req.body.txSignature || null
+        txSignature: req.body.txSignature || null,
+        isSeeker: req.body.isSeeker !== undefined ? Boolean(req.body.isSeeker) : true
       });
       if (!quotaResult.allowed) {
         return res.status(402).json({

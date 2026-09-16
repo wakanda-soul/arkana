@@ -101,19 +101,19 @@ export default function CodexScreen() {
   };
 
   const filterTabs = [
-    { id: "all", label: t('filter_all', 'ALL (78)') },
-    { id: "major", label: t('filter_major', 'MAJORS (22)') },
-    { id: "Protocols", label: t('filter_protocols', 'PROTOCOLS (14)') },
-    { id: "Liquidity", label: t('filter_liquidity', 'LIQUIDITY (14)') },
-    { id: "Nodes", label: t('filter_nodes', 'NODES (14)') },
-    { id: "Assets", label: t('filter_assets', 'ASSETS (14)') },
+    { id: "all", label: "ALL (78)" },
+    { id: "major", label: "MAJORS (22)" },
+    { id: "Protocols", label: "PROTOCOLS (14)" },
+    { id: "Liquidity", label: "LIQUIDITY (14)" },
+    { id: "Nodes", label: "NODES (14)" },
+    { id: "Assets", label: "ASSETS (14)" },
   ];
 
-  return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+  const renderHeader = () => (
+    <View>
       {/* Obsidian Header */}
       <View style={styles.header}>
-        <Text style={styles.headerKicker}>{t('tab_deck', 'DECK')} \u00B7 {t('cards_count', '78 CARDS', { n: 78 })}</Text>
+        <Text style={styles.headerKicker}>{t('tab_deck', 'DECK')} · {t('cards_count', '78 CARDS', { n: 78 })}</Text>
         <Text style={styles.headerTitle}>{t('deck_progress', '{unlocked} of 78 known', { unlocked: unlockedCount })}</Text>
         <Text style={styles.headerSub}>{t('deck_record_sub', 'Cards unlock when you draw them: a record, not a catalogue.')}</Text>
       </View>
@@ -223,12 +223,17 @@ export default function CodexScreen() {
           ))}
         </ScrollView>
       </View>
+    </View>
+  );
 
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* Grid of Cards (3 Columns) */}
       <FlatList
         data={filteredCards}
         keyExtractor={item => item.card_no}
         numColumns={3}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.gridContent}
         columnWrapperStyle={filteredCards.length > 0 ? styles.columnWrapper : undefined}
         showsVerticalScrollIndicator={false}
@@ -571,7 +576,7 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
   },
   emptyGlyph: {
     color: ObsidianTokens.colors.gold.subtle,
@@ -638,10 +643,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   gridContent: {
-    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
     paddingBottom: 110,
   },
   columnWrapper: {
+    paddingHorizontal: ObsidianTokens.spacing.screenGutter,
     justifyContent: "space-between",
     marginBottom: 12,
   },

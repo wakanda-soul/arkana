@@ -151,7 +151,7 @@ export function generateLocalReading(spreadKey: string, question: string = ''): 
 
 export async function fetchClockInStatus(wallet: string): Promise<ClockInResult> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/clock-in/${wallet}`);
+    const res = await fetch(`${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=true`);
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn('API error, using local state:', e);
@@ -162,9 +162,9 @@ export async function fetchClockInStatus(wallet: string): Promise<ClockInResult>
     lastClockIn: null,
     totalReadings: 1,
     skrBalance: 25,
-    freeSpreadsRemaining: 0,
-    freeSpreadsMax: 0,
-    isSeekerHolder: false,
+    freeSpreadsRemaining: 3,
+    freeSpreadsMax: 3,
+    isSeekerHolder: true,
   };
 }
 
@@ -247,7 +247,7 @@ export async function fetchReading(
     const res = await fetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ spread, question, wallet, payWithSol, language }),
+      body: JSON.stringify({ spread, question, wallet, payWithSol, language, isSeeker: true }),
     });
     if (res.status === 402) {
       const errData = await res.json();
@@ -274,7 +274,7 @@ export async function consumeSpreadQuota(wallet?: string): Promise<QuotaConsumeR
     const res = await fetch(`${API_BASE_URL}/api/spread/consume`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet }),
+      body: JSON.stringify({ wallet, isSeeker: true }),
     });
     const data = await res.json();
     return data;

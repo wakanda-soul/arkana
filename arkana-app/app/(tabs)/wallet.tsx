@@ -19,6 +19,8 @@ import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
 import { useLanguage } from "@/services/i18n";
 import { soundService } from "@/services/soundService";
+import { useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { fetchRealSkrBalance, fetchRealSolBalance } from "@/services/solanaService";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
@@ -27,6 +29,9 @@ export default function WalletScreen() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [realSolBalance, setRealSolBalance] = useState<number | null>(null);
+  const [realSkrBalance, setRealSkrBalance] = useState<number | null>(null);
+  const { connection } = useMobileWallet();
 
   const [clockInState, setClockInState] = useState<ClockInResult>({
     canClockIn: true,
@@ -59,7 +64,21 @@ export default function WalletScreen() {
   useEffect(() => {
     const targetAddress = address || "SeekerDemoWallet1111111111111111111";
     fetchClockInStatus(targetAddress).then(setClockInState);
-  }, [address]);
+    if (account?.publicKey) {
+      Promise.all([
+        fetchRealSolBalance(connection, account.publicKey),
+        fetchRealSkrBalance(connection, account.publicKey),
+      ]).then(([sol, skr]) => {
+        setRealSolBalance(sol);
+        setRealSkrBalance(skr);
+      }).catch(err => {
+        console.warn("Failed to fetch on-chain balances in wallet tab:", err);
+      });
+    } else {
+      setRealSolBalance(null);
+      setRealSkrBalance(null);
+    }
+  }, [address, account?.publicKey, connection]);
 
   const copyAddress = () => {
     if (!address) return;
@@ -150,7 +169,9 @@ export default function WalletScreen() {
               {/* SOL Card */}
               <View style={styles.assetCard}>
                 <Text style={styles.assetLabel}>{t('sol_balance', 'SOL BALANCE')}</Text>
-                <Text style={styles.assetValue}>1.45 SOL</Text>
+                <Text style={styles.assetValue}>
+                  {realSolBalance !== null ? (realSolBalance === 0 ? '0 SOL' : `${Number(realSolBalance.toFixed(4))} SOL`) : '0 SOL'}
+                </Text>
                 <Text style={styles.assetSub}>{t('gas_and_minting', 'Gas & Minting')}</Text>
               </View>
 
@@ -158,7 +179,7 @@ export default function WalletScreen() {
               <View style={[styles.assetCard, styles.skrCard]}>
                 <Text style={styles.assetLabel}>{t('skr_balance', 'SKR BALANCE')}</Text>
                 <Text style={[styles.assetValue, { color: ObsidianTokens.colors.gold.primary }]}>
-                  {clockInState.skrBalance} SKR
+                  {realSkrBalance !== null ? realSkrBalance : clockInState.skrBalance} SKR
                 </Text>
                 <Text style={styles.assetSub}>{t('seeker_oracle_fuel', 'Seeker Oracle Fuel')}</Text>
               </View>
@@ -222,7 +243,7 @@ export default function WalletScreen() {
                 <Text style={styles.featureTitle}>{t('sound_effects_title', 'Acoustic Resonance / SFX')}</Text>
                 <Text style={styles.featureDesc}>
                   {isSoundMuted
-                    ? t('sound_effects_muted_desc', 'Muted -- silent contemplation mode')
+                    ? t('sound_effects_muted_desc', 'Muted - silent contemplation mode')
                     : t('sound_effects_active_desc', 'Card flips, sacred shuffles, and consensus chime active')}
                 </Text>
               </View>
@@ -348,7 +369,7 @@ export default function WalletScreen() {
                 <Text style={styles.featureTitle}>{t('sound_effects_title', 'Acoustic Resonance / SFX')}</Text>
                 <Text style={styles.featureDesc}>
                   {isSoundMuted
-                    ? t('sound_effects_muted_desc', 'Muted -- silent contemplation mode')
+                    ? t('sound_effects_muted_desc', 'Muted - silent contemplation mode')
                     : t('sound_effects_active_desc', 'Card flips, sacred shuffles, and consensus chime active')}
                 </Text>
               </View>

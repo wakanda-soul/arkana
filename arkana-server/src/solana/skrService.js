@@ -66,15 +66,22 @@ function getDailyFreeAllowance(streak = 0) {
   return 3;                  // Base daily free allowance
 }
 
-function checkSeekerStatus(user, walletAddress) {
+function checkSeekerStatus(user, walletAddress, clientHint) {
+  if (clientHint !== undefined) {
+    if (user) {
+      user.isSeekerHolder = Boolean(clientHint);
+    }
+    return Boolean(clientHint);
+  }
   if (user && user.isSeekerHolder !== undefined) {
     return Boolean(user.isSeekerHolder);
   }
   if (!walletAddress) return false;
-  if (walletAddress.startsWith("DemoSeeker") || walletAddress.startsWith("SeekerDemo") || walletAddress.startsWith("SeekerTest")) {
-    return true;
+  // Any connected wallet via Arkana on Solana Mobile Seeker is recognized as Seeker Genesis SBT holder
+  if (user) {
+    user.isSeekerHolder = true;
   }
-  return false;
+  return true;
 }
 
 function setSeekerHolderStatus(walletAddress, isHolder) {
@@ -92,7 +99,7 @@ function setSeekerHolderStatus(walletAddress, isHolder) {
  * Notice: Free daily spreads (3 to 5) are an exclusive privilege of Seeker Genesis SBT holders.
  * Non-Seeker wallets have freeSpreadsRemaining: 0 and must offer SKR or SOL.
  */
-function getClockInStatus(walletAddress) {
+function getClockInStatus(walletAddress, clientHint = true) {
   const config = loadEconomyConfig();
   const repairCost = config.streakRepairCostSkr || 1;
   const askCost = config.askCostSkr || 1;
@@ -108,21 +115,21 @@ function getClockInStatus(walletAddress) {
       repairStreakTarget: 1,
       streakRepairCostSkr: repairCost,
       lastClockIn: null,
-      freeSpreadsRemaining: 0,
-      freeSpreadsMax: 0,
+      freeSpreadsRemaining: 3,
+      freeSpreadsMax: 3,
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
       askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
       extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
       skrBalance: 0,
-      isSeekerHolder: false
+      isSeekerHolder: true
     };
   }
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
-  const isSeekerHolder = checkSeekerStatus(user, walletAddress);
+  const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
@@ -266,7 +273,8 @@ function consumeSpread(walletAddress, options = {}) {
 
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0, skrBalance: 25 };
-  const isSeekerHolder = checkSeekerStatus(user, walletAddress);
+  const clientHint = options.isSeeker !== undefined ? Boolean(options.isSeeker) : true;
+  const isSeekerHolder = checkSeekerStatus(user, walletAddress, clientHint);
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
