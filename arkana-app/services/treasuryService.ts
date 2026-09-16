@@ -83,27 +83,9 @@ export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey
  * Query live Jupiter DEX rate for converting SOL to exact SKR
  */
 export async function getLiveSolQuoteForSkr(amountSkr: number): Promise<{ solAmount: number; lamports: number }> {
-  const inputMint = 'So11111111111111111111111111111111111111112';
-  const outputMint = SKR_MINT.toBase58();
-  const rawSkr = Math.max(1, Math.round(amountSkr * 1_000_000));
-
-  try {
-    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${rawSkr}&swapMode=ExactOut&slippageBps=100`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      const inLamports = Number(data.inAmount) || Math.round(amountSkr * 0.0002 * 1e9);
-      return {
-        solAmount: Number((inLamports / 1e9).toFixed(5)),
-        lamports: inLamports,
-      };
-    }
-  } catch (e) {
-    console.warn('Jupiter quote fetch error, using fallback rate:', e);
-  }
-
-  // Fallback: 1 SKR = ~0.0002 SOL
-  const fallbackSol = Number((amountSkr * 0.0002).toFixed(5));
+  // Canonical rate: 1 SKR = 0.0002 SOL (1 SOL = 5,000 SKR)
+  const rate = 0.0002;
+  const fallbackSol = Number((amountSkr * rate).toFixed(5));
   return {
     solAmount: fallbackSol,
     lamports: Math.round(fallbackSol * 1e9),
@@ -227,40 +209,8 @@ export async function executePaymentOrSwap({
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
-  // User has insufficient SKR -> auto-swap SOL into Treasury via Jupiter / Buyback
+  // User has insufficient SKR -> direct SOL transfer with Buyback Memo into Treasury
   const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-  const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey);
-
-  try {
-    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${lamports}&slippageBps=100`;
-    const quoteRes = await fetch(quoteUrl);
-    if (quoteRes.ok) {
-      const quoteData = await quoteRes.json();
-      const swapRes = await fetch('https://quote-api.jup.ag/v6/swap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quoteResponse: quoteData,
-          userPublicKey: userPublicKey.toBase58(),
-          destinationTokenAccount: treasuryAta.toBase58(),
-          wrapAndUnwrapSol: true,
-        }),
-      });
-      if (swapRes.ok) {
-        const swapData = await swapRes.json();
-        const rawTxBuffer = Buffer.from(swapData.swapTransaction, 'base64');
-        const { VersionedTransaction } = await import('@solana/web3.js');
-        const vTx = VersionedTransaction.deserialize(new Uint8Array(rawTxBuffer));
-        const result = await signAndSendTransactions(vTx, undefined as any);
-        const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
-        return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
-      }
-    }
-  } catch (err) {
-    console.warn('Jupiter swap assembly failed, executing fallback buyback transfer:', err);
-  }
-
-  // Fallback: Direct SOL transfer with Buyback Memo to Treasury
   const { blockhash } = await connection.getLatestBlockhash('confirmed');
   const fallbackTx = new Transaction({
     feePayer: userPublicKey,

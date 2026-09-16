@@ -9,7 +9,9 @@ import {
   Platform,
   Linking,
   Modal,
+  Alert,
 } from "react-native";
+import { PublicKey } from "@solana/web3.js";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -149,14 +151,27 @@ export default function WalletScreen() {
   }, []);
 
   const handlePurchaseSubscription = async () => {
-    if (!account?.publicKey || !address || !signAndSendTransactions) return;
+    const userPubkey = account?.publicKey
+      ? new PublicKey(account.publicKey)
+      : address
+      ? new PublicKey(address)
+      : null;
+
+    if (!userPubkey || !signAndSendTransactions) {
+      Alert.alert(
+        t('wallet_required', 'Wallet Required'),
+        t('connect_wallet_first', 'Please connect your Solana wallet first.')
+      );
+      return;
+    }
+
     setIsSubscribing(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
       const paymentResult = await executePaymentOrSwap({
         connection,
-        userPublicKey: account.publicKey,
+        userPublicKey: userPubkey,
         treasuryPublicKey: treasuryPubkey,
         amountSkr: 333,
         actionLabel: 'SUBSCRIPTION_PASS',
@@ -181,9 +196,15 @@ export default function WalletScreen() {
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
+      } else {
+        throw new Error(res.error || 'Failed to activate pass on server.');
       }
     } catch (e: any) {
       console.warn('Subscription purchase error:', e);
+      Alert.alert(
+        t('subscription_failed_title', 'Pass Activation Incomplete'),
+        e?.message || t('subscription_failed_desc', 'Transaction could not be confirmed. No funds were debited.')
+      );
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch {}

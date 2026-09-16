@@ -10,16 +10,20 @@ import {
   Platform,
   Keyboard,
   Modal,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { PublicKey } from "@solana/web3.js";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   fetchClockInStatus,
   setRemoteSeekerStatus,
   ClockInResult,
   sendOracleChatMessage,
+  API_BASE_URL,
 } from "@/services/oracleApi";
 import { ObsidianTokens } from "@/constants/theme";
 import { ALL_CARDS } from "@/data/cardsData";
@@ -32,6 +36,7 @@ import { useLanguage } from "@/services/i18n";
 import { localizeZoomCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
+import { executePaymentOrSwap, getVerifiedTreasury } from "@/services/treasuryService";
 
 interface ChatMessage {
   id: string;
@@ -83,12 +88,13 @@ const DIVERSE_PROMPTS: RitualPrompt[] = [
 
 export default function OracleScreen() {
   const { account } = useAuth();
-  const { connection } = useMobileWallet();
+  const { connection, signAndSendTransactions } = useMobileWallet();
   const { t, language } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "";
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -189,11 +195,46 @@ export default function OracleScreen() {
     const query = pendingQuery || input;
     if (!query) return;
 
-    const skrBalance = onChainSkr !== null ? onChainSkr : 0;
-    const askCost = quotaInfo?.askCostSkr || 1;
-    const payWithSol = skrBalance < askCost;
+    const userPubkey = account?.publicKey
+      ? new PublicKey(account.publicKey)
+      : walletAddress
+      ? new PublicKey(walletAddress)
+      : null;
 
-    await executeSendMessage(query, payWithSol);
+    if (!userPubkey || !signAndSendTransactions) {
+      Alert.alert(
+        t('wallet_required', 'Wallet Required'),
+        t('connect_wallet_first', 'Please connect your Solana wallet to commune with Arkana.')
+      );
+      return;
+    }
+
+    const askCost = quotaInfo?.askCostSkr || 1;
+    setIsProcessingPayment(true);
+
+    try {
+      const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
+      const paymentResult = await executePaymentOrSwap({
+        connection,
+        userPublicKey: userPubkey,
+        treasuryPublicKey: treasuryPubkey,
+        amountSkr: askCost,
+        actionLabel: 'ORACLE_ASK',
+        signAndSendTransactions,
+      });
+
+      setSolModalVisible(false);
+      setPendingQuery("");
+      await executeSendMessage(query, false, paymentResult.signature);
+    } catch (err: any) {
+      console.warn('Paid commune payment error:', err);
+      Alert.alert(
+        t('offering_failed_title', 'Offering Incomplete'),
+        err?.message || t('offering_failed_desc', 'Transaction could not be confirmed. No funds were debited.')
+      );
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleReturnTomorrow = () => {
@@ -203,7 +244,7 @@ export default function OracleScreen() {
     setSolModalVisible(false);
   };
 
-  const executeSendMessage = async (query: string, payWithSol: boolean = false) => {
+  const executeSendMessage = async (query: string, payWithSol: boolean = false, txSignature?: string | null) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
@@ -225,6 +266,7 @@ export default function OracleScreen() {
         message: query,
         wallet: walletAddress,
         payWithSol,
+        txSignature: txSignature || null,
         language,
       });
 
@@ -760,18 +802,28 @@ export default function OracleScreen() {
 
             <View style={styles.modalButtonsColumn}>
               <Pressable
-                style={({ pressed }) => [styles.modalPayBtn, pressed && styles.chipPressed]}
+                style={({ pressed }) => [
+                  styles.modalPayBtn,
+                  pressed && styles.chipPressed,
+                  isProcessingPayment && styles.btnDisabled,
+                ]}
                 onPress={handleConfirmPaidCommune}
+                disabled={isProcessingPayment}
               >
-                <Text style={styles.modalPayBtnText}>
-                  {skrBalance >= askCostSkr
-                    ? t('ask_now_offer_skr', 'ASK NOW \u00B7 OFFER {cost} SKR', { cost: askCostSkr })
-                    : t('ask_now_offer_sol', 'ASK NOW \u00B7 OFFER {cost} SOL', { cost: askCostSol })}
-                </Text>
+                {isProcessingPayment ? (
+                  <ActivityIndicator color="#100C06" />
+                ) : (
+                  <Text style={styles.modalPayBtnText}>
+                    {skrBalance >= askCostSkr
+                      ? t('ask_now_offer_skr', 'ASK NOW \u00B7 OFFER {cost} SKR', { cost: askCostSkr })
+                      : t('ask_now_offer_sol', 'ASK NOW \u00B7 OFFER {cost} SOL', { cost: askCostSol })}
+                  </Text>
+                )}
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.modalCancelBtn, pressed && styles.chipPressed]}
                 onPress={handleReturnTomorrow}
+                disabled={isProcessingPayment}
               >
                 <Text style={styles.modalCancelBtnText}>{t('return_tomorrow_btn', 'RETURN TOMORROW (NEXT UTC BLOCK)')}</Text>
               </Pressable>
@@ -1383,5 +1435,8 @@ const styles = StyleSheet.create({
     color: ObsidianTokens.colors.ink.text42,
     fontSize: 9.5,
     letterSpacing: 1,
+  },
+  btnDisabled: {
+    opacity: 0.6,
   },
 });
