@@ -18,7 +18,7 @@ import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID } from './solanaService';
  * Only messages signed by the corresponding offline secret key (never stored on server)
  * are accepted as authentic Treasury destinations by the client.
  */
-export const FOUNDER_MASTER_PUBLIC_KEY = '6NJHiiXPHzHSLQYbyiet93WNSfEDayiPL6b6j9zfdyDz';
+export const FOUNDER_MASTER_PUBLIC_KEY = '4R6FtpbHdv8WhXy7gHQCaXQbEqTgetqaBcJJSLs8kjW1';
 
 export const ATTESTATION_PREFIX = 'ARKANA::TREASURY::ATTESTATION::v1::';
 

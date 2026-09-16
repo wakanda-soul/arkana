@@ -5,9 +5,9 @@
   "streakTier2Threshold": 3,
   "streakTier3Threshold": 7,
   "treasury": {
-    "address": "7tPPv8qdzSp3J6fGTKpvomHL4iiT3W1PRQ6mv4qc7iQx",
-    "attestationSignature": "4RKE6QJ7szg5EJh7LQ7NKTLuvaRGQDks6yQN8fuKbjrfeMAt9G26V1GmANirfkcAeKi7F5pFFXHWcCogomACRHth",
-    "masterPublicKey": "6NJHiiXPHzHSLQYbyiet93WNSfEDayiPL6b6j9zfdyDz",
+    "address": "4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny",
+    "attestationSignature": "yNE2Um6jZiqJEXkNNMz8Y9Jg8KrJXEpY3gZAGDiy4JGoHu7Mtgzn7p4GNHBUHcxgDK4Rdi2tKbcZyWH2DVYoEJs",
+    "masterPublicKey": "4R6FtpbHdv8WhXy7gHQCaXQbEqTgetqaBcJJSLs8kjW1",
     "version": 1
   }
 }
