@@ -18,7 +18,8 @@
       "package": "com.anonymous.arkana_app",
       "versionCode": 7,
       "softwareKeyboardLayoutMode": "resize",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "launchMode": "singleTop"
     },
     "web": {
       "bundler": "metro",
