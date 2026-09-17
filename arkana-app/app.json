@@ -19,7 +19,7 @@
       "versionCode": 7,
       "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": true,
-      "launchMode": "singleTask"
+      "launchMode": "singleTop"
     },
     "web": {
       "bundler": "metro",

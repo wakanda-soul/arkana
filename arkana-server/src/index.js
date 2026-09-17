@@ -68,7 +68,7 @@ app.get("/download", (req, res) => {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      ${!isReady ? '<meta http-equiv="refresh" content="10">' : ''}
+      ${(!isReady || build.pendingBuild) ? '<meta http-equiv="refresh" content="15">' : ''}
       <title>Arkana: Solana Mobile APK</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -174,6 +174,17 @@ app.get("/download", (req, res) => {
         </div>
         <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
+        ${build.pendingBuild ? `
+          <div style="margin: 14px 0 18px 0; padding: 12px 16px; background: rgba(153, 69, 255, 0.12); border: 1px solid rgba(153, 69, 255, 0.4); border-radius: 12px; font-size: 12px; line-height: 1.5; color: #dcd7fe; text-align: left;">
+            <div style="font-weight: 700; color: #14F195; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>⏳</span> <span>Build #${build.pendingBuild.buildNumber} (v${build.pendingBuild.version}) is compiling in GitHub Actions...</span>
+            </div>
+            <div style="color: #a5a0c2; font-size: 11px;">
+              Current file on mirror: Build #${build.buildNumber} (v${build.version}). As soon as Build #${build.pendingBuild.buildNumber} finishes, it will be automatically mirrored here (page auto-refreshes every 15s).
+            </div>
+          </div>
+        ` : ''}
+
         ${isReady ? `
           <a class="btn" style="background: linear-gradient(135deg, #14F195 0%, #00C853 100%); color: #000; font-weight: 700;" href="https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-v1.0.0-beta.apk">⚡ High-Speed CDN Download (${apkSize})</a>
           <a class="btn btn-sec" href="/arkana.apk" download>🖥️ VPS Server Mirror (${apkSize})</a>

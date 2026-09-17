@@ -22,23 +22,21 @@ export function useAuth() {
   return value
 }
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 function useConnectMutation() {
-  const { connect, signIn } = useMobileWallet()
+  const { connect } = useMobileWallet()
 
   return useMutation({
     mutationFn: async () => {
       try {
         return await connect()
       } catch (err: any) {
-        console.warn('[Auth] Standard connect failed, attempting signIn fallback:', err)
+        console.warn('[Auth] Connect failed or cancelled:', err)
         try {
-          return await signIn({
-            uri: AppConfig.uri,
-          })
-        } catch (signInErr: any) {
-          console.error('[Auth] Both connect and signIn failed:', signInErr)
-          throw err || signInErr
-        }
+          await AsyncStorage.removeItem('arkana_wallet_authorization')
+        } catch {}
+        throw err
       }
     },
   })

@@ -1,4 +1,13 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import {
+  Connection,
+  PublicKey,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
+} from '@solana/web3.js';
+import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+import { APP_IDENTITY } from '@/constants/app-config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 
 export const SOLANA_MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -26,10 +35,109 @@ export function createConsensusMemoInstruction(
   });
 }
 
+export interface ExecuteTransactionParams {
+  connection: Connection;
+  payerKey: PublicKey;
+  instructions: TransactionInstruction[];
+  signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
+}
+
+/**
+ * Universal Solana Mobile transaction executor adhering strictly to
+ * official Solana Mobile Hackathon / MWA 2.0 standards:
+ * 1. Fetches blockhash & slot with getLatestBlockhashAndContext.
+ * 2. Compiles modern VersionedTransaction (compileToV0Message).
+ * 3. Signs & sends via signAndSendTransactions or direct MWA transact fallback.
+ */
+export async function executeSolanaTransaction({
+  connection,
+  payerKey,
+  instructions,
+  signAndSendTransactions,
+}: ExecuteTransactionParams): Promise<{ signature: string; slot?: number }> {
+  let blockhash: string;
+  let minContextSlot: number;
+  try {
+    const res = await connection.getLatestBlockhashAndContext('confirmed');
+    blockhash = res.value.blockhash;
+    minContextSlot = res.context.slot;
+  } catch {
+    const bh = await connection.getLatestBlockhash('confirmed');
+    blockhash = bh.blockhash;
+    try {
+      minContextSlot = await connection.getSlot('confirmed');
+    } catch {
+      minContextSlot = await connection.getSlot();
+    }
+  }
+
+  const message = new TransactionMessage({
+    payerKey,
+    recentBlockhash: blockhash,
+    instructions,
+  }).compileToV0Message();
+
+  const versionedTx = new VersionedTransaction(message);
+
+  let signature: string | undefined;
+
+  if (signAndSendTransactions) {
+    try {
+      const result = await signAndSendTransactions(versionedTx, minContextSlot);
+      signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+    } catch (err: any) {
+      console.warn('[Solana] signAndSendTransactions failed, evaluating fallback:', err);
+      const isUserCancellation =
+        err?.code === -32000 ||
+        err?.code === -32003 ||
+        /cancel|reject|denied|declined/i.test(String(err?.message || ''));
+      if (isUserCancellation) {
+        throw err;
+      }
+
+      // If reauthorization/session issue, clear stale token and execute direct transact
+      try {
+        await AsyncStorage.removeItem('arkana_wallet_authorization');
+      } catch {}
+
+      signature = await transact(async (wallet: Web3MobileWallet) => {
+        await wallet.authorize({
+          chain: 'solana:mainnet',
+          identity: APP_IDENTITY,
+        });
+        const sigs = await wallet.signAndSendTransactions({
+          transactions: [versionedTx],
+          minContextSlot,
+        });
+        return sigs[0];
+      });
+    }
+  } else {
+    signature = await transact(async (wallet: Web3MobileWallet) => {
+      await wallet.authorize({
+        chain: 'solana:mainnet',
+        identity: APP_IDENTITY,
+      });
+      const sigs = await wallet.signAndSendTransactions({
+        transactions: [versionedTx],
+        minContextSlot,
+      });
+      return sigs[0];
+    });
+  }
+
+  let slot: number | undefined = minContextSlot;
+  try {
+    slot = await connection.getSlot('confirmed');
+  } catch {}
+
+  return { signature: signature!, slot };
+}
+
 export interface SubmitProofParams {
   connection: Connection;
   walletPublicKey: PublicKey;
-  signAndSendTransactions: (transaction: any, minContextSlot: any) => Promise<any>;
+  signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
   cardNo: string;
   orientation: 'UPRIGHT' | 'REVERSED';
 }
@@ -49,42 +157,14 @@ export async function submitConsensusProofOnChain({
     timestamp: Date.now(),
   };
 
-  let blockhash: string;
-  let minContextSlot: number;
-  try {
-    const res = await connection.getLatestBlockhashAndContext('confirmed');
-    blockhash = res.value.blockhash;
-    minContextSlot = res.context.slot;
-  } catch {
-    const bh = await connection.getLatestBlockhash('confirmed');
-    blockhash = bh.blockhash;
-    try {
-      minContextSlot = await connection.getSlot('confirmed');
-    } catch {
-      minContextSlot = await connection.getSlot();
-    }
-  }
+  const instruction = createConsensusMemoInstruction(walletPublicKey, payload);
 
-  const transaction = new Transaction({
-    feePayer: walletPublicKey,
-    recentBlockhash: blockhash,
+  return await executeSolanaTransaction({
+    connection,
+    payerKey: walletPublicKey,
+    instructions: [instruction],
+    signAndSendTransactions,
   });
-
-  transaction.add(createConsensusMemoInstruction(walletPublicKey, payload));
-
-  const result = await signAndSendTransactions(transaction, minContextSlot);
-  const signature: string = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
-
-  let slot: number | undefined;
-  try {
-    slot = await connection.getSlot('confirmed');
-  } catch {
-    try {
-      slot = await connection.getSlot();
-    } catch {}
-  }
-
-  return { signature, slot };
 }
 
 export const SKR_MINT = new PublicKey('SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3');
