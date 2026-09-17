@@ -20,10 +20,28 @@
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 0,
-    "dailySpreadsUsed": 0,
-    "lastSpreadDate": "2026-09-16",
-    "totalReadings": 2,
-    "isSeekerHolder": false
+    "dailySpreadsUsed": 2,
+    "lastSpreadDate": "2026-09-17",
+    "totalReadings": 4,
+    "isSeekerHolder": false,
+    "txHistory": [
+      {
+        "timestamp": "2026-09-17T17:35:32.603Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "2tRX9o1iwEPHegw2NLYSzr79zzPapPYpfJcdPkVCdQjCdMMtbVSJjNiQ1Dvb6frZJSELYAHZCAbHSGZFtViwCZna"
+      },
+      {
+        "timestamp": "2026-09-17T21:41:49.645Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "XPYqR5Pjtuo5inMLfcrDx34C7BEaxuUoAre8SBWvpfWJFN6XL9UJsQ4VeQrcs7vgMTwYUx1dUwYdisuVmYWEjDm"
+      }
+    ]
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,

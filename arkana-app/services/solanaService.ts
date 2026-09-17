@@ -4,6 +4,7 @@ import {
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
+  AddressLookupTableAccount,
 } from '@solana/web3.js';
 import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { APP_IDENTITY } from '@/constants/app-config';
@@ -39,6 +40,7 @@ export interface ExecuteTransactionParams {
   connection: Connection;
   payerKey: PublicKey;
   instructions: TransactionInstruction[];
+  addressLookupTableAccounts?: AddressLookupTableAccount[];
   signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
 }
 
@@ -53,6 +55,7 @@ export async function executeSolanaTransaction({
   connection,
   payerKey,
   instructions,
+  addressLookupTableAccounts,
   signAndSendTransactions,
 }: ExecuteTransactionParams): Promise<{ signature: string; slot?: number }> {
   let blockhash: string;
@@ -75,7 +78,7 @@ export async function executeSolanaTransaction({
     payerKey,
     recentBlockhash: blockhash,
     instructions,
-  }).compileToV0Message();
+  }).compileToV0Message(addressLookupTableAccounts);
 
   const versionedTx = new VersionedTransaction(message);
 

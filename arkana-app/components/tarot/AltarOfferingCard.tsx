@@ -6,6 +6,7 @@ import { PublicKey, Connection } from '@solana/web3.js';
 import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage } from '@/services/i18n';
 import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from '@/services/treasuryService';
+import { fetchRealSkrBalance } from '@/services/solanaService';
 import { submitAltarOfferingApi, API_BASE_URL } from '@/services/oracleApi';
 
 interface AltarOfferingCardProps {
@@ -22,11 +23,28 @@ export function AltarOfferingCard({
   onOfferingSuccess,
 }: AltarOfferingCardProps) {
   const { t } = useLanguage();
-  const [selectedAmount, setSelectedAmount] = useState<number>(15);
-  const [solEstimate, setSolEstimate] = useState<string>('~0.003 SOL');
+  const [selectedAmount, setSelectedAmount] = useState<number>(5);
+  const [solEstimate, setSolEstimate] = useState<string>('~0.001 SOL');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showBlessing, setShowBlessing] = useState<boolean>(false);
   const [confirmedTx, setConfirmedTx] = useState<string | null>(null);
+  const [userSkrBalance, setUserSkrBalance] = useState<number | null>(null);
+  const [forceSolMode, setForceSolMode] = useState<boolean>(false);
+  const [wasSwapped, setWasSwapped] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (walletAddress) {
+      fetchRealSkrBalance(connection, new PublicKey(walletAddress))
+        .then((bal) => {
+          if (isMounted) setUserSkrBalance(bal);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [walletAddress, connection, confirmedTx]);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,6 +65,8 @@ export function AltarOfferingCard({
     setSelectedAmount(amount);
   };
 
+  const isSolMode = forceSolMode || (userSkrBalance !== null && userSkrBalance < selectedAmount);
+
   const handleSendOffering = async () => {
     if (!walletAddress || !signAndSendTransactions) {
       return;
@@ -63,8 +83,11 @@ export function AltarOfferingCard({
         treasuryPublicKey: treasuryPubkey,
         amountSkr: selectedAmount,
         actionLabel: 'ALTAR_OFFERING',
+        forceSolSwap: isSolMode,
         signAndSendTransactions,
       });
+
+      setWasSwapped(result.paidWith === 'sol_swap');
 
       // Report offering to backend
       await submitAltarOfferingApi({
@@ -104,20 +127,20 @@ export function AltarOfferingCard({
           <Text style={styles.altarIcon}>{'\u2726'}</Text>
           <View style={styles.titleWrapper}>
             <Text style={styles.titleText}>
-              {t('altar_offering_title', '\u0414\u0410\u0420 \u0410\u041B\u0422\u0410\u0420\u042E \u00B7 ALTAR OFFERING')}
+              {t('altar_offering_title', 'ДАР АЛТАРЮ · ALTAR OFFERING')}
             </Text>
             <Text style={styles.subtitleText}>
               {t(
                 'altar_offering_sub',
-                '50% \u0441\u0436\u0438\u0433\u0430\u0435\u0442\u0441\u044F \u00B7 50% \u0432 \u043A\u0430\u0437\u043D\u0443 \u00B7 Buyback & Burn'
+                '50% сжигается · 50% в казну · Deflationary Burn'
               )}
             </Text>
           </View>
         </View>
 
-        {/* Tier Selector: 5, 15, 50 SKR */}
+        {/* Tier Selector: 1, 5, 15, 50 SKR */}
         <View style={styles.tierSelector}>
-          {[5, 15, 50].map((amount) => {
+          {[1, 5, 15, 50].map((amount) => {
             const isSelected = selectedAmount === amount;
             return (
               <Pressable
@@ -129,25 +152,57 @@ export function AltarOfferingCard({
                   {amount} SKR
                 </Text>
                 <Text style={[styles.tierLabelText, isSelected && styles.tierLabelTextActive]}>
-                  {amount === 5
-                    ? t('tier_minor', '\u0421\u043A\u0440\u043E\u043C\u043D\u044B\u0439')
+                  {amount === 1
+                    ? t('tier_symbolic', 'Символ')
+                    : amount === 5
+                    ? t('tier_minor', 'Скромный')
                     : amount === 15
-                    ? t('tier_sacred', '\u0421\u0432\u044F\u0449\u0435\u043D\u043D\u044B\u0439')
-                    : t('tier_grand', '\u0412\u0435\u043B\u0438\u043A\u0438\u0439')}
+                    ? t('tier_sacred', 'Священный')
+                    : t('tier_grand', 'Великий')}
                 </Text>
               </Pressable>
             );
           })}
         </View>
 
+        {/* Payment Source Selector (SKR vs SOL DEX Swap) */}
+        <View style={styles.sourceSelector}>
+          <Pressable
+            style={[
+              styles.sourceButton,
+              !isSolMode && styles.sourceButtonActive,
+            ]}
+            onPress={() => {
+              if (userSkrBalance !== null && userSkrBalance < selectedAmount) {
+                return;
+              }
+              setForceSolMode(false);
+            }}
+          >
+            <Text style={[styles.sourceButtonText, !isSolMode && styles.sourceButtonTextActive]}>
+              SKR {userSkrBalance !== null ? `(${userSkrBalance.toFixed(1)})` : ''}
+              {userSkrBalance !== null && userSkrBalance < selectedAmount ? ' [мало]' : ''}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.sourceButton,
+              isSolMode && styles.sourceButtonActive,
+            ]}
+            onPress={() => setForceSolMode(true)}
+          >
+            <Text style={[styles.sourceButtonText, isSolMode && styles.sourceButtonTextActive]}>
+              ⚡ SOL (Jupiter Swap)
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Rate indication */}
         <View style={styles.rateRow}>
           <Text style={styles.rateText}>
-            {t(
-              'jupiter_rate_note',
-              '\u041D\u0435\u0442 SKR? \u0410\u0432\u0442\u043E\u0441\u0432\u0430\u043F \u0447\u0435\u0440\u0435\u0437 Jupiter DEX'
-            )}{' '}
-            ({solEstimate})
+            {isSolMode
+              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX ExactOut автосвап')} (${solEstimate}) \u2192 50% в казну + 50% сжигается`
+              : `${t('direct_skr_payment_active', 'Прямой платёж SKR')} \u2192 50% в казну + 50% сжигается`}
           </Text>
         </View>
 
@@ -161,7 +216,9 @@ export function AltarOfferingCard({
             <ActivityIndicator color="#000" size="small" />
           ) : (
             <Text style={styles.submitButtonText}>
-              {t('send_offering_btn', '\u041F\u0420\u0418\u041D\u0415\u0421\u0422\u0418 \u0414\u0410\u0420')} ({selectedAmount} SKR)
+              {isSolMode
+                ? `${t('send_offering_sol_btn', 'СВАПНУТЬ SOL & СЖЕЧЬ 50%')} (${solEstimate})`
+                : `${t('send_offering_btn', 'ПРИНЕСТИ ДАР')} (${selectedAmount} SKR)`}
             </Text>
           )}
         </Pressable>
@@ -173,13 +230,18 @@ export function AltarOfferingCard({
           <View style={styles.modalCard}>
             <Text style={styles.modalIcon}>{'\u2726'}</Text>
             <Text style={styles.modalTitle}>
-              {t('offering_accepted_title', '\u0414\u0410\u0420 \u041F\u0420\u0418\u041D\u042F\u0422 \u0410\u041B\u0422\u0410\u0420\u0401\u041C')}
+              {t('offering_accepted_title', 'ДАР ПРИНЯТ АЛТАРЁМ')}
             </Text>
             <Text style={styles.modalDesc}>
-              {t(
-                'offering_accepted_desc',
-                '\u0412\u0430\u0448 \u0434\u0430\u0440 \u0437\u0430\u0432\u0435\u0440\u0435\u043D \u0432 \u0431\u043B\u043E\u043A\u0447\u0435\u0439\u043D\u0435 Solana. 50% \u0441\u043E\u0436\u0436\u0435\u043D\u043E \u043D\u0430\u0432\u0441\u0435\u0433\u0434\u0430, 50% \u043F\u043E\u0441\u0442\u0443\u043F\u0438\u043B\u043E \u0432 \u043A\u0430\u0437\u043D\u0443.'
-              )}
+              {wasSwapped
+                ? t(
+                    'offering_swap_accepted_desc',
+                    'SOL успешно конвертирован в SKR через Jupiter DEX! 50% сожжено навсегда в блокчейне Solana, 50% поступило в казну.'
+                  )
+                : t(
+                    'offering_accepted_desc',
+                    'Ваш дар заверен в блокчейне Solana. 50% сожжено навсегда, 50% поступило в казну.'
+                  )}
             </Text>
             {confirmedTx && (
               <Text style={styles.modalTx}>
@@ -188,7 +250,7 @@ export function AltarOfferingCard({
             )}
             <Pressable style={styles.modalCloseButton} onPress={() => setShowBlessing(false)}>
               <Text style={styles.modalCloseButtonText}>
-                {t('close_blessing_btn', '\u041F\u0420\u0418\u041D\u042F\u0422\u042C \u0411\u041B\u0410\u0413\u041E\u0421\u041B\u041E\u0412\u0415\u041D\u0418\u0415')}
+                {t('close_blessing_btn', 'ПРИНЯТЬ БЛАГОСЛОВЕНИЕ')}
               </Text>
             </Pressable>
           </View>
@@ -269,6 +331,33 @@ const styles = StyleSheet.create({
   },
   tierLabelTextActive: {
     color: ObsidianTokens.colors.gold.muted,
+  },
+  sourceSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 8,
+    padding: 3,
+    marginVertical: 6,
+  },
+  sourceButton: {
+    flex: 1,
+    paddingVertical: 6,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  sourceButtonActive: {
+    backgroundColor: 'rgba(229, 169, 60, 0.2)',
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+  },
+  sourceButtonText: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sourceButtonTextActive: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontWeight: '800',
   },
   rateRow: {
     alignItems: 'center',

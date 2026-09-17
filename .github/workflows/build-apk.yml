@@ -169,6 +169,7 @@ jobs:
         run: |
           echo "Publishing APKs via gh release tool..."
           gh release upload v1.0.0-beta arkana-latest.apk --clobber || true
+          gh release upload v1.0.0-beta arkana-v1.0.0-beta.apk --clobber || true
           if [ -f "arkana-v1.0.${{ github.run_number }}.apk" ]; then
             gh release upload v1.0.0-beta "arkana-v1.0.${{ github.run_number }}.apk" --clobber || true
           fi

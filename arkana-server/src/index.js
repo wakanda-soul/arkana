@@ -186,13 +186,13 @@ app.get("/download", (req, res) => {
         ` : ''}
 
         ${isReady ? `
-          <a class="btn" style="background: linear-gradient(135deg, #14F195 0%, #00C853 100%); color: #000; font-weight: 700;" href="https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-v1.0.0-beta.apk">⚡ High-Speed CDN Download (${apkSize})</a>
+          <a class="btn" style="background: linear-gradient(135deg, #14F195 0%, #00C853 100%); color: #000; font-weight: 700;" href="https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk">⚡ High-Speed CDN Download (${apkSize})</a>
           <a class="btn btn-sec" href="/arkana.apk" download>🖥️ VPS Server Mirror (${apkSize})</a>
           <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Download Design Kit (78 cards + icons, 22 MB)</a>
           <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
           <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-v1.0.0-beta.apk" alt="QR Code" width="180" height="180" style="display:block;" />
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk" alt="QR Code" width="180" height="180" style="display:block;" />
             <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Scan with phone camera (High Speed)</p>
           </div>
         ` : `
