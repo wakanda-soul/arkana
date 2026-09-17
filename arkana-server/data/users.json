@@ -20,9 +20,9 @@
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 0,
-    "dailySpreadsUsed": 2,
+    "dailySpreadsUsed": 3,
     "lastSpreadDate": "2026-09-17",
-    "totalReadings": 4,
+    "totalReadings": 5,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -40,6 +40,14 @@
         "costSol": 0.0002,
         "itemType": "chat",
         "txSignature": "XPYqR5Pjtuo5inMLfcrDx34C7BEaxuUoAre8SBWvpfWJFN6XL9UJsQ4VeQrcs7vgMTwYUx1dUwYdisuVmYWEjDm"
+      },
+      {
+        "timestamp": "2026-09-17T23:01:08.336Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "Kx1Mc8mic2p3rt4AJZa633HiJpmugKXJxhZqZ3DBW9NcxFtLjnxzrLrWGTm6b1PqZrJYdaxUkSzswanxCJDYL9P"
       }
     ]
   },

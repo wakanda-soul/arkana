@@ -4,17 +4,21 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
 import { AppProviders } from '@/components/app-providers'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { View } from 'react-native'
 import { useTrackLocations } from '@/hooks/use-track-locations'
 import { AppSplashController } from '@/components/app-splash-controller'
+import { soundService } from '@/services/soundService'
 
 import { LanguageSelectionModal } from '@/components/onboarding/LanguageSelectionModal'
 
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
+  useEffect(() => {
+    soundService.init().catch(() => {});
+  }, []);
   // Use this hook to track the locations for analytics or debugging.
   // Delete if you don't need it.
   useTrackLocations((pathname, params) => {
