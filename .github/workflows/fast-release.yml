@@ -1,0 +1,37 @@
+name: Fast Release Artifact to GitHub Releases
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fast-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release Existing Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifact from Run 35245661355
+        uses: actions/download-artifact@v4
+        with:
+          name: arkana-solana-mobile-apk
+          run-id: 35245661355
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inspect and Upload to Release
+        run: |
+          ls -lh
+          echo "Uploading APK to GitHub Release v1.0.0-beta..."
+          gh release upload v1.0.0-beta arkana-latest.apk --clobber
+          if [ -f "arkana-v1.0.68.apk" ]; then
+            gh release upload v1.0.0-beta arkana-v1.0.68.apk --clobber
+          fi
+          echo "Release uploaded successfully!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
