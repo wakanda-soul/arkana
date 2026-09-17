@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   StyleSheet,
   View,
@@ -98,6 +99,36 @@ export default function WalletScreen() {
       setRealSkrBalance(null);
     }
   }, [address, account?.publicKey, connection]);
+
+  // Refresh on-chain SOL, SKR and clock-in state whenever user navigates to Wallet tab
+  useFocusEffect(
+    useCallback(() => {
+      if (!account?.publicKey || !address) return;
+      let isMounted = true;
+      try {
+        const userPub = account.publicKey instanceof PublicKey ? account.publicKey : new PublicKey(account.publicKey);
+        Promise.all([
+          fetchRealSolBalance(connection, userPub),
+          fetchRealSkrBalance(connection, userPub),
+          fetchClockInStatus(address),
+        ]).then(([sol, skr, status]) => {
+          if (isMounted) {
+            setRealSolBalance(sol);
+            setRealSkrBalance(skr);
+            if (status) setClockInState(status);
+          }
+        }).catch(err => {
+          console.warn("Failed to refresh on-chain balances on focus in wallet tab:", err);
+        });
+      } catch {}
+
+      return () => {
+        isMounted = false;
+      };
+    }, [address, account?.publicKey, connection])
+  );
+
+  const displaySkr = realSkrBalance !== null ? realSkrBalance : (clockInState.skrBalance ?? 0);
 
   const copyAddress = () => {
     if (!address) return;
@@ -272,7 +303,7 @@ export default function WalletScreen() {
               <View style={[styles.assetCard, styles.skrCard]}>
                 <Text style={styles.assetLabel}>{t('skr_balance', 'SKR BALANCE')}</Text>
                 <Text style={[styles.assetValue, { color: ObsidianTokens.colors.gold.primary }]}>
-                  {realSkrBalance !== null ? realSkrBalance : 0} SKR
+                  {displaySkr} SKR
                 </Text>
                 <Text style={styles.assetSub}>{t('seeker_oracle_fuel', 'Seeker Oracle Fuel')}</Text>
               </View>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
 import { fetchClockInStatus, executeClockIn, repairStreak, setRemoteSeekerStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
@@ -30,6 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { submitConsensusProofOnChain, fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
+import { PublicKey } from "@solana/web3.js";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -116,11 +117,36 @@ export default function AltarScreen() {
     syncStatus();
 
     if (account?.publicKey) {
-      fetchRealSkrBalance(connection, account.publicKey).then(val => {
-        setOnChainSkr(val);
-      }).catch(() => {});
+      try {
+        const userPub = new PublicKey(account.publicKey);
+        fetchRealSkrBalance(connection, userPub).then(val => {
+          setOnChainSkr(val);
+        }).catch(() => {});
+      } catch {}
     }
   }, [walletAddress, account?.publicKey, connection]);
+
+  // Immediately refresh on-chain SKR balance and holder verification whenever user navigates to Altar tab
+  useFocusEffect(
+    useCallback(() => {
+      if (!walletAddress || !account?.publicKey) return;
+      let isMounted = true;
+      try {
+        const userPub = new PublicKey(account.publicKey);
+        fetchRealSkrBalance(connection, userPub)
+          .then(val => {
+            if (isMounted) setOnChainSkr(val);
+          })
+          .catch(() => {});
+      } catch {}
+
+      return () => {
+        isMounted = false;
+      };
+    }, [walletAddress, account?.publicKey, connection])
+  );
+
+  const displaySkr = onChainSkr !== null ? onChainSkr : (clockInState.skrBalance ?? 0);
 
   const handleSignRitualOnChain = async (card: CardData, orientation: 'UPRIGHT' | 'REVERSED') => {
     try {
@@ -232,7 +258,7 @@ export default function AltarScreen() {
   const handleRepairStreak = async () => {
     if (isRepairing) return;
     const cost = clockInState.streakRepairCostSkr || 1;
-    const currentSkr = onChainSkr !== null ? onChainSkr : 0;
+    const currentSkr = displaySkr;
     if (currentSkr < cost) {
       showError("Insufficient SKR", `You need ${cost} SKR to repair your streak.`);
       return;
@@ -367,7 +393,7 @@ export default function AltarScreen() {
               </View>
               <View style={styles.skrBadge}>
                 <Text style={styles.skrBadgeLabel}>{t('balance', 'BALANCE')}</Text>
-                <Text style={styles.skrText}>{onChainSkr !== null ? onChainSkr : 0} SKR</Text>
+                <Text style={styles.skrText}>{displaySkr} SKR</Text>
               </View>
             </View>
           )}
@@ -376,7 +402,7 @@ export default function AltarScreen() {
         {/* Core Interactive Daily Ritual Loop */}
         <DailyRitualView
           streak={clockInState.streak}
-          skrBalance={onChainSkr !== null ? onChainSkr : 0}
+          skrBalance={displaySkr}
           canRepairStreak={clockInState.canRepairStreak}
           streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
           isAlreadyClockedIn={!clockInState.canClockIn || !!savedSealedCard}
