@@ -116,9 +116,10 @@ export default function AltarScreen() {
 
     syncStatus();
 
-    if (account?.publicKey) {
+    if (account?.publicKey || walletAddress) {
       try {
-        const userPub = new PublicKey(account.publicKey);
+        const pubkeyStr = walletAddress || account.publicKey.toString();
+        const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub).then(val => {
           setOnChainSkr(val);
         }).catch(() => {});
@@ -129,10 +130,11 @@ export default function AltarScreen() {
   // Immediately refresh on-chain SKR balance and holder verification whenever user navigates to Altar tab
   useFocusEffect(
     useCallback(() => {
-      if (!walletAddress || !account?.publicKey) return;
+      if (!walletAddress && !account?.publicKey) return;
       let isMounted = true;
       try {
-        const userPub = new PublicKey(account.publicKey);
+        const pubkeyStr = walletAddress || account.publicKey.toString();
+        const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
           .then(val => {
             if (isMounted) setOnChainSkr(val);
