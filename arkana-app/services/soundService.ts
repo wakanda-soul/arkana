@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Vibration, Platform } from 'react-native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 
 const MUTE_STORAGE_KEY = 'arkana_sound_muted_v1';
 
@@ -14,35 +14,47 @@ const SOUND_CARD_SHUFFLE = require('@/assets/audio/card_shuffle.wav');
 const SOUND_CHIME = require('@/assets/audio/chime.wav');
 const SOUND_TAP = require('@/assets/audio/tap.wav');
 
+const players: Record<string, AudioPlayer | null> = {};
+
 async function configureAudio() {
   if (audioConfigured) return;
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: 'mixWithOthers',
     });
     audioConfigured = true;
   } catch (err) {
-    console.warn('Failed to configure Audio mode:', err);
+    console.warn('[SoundService] Failed to configure Audio mode:', err);
   }
 }
 
-async function playSoundFile(source: any, volume: number = 0.8) {
+function getOrCreatePlayer(key: string, source: any): AudioPlayer | null {
+  try {
+    if (!players[key]) {
+      players[key] = createAudioPlayer(source);
+    }
+    return players[key];
+  } catch (err) {
+    console.warn(`[SoundService] Failed to create player for ${key}:`, err);
+    return null;
+  }
+}
+
+async function playEffect(key: string, source: any, volume: number = 0.8) {
+  if (isMutedState) return;
   try {
     await configureAudio();
-    const { sound } = await Audio.Sound.createAsync(
-      source,
-      { shouldPlay: true, volume },
-      (status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync().catch(() => {});
-        }
-      }
-    );
+    const player = getOrCreatePlayer(key, source);
+    if (!player) return;
+    player.volume = volume;
+    if (player.currentTime > 0) {
+      await player.seekTo(0);
+    }
+    player.play();
   } catch (err) {
-    console.warn('Audio playback warning:', err);
+    console.warn(`[SoundService] Playback warning for ${key}:`, err);
   }
 }
 
@@ -72,13 +84,13 @@ export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' | '
   if (Platform.OS === 'android') {
     try {
       if (type === 'light') {
-        Vibration.vibrate(28);
+        Vibration.vibrate(30);
       } else if (type === 'medium') {
-        Vibration.vibrate(48);
+        Vibration.vibrate(55);
       } else if (type === 'heavy') {
-        Vibration.vibrate(75);
+        Vibration.vibrate(85);
       } else if (type === 'success') {
-        Vibration.vibrate([0, 35, 50, 45]);
+        Vibration.vibrate([0, 40, 50, 45]);
       } else if (type === 'warning' || type === 'error') {
         Vibration.vibrate([0, 50, 60, 50]);
       }
@@ -96,6 +108,11 @@ export const soundService = {
       }
       isInitialized = true;
       await configureAudio();
+      // Pre-warm audio players for instant feedback
+      getOrCreatePlayer('card_flip', SOUND_CARD_FLIP);
+      getOrCreatePlayer('card_shuffle', SOUND_CARD_SHUFFLE);
+      getOrCreatePlayer('chime', SOUND_CHIME);
+      getOrCreatePlayer('tap', SOUND_TAP);
     } catch {}
     return !isMutedState;
   },
@@ -122,25 +139,25 @@ export const soundService = {
   async playCardFlip(): Promise<void> {
     this.triggerHapticFlip();
     if (isMutedState) return;
-    await playSoundFile(SOUND_CARD_FLIP, 0.85);
+    await playEffect('card_flip', SOUND_CARD_FLIP, 0.85);
   },
 
   async playCardShuffle(): Promise<void> {
     this.triggerHapticShuffle();
     if (isMutedState) return;
-    await playSoundFile(SOUND_CARD_SHUFFLE, 0.9);
+    await playEffect('card_shuffle', SOUND_CARD_SHUFFLE, 0.9);
   },
 
   async playConsensusSeal(): Promise<void> {
     this.triggerHapticSeal();
     if (isMutedState) return;
-    await playSoundFile(SOUND_CHIME, 0.95);
+    await playEffect('chime', SOUND_CHIME, 0.95);
   },
 
   async playTap(): Promise<void> {
     this.triggerHapticTap();
     if (isMutedState) return;
-    await playSoundFile(SOUND_TAP, 0.65);
+    await playEffect('tap', SOUND_TAP, 0.65);
   },
 
   triggerHapticFlip(): void {
