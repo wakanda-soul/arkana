@@ -57,8 +57,8 @@ jobs:
           grep -q 'android:usesCleartextTraffic' android/app/src/main/AndroidManifest.xml || sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml || true
           
           # MWA queries for Solana Wallets (Phantom, Solflare, Backpack)
-          grep -q 'solana-wallet' android/app/src/main/AndroidManifest.xml || sed -i 's#</queries>#  <intent><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="solana-wallet"/></intent>\n    <package android:name="app.phantom"/>\n    <package android:name="com.solflare.mobile"/>\n    <package android:name="com.backpack.wallet"/>\n  </queries>#' android/app/src/main/AndroidManifest.xml || true
-          sed -i 's/android:launchMode="singleTask"/android:launchMode="singleTop"/' android/app/src/main/AndroidManifest.xml || true
+          # Ensure launchMode is singleTask for MWA deep-link intents
+          sed -i 's/android:launchMode="singleTop"/android:launchMode="singleTask"/' android/app/src/main/AndroidManifest.xml || true
 
       - name: Build Android APK (Release Standalone)
         working-directory: ./arkana-app/android

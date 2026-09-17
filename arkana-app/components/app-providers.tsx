@@ -7,12 +7,25 @@ import { ClusterProvider, useCluster } from '@/components/cluster/cluster-provid
 import { AppTheme } from '@/components/app-theme'
 import { LanguageProvider } from '@/services/i18n'
 
+import { PublicKey } from '@solana/web3.js'
+
 const identity = {
   name: 'Arkana: The Solana Oracle',
   uri: 'https://github.com/wakanda-soul/arkana',
-  icon: 'https://raw.githubusercontent.com/wakanda-soul/arkana/main/arkana-app/assets/images/icon.png',
+  icon: 'favicon.ico',
 }
 const queryClient = new QueryClient()
+
+function cacheReviver(key: string, value: any) {
+  if (key === 'publicKey' || key === 'address') {
+    try {
+      return new PublicKey(value)
+    } catch {
+      return value
+    }
+  }
+  return value
+}
 
 function createAsyncStorageCache(key: string): WalletAuthorizationCache {
   return {
@@ -24,7 +37,7 @@ function createAsyncStorageCache(key: string): WalletAuthorizationCache {
     async get(): Promise<WalletAuthorization | undefined> {
       try {
         const item = await AsyncStorage.getItem(key)
-        return item ? (JSON.parse(item) as WalletAuthorization) : undefined
+        return item ? (JSON.parse(item, cacheReviver) as WalletAuthorization) : undefined
       } catch {
         return undefined
       }
