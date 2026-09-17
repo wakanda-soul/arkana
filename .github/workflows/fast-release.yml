@@ -17,11 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Artifact from Run 35245661355
+      - name: Download Artifact from Run 35254031922
         uses: actions/download-artifact@v4
         with:
           name: arkana-solana-mobile-apk
-          run-id: 35245661355
+          run-id: 35254031922
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Inspect and Upload to Release
@@ -29,8 +29,8 @@ jobs:
           ls -lh
           echo "Uploading APK to GitHub Release v1.0.0-beta..."
           gh release upload v1.0.0-beta arkana-latest.apk --clobber
-          if [ -f "arkana-v1.0.68.apk" ]; then
-            gh release upload v1.0.0-beta arkana-v1.0.68.apk --clobber
+          if [ -f "arkana-v1.0.70.apk" ]; then
+            gh release upload v1.0.0-beta arkana-v1.0.70.apk --clobber
           fi
           echo "Release uploaded successfully!"
         env:
