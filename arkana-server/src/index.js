@@ -39,11 +39,28 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/cards", express.static(path.join(__dirname, "..", "public", "cards")));
 app.use("/images", express.static(path.join(__dirname, "..", "public", "images")));
 
+// Dynamic Build Metadata Reader
+function getBuildInfo() {
+  const vPath = path.join(__dirname, "..", "public", "version.json");
+  if (fs.existsSync(vPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(vPath, "utf8"));
+    } catch {}
+  }
+  return {
+    version: "1.0.61",
+    buildNumber: 61,
+    commitSha: "3836a65",
+    updatedAt: "2026-09-17"
+  };
+}
+
 // Mobile APK Download Landing Page
 app.get("/download", (req, res) => {
   const apkPath = path.join(__dirname, "..", "public", "arkana.apk");
   const isReady = fs.existsSync(apkPath);
   const apkSize = isReady ? (fs.statSync(apkPath).size / (1024 * 1024)).toFixed(1) + " MB" : null;
+  const build = getBuildInfo();
 
   res.send(`
     <!DOCTYPE html>
@@ -149,7 +166,12 @@ app.get("/download", (req, res) => {
     <body>
       <div class="card">
         <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
-        <h1>🔮 Arkana v1.0.6</h1>
+        <h1>🔮 Arkana v${build.version}</h1>
+        <div style="margin: 8px 0 14px 0;">
+          <span style="display: inline-block; background: rgba(20, 241, 149, 0.12); border: 1px solid #14F195; border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #14F195; font-family: monospace; letter-spacing: 0.5px;">
+            BUILD #${build.buildNumber} · ${build.commitSha}
+          </span>
+        </div>
         <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
         
         ${isReady ? `
@@ -200,13 +222,21 @@ app.get("/download", (req, res) => {
 
 // Health check
 app.get("/api/health", (req, res) => {
+  const build = getBuildInfo();
   res.json({
     status: "ok",
     app: "Arkana - The Solana Oracle API",
-    version: "1.0.6",
+    version: build.version,
+    buildNumber: build.buildNumber,
+    commitSha: build.commitSha,
     hackathon: "Clock In: A Solana Mobile Hackathon",
     network: "Solana Mobile / Seeker"
   });
+});
+
+// App Version & Build info API
+app.get("/api/version", (req, res) => {
+  res.json(getBuildInfo());
 });
 
 // List all 78 cards

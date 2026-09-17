@@ -24,6 +24,7 @@ android/.idea/
 *.tar.gz
 unzipped/
 scripts/
+scratch/
 hackathon_raw_chunk.txt
 hackathon_info.txt
 screenshot_*.jpg
