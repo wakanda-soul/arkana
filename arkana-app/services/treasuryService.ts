@@ -214,7 +214,19 @@ export async function executePaymentOrSwap({
   }
 
   // User has insufficient SKR -> direct SOL transfer with Buyback Memo into Treasury
-  const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
+  let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
+
+  // Solana Protocol Rent-Exemption Guard:
+  // An account with 0 SOL cannot be created with less than 650,240 lamports (~0.00065 SOL).
+  // If the Treasury account is not yet rent-exempt, ensure the transfer meets this threshold
+  // so that transaction simulation never fails with InsufficientFundsForRent.
+  try {
+    const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
+    if (treasuryBalance === 0 && lamports < 650240) {
+      lamports = 650240;
+    }
+  } catch {}
+
   const fallbackInstructions: TransactionInstruction[] = [
     SystemProgram.transfer({
       fromPubkey: payer,
