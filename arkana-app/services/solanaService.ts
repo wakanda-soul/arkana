@@ -94,22 +94,29 @@ export async function executeSolanaTransaction({
         throw err;
       }
 
-      // If reauthorization/session issue, clear stale token and execute direct transact
-      try {
-        await AsyncStorage.removeItem('arkana_wallet_authorization');
-      } catch {}
+      // Only attempt re-authorization fallback if strictly an auth/session token invalidation
+      const isAuthError =
+        err?.code === -32000 ||
+        /auth|session|unauthorized|token/i.test(String(err?.message || ''));
+      if (isAuthError) {
+        try {
+          await AsyncStorage.removeItem('arkana_wallet_authorization');
+        } catch {}
 
-      signature = await transact(async (wallet: Web3MobileWallet) => {
-        await wallet.authorize({
-          chain: 'solana:mainnet',
-          identity: APP_IDENTITY,
+        signature = await transact(async (wallet: Web3MobileWallet) => {
+          await wallet.authorize({
+            chain: 'solana:mainnet',
+            identity: APP_IDENTITY,
+          });
+          const sigs = await wallet.signAndSendTransactions({
+            transactions: [versionedTx],
+            minContextSlot,
+          });
+          return sigs[0];
         });
-        const sigs = await wallet.signAndSendTransactions({
-          transactions: [versionedTx],
-          minContextSlot,
-        });
-        return sigs[0];
-      });
+      } else {
+        throw err;
+      }
     }
   } else {
     signature = await transact(async (wallet: Web3MobileWallet) => {
