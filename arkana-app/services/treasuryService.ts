@@ -11,7 +11,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 // @ts-ignore
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
-import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance } from './solanaService';
+import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance, executeSolanaTransaction } from './solanaService';
 
 /**
  * Arkana Founder Offline Master Public Key
@@ -93,36 +93,28 @@ export async function getLiveSolQuoteForSkr(amountSkr: number): Promise<{ solAmo
 }
 
 /**
- * Build an SPL Token Transfer transaction for direct SKR payments:
+ * Build SPL Token instructions for direct SKR payments:
  * - 50% transferred to Arkana Treasury
  * - 50% burned permanently on-chain (createBurnInstruction)
  */
-export async function buildSkrPaymentTransaction({
-  connection,
+export function buildSkrPaymentInstructions({
   userPublicKey,
   treasuryPublicKey,
   amountSkr,
   actionLabel = 'PAYMENT',
-  blockhash,
 }: {
-  connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
-  blockhash?: string;
-}): Promise<Transaction> {
+}): TransactionInstruction[] {
   const userAta = getAssociatedTokenAddressSync(SKR_MINT, userPublicKey, true);
   const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey, true);
 
-  const bh = blockhash || (await connection.getLatestBlockhash('confirmed')).blockhash;
-  const tx = new Transaction({
-    feePayer: userPublicKey,
-    recentBlockhash: bh,
-  });
+  const instructions: TransactionInstruction[] = [];
 
-  // Ensure Treasury ATA exists idempotently
-  tx.add(
+  // 1. Ensure Treasury ATA exists idempotently
+  instructions.push(
     createAssociatedTokenAccountIdempotentInstruction(
       userPublicKey,
       treasuryAta,
@@ -138,8 +130,8 @@ export async function buildSkrPaymentTransaction({
   const treasuryRaw = totalRaw / 2n;
   const burnRaw = totalRaw - treasuryRaw;
 
-  // 1. Transfer 50% to Treasury
-  tx.add(
+  // 2. Transfer 50% to Treasury
+  instructions.push(
     createTransferInstruction(
       userAta,
       treasuryAta,
@@ -150,8 +142,8 @@ export async function buildSkrPaymentTransaction({
     )
   );
 
-  // 2. Permanently Burn 50%
-  tx.add(
+  // 3. Permanently Burn 50%
+  instructions.push(
     createBurnInstruction(
       userAta,
       SKR_MINT,
@@ -162,9 +154,9 @@ export async function buildSkrPaymentTransaction({
     )
   );
 
-  // 3. Proof Memo
+  // 4. Proof Memo
   const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::TREASURY=50%::BURN=50%::TS=${Date.now()}`;
-  tx.add(
+  instructions.push(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
       keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
@@ -172,13 +164,13 @@ export async function buildSkrPaymentTransaction({
     })
   );
 
-  return tx;
+  return instructions;
 }
 
 /**
- * Universal payment or swap executor:
- * If user has sufficient SKR -> direct 50% Treasury + 50% Burn transaction.
- * If user has insufficient SKR -> auto-swap via Jupiter DEX or SOL Buyback transfer.
+ * Universal payment or swap executor adhering to Solana Mobile Hackathon standard:
+ * - If user has sufficient SKR -> 50% Treasury + 50% Burn via VersionedTransaction.
+ * - If user has insufficient SKR -> SOL Buyback transfer into Treasury via VersionedTransaction.
  */
 export async function executePaymentOrSwap({
   connection,
@@ -193,66 +185,50 @@ export async function executePaymentOrSwap({
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel: string;
-  signAndSendTransactions: (tx: any, minContextSlot: any) => Promise<any>;
+  signAndSendTransactions?: (tx: any, minContextSlot: any) => Promise<any>;
 }): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
-  let blockhash: string;
-  let minContextSlot: number;
-  try {
-    const res = await connection.getLatestBlockhashAndContext('confirmed');
-    blockhash = res.value.blockhash;
-    minContextSlot = res.context.slot;
-  } catch {
-    const bh = await connection.getLatestBlockhash('confirmed');
-    blockhash = bh.blockhash;
-    try {
-      minContextSlot = await connection.getSlot('confirmed');
-    } catch {
-      minContextSlot = await connection.getSlot();
-    }
-  }
-
   const currentSkr = await fetchRealSkrBalance(connection, userPublicKey);
 
   if (currentSkr >= amountSkr) {
     // Direct on-chain SKR transaction: 50% Treasury + 50% Burn
-    const tx = await buildSkrPaymentTransaction({
-      connection,
+    const instructions = buildSkrPaymentInstructions({
       userPublicKey,
       treasuryPublicKey,
       amountSkr,
       actionLabel,
-      blockhash,
     });
-    const result = await signAndSendTransactions(tx, minContextSlot);
-    const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+
+    const { signature } = await executeSolanaTransaction({
+      connection,
+      payerKey: userPublicKey,
+      instructions,
+      signAndSendTransactions,
+    });
+
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
   // User has insufficient SKR -> direct SOL transfer with Buyback Memo into Treasury
   const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-  const fallbackTx = new Transaction({
-    feePayer: userPublicKey,
-    recentBlockhash: blockhash,
-  });
-
-  fallbackTx.add(
+  const fallbackInstructions: TransactionInstruction[] = [
     SystemProgram.transfer({
       fromPubkey: userPublicKey,
       toPubkey: treasuryPublicKey,
       lamports,
-    })
-  );
-
-  const memoText = `ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`;
-  fallbackTx.add(
+    }),
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
       keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
-      data: Buffer.from(memoText, 'utf-8'),
-    })
-  );
+      data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
+    }),
+  ];
 
-  const result = await signAndSendTransactions(fallbackTx, minContextSlot);
-  const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+  const { signature } = await executeSolanaTransaction({
+    connection,
+    payerKey: userPublicKey,
+    instructions: fallbackInstructions,
+    signAndSendTransactions,
+  });
+
   return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
 }

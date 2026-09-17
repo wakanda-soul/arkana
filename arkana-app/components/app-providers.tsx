@@ -7,13 +7,10 @@ import { ClusterProvider, useCluster } from '@/components/cluster/cluster-provid
 import { AppTheme } from '@/components/app-theme'
 import { LanguageProvider } from '@/services/i18n'
 
+import { APP_IDENTITY } from '@/constants/app-config'
 import { PublicKey } from '@solana/web3.js'
 
-const identity = {
-  name: 'Arkana: The Solana Oracle',
-  uri: 'https://github.com/wakanda-soul/arkana',
-  icon: 'favicon.ico',
-}
+const identity = APP_IDENTITY
 const queryClient = new QueryClient()
 
 function cacheReviver(key: string, value: any) {
