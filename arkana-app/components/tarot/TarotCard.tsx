@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CardImages, CARD_BACK } from '@/assets/cards';
 import { useLanguage, localizePosition } from '@/services/i18n';
+import { soundService } from '@/services/soundService';
 
 interface TarotCardProps {
   cardNo: string;
@@ -47,9 +48,7 @@ export function TarotCard({
   }, [isRevealed]);
 
   const handlePress = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    soundService.playCardFlip();
     if (onPress) onPress();
   };
 

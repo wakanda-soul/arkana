@@ -28,6 +28,7 @@ import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { AltarOfferingCard } from "@/components/tarot/AltarOfferingCard";
 import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
+import { soundService } from "@/services/soundService";
 
 export default function SpreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -120,6 +121,7 @@ export default function SpreadScreen() {
 
     setIsShuffling(true);
     setIsLoading(true);
+    soundService.playCardShuffle();
     try {
       const readingPromise = fetchReading(spreadKey, question, walletAddress, payWithSol, language, isSeeker, txSignature);
       const minShuffleWait = new Promise((resolve) => setTimeout(resolve, 1800));
@@ -143,9 +145,7 @@ export default function SpreadScreen() {
             : null
         );
       }
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      soundService.playConsensusSeal();
     } catch (e: any) {
       console.warn("Draw error:", e);
       if (e.message && e.message.includes("5 SKR")) {
@@ -201,9 +201,7 @@ export default function SpreadScreen() {
   const isAllRevealed = hasDrawn && revealedCount >= totalCards;
 
   const revealAll = () => {
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    soundService.playConsensusSeal();
     const fullMap: Record<number, boolean> = {};
     for (let i = 0; i < totalCards; i++) {
       fullMap[i] = true;
@@ -343,11 +341,10 @@ export default function SpreadScreen() {
                 revealedMap={revealedMap}
                 onCardPress={(index: number) => {
                   if (!revealedMap[index]) {
-                    try {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    } catch {}
+                    soundService.playCardFlip();
                     setRevealedMap(prev => ({ ...prev, [index]: true }));
                   } else {
+                    soundService.playTap();
                     setZoomedCard(reading.cards[index]);
                   }
                 }}

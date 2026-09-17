@@ -7,6 +7,7 @@ import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage } from '@/services/i18n';
 import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from '@/services/treasuryService';
 import { fetchRealSkrBalance } from '@/services/solanaService';
+import { soundService } from '@/services/soundService';
 import { submitAltarOfferingApi, API_BASE_URL } from '@/services/oracleApi';
 
 interface AltarOfferingCardProps {
@@ -59,9 +60,7 @@ export function AltarOfferingCard({
   }, [selectedAmount]);
 
   const handleSelectAmount = (amount: number) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    soundService.playTap();
     setSelectedAmount(amount);
   };
 
@@ -73,7 +72,7 @@ export function AltarOfferingCard({
     }
     setIsSubmitting(true);
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      soundService.triggerHapticHeavy();
       const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
       const userPubkey = new PublicKey(walletAddress);
 
@@ -99,12 +98,10 @@ export function AltarOfferingCard({
 
       setConfirmedTx(result.signature);
       setShowBlessing(true);
+      soundService.playConsensusSeal();
       if (onOfferingSuccess) {
         onOfferingSuccess(selectedAmount, result.signature);
       }
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
     } catch (e: any) {
       console.warn('Altar offering error:', e);
       try {

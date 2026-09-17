@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { soundService } from '@/services/soundService';
 import { CardImages } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage, localizePosition, localizePositionHint } from '@/services/i18n';
@@ -57,17 +58,13 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
   const imageSource = CardImages[card.card_no] || CardImages['00'];
 
   const handleClose = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    soundService.playTap();
     setFlippedUpright(false);
     onClose();
   };
 
   const handleToggleOrientation = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    soundService.playCardFlip();
     setFlippedUpright(prev => !prev);
   };
 
