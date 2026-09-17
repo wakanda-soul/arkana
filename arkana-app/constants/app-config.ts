@@ -5,7 +5,7 @@ import { ClusterNetwork } from '@/components/cluster/cluster-network'
 export const APP_IDENTITY = {
   name: 'Arkana: The Solana Oracle',
   uri: 'https://github.com/wakanda-soul/arkana',
-  icon: 'https://raw.githubusercontent.com/wakanda-soul/arkana/main/arkana-app/assets/images/icon.png',
+  icon: 'favicon.ico',
 }
 
 export class AppConfig {
