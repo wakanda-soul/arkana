@@ -108,17 +108,19 @@ export function buildSkrPaymentInstructions({
   amountSkr: number;
   actionLabel?: string;
 }): TransactionInstruction[] {
-  const userAta = getAssociatedTokenAddressSync(SKR_MINT, userPublicKey, true);
-  const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey, true);
+  const payer = new PublicKey(userPublicKey.toString());
+  const treasury = new PublicKey(treasuryPublicKey.toString());
+  const userAta = getAssociatedTokenAddressSync(SKR_MINT, payer, true);
+  const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasury, true);
 
   const instructions: TransactionInstruction[] = [];
 
   // 1. Ensure Treasury ATA exists idempotently
   instructions.push(
     createAssociatedTokenAccountIdempotentInstruction(
-      userPublicKey,
+      payer,
       treasuryAta,
-      treasuryPublicKey,
+      treasury,
       SKR_MINT,
       TOKEN_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -135,7 +137,7 @@ export function buildSkrPaymentInstructions({
     createTransferInstruction(
       userAta,
       treasuryAta,
-      userPublicKey,
+      payer,
       treasuryRaw,
       [],
       TOKEN_PROGRAM_ID
@@ -147,7 +149,7 @@ export function buildSkrPaymentInstructions({
     createBurnInstruction(
       userAta,
       SKR_MINT,
-      userPublicKey,
+      payer,
       burnRaw,
       [],
       TOKEN_PROGRAM_ID
@@ -159,7 +161,7 @@ export function buildSkrPaymentInstructions({
   instructions.push(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
+      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
       data: Buffer.from(memoText, 'utf-8'),
     })
   );
@@ -187,20 +189,23 @@ export async function executePaymentOrSwap({
   actionLabel: string;
   signAndSendTransactions?: (tx: any, minContextSlot: any) => Promise<any>;
 }): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
-  const currentSkr = await fetchRealSkrBalance(connection, userPublicKey);
+  const payer = new PublicKey(userPublicKey.toString());
+  const treasury = new PublicKey(treasuryPublicKey.toString());
+
+  const currentSkr = await fetchRealSkrBalance(connection, payer);
 
   if (currentSkr >= amountSkr) {
     // Direct on-chain SKR transaction: 50% Treasury + 50% Burn
     const instructions = buildSkrPaymentInstructions({
-      userPublicKey,
-      treasuryPublicKey,
+      userPublicKey: payer,
+      treasuryPublicKey: treasury,
       amountSkr,
       actionLabel,
     });
 
     const { signature } = await executeSolanaTransaction({
       connection,
-      payerKey: userPublicKey,
+      payerKey: payer,
       instructions,
       signAndSendTransactions,
     });
@@ -212,20 +217,20 @@ export async function executePaymentOrSwap({
   const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
   const fallbackInstructions: TransactionInstruction[] = [
     SystemProgram.transfer({
-      fromPubkey: userPublicKey,
-      toPubkey: treasuryPublicKey,
+      fromPubkey: payer,
+      toPubkey: treasury,
       lamports,
     }),
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
+      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
       data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
     }),
   ];
 
   const { signature } = await executeSolanaTransaction({
     connection,
-    payerKey: userPublicKey,
+    payerKey: payer,
     instructions: fallbackInstructions,
     signAndSendTransactions,
   });
