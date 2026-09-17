@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   StyleSheet,
   View,
@@ -157,6 +158,28 @@ export default function OracleScreen() {
       }).catch(() => {});
     }
   }, [walletAddress, account?.publicKey, connection]);
+
+  // Refresh on-chain SKR balance and quota info whenever user navigates to Oracle tab
+  useFocusEffect(
+    useCallback(() => {
+      if (!walletAddress || !account?.publicKey) return;
+      let isMounted = true;
+      try {
+        const userPub = account.publicKey instanceof PublicKey ? account.publicKey : new PublicKey(account.publicKey);
+        fetchRealSkrBalance(connection, userPub)
+          .then((val) => {
+            if (isMounted) setOnChainSkr(val);
+          })
+          .catch(() => {});
+        fetchClockInStatus(walletAddress).then((info) => {
+          if (isMounted) setQuotaInfo(info);
+        }).catch(() => {});
+      } catch {}
+      return () => {
+        isMounted = false;
+      };
+    }, [walletAddress, account?.publicKey, connection])
+  );
 
   const handleInitiateSend = (textToSend?: string) => {
     const query = (textToSend || input).trim();
@@ -381,7 +404,7 @@ export default function OracleScreen() {
   const freeRemaining = isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0;
   const askCostSkr = quotaInfo?.askCostSkr || 1;
   const askCostSol = quotaInfo?.askCostSol || 0.0002;
-  const skrBalance = onChainSkr !== null ? onChainSkr : 0;
+  const skrBalance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
 
   const filteredPrompts = selectedCategory === "ALL"
     ? DIVERSE_PROMPTS
