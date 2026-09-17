@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, AddressLookupTableAccount } from '@solana/web3.js';
 import {
   createTransferInstruction,
   createBurnInstruction,
@@ -82,14 +82,48 @@ export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey
 /**
  * Query live Jupiter DEX rate for converting SOL to exact SKR
  */
-export async function getLiveSolQuoteForSkr(amountSkr: number): Promise<{ solAmount: number; lamports: number }> {
-  // Canonical rate: 1 SKR = 0.0002 SOL (1 SOL = 5,000 SKR)
+export async function getLiveSolQuoteForSkr(
+  amountSkr: number
+): Promise<{ solAmount: number; lamports: number; quoteResponse?: any }> {
+  const rawSkrNeeded = Math.round(amountSkr * 1_000_000);
+  try {
+    const res = await fetch(
+      `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${rawSkrNeeded}&swapMode=ExactOut&slippageBps=100`
+    );
+    if (res.ok) {
+      const quote = await res.json();
+      if (quote && quote.inAmount) {
+        const lamports = Number(quote.inAmount);
+        const solAmount = Number((lamports / 1e9).toFixed(6));
+        return { solAmount, lamports, quoteResponse: quote };
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch live Jupiter quote, using fallback rate:', e);
+  }
+
+  // Canonical fallback rate: 1 SKR = 0.0002 SOL (1 SOL = 5,000 SKR)
   const rate = 0.0002;
   const fallbackSol = Number((amountSkr * rate).toFixed(5));
   return {
     solAmount: fallbackSol,
     lamports: Math.round(fallbackSol * 1e9),
   };
+}
+
+/**
+ * Deserialize a Jupiter DEX instruction into a Solana Web3 TransactionInstruction
+ */
+function deserializeJupiterInstruction(instruction: any): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: new PublicKey(instruction.programId),
+    keys: instruction.accounts.map((key: any) => ({
+      pubkey: new PublicKey(key.pubkey),
+      isSigner: key.isSigner,
+      isWritable: key.isWritable,
+    })),
+    data: Buffer.from(instruction.data, 'base64'),
+  });
 }
 
 /**
@@ -169,10 +203,21 @@ export function buildSkrPaymentInstructions({
   return instructions;
 }
 
+export interface ExecutePaymentOrSwapParams {
+  connection: Connection;
+  userPublicKey: PublicKey;
+  treasuryPublicKey: PublicKey;
+  amountSkr: number;
+  actionLabel: string;
+  forceSolSwap?: boolean;
+  signAndSendTransactions?: (tx: any, minContextSlot: any) => Promise<any>;
+}
+
 /**
  * Universal payment or swap executor adhering to Solana Mobile Hackathon standard:
- * - If user has sufficient SKR -> 50% Treasury + 50% Burn via VersionedTransaction.
- * - If user has insufficient SKR -> SOL Buyback transfer into Treasury via VersionedTransaction.
+ * - If user has sufficient SKR (and !forceSolSwap) -> 50% Treasury + 50% Burn via VersionedTransaction.
+ * - If user has insufficient SKR (or forceSolSwap) -> Atomic Jupiter DEX Swap (SOL -> exact SKR) + 50% Treasury + 50% Deflationary Burn in a single atomic transaction.
+ * - Fallback: If Jupiter route is temporarily unavailable, gracefully executes direct SOL Buyback transfer into Treasury.
  */
 export async function executePaymentOrSwap({
   connection,
@@ -180,21 +225,15 @@ export async function executePaymentOrSwap({
   treasuryPublicKey,
   amountSkr,
   actionLabel,
+  forceSolSwap = false,
   signAndSendTransactions,
-}: {
-  connection: Connection;
-  userPublicKey: PublicKey;
-  treasuryPublicKey: PublicKey;
-  amountSkr: number;
-  actionLabel: string;
-  signAndSendTransactions?: (tx: any, minContextSlot: any) => Promise<any>;
-}): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
+}: ExecutePaymentOrSwapParams): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
 
   const currentSkr = await fetchRealSkrBalance(connection, payer);
 
-  if (currentSkr >= amountSkr) {
+  if (!forceSolSwap && currentSkr >= amountSkr) {
     // Direct on-chain SKR transaction: 50% Treasury + 50% Burn
     const instructions = buildSkrPaymentInstructions({
       userPublicKey: payer,
@@ -213,39 +252,179 @@ export async function executePaymentOrSwap({
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
-  // User has insufficient SKR -> direct SOL transfer with Buyback Memo into Treasury
-  let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-
-  // Solana Protocol Rent-Exemption Guard:
-  // An account with 0 SOL cannot be created with less than 650,240 lamports (~0.00065 SOL).
-  // If the Treasury account is not yet rent-exempt, ensure the transfer meets this threshold
-  // so that transaction simulation never fails with InsufficientFundsForRent.
+  // Atomic Jupiter DEX Swap (SOL -> exact SKR) + 50% Treasury + 50% Deflationary Burn
+  const rawSkrNeeded = Math.round(amountSkr * 1_000_000);
   try {
-    const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
-    if (treasuryBalance === 0 && lamports < 650240) {
-      lamports = 650240;
+    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${rawSkrNeeded}&swapMode=ExactOut&slippageBps=100`;
+    const quoteRes = await fetch(quoteUrl);
+    if (!quoteRes.ok) {
+      throw new Error(`Jupiter quote error: ${quoteRes.status} ${quoteRes.statusText}`);
     }
-  } catch {}
+    const quoteData = await quoteRes.json();
+    if (!quoteData || !quoteData.inAmount) {
+      throw new Error('Invalid quote returned from Jupiter DEX API');
+    }
 
-  const fallbackInstructions: TransactionInstruction[] = [
-    SystemProgram.transfer({
-      fromPubkey: payer,
-      toPubkey: treasury,
-      lamports,
-    }),
-    new TransactionInstruction({
-      programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-      data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
-    }),
-  ];
+    const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userPublicKey: payer.toBase58(),
+        quoteResponse: quoteData,
+        wrapAndUnwrapSol: true,
+        useSharedAccounts: true,
+      }),
+    });
 
-  const { signature } = await executeSolanaTransaction({
-    connection,
-    payerKey: payer,
-    instructions: fallbackInstructions,
-    signAndSendTransactions,
-  });
+    if (!insRes.ok) {
+      throw new Error(`Jupiter swap-instructions error: ${insRes.status} ${insRes.statusText}`);
+    }
 
-  return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+    const insData = await insRes.json();
+
+    const swapInstructions: TransactionInstruction[] = [];
+
+    // 1. Compute budget instructions from Jupiter
+    if (insData.computeBudgetInstructions && Array.isArray(insData.computeBudgetInstructions)) {
+      swapInstructions.push(...insData.computeBudgetInstructions.map(deserializeJupiterInstruction));
+    }
+
+    // 2. Setup instructions (WSOL ATA creation / sync / output ATA creation)
+    if (insData.setupInstructions && Array.isArray(insData.setupInstructions)) {
+      swapInstructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
+    }
+
+    // 3. Swap instruction (Raydium CLMM via Jupiter)
+    if (insData.swapInstruction) {
+      swapInstructions.push(deserializeJupiterInstruction(insData.swapInstruction));
+    }
+
+    // 4. Cleanup instruction (unwrap WSOL)
+    if (insData.cleanupInstruction) {
+      swapInstructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
+    }
+
+    // 5. Ensure Treasury ATA exists idempotently
+    const userAta = getAssociatedTokenAddressSync(SKR_MINT, payer, true);
+    const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasury, true);
+
+    swapInstructions.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        payer,
+        treasuryAta,
+        treasury,
+        SKR_MINT,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+
+    // 6. Transfer 50% SKR to Treasury ATA
+    const totalRaw = BigInt(rawSkrNeeded);
+    const treasuryRaw = totalRaw / 2n;
+    const burnRaw = totalRaw - treasuryRaw;
+
+    swapInstructions.push(
+      createTransferInstruction(
+        userAta,
+        treasuryAta,
+        payer,
+        treasuryRaw,
+        [],
+        TOKEN_PROGRAM_ID
+      )
+    );
+
+    // 7. Permanently Burn 50% SKR on-chain
+    swapInstructions.push(
+      createBurnInstruction(
+        userAta,
+        SKR_MINT,
+        payer,
+        burnRaw,
+        [],
+        TOKEN_PROGRAM_ID
+      )
+    );
+
+    // 8. SPL Memo documenting Swap + 50% Treasury + 50% Deflationary Burn
+    const memoText = `ARKANA::${actionLabel}::SWAP_SOL_TO_SKR=${amountSkr}::TREASURY=50%::BURN=50%::TS=${Date.now()}`;
+    swapInstructions.push(
+      new TransactionInstruction({
+        programId: SOLANA_MEMO_PROGRAM_ID,
+        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
+        data: Buffer.from(memoText, 'utf-8'),
+      })
+    );
+
+    // Fetch Address Lookup Tables
+    const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
+    if (insData.addressLookupTableAddresses && Array.isArray(insData.addressLookupTableAddresses)) {
+      const altResults = await Promise.all(
+        insData.addressLookupTableAddresses.map((addr: string) =>
+          connection.getAddressLookupTable(new PublicKey(addr)).catch(() => ({ value: null }))
+        )
+      );
+      for (const res of altResults) {
+        if (res && res.value) {
+          addressLookupTableAccounts.push(res.value);
+        }
+      }
+    }
+
+    const { signature } = await executeSolanaTransaction({
+      connection,
+      payerKey: payer,
+      instructions: swapInstructions,
+      addressLookupTableAccounts,
+      signAndSendTransactions,
+    });
+
+    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+  } catch (swapErr: any) {
+    // If user explicitly rejected or cancelled in Phantom, do NOT fallback!
+    const isUserCancellation =
+      swapErr?.code === -32003 ||
+      /reject|denied|declined|cancel/i.test(String(swapErr?.message || '')) ||
+      (swapErr?.code === -1 && /reject|denied|cancel/i.test(String(swapErr?.message || '')));
+
+    if (isUserCancellation) {
+      throw swapErr;
+    }
+
+    console.warn('Jupiter atomic swap failed or unavailable, falling back to direct SOL treasury transfer:', swapErr);
+
+    // Fallback: direct SOL transfer with Buyback Memo into Treasury
+    let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
+
+    // Solana Protocol Rent-Exemption Guard:
+    try {
+      const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
+      if (treasuryBalance === 0 && lamports < 650240) {
+        lamports = 650240;
+      }
+    } catch {}
+
+    const fallbackInstructions: TransactionInstruction[] = [
+      SystemProgram.transfer({
+        fromPubkey: payer,
+        toPubkey: treasury,
+        lamports,
+      }),
+      new TransactionInstruction({
+        programId: SOLANA_MEMO_PROGRAM_ID,
+        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
+        data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
+      }),
+    ];
+
+    const { signature } = await executeSolanaTransaction({
+      connection,
+      payerKey: payer,
+      instructions: fallbackInstructions,
+      signAndSendTransactions,
+    });
+
+    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+  }
 }
