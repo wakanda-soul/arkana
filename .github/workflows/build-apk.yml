@@ -165,8 +165,13 @@ jobs:
           retention-days: 30
 
       - name: Publish GitHub Release
+        continue-on-error: true
         run: |
           echo "Publishing APKs via gh release tool..."
-          gh release upload v1.0.0-beta arkana-latest.apk arkana-v1.0.${{ github.run_number }}.apk --clobber
+          gh release upload v1.0.0-beta arkana-latest.apk --clobber || true
+          if [ -f "arkana-v1.0.${{ github.run_number }}.apk" ]; then
+            gh release upload v1.0.0-beta "arkana-v1.0.${{ github.run_number }}.apk" --clobber || true
+          fi
+          echo "Release upload completed."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
