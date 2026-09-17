@@ -51,7 +51,7 @@
     "@wallet-ui/react-native-web3js": "^4.3.0",
     "color": "^4.2.3",
     "expo": "~57.0.19",
-    "expo-av": "^16.0.8",
+    "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.17",
     "expo-font": "~57.0.3",
