@@ -30,6 +30,8 @@ function useConnectMutation() {
   return useMutation({
     mutationFn: async () => {
       try {
+        // Clear any stale cached authorization token first to guarantee a fresh MWA handshake
+        await AsyncStorage.removeItem('arkana_wallet_authorization')
         return await connect()
       } catch (err: any) {
         console.warn('[Auth] Connect failed or cancelled:', err)
@@ -48,8 +50,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const value: AuthState = useMemo(
     () => ({
-      signIn: async () => await connectMutation.mutateAsync(),
-      signOut: async () => await disconnect(),
+      signIn: async () => {
+        try {
+          await AsyncStorage.removeItem('arkana_wallet_authorization')
+        } catch {}
+        return await connectMutation.mutateAsync()
+      },
+      signOut: async () => {
+        try {
+          await AsyncStorage.removeItem('arkana_wallet_authorization')
+        } catch {}
+        await disconnect()
+      },
       isAuthenticated: (accounts?.length ?? 0) > 0,
       account: accounts?.[0] ?? null,
       isLoading: connectMutation.isPending,
