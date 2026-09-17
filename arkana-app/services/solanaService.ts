@@ -49,7 +49,21 @@ export async function submitConsensusProofOnChain({
     timestamp: Date.now(),
   };
 
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+  let blockhash: string;
+  let minContextSlot: number;
+  try {
+    const res = await connection.getLatestBlockhashAndContext('confirmed');
+    blockhash = res.value.blockhash;
+    minContextSlot = res.context.slot;
+  } catch {
+    const bh = await connection.getLatestBlockhash('confirmed');
+    blockhash = bh.blockhash;
+    try {
+      minContextSlot = await connection.getSlot('confirmed');
+    } catch {
+      minContextSlot = await connection.getSlot();
+    }
+  }
 
   const transaction = new Transaction({
     feePayer: walletPublicKey,
@@ -58,7 +72,7 @@ export async function submitConsensusProofOnChain({
 
   transaction.add(createConsensusMemoInstruction(walletPublicKey, payload));
 
-  const result = await signAndSendTransactions(transaction, undefined as any);
+  const result = await signAndSendTransactions(transaction, minContextSlot);
   const signature: string = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
 
   let slot: number | undefined;

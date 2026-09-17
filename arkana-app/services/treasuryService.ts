@@ -103,20 +103,22 @@ export async function buildSkrPaymentTransaction({
   treasuryPublicKey,
   amountSkr,
   actionLabel = 'PAYMENT',
+  blockhash,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
+  blockhash?: string;
 }): Promise<Transaction> {
-  const userAta = getAssociatedTokenAddressSync(SKR_MINT, userPublicKey);
-  const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey);
+  const userAta = getAssociatedTokenAddressSync(SKR_MINT, userPublicKey, true);
+  const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasuryPublicKey, true);
 
-  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const bh = blockhash || (await connection.getLatestBlockhash('confirmed')).blockhash;
   const tx = new Transaction({
     feePayer: userPublicKey,
-    recentBlockhash: blockhash,
+    recentBlockhash: bh,
   });
 
   // Ensure Treasury ATA exists idempotently
@@ -193,6 +195,22 @@ export async function executePaymentOrSwap({
   actionLabel: string;
   signAndSendTransactions: (tx: any, minContextSlot: any) => Promise<any>;
 }): Promise<{ signature: string; paidWith: 'skr' | 'sol_swap'; costSkr: number }> {
+  let blockhash: string;
+  let minContextSlot: number;
+  try {
+    const res = await connection.getLatestBlockhashAndContext('confirmed');
+    blockhash = res.value.blockhash;
+    minContextSlot = res.context.slot;
+  } catch {
+    const bh = await connection.getLatestBlockhash('confirmed');
+    blockhash = bh.blockhash;
+    try {
+      minContextSlot = await connection.getSlot('confirmed');
+    } catch {
+      minContextSlot = await connection.getSlot();
+    }
+  }
+
   const currentSkr = await fetchRealSkrBalance(connection, userPublicKey);
 
   if (currentSkr >= amountSkr) {
@@ -203,15 +221,15 @@ export async function executePaymentOrSwap({
       treasuryPublicKey,
       amountSkr,
       actionLabel,
+      blockhash,
     });
-    const result = await signAndSendTransactions(tx, undefined as any);
+    const result = await signAndSendTransactions(tx, minContextSlot);
     const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
   // User has insufficient SKR -> direct SOL transfer with Buyback Memo into Treasury
   const { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-  const { blockhash } = await connection.getLatestBlockhash('confirmed');
   const fallbackTx = new Transaction({
     feePayer: userPublicKey,
     recentBlockhash: blockhash,
@@ -234,7 +252,7 @@ export async function executePaymentOrSwap({
     })
   );
 
-  const result = await signAndSendTransactions(fallbackTx, undefined as any);
+  const result = await signAndSendTransactions(fallbackTx, minContextSlot);
   const signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
   return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
 }
