@@ -40,6 +40,57 @@ jobs:
         working-directory: ./arkana-app
         run: npm ci || npm install --legacy-peer-deps
 
+      - name: Dynamic Versioning & Build Info Injection
+        working-directory: ./arkana-app
+        run: |
+          BUILD_NUM="${{ github.run_number }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          VERSION_NAME="1.0.${BUILD_NUM}"
+          
+          echo "=== Setting up dynamic build metadata ==="
+          echo "Build Number (versionCode): $BUILD_NUM"
+          echo "Version Name: $VERSION_NAME"
+          echo "Commit SHA: $SHORT_SHA"
+
+          # Update app.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            pkg.expo.version = '$VERSION_NAME';
+            if (!pkg.expo.android) pkg.expo.android = {};
+            pkg.expo.android.versionCode = parseInt('$BUILD_NUM', 10);
+            if (!pkg.expo.extra) pkg.expo.extra = {};
+            pkg.expo.extra.buildNumber = '$BUILD_NUM';
+            pkg.expo.extra.commitSha = '$SHORT_SHA';
+            fs.writeFileSync('app.json', JSON.stringify(pkg, null, 2));
+          "
+
+          # Update package.json version
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$VERSION_NAME';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+          # Write constants/build-info.ts
+          cat <<EOF > constants/build-info.ts
+/**
+ * Arkana Build Metadata
+ * Dynamically injected during CI/CD build run.
+ */
+export const APP_VERSION = "$VERSION_NAME";
+export const BUILD_NUMBER = "$BUILD_NUM";
+export const COMMIT_SHA = "$SHORT_SHA";
+export const BUILD_DATE = "$(date -u +'%Y-%m-%d %H:%M UTC')";
+export const BUILD_LABEL = "v$VERSION_NAME · #$BUILD_NUM ($SHORT_SHA)";
+EOF
+
+          echo "Updated app.json:"
+          grep -E '"version"|"versionCode"' app.json
+          echo "Updated constants/build-info.ts:"
+          cat constants/build-info.ts
+
       - name: Expo Prebuild & Configure Build Environment
         working-directory: ./arkana-app
         run: |
@@ -82,13 +133,16 @@ jobs:
           path: arkana-app/android/gradle_build.log
           if-no-files-found: ignore
 
-      - name: Rename APK for Release
+      - name: Prepare APKs for Release
         run: |
+          BUILD_NUM="${{ github.run_number }}"
           APK_FILE=$(find arkana-app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -n "$APK_FILE" ]; then
             echo "Found APK at: $APK_FILE"
+            cp "$APK_FILE" "arkana-v1.0.${BUILD_NUM}.apk"
+            cp "$APK_FILE" arkana-latest.apk
             cp "$APK_FILE" arkana-v1.0.0-beta.apk
-            ls -lh arkana-v1.0.0-beta.apk
+            ls -lh arkana-*.apk
           else
             echo "No APK found in release output directory!"
             find arkana-app/android/app/build/outputs -name "*.apk" || true
@@ -99,25 +153,39 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: arkana-solana-mobile-apk
-          path: arkana-v1.0.0-beta.apk
+          path: |
+            arkana-v1.0.${{ github.run_number }}.apk
+            arkana-latest.apk
+            arkana-v1.0.0-beta.apk
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-beta
-          name: "Arkana v1.0.6 - Solana Mobile Build"
+          name: "Arkana v1.0.${{ github.run_number }} (Build #${{ github.run_number }})"
           body: |
-            ### Arkana: The Solana Oracle (Mobile Release v1.0.6)
-            - Built for **Solana Mobile & Seeker** (versionCode 7, versionName 1.0.6)
-            - Multilingual Sacred Dialect Onboarding: 10 global languages with persistent dialect switching.
-            - Deep Immersion AI Oracle: Live contextual spreads generated for specific querent questions.
-            - Continuous Obsidian Consensus Scroll: 6-beat uninterrupted spiritual oracle synthesis.
-            - Fixed position badge card overlap in spread layouts.
-            - Purged all consumer emojis across the sacred interface.
-            - Streamlined high-performance ARM64 and ARMv7 binary packaging for fast mobile downloads.
-            - Direct download: install `arkana-v1.0.0-beta.apk` on any Android device or Solana Seeker.
-          files: arkana-v1.0.0-beta.apk
+            ### Arkana: The Solana Oracle (Build #${{ github.run_number }})
+            - **Version**: `v1.0.${{ github.run_number }}`
+            - **Android versionCode**: `${{ github.run_number }}`
+            - **Commit**: `${{ github.sha }}`
+            - Built for **Solana Mobile & Seeker**
+
+            #### Download Links:
+            - 📦 **Versioned APK**: [`arkana-v1.0.${{ github.run_number }}.apk`](https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-v1.0.${{ github.run_number }}.apk)
+            - ⚡ **Latest APK Alias**: [`arkana-latest.apk`](https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk)
+            - 🔄 **Legacy Link**: [`arkana-v1.0.0-beta.apk`](https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-v1.0.0-beta.apk)
+
+            #### Build Highlights:
+            - **Dynamic Automated Versioning**: Every push automatically increments `versionCode` and `versionName`.
+            - **Sacred Telemetry Stamp**: In-app build badge on the Profile/ME screen to verify the exact build hash.
+            - **MWA Integration**: `singleTask` launchMode preserved for reliable Phantom, Solflare, and Backpack handshakes.
+            - **50% Treasury / 50% Burn**: Tokenomics for Ask 1 SKR and Seeker Oracle Pass verified on Solana mainnet.
+            - **78 Arcana**: Complete tarot collection with offline caching and obsidian UI.
+          files: |
+            arkana-v1.0.${{ github.run_number }}.apk
+            arkana-latest.apk
+            arkana-v1.0.0-beta.apk
           overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

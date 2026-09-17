@@ -28,6 +28,7 @@ import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnCha
 import { LinearGradient } from "expo-linear-gradient";
 import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from "@/services/treasuryService";
 import { activateSubscriptionApi, API_BASE_URL } from "@/services/oracleApi";
+import { BUILD_LABEL, APP_VERSION, BUILD_NUMBER, COMMIT_SHA } from "@/constants/build-info";
 
 export default function WalletScreen() {
   const { account, isAuthenticated, signIn, signOut } = useAuth();
@@ -555,6 +556,32 @@ export default function WalletScreen() {
             </View>
           </>
         )}
+
+        {/* Sacred Build Telemetry Stamp */}
+        <Pressable
+          style={({ pressed }) => [styles.buildStampCard, pressed && styles.cardPressed]}
+          onPress={() => {
+            Clipboard.setString(`Arkana ${BUILD_LABEL}`);
+            try {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {}
+            Alert.alert(
+              "Arkana Telemetry",
+              `Version: ${APP_VERSION}\nBuild Number: #${BUILD_NUMBER}\nCommit: ${COMMIT_SHA}\nEnvironment: Solana Mobile & Seeker (Mainnet)\n\nCopied to clipboard!`
+            );
+          }}
+        >
+          <View style={styles.buildStampBadge}>
+            <Text style={styles.buildStampBadgeDot}>{'\u25C8'}</Text>
+            <Text style={styles.buildStampBadgeText}>SOLANA MOBILE BUILD</Text>
+          </View>
+          <Text style={styles.buildStampTitle}>
+            ARKANA {BUILD_LABEL}
+          </Text>
+          <Text style={styles.buildStampSubtitle}>
+            Tap to view telemetry & copy build hash
+          </Text>
+        </Pressable>
       </ScrollView>
 
       <SystemStateModal
@@ -1206,5 +1233,46 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     transform: [{ scale: ObsidianTokens.motion.pressScale }],
+  },
+  buildStampCard: {
+    marginTop: 24,
+    marginBottom: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.subtle,
+    backgroundColor: ObsidianTokens.colors.ink.surface,
+    alignItems: "center",
+  },
+  buildStampBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  buildStampBadgeDot: {
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+  },
+  buildStampBadgeText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    fontWeight: "700",
+  },
+  buildStampTitle: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.ink.text,
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: "600",
+  },
+  buildStampSubtitle: {
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
+    color: ObsidianTokens.colors.ink.text42,
+    fontSize: 11,
+    marginTop: 4,
   },
 });
