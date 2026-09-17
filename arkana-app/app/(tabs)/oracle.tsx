@@ -165,7 +165,8 @@ export default function OracleScreen() {
       if (!walletAddress || !account?.publicKey) return;
       let isMounted = true;
       try {
-        const userPub = account.publicKey instanceof PublicKey ? account.publicKey : new PublicKey(account.publicKey);
+        const pubkeyStr = walletAddress || account.publicKey.toString();
+        const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
           .then((val) => {
             if (isMounted) setOnChainSkr(val);
@@ -218,11 +219,8 @@ export default function OracleScreen() {
     const query = pendingQuery || input;
     if (!query) return;
 
-    const userPubkey = account?.publicKey
-      ? new PublicKey(account.publicKey)
-      : walletAddress
-      ? new PublicKey(walletAddress)
-      : null;
+    const userPubkeyStr = walletAddress || (account?.publicKey ? account.publicKey.toString() : "");
+    const userPubkey = userPubkeyStr ? new PublicKey(userPubkeyStr) : null;
 
     if (!userPubkey || !signAndSendTransactions) {
       Alert.alert(

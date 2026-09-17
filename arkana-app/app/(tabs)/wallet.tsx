@@ -106,7 +106,8 @@ export default function WalletScreen() {
       if (!account?.publicKey || !address) return;
       let isMounted = true;
       try {
-        const userPub = account.publicKey instanceof PublicKey ? account.publicKey : new PublicKey(account.publicKey);
+        const pubkeyStr = address || (account?.publicKey ? account.publicKey.toString() : "");
+        const userPub = new PublicKey(pubkeyStr);
         Promise.all([
           fetchRealSolBalance(connection, userPub),
           fetchRealSkrBalance(connection, userPub),
@@ -183,11 +184,8 @@ export default function WalletScreen() {
   }, []);
 
   const handlePurchaseSubscription = async () => {
-    const userPubkey = account?.publicKey
-      ? new PublicKey(account.publicKey)
-      : address
-      ? new PublicKey(address)
-      : null;
+    const userPubkeyStr = address || (account?.publicKey ? account.publicKey.toString() : "");
+    const userPubkey = userPubkeyStr ? new PublicKey(userPubkeyStr) : null;
 
     if (!userPubkey || !signAndSendTransactions) {
       Alert.alert(
