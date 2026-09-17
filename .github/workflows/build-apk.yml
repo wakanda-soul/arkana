@@ -74,17 +74,22 @@ jobs:
           "
 
           # Write constants/build-info.ts
-          cat <<EOF > constants/build-info.ts
-/**
- * Arkana Build Metadata
- * Dynamically injected during CI/CD build run.
- */
-export const APP_VERSION = "$VERSION_NAME";
-export const BUILD_NUMBER = "$BUILD_NUM";
-export const COMMIT_SHA = "$SHORT_SHA";
-export const BUILD_DATE = "$(date -u +'%Y-%m-%d %H:%M UTC')";
-export const BUILD_LABEL = "v$VERSION_NAME · #$BUILD_NUM ($SHORT_SHA)";
-EOF
+          node -e "
+            const fs = require('fs');
+            const lines = [
+              '/**',
+              ' * Arkana Build Metadata',
+              ' * Dynamically injected during CI/CD build run.',
+              ' */',
+              'export const APP_VERSION = \"' + '$VERSION_NAME' + '\";',
+              'export const BUILD_NUMBER = \"' + '$BUILD_NUM' + '\";',
+              'export const COMMIT_SHA = \"' + '$SHORT_SHA' + '\";',
+              'export const BUILD_DATE = \"' + new Date().toISOString().split('T')[0] + '\";',
+              'export const BUILD_LABEL = \"v' + '$VERSION_NAME' + ' · #' + '$BUILD_NUM' + ' (' + '$SHORT_SHA' + ')\";',
+              ''
+            ];
+            fs.writeFileSync('constants/build-info.ts', lines.join('\n'));
+          "
 
           echo "Updated app.json:"
           grep -E '"version"|"versionCode"' app.json
