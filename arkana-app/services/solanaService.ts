@@ -86,11 +86,10 @@ export async function executeSolanaTransaction({
       const result = await signAndSendTransactions(versionedTx, minContextSlot);
       signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
     } catch (err: any) {
-      console.warn('[Solana] signAndSendTransactions failed, evaluating fallback:', err);
       const isUserCancellation =
-        err?.code === -32000 ||
         err?.code === -32003 ||
-        /cancel|reject|denied|declined/i.test(String(err?.message || ''));
+        /reject|denied|declined/i.test(String(err?.message || '')) ||
+        (err?.code === -1 && /reject|denied|cancel/i.test(String(err?.message || '')));
       if (isUserCancellation) {
         throw err;
       }
