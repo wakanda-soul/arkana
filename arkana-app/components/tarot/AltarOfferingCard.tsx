@@ -98,15 +98,13 @@ export function AltarOfferingCard({
 
       setConfirmedTx(result.signature);
       setShowBlessing(true);
-      soundService.playConsensusSeal();
+      soundService.playBurnIgnite();
       if (onOfferingSuccess) {
         onOfferingSuccess(selectedAmount, result.signature);
       }
     } catch (e: any) {
       console.warn('Altar offering error:', e);
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      } catch {}
+      soundService.playTxError();
     } finally {
       setIsSubmitting(false);
     }

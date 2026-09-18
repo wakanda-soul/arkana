@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage, LANGUAGES, LanguageCode } from '@/services/i18n';
+import { soundService } from '@/services/soundService';
 
 export function LanguageSelectionModal() {
   const {
@@ -51,7 +52,10 @@ export function LanguageSelectionModal() {
       animationType="fade"
       transparent={false}
       onRequestClose={() => {
-        if (hasChosenLanguage) closeLanguageModal();
+        if (hasChosenLanguage) {
+          soundService.playModalClose();
+          closeLanguageModal();
+        }
       }}
     >
       <View style={styles.backdrop}>
@@ -63,7 +67,10 @@ export function LanguageSelectionModal() {
             {hasChosenLanguage ? (
               <Pressable
                 style={({ pressed }) => [styles.closeBtn, pressed && styles.cardPressed]}
-                onPress={closeLanguageModal}
+                onPress={() => {
+                  soundService.playModalClose();
+                  closeLanguageModal();
+                }}
                 hitSlop={12}
               >
                 <Text style={styles.closeIcon}>{'\u2715'}</Text>

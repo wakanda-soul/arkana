@@ -216,10 +216,7 @@ export function DailyRitualView({
 
   // Handle stage transitions
   const startShuffle = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    soundService.playCardShuffle();
+    soundService.playDeckGather();
     setStage('shuffle');
 
     // Shuffle loop
@@ -253,13 +250,15 @@ export function DailyRitualView({
   };
 
   const handlePickCard = (indexOffset: number) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {}
-    soundService.playCardFlip();
-
     // Pick a card pseudo-randomly
     const randomCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+    const isMajor = randomCard.arcana === 'major' || randomCard.suit === 'Major Arcana';
+    if (isMajor) {
+      soundService.playMajorArcanaReveal();
+    } else {
+      soundService.playCardDeal();
+    }
+
     const isReversed = Math.random() > 0.8;
     const chosenOrientation = isReversed ? 'REVERSED' : 'UPRIGHT';
 

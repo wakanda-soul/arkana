@@ -53,6 +53,10 @@ export default function SpreadScreen() {
   const { connection, signAndSendTransactions } = useMobileWallet();
 
   useEffect(() => {
+    soundService.playPortalEnter();
+  }, []);
+
+  useEffect(() => {
     if (!walletAddress) return;
     const syncStatus = async () => {
       let isHolder = false;
@@ -341,10 +345,16 @@ export default function SpreadScreen() {
                 revealedMap={revealedMap}
                 onCardPress={(index: number) => {
                   if (!revealedMap[index]) {
-                    soundService.playCardFlip();
+                    const card = reading.cards[index];
+                    const isMajor = card?.arcana === 'major' || card?.suit === 'Major Arcana';
+                    if (isMajor) {
+                      soundService.playMajorArcanaReveal();
+                    } else {
+                      soundService.playCardDeal();
+                    }
                     setRevealedMap(prev => ({ ...prev, [index]: true }));
                   } else {
-                    soundService.playTap();
+                    soundService.playCardFocus();
                     setZoomedCard(reading.cards[index]);
                   }
                 }}
