@@ -38,6 +38,7 @@ import { localizeZoomCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
 import { executePaymentOrSwap, getVerifiedTreasury } from "@/services/treasuryService";
+import { soundService } from "@/services/soundService";
 
 interface ChatMessage {
   id: string;
@@ -259,16 +260,12 @@ export default function OracleScreen() {
   };
 
   const handleReturnTomorrow = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    soundService.playModalClose();
     setSolModalVisible(false);
   };
 
   const executeSendMessage = async (query: string, payWithSol: boolean = false, txSignature?: string | null) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    soundService.playOracleSend();
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -328,9 +325,7 @@ export default function OracleScreen() {
       };
 
       setMessages((prev) => [...prev, oracleMsg]);
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      soundService.triggerHaptic('medium');
     } catch (e: any) {
       if (e.quota && !e.quota.allowed) {
         setPendingQuery(query);

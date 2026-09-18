@@ -76,5 +76,6 @@ temp/
 arkana-server/data/*.jsonl
 arkana-server/data/*.jsonl.gz
 data/*.jsonl
-data/*.jsonl.gz
-
+# Audio showcase vault
+audio_vault/
+arkana-server/public/audio_vault/

@@ -58,7 +58,7 @@ export function CardZoomModal({ card, onClose }: CardZoomModalProps) {
   const imageSource = CardImages[card.card_no] || CardImages['00'];
 
   const handleClose = () => {
-    soundService.playTap();
+    soundService.playModalClose();
     setFlippedUpright(false);
     onClose();
   };

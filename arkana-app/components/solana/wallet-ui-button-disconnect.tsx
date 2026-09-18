@@ -2,6 +2,7 @@ import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { BaseButton } from '@/components/solana/base-button'
 import React, { useState } from 'react'
 import { showError } from '@/utils/show-error'
+import { soundService } from '@/services/soundService'
 
 export function WalletUiButtonDisconnect({ label = 'Disconnect' }: { label?: string }) {
   const { disconnect } = useMobileWallet()
@@ -13,6 +14,7 @@ export function WalletUiButtonDisconnect({ label = 'Disconnect' }: { label?: str
     }
     setIsDisconnecting(true)
     try {
+      soundService.playWalletDisconnect()
       await disconnect()
     } catch (error) {
       showError('Could not disconnect wallet', error)

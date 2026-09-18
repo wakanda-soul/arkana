@@ -22,6 +22,7 @@ import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
 import { useLanguage, localizeArcana, localizeSuit } from "@/services/i18n";
 import { localizeCard } from "@/services/cardLocalization";
+import { soundService } from "@/services/soundService";
 
 export default function CodexScreen() {
   const router = useRouter();
@@ -206,7 +207,7 @@ export default function CodexScreen() {
               ]}
               onPress={() => {
                 try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  soundService.playFilterTab();
                 } catch {}
                 setSelectedFilter(tab.id);
               }}
@@ -372,7 +373,10 @@ export default function CodexScreen() {
 
               <Pressable
                 style={styles.closeButton}
-                onPress={() => setSelectedCard(null)}
+                onPress={() => {
+                  soundService.playModalClose();
+                  setSelectedCard(null);
+                }}
               >
                 <Text style={styles.closeButtonText}>{t('return_to_deck', 'RETURN TO DECK')}</Text>
               </Pressable>
@@ -407,6 +411,7 @@ export default function CodexScreen() {
               <Pressable
                 style={styles.lockedGoAltarBtn}
                 onPress={() => {
+                  soundService.playModalClose();
                   setLockedPreviewCard(null);
                   router.push("/(tabs)");
                 }}
@@ -416,7 +421,10 @@ export default function CodexScreen() {
 
               <Pressable
                 style={styles.lockedCloseBtn}
-                onPress={() => setLockedPreviewCard(null)}
+                onPress={() => {
+                  soundService.playModalClose();
+                  setLockedPreviewCard(null);
+                }}
               >
                 <Text style={styles.lockedCloseText}>{t('close', 'CLOSE')}</Text>
               </Pressable>

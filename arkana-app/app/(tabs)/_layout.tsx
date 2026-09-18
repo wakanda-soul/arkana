@@ -4,6 +4,7 @@ import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
 import { useLanguage } from '@/services/i18n'
+import { soundService } from '@/services/soundService'
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets()
@@ -13,6 +14,11 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => {
+          soundService.playTabSwitch();
+        },
+      }}
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,

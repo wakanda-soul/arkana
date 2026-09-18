@@ -55,6 +55,8 @@ function useConnectMutation() {
   })
 }
 
+import { soundService } from '@/services/soundService'
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const { accounts, disconnect } = useMobileWallet()
   const connectMutation = useConnectMutation()
@@ -64,13 +66,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signIn: async () => {
         try {
           await AsyncStorage.removeItem('arkana_wallet_authorization')
-        } catch {}
-        return await connectMutation.mutateAsync()
+          const result = await connectMutation.mutateAsync()
+          soundService.playWalletConnected()
+          return result
+        } catch (err) {
+          soundService.playTxError()
+          throw err
+        }
       },
       signOut: async () => {
         try {
           await AsyncStorage.removeItem('arkana_wallet_authorization')
         } catch {}
+        soundService.playWalletDisconnect()
         await disconnect()
       },
       isAuthenticated: (accounts?.length ?? 0) > 0,
