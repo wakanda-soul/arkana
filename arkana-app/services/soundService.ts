@@ -1,7 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { Vibration, Platform } from 'react-native';
+import { Vibration, Platform, AppState } from 'react-native';
+import { Asset } from 'expo-asset';
 import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
+
+// Auto-pause / resume ambient hang on background/foreground
+AppState.addEventListener('change', (nextState) => {
+  if (nextState === 'active') {
+    if (isInitialized && !isMutedState && !isAmbientMutedState) {
+      soundService.startAmbientHang();
+    }
+  } else if (nextState.match(/inactive|background/)) {
+    soundService.stopAmbientHang();
+  }
+});
 
 const MUTE_STORAGE_KEY = 'arkana_sound_muted_v1';
 const AMBIENT_STORAGE_KEY = 'arkana_ambient_muted_v1';
@@ -11,22 +23,25 @@ let isAmbientMutedState = false;
 let isInitialized = false;
 let audioConfigured = false;
 
-// 14 Approved Sound Assets
-const SOUND_AMBIENT_HANG = require('@/assets/audio/ambient_hang_loop.mp3');
-const SOUND_CARD_DEAL = require('@/assets/audio/card_deal.wav');
-const SOUND_DECK_GATHER = require('@/assets/audio/deck_gather.wav');
-const SOUND_CARD_FOCUS = require('@/assets/audio/card_focus.wav');
-const SOUND_MAJOR_ARCANA_REVEAL = require('@/assets/audio/major_arcana_reveal.wav');
-const SOUND_PORTAL_ENTER = require('@/assets/audio/portal_enter.wav');
-const SOUND_TAB_SWITCH = require('@/assets/audio/tab_switch.wav');
-const SOUND_MODAL_CLOSE = require('@/assets/audio/modal_close.wav');
-const SOUND_FILTER_TAB = require('@/assets/audio/filter_tab.wav');
-const SOUND_WALLET_CONNECTED = require('@/assets/audio/wallet_connected.wav');
-const SOUND_WALLET_DISCONNECT = require('@/assets/audio/wallet_disconnect.wav');
-const SOUND_TX_ERROR = require('@/assets/audio/tx_error.wav');
-const SOUND_BURN_IGNITE = require('@/assets/audio/burn_ignite.wav');
-const SOUND_ORACLE_SEND = require('@/assets/audio/oracle_send.wav');
+// 14 Mastered Organic Sound Assets
+const SOUND_ASSETS: Record<string, any> = {
+  ambient_hang: require('@/assets/audio/ambient_hang_loop.mp3'),
+  card_deal: require('@/assets/audio/card_deal.wav'),
+  deck_gather: require('@/assets/audio/deck_gather.wav'),
+  card_focus: require('@/assets/audio/card_focus.wav'),
+  major_arcana_reveal: require('@/assets/audio/major_arcana_reveal.wav'),
+  portal_enter: require('@/assets/audio/portal_enter.wav'),
+  tab_switch: require('@/assets/audio/tab_switch.wav'),
+  modal_close: require('@/assets/audio/modal_close.wav'),
+  filter_tab: require('@/assets/audio/filter_tab.wav'),
+  wallet_connected: require('@/assets/audio/wallet_connected.wav'),
+  wallet_disconnect: require('@/assets/audio/wallet_disconnect.wav'),
+  tx_error: require('@/assets/audio/tx_error.wav'),
+  burn_ignite: require('@/assets/audio/burn_ignite.wav'),
+  oracle_send: require('@/assets/audio/oracle_send.wav'),
+};
 
+const cachedUris: Record<string, string> = {};
 const players: Record<string, AudioPlayer | null> = {};
 let ambientPlayer: AudioPlayer | null = null;
 
@@ -44,10 +59,32 @@ async function configureAudio() {
   }
 }
 
+/**
+ * Resolves a bundled asset to a local file:// path using expo-asset.
+ * This ensures Android ExoPlayer accesses real files on disk instead of
+ * failing on obfuscated/compressed resources inside the APK.
+ */
+async function resolveAndCacheAsset(key: string, source: any): Promise<string> {
+  if (cachedUris[key]) return cachedUris[key];
+  try {
+    const [asset] = await Asset.loadAsync(source);
+    const localUri = asset.localUri || asset.uri;
+    if (localUri) {
+      cachedUris[key] = localUri;
+      return localUri;
+    }
+  } catch (e) {
+    console.warn(`[SoundService] Failed to resolve asset ${key}:`, e);
+  }
+  return '';
+}
+
 function getOrCreatePlayer(key: string, source: any): AudioPlayer | null {
   try {
     if (!players[key]) {
-      players[key] = createAudioPlayer(source);
+      const uri = cachedUris[key];
+      const playerSource = uri ? { uri } : source;
+      players[key] = createAudioPlayer(playerSource);
     }
     return players[key];
   } catch (err) {
@@ -56,16 +93,23 @@ function getOrCreatePlayer(key: string, source: any): AudioPlayer | null {
   }
 }
 
-async function playEffect(key: string, source: any, volume: number = 0.8) {
+/**
+ * Plays a sound effect with 0ms latency.
+ * Non-blocking position reset via seekTo ensures repeated rapid taps
+ * never lock up the JavaScript bridge.
+ */
+function playEffect(key: string, source: any, volume: number = 0.85) {
   if (isMutedState) return;
   try {
-    await configureAudio();
+    if (!audioConfigured) {
+      configureAudio().catch(() => {});
+    }
     const player = getOrCreatePlayer(key, source);
     if (!player) return;
     player.volume = volume;
-    if (player.currentTime > 0) {
-      await player.seekTo(0);
-    }
+    try {
+      player.seekTo(0);
+    } catch {}
     player.play();
   } catch (err) {
     console.warn(`[SoundService] Playback warning for ${key}:`, err);
@@ -74,8 +118,9 @@ async function playEffect(key: string, source: any, volume: number = 0.8) {
 
 /**
  * Universal tactile haptic motor trigger.
- * Calls expo-haptics AND native Android Vibration to ensure physical tactile pulses
- * even on Xiaomi/MIUI/HyperOS and devices with system touch vibrations turned off.
+ * Dual-driver combining expo-haptics AND native Android Vibration to ensure
+ * physical tactile pulses even on Xiaomi/POCO/MIUI/HyperOS with system touch
+ * vibrations disabled.
  */
 export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') {
   try {
@@ -94,15 +139,14 @@ export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' | '
     }
   } catch {}
 
-  // Native Vibration for Android guaranteed motor pulse
   if (Platform.OS === 'android') {
     try {
       if (type === 'light') {
-        Vibration.vibrate(25);
+        Vibration.vibrate(28);
       } else if (type === 'medium') {
-        Vibration.vibrate(50);
+        Vibration.vibrate(55);
       } else if (type === 'heavy') {
-        Vibration.vibrate(80);
+        Vibration.vibrate(85);
       } else if (type === 'success') {
         Vibration.vibrate([0, 35, 45, 40]);
       } else if (type === 'warning' || type === 'error') {
@@ -113,6 +157,14 @@ export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' | '
 }
 
 export const soundService = {
+  /**
+   * Initializes audio system:
+   * 1. Reads user preferences from AsyncStorage.
+   * 2. Configures Android audio mode.
+   * 3. Pre-extracts all audio assets to local disk cache via expo-asset.
+   * 4. Pre-warms players for instant 0ms latency playback.
+   * 5. Automatically begins ambient hang loop if enabled.
+   */
   async init(): Promise<boolean> {
     if (isInitialized) return !isMutedState;
     try {
@@ -127,12 +179,23 @@ export const soundService = {
       isInitialized = true;
       await configureAudio();
 
-      // Pre-warm high-frequency UI sound players for instant latency-free clicks
-      getOrCreatePlayer('tab_switch', SOUND_TAB_SWITCH);
-      getOrCreatePlayer('card_deal', SOUND_CARD_DEAL);
-      getOrCreatePlayer('deck_gather', SOUND_DECK_GATHER);
-      getOrCreatePlayer('card_focus', SOUND_CARD_FOCUS);
-      getOrCreatePlayer('modal_close', SOUND_MODAL_CLOSE);
+      // Resolve and extract all audio assets in parallel into local cache
+      const assetKeys = Object.keys(SOUND_ASSETS);
+      await Promise.allSettled(
+        assetKeys.map(async (key) => {
+          const uri = await resolveAndCacheAsset(key, SOUND_ASSETS[key]);
+          if (uri) {
+            getOrCreatePlayer(key, { uri });
+          } else {
+            getOrCreatePlayer(key, SOUND_ASSETS[key]);
+          }
+        })
+      );
+
+      // Auto-start ambient hang loop on app launch if unmuted
+      if (!isMutedState && !isAmbientMutedState) {
+        this.startAmbientHang();
+      }
     } catch (e) {
       console.warn('[SoundService] Init error:', e);
     }
@@ -148,10 +211,10 @@ export const soundService = {
     try {
       await AsyncStorage.setItem(MUTE_STORAGE_KEY, String(isMutedState));
     } catch {}
-    if (isMutedState && ambientPlayer) {
-      try {
-        ambientPlayer.pause();
-      } catch {}
+    if (isMutedState) {
+      this.stopAmbientHang();
+    } else if (!isAmbientMutedState) {
+      this.startAmbientHang();
     }
     return isMutedState;
   },
@@ -161,128 +224,132 @@ export const soundService = {
     try {
       await AsyncStorage.setItem(MUTE_STORAGE_KEY, String(muted));
     } catch {}
-    if (isMutedState && ambientPlayer) {
-      try {
-        ambientPlayer.pause();
-      } catch {}
+    if (isMutedState) {
+      this.stopAmbientHang();
+    } else if (!isAmbientMutedState) {
+      this.startAmbientHang();
     }
   },
 
   // --- Approved Sound Effect Triggers ---
 
   /**
-   * Silk slide of card dealt to altar table (User's Drive card_deal.mp3)
+   * Silk slide of card dealt to altar table
    */
-  async playCardDeal(): Promise<void> {
+  playCardDeal(): void {
     triggerHaptic('light');
-    await playEffect('card_deal', SOUND_CARD_DEAL, 0.85);
+    playEffect('card_deal', SOUND_ASSETS.card_deal, 0.9);
   },
 
   /**
    * Solid altar thump of 78 cards squared after shuffle
    */
-  async playDeckGather(): Promise<void> {
+  playDeckGather(): void {
     triggerHaptic('medium');
-    await playEffect('deck_gather', SOUND_DECK_GATHER, 0.9);
+    playEffect('deck_gather', SOUND_ASSETS.deck_gather, 0.95);
   },
 
   /**
    * Delicate tactile fingertip touch on facedown card
    */
-  async playCardFocus(): Promise<void> {
+  playCardFocus(): void {
     triggerHaptic('light');
-    await playEffect('card_focus', SOUND_CARD_FOCUS, 0.8);
+    playEffect('card_focus', SOUND_ASSETS.card_focus, 0.85);
   },
 
   /**
    * Resonant Tibetan temple gong for Major Arcana card reveals
    */
-  async playMajorArcanaReveal(): Promise<void> {
+  playMajorArcanaReveal(): void {
     triggerHaptic('heavy');
-    await playEffect('major_arcana_reveal', SOUND_MAJOR_ARCANA_REVEAL, 0.95);
+    playEffect('major_arcana_reveal', SOUND_ASSETS.major_arcana_reveal, 0.85);
   },
 
   /**
    * Deep vacuum air whoosh entering the sacred spread arena (1.0s)
    */
-  async playPortalEnter(): Promise<void> {
+  playPortalEnter(): void {
     triggerHaptic('medium');
-    await playEffect('portal_enter', SOUND_PORTAL_ENTER, 0.85);
+    playEffect('portal_enter', SOUND_ASSETS.portal_enter, 0.8);
   },
 
   /**
    * Soft dry tactile click switching bottom navigation tabs
    */
-  async playTabSwitch(): Promise<void> {
+  playTabSwitch(): void {
     triggerHaptic('light');
-    await playEffect('tab_switch', SOUND_TAB_SWITCH, 0.7);
+    playEffect('tab_switch', SOUND_ASSETS.tab_switch, 0.95);
   },
 
   /**
    * Soft parchment/grimoire settling sound closing modals
    */
-  async playModalClose(): Promise<void> {
+  playModalClose(): void {
     triggerHaptic('light');
-    await playEffect('modal_close', SOUND_MODAL_CLOSE, 0.8);
+    playEffect('modal_close', SOUND_ASSETS.modal_close, 0.85);
   },
 
   /**
    * Deep rich rustle of ancient foliant page turn in Codex
    */
-  async playFilterTab(): Promise<void> {
+  playFilterTab(): void {
     triggerHaptic('light');
-    await playEffect('filter_tab', SOUND_FILTER_TAB, 0.8);
+    playEffect('filter_tab', SOUND_ASSETS.filter_tab, 0.85);
   },
 
   /**
-   * Noble temple chord when connecting Solana wallet (User's Drive chord)
+   * Noble temple chord when connecting Solana wallet
    */
-  async playWalletConnected(): Promise<void> {
+  playWalletConnected(): void {
     triggerHaptic('success');
-    await playEffect('wallet_connected', SOUND_WALLET_CONNECTED, 0.85);
+    playEffect('wallet_connected', SOUND_ASSETS.wallet_connected, 0.9);
   },
 
   /**
    * Minimalist soft tactile click disconnecting wallet (0.2s)
    */
-  async playWalletDisconnect(): Promise<void> {
+  playWalletDisconnect(): void {
     triggerHaptic('warning');
-    await playEffect('wallet_disconnect', SOUND_WALLET_DISCONNECT, 0.75);
+    playEffect('wallet_disconnect', SOUND_ASSETS.wallet_disconnect, 0.75);
   },
 
   /**
    * Somber toll of the heavy bronze bell of destiny on transaction failure/error (1.4s)
    */
-  async playTxError(): Promise<void> {
+  playTxError(): void {
     triggerHaptic('error');
-    await playEffect('tx_error', SOUND_TX_ERROR, 0.9);
+    playEffect('tx_error', SOUND_ASSETS.tx_error, 0.85);
   },
 
   /**
    * Powerful sacred altar flame whoosh on SOL -> SKR burn & offering
    */
-  async playBurnIgnite(): Promise<void> {
+  playBurnIgnite(): void {
     triggerHaptic('heavy');
-    await playEffect('burn_ignite', SOUND_BURN_IGNITE, 0.9);
+    playEffect('burn_ignite', SOUND_ASSETS.burn_ignite, 0.8);
   },
 
   /**
    * Tactile scroll click with subtle air trail sending question to oracle (0.12s)
    */
-  async playOracleSend(): Promise<void> {
+  playOracleSend(): void {
     triggerHaptic('light');
-    await playEffect('oracle_send', SOUND_ORACLE_SEND, 0.8);
+    playEffect('oracle_send', SOUND_ASSETS.oracle_send, 0.85);
   },
 
   /**
    * Background Hang Ambient: 90s seamless loop of authentic handpan
    */
-  async startAmbientHang(volume: number = 0.28): Promise<void> {
+  startAmbientHang(volume: number = 0.22): void {
     if (isMutedState || isAmbientMutedState) return;
     try {
-      await configureAudio();
+      if (!audioConfigured) {
+        configureAudio().catch(() => {});
+      }
       if (!ambientPlayer) {
-        ambientPlayer = createAudioPlayer(SOUND_AMBIENT_HANG);
+        const uri = cachedUris['ambient_hang'];
+        const source = uri ? { uri } : SOUND_ASSETS.ambient_hang;
+        ambientPlayer = createAudioPlayer(source);
         ambientPlayer.loop = true;
       }
       ambientPlayer.volume = volume;
@@ -319,20 +386,20 @@ export const soundService = {
 
   // --- Backward Compatibility Aliases ---
 
-  async playCardFlip(): Promise<void> {
-    await this.playCardDeal();
+  playCardFlip(): void {
+    this.playCardDeal();
   },
 
-  async playCardShuffle(): Promise<void> {
-    await this.playDeckGather();
+  playCardShuffle(): void {
+    this.playDeckGather();
   },
 
-  async playConsensusSeal(): Promise<void> {
-    await this.playMajorArcanaReveal();
+  playConsensusSeal(): void {
+    this.playMajorArcanaReveal();
   },
 
-  async playTap(): Promise<void> {
-    await this.playTabSwitch();
+  playTap(): void {
+    this.playTabSwitch();
   },
 
   triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light'): void {
