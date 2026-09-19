@@ -198,6 +198,78 @@ const SPECIFIC_CARD_TEMPLATES: Record<string, ((d: ShareOmenData) => string)[]> 
     (d) =>
       `The cycle completes. Decentralization is no longer an experiment—it is the planetary state machine.\n\nArkana consensus: Mass Adoption (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak. We are early no more; we are here.\n#Solana #ArkanaTarot #Seeker #DeFAI`,
   ],
+
+  // 03: The Seed Phrase (The Empress)
+  '03': [
+    (d) =>
+      `The most critical 12 words of your life. Sovereign custody isn't a feature; it's the entire ethos.\n\nAltar revealed: The Seed Phrase (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak. Guarding sovereign capital with zero trust assumptions.\n#Solana #ArkanaTarot #Seeker #ClockIn`,
+  ],
+
+  // 05: The Whale (The Hierophant)
+  '05': [
+    (d) =>
+      `Whales don't announce their moves on Twitter. They leave footprints in the order books.\n\nArkana consensus: The Whale (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1}. Tracking smart capital while the crowd chases noise.\n#Solana #ArkanaTarot #Seeker #DeFAI`,
+  ],
+
+  // 06: The Strategic Partnership (The Lovers)
+  '06': [
+    (d) =>
+      `In DeFi, alignment is everything. Two protocols sharing liquidity or two minds synchronizing a thesis.\n\nDrawn: The Strategic Partnership (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} clock-in. Synchronizing intent on-chain.\n#Solana #ArkanaTarot #Seeker`,
+  ],
+
+  // 09: The Solo Validator (The Hermit)
+  '09': [
+    (d) =>
+      `While CT was doom-scrolling, the solo validator was optimizing rust clients in the dark.\n\nArkana signal: The Solo Validator (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak. Silence, focus, and uptime.\n#Solana #ArkanaTarot #Seeker #ClockIn`,
+  ],
+
+  // 12: The Staked Position (The Hanged Man)
+  '12': [
+    (d) =>
+      `Voluntarily locking capital to secure consensus. Staking requires patience, trading instant gratification for protocol yield.\n\nArchetype: The Staked Position (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1}. Delayed gratification on @SolanaMobile.\n#Solana #ArkanaTarot #Seeker`,
+  ],
+
+  // 14: Smart Contract Audit (Temperance)
+  '14': [
+    (d) =>
+      `Blending speed with formal verification. The best audit is relentless discipline before testing on production.\n\nConsensus anchor: Smart Contract Audit (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak. Math over emotion.\n#Solana #ArkanaTarot #Seeker #DeFAI`,
+  ],
+
+  // 22: Genesis Block (Ace of Wands)
+  '22': [
+    (d) =>
+      `One single transaction sparked an entire universe. All sovereign movements begin with a spark.\n\nDrawn: Genesis Block (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} clock-in. Igniting the cycle.\n#Solana #ArkanaTarot #Seeker #ClockIn`,
+  ],
+
+  // 28: Gas War (Seven of Wands)
+  '28': [
+    (d) =>
+      `Priority fees spiking, block space contested. Standing firm when the entire mempool contends for the same slot.\n\nArkana battle signal: Gas War (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1}. High-conviction execution under pressure.\n#Solana #ArkanaTarot #Seeker`,
+  ],
+
+  // 35: Yield Farming (Two of Cups)
+  '35': [
+    (d) =>
+      `Mutual liquidity between protocol and user. When incentives align, yields flow naturally without predatory unlocks.\n\nToday's consensus: Yield Farming (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak on Seeker.\n#Solana #ArkanaTarot #DeFi`,
+  ],
+
+  // 59: FOMO Chaser (Knight of Swords)
+  '59': [
+    (d) =>
+      `Market-buying green candles on 10x leverage because the timeline was euphoric. The oracle warns of velocity without direction.\n\nAltar warning: FOMO Chaser (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1}. Slowing down execution to save capital.\n#Solana #ArkanaTarot #Seeker`,
+  ],
+
+  // 64: Private Key (Ace of Pentacles)
+  '64': [
+    (d) =>
+      `The bedrock of personal sovereignty. If you don't control the elliptic curve signatures, you own nothing.\n\nArkana foundation: Private Key (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} streak. Sovereign custody confirmed.\n#Solana #ArkanaTarot #Seeker #ClockIn`,
+  ],
+
+  // 77: DAO Treasury (King of Pentacles)
+  '77': [
+    (d) =>
+      `Architecting generational capital. The sovereign treasury outlasts every four-year cycle by managing risk like a nation-state.\n\nArchetype: DAO Treasury (${d.orientation}).\n\n"${getQuote(d)}"\n\nDay ${d.streak || 1} consensus. Long-horizon stewardship.\n#Solana #ArkanaTarot #Seeker #DeFAI`,
+  ],
 };
 
 // 2. Templates for REVERSED Cards (Shadows, Warnings, Cognitive Bias)

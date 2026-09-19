@@ -68,9 +68,6 @@ export default function WalletScreen() {
     } catch {}
     const muted = await soundService.toggleMute();
     setIsSoundMuted(muted);
-    if (!muted) {
-      soundService.playCardFlip();
-    }
   };
 
   useEffect(() => {
