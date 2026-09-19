@@ -14,7 +14,7 @@ const TWEET_TEMPLATES = [
     `The ledger does not lie. Drawn into my daily consensus on @SolanaMobile Seeker: ${d.cardName} (${d.orientation}).\n\n"${d.proseOmen || 'Consensus confirms the path forward.'}"\n\nStreak: ${d.streak || 1} days 🔥\n#Solana #Seeker #Arkana #ClockIn`,
 
   (d: ShareOmenData) =>
-    `Validating my market mindset before executing the next block. Arkana revealed ${d.cardName} (${d.orientation}) for today's consensus.\n\n"${d.proseOmen || 'Act with the composure of a validator.'}"\n\nDay ${d.streak || 1} streak. Validating conviction over noise.\n#Solana #CryptoTarot #Seeker #DeFAI`,
+    `Validating my market mindset before executing the next block. Arkana revealed ${d.cardName} (${d.orientation}) for today's consensus.\n\n"${d.proseOmen || 'Act with the composure of a validator.'}"\n\nDay ${d.streak || 1} streak. Validating conviction over noise.\n#Solana #ArkanaTarot #Seeker #DeFAI`,
 
   (d: ShareOmenData) =>
     `Block consensus confirmed on @SolanaMobile. Archetype #${d.cardNo}: ${d.cardName} has anchored my daily reading.\n\nTransmission: "${d.proseOmen || 'Every block is irreversible.'}"\n\nConsensus streak: ${d.streak || 1} consecutive blocks.\n#Arkana #SolanaMobile #ClockIn`,
@@ -32,13 +32,12 @@ const TWEET_TEMPLATES = [
 export async function shareToTwitter(data: ShareOmenData) {
   const randomIndex = Math.floor(Math.random() * TWEET_TEMPLATES.length);
   const text = TWEET_TEMPLATES[randomIndex](data);
-  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.webp`;
-  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(mediaUrl)}`;
+  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
 
   try {
     await Linking.openURL(tweetUrl);
   } catch {
-    await Linking.openURL(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(mediaUrl)}`);
+    await Linking.openURL(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`);
   }
 }
 
@@ -48,10 +47,9 @@ export async function shareToTwitter(data: ShareOmenData) {
 export async function shareGeneral(data: ShareOmenData) {
   const randomIndex = Math.floor(Math.random() * TWEET_TEMPLATES.length);
   const text = TWEET_TEMPLATES[randomIndex](data);
-  const mediaUrl = `http://184.174.39.62/cards/${data.cardNo}.webp`;
 
   await Share.share({
-    message: `${text}\n\n${mediaUrl}`,
+    message: text,
     title: `Arkana Consensus: ${data.cardName}`,
   });
 }

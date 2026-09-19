@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 0,
+    "streak": 1,
     "dailySpreadsUsed": 3,
     "lastSpreadDate": "2026-09-17",
-    "totalReadings": 5,
+    "totalReadings": 6,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -48,6 +48,17 @@
         "costSol": 0.0002,
         "itemType": "chat",
         "txSignature": "Kx1Mc8mic2p3rt4AJZa633HiJpmugKXJxhZqZ3DBW9NcxFtLjnxzrLrWGTm6b1PqZrJYdaxUkSzswanxCJDYL9P"
+      }
+    ],
+    "lastClockIn": "2026-09-19T13:40:52.060Z",
+    "history": [
+      {
+        "timestamp": "2026-09-19T13:40:52.060Z",
+        "type": "daily-block",
+        "card": "Exit Position",
+        "card_no": "43",
+        "orientation": "upright",
+        "image": "/cards/43.webp"
       }
     ]
   },
