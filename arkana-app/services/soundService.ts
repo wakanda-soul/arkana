@@ -238,7 +238,7 @@ export const soundService = {
    */
   playCardDeal(): void {
     triggerHaptic('light');
-    playEffect('card_deal', SOUND_ASSETS.card_deal, 0.9);
+    playEffect('card_deal', SOUND_ASSETS.card_deal, 0.7);
   },
 
   /**
@@ -246,7 +246,7 @@ export const soundService = {
    */
   playDeckGather(): void {
     triggerHaptic('medium');
-    playEffect('deck_gather', SOUND_ASSETS.deck_gather, 0.95);
+    playEffect('deck_gather', SOUND_ASSETS.deck_gather, 0.65);
   },
 
   /**
@@ -254,7 +254,7 @@ export const soundService = {
    */
   playCardFocus(): void {
     triggerHaptic('light');
-    playEffect('card_focus', SOUND_ASSETS.card_focus, 0.85);
+    playEffect('card_focus', SOUND_ASSETS.card_focus, 0.65);
   },
 
   /**
@@ -262,7 +262,7 @@ export const soundService = {
    */
   playMajorArcanaReveal(): void {
     triggerHaptic('heavy');
-    playEffect('major_arcana_reveal', SOUND_ASSETS.major_arcana_reveal, 0.85);
+    playEffect('major_arcana_reveal', SOUND_ASSETS.major_arcana_reveal, 0.55);
   },
 
   /**
@@ -270,7 +270,7 @@ export const soundService = {
    */
   playPortalEnter(): void {
     triggerHaptic('medium');
-    playEffect('portal_enter', SOUND_ASSETS.portal_enter, 0.8);
+    playEffect('portal_enter', SOUND_ASSETS.portal_enter, 0.50);
   },
 
   /**
@@ -278,7 +278,7 @@ export const soundService = {
    */
   playTabSwitch(): void {
     triggerHaptic('light');
-    playEffect('tab_switch', SOUND_ASSETS.tab_switch, 0.95);
+    playEffect('tab_switch', SOUND_ASSETS.tab_switch, 0.60);
   },
 
   /**
@@ -286,7 +286,7 @@ export const soundService = {
    */
   playModalClose(): void {
     triggerHaptic('light');
-    playEffect('modal_close', SOUND_ASSETS.modal_close, 0.85);
+    playEffect('modal_close', SOUND_ASSETS.modal_close, 0.60);
   },
 
   /**
@@ -294,7 +294,7 @@ export const soundService = {
    */
   playFilterTab(): void {
     triggerHaptic('light');
-    playEffect('filter_tab', SOUND_ASSETS.filter_tab, 0.85);
+    playEffect('filter_tab', SOUND_ASSETS.filter_tab, 0.60);
   },
 
   /**
@@ -302,7 +302,7 @@ export const soundService = {
    */
   playWalletConnected(): void {
     triggerHaptic('success');
-    playEffect('wallet_connected', SOUND_ASSETS.wallet_connected, 0.9);
+    playEffect('wallet_connected', SOUND_ASSETS.wallet_connected, 0.55);
   },
 
   /**
@@ -310,7 +310,7 @@ export const soundService = {
    */
   playWalletDisconnect(): void {
     triggerHaptic('warning');
-    playEffect('wallet_disconnect', SOUND_ASSETS.wallet_disconnect, 0.75);
+    playEffect('wallet_disconnect', SOUND_ASSETS.wallet_disconnect, 0.50);
   },
 
   /**
@@ -318,7 +318,7 @@ export const soundService = {
    */
   playTxError(): void {
     triggerHaptic('error');
-    playEffect('tx_error', SOUND_ASSETS.tx_error, 0.85);
+    playEffect('tx_error', SOUND_ASSETS.tx_error, 0.55);
   },
 
   /**
@@ -326,7 +326,7 @@ export const soundService = {
    */
   playBurnIgnite(): void {
     triggerHaptic('heavy');
-    playEffect('burn_ignite', SOUND_ASSETS.burn_ignite, 0.8);
+    playEffect('burn_ignite', SOUND_ASSETS.burn_ignite, 0.50);
   },
 
   /**
@@ -334,13 +334,13 @@ export const soundService = {
    */
   playOracleSend(): void {
     triggerHaptic('light');
-    playEffect('oracle_send', SOUND_ASSETS.oracle_send, 0.85);
+    playEffect('oracle_send', SOUND_ASSETS.oracle_send, 0.60);
   },
 
   /**
    * Background Hang Ambient: 90s seamless loop of authentic handpan
    */
-  startAmbientHang(volume: number = 0.22): void {
+  startAmbientHang(volume: number = 0.16): void {
     if (isMutedState || isAmbientMutedState) return;
     try {
       if (!audioConfigured) {
