@@ -300,6 +300,12 @@ export default function AltarScreen() {
       cardNo: card.card_no,
       orientation: card.orientation,
       streak: clockInState.streak,
+      advice: card.advice,
+      shadow: card.shadow,
+      suit: card.suit,
+      arcana: card.arcana,
+      keywords: card.keywords,
+      classic: card.classic,
       proseOmen: dailyReading.prose?.finalOmen || card.advice,
       spreadName: "Daily Consensus Block"
     });
@@ -316,6 +322,12 @@ export default function AltarScreen() {
       cardNo: card.card_no,
       orientation: card.orientation,
       streak: clockInState.streak,
+      advice: card.advice,
+      shadow: card.shadow,
+      suit: card.suit,
+      arcana: card.arcana,
+      keywords: card.keywords,
+      classic: card.classic,
       proseOmen: dailyReading.prose?.finalOmen || card.advice,
       spreadName: "Daily Consensus Block"
     });

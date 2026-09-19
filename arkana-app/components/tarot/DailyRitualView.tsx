@@ -354,6 +354,12 @@ export function DailyRitualView({
       cardNo: selectedCard.card_no,
       orientation: orientation.toLowerCase() as 'upright' | 'reversed',
       streak: streak,
+      advice: selectedCard.advice,
+      shadow: selectedCard.shadow,
+      suit: selectedCard.suit,
+      arcana: selectedCard.arcana,
+      keywords: selectedCard.keywords,
+      classic: selectedCard.classic,
       proseOmen: selectedCard.advice,
       spreadName: 'Daily Consensus Block',
     });
