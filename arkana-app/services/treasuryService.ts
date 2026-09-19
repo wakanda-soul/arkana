@@ -252,6 +252,43 @@ export async function executePaymentOrSwap({
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
+  // For micro-service fees (EXTRA_SPREAD / ORACLE_ASK), execute direct SOL Buyback Transfer
+  // into Treasury with on-chain Memo. This guarantees 1 single transaction and 1 single Phantom prompt,
+  // completely avoiding DEX liquidity slippage failures and duplicate wallet prompts!
+  if (!forceSolSwap && currentSkr < amountSkr && (actionLabel === 'EXTRA_SPREAD' || actionLabel === 'ORACLE_ASK')) {
+    let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
+
+    // Solana Protocol Rent-Exemption Guard:
+    try {
+      const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
+      if (treasuryBalance === 0 && lamports < 650240) {
+        lamports = 650240;
+      }
+    } catch {}
+
+    const directSolInstructions: TransactionInstruction[] = [
+      SystemProgram.transfer({
+        fromPubkey: payer,
+        toPubkey: treasury,
+        lamports,
+      }),
+      new TransactionInstruction({
+        programId: SOLANA_MEMO_PROGRAM_ID,
+        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
+        data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
+      }),
+    ];
+
+    const { signature } = await executeSolanaTransaction({
+      connection,
+      payerKey: payer,
+      instructions: directSolInstructions,
+      signAndSendTransactions,
+    });
+
+    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+  }
+
   // Atomic Jupiter DEX Swap (SOL -> exact SKR) + 50% Treasury + 50% Deflationary Burn
   const rawSkrNeeded = Math.round(amountSkr * 1_000_000);
   try {
@@ -385,8 +422,10 @@ export async function executePaymentOrSwap({
     // If user explicitly rejected or cancelled in Phantom, do NOT fallback!
     const isUserCancellation =
       swapErr?.code === -32003 ||
-      /reject|denied|declined|cancel/i.test(String(swapErr?.message || '')) ||
-      (swapErr?.code === -1 && /reject|denied|cancel/i.test(String(swapErr?.message || '')));
+      swapErr?.code === 4001 ||
+      /reject|denied|declined|cancel|cancelled|canceled|closed|dismissed|abort/i.test(
+        String(swapErr?.message || '')
+      );
 
     if (isUserCancellation) {
       throw swapErr;

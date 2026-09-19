@@ -23,9 +23,14 @@ let isAmbientMutedState = false;
 let isInitialized = false;
 let audioConfigured = false;
 
-// 14 Mastered Organic Sound Assets
+// 19 Mastered Organic Sound Assets & Ambient Segments
 const SOUND_ASSETS: Record<string, any> = {
-  ambient_hang: require('@/assets/audio/ambient_hang_loop.mp3'),
+  ambient_hang_1: require('@/assets/audio/ambient_hang_1.mp3'),
+  ambient_hang_2: require('@/assets/audio/ambient_hang_2.mp3'),
+  ambient_hang_3: require('@/assets/audio/ambient_hang_3.mp3'),
+  ambient_hang_4: require('@/assets/audio/ambient_hang_4.mp3'),
+  ambient_hang_5: require('@/assets/audio/ambient_hang_5.mp3'),
+  ambient_hang: require('@/assets/audio/ambient_hang_1.mp3'),
   card_deal: require('@/assets/audio/card_deal.wav'),
   deck_gather: require('@/assets/audio/deck_gather.wav'),
   card_focus: require('@/assets/audio/card_focus.wav'),
@@ -40,6 +45,25 @@ const SOUND_ASSETS: Record<string, any> = {
   burn_ignite: require('@/assets/audio/burn_ignite.wav'),
   oracle_send: require('@/assets/audio/oracle_send.wav'),
 };
+
+const AMBIENT_KEYS = [
+  'ambient_hang_1',
+  'ambient_hang_2',
+  'ambient_hang_3',
+  'ambient_hang_4',
+  'ambient_hang_5',
+];
+let currentAmbientIndex = -1;
+let ambientStatusSubscription: { remove: () => void } | null = null;
+
+function pickNextAmbientKey(): string {
+  let nextIdx = Math.floor(Math.random() * AMBIENT_KEYS.length);
+  if (nextIdx === currentAmbientIndex && AMBIENT_KEYS.length > 1) {
+    nextIdx = (nextIdx + 1) % AMBIENT_KEYS.length;
+  }
+  currentAmbientIndex = nextIdx;
+  return AMBIENT_KEYS[nextIdx];
+}
 
 const cachedUris: Record<string, string> = {};
 const players: Record<string, AudioPlayer | null> = {};
@@ -94,9 +118,9 @@ function getOrCreatePlayer(key: string, source: any): AudioPlayer | null {
 }
 
 /**
- * Plays a sound effect with 0ms latency.
- * Non-blocking position reset via seekTo ensures repeated rapid taps
- * never lock up the JavaScript bridge.
+ * Plays a sound effect with near 0ms latency.
+ * Lazy player creation ensures Android AudioTrack limits are never exceeded.
+ * Recovers automatically if a native player is ever dropped or interrupted.
  */
 function playEffect(key: string, source: any, volume: number = 0.85) {
   if (isMutedState) return;
@@ -104,15 +128,26 @@ function playEffect(key: string, source: any, volume: number = 0.85) {
     if (!audioConfigured) {
       configureAudio().catch(() => {});
     }
-    const player = getOrCreatePlayer(key, source);
-    if (!player) return;
+    const uri = cachedUris[key];
+    const playerSource = uri ? { uri } : source;
+    let player = players[key];
+    if (!player) {
+      player = createAudioPlayer(playerSource);
+      players[key] = player;
+    }
     player.volume = volume;
     try {
-      player.seekTo(0);
+      if (player.currentTime > 0) {
+        player.seekTo(0);
+      }
     } catch {}
     player.play();
   } catch (err) {
     console.warn(`[SoundService] Playback warning for ${key}:`, err);
+    try {
+      players[key]?.remove();
+    } catch {}
+    players[key] = null;
   }
 }
 
@@ -179,17 +214,12 @@ export const soundService = {
       isInitialized = true;
       await configureAudio();
 
-      // Resolve and extract all audio assets in parallel into local cache
+      // Pre-extract all audio assets into local disk cache via expo-asset
+      // We do NOT pre-instantiate AudioPlayer instances here to prevent
+      // Android AudioTrack / ExoPlayer limit exhaustion!
       const assetKeys = Object.keys(SOUND_ASSETS);
       await Promise.allSettled(
-        assetKeys.map(async (key) => {
-          const uri = await resolveAndCacheAsset(key, SOUND_ASSETS[key]);
-          if (uri) {
-            getOrCreatePlayer(key, { uri });
-          } else {
-            getOrCreatePlayer(key, SOUND_ASSETS[key]);
-          }
-        })
+        assetKeys.map((key) => resolveAndCacheAsset(key, SOUND_ASSETS[key]))
       );
 
       // Auto-start ambient hang loop on app launch if unmuted
@@ -282,11 +312,11 @@ export const soundService = {
   },
 
   /**
-   * Soft parchment/grimoire settling sound closing modals
+   * Soft parchment/grimoire settling sound closing modals (-30% volume)
    */
   playModalClose(): void {
     triggerHaptic('light');
-    playEffect('modal_close', SOUND_ASSETS.modal_close, 0.60);
+    playEffect('modal_close', SOUND_ASSETS.modal_close, 0.42);
   },
 
   /**
@@ -338,7 +368,8 @@ export const soundService = {
   },
 
   /**
-   * Background Hang Ambient: 90s seamless loop of authentic handpan
+   * Background Hang Ambient: 5 organic handpan meditative segments (~60s each)
+   * with 3.0s fade-in and 3.5s fade-out, randomly sequenced.
    */
   startAmbientHang(volume: number = 0.16): void {
     if (isMutedState || isAmbientMutedState) return;
@@ -346,16 +377,49 @@ export const soundService = {
       if (!audioConfigured) {
         configureAudio().catch(() => {});
       }
-      if (!ambientPlayer) {
-        const uri = cachedUris['ambient_hang'];
-        const source = uri ? { uri } : SOUND_ASSETS.ambient_hang;
-        ambientPlayer = createAudioPlayer(source);
-        ambientPlayer.loop = true;
+      if (ambientPlayer && ambientPlayer.playing) {
+        return;
       }
-      ambientPlayer.volume = volume;
-      ambientPlayer.play();
+      if (ambientPlayer && ambientPlayer.paused) {
+        ambientPlayer.volume = volume;
+        ambientPlayer.play();
+        return;
+      }
+      this.playNextRandomAmbient(volume);
     } catch (err) {
       console.warn('[SoundService] Ambient playback warning:', err);
+    }
+  },
+
+  playNextRandomAmbient(volume: number = 0.16): void {
+    if (isMutedState || isAmbientMutedState) return;
+    try {
+      if (ambientStatusSubscription) {
+        try {
+          ambientStatusSubscription.remove();
+        } catch {}
+        ambientStatusSubscription = null;
+      }
+      if (ambientPlayer) {
+        try {
+          ambientPlayer.remove();
+        } catch {}
+        ambientPlayer = null;
+      }
+      const key = pickNextAmbientKey();
+      const uri = cachedUris[key];
+      const source = uri ? { uri } : SOUND_ASSETS[key];
+      ambientPlayer = createAudioPlayer(source);
+      ambientPlayer.loop = false;
+      ambientPlayer.volume = volume;
+      ambientStatusSubscription = ambientPlayer.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          this.playNextRandomAmbient(volume);
+        }
+      });
+      ambientPlayer.play();
+    } catch (err) {
+      console.warn('[SoundService] playNextRandomAmbient error:', err);
     }
   },
 

@@ -250,6 +250,7 @@ export default function OracleScreen() {
       await executeSendMessage(query, false, paymentResult.signature);
     } catch (err: any) {
       console.warn('Paid commune payment error:', err);
+      soundService.playTxError();
       Alert.alert(
         t('offering_failed_title', 'Offering Incomplete'),
         err?.message || t('offering_failed_desc', 'Transaction could not be confirmed. No funds were debited.')

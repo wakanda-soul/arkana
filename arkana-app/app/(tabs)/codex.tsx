@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -27,6 +27,7 @@ import { soundService } from "@/services/soundService";
 export default function CodexScreen() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const filterScrollXRef = useRef(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterUnlockedOnly, setFilterUnlockedOnly] = useState(false);
@@ -197,7 +198,16 @@ export default function CodexScreen() {
 
       {/* Filter Tabs */}
       <View style={styles.filtersWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScroll}
+          contentOffset={{ x: filterScrollXRef.current, y: 0 }}
+          onScroll={(e) => {
+            filterScrollXRef.current = e.nativeEvent.contentOffset.x;
+          }}
+          scrollEventThrottle={16}
+        >
           {filterTabs.map(tab => (
             <Pressable
               key={tab.id}

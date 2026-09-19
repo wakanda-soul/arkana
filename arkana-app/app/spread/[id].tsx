@@ -35,7 +35,7 @@ export default function SpreadScreen() {
   const router = useRouter();
   const spreadKey = id || "network-scan";
 
-  const { account } = useAuth();
+  const { account, signIn } = useAuth();
   const { language, t } = useLanguage();
   const walletAddress = account?.publicKey?.toString() || "";
 
@@ -89,7 +89,14 @@ export default function SpreadScreen() {
     } catch {}
 
     if (!account?.publicKey || !walletAddress) {
-      setQuotaError(t("connect_wallet_desc", "Connect via Solana Mobile Wallet Adapter or Phantom to seal consensus on-chain."));
+      try {
+        setIsLoading(true);
+        await signIn();
+      } catch (e: any) {
+        console.warn("Wallet connect in spread:", e);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -118,6 +125,7 @@ export default function SpreadScreen() {
         txSignature = paymentResult.signature;
       } catch (payErr: any) {
         console.warn("Payment error:", payErr);
+        soundService.playTxError();
         setQuotaError(payErr?.message || "Payment cancelled or dropped.");
         return;
       }
@@ -289,17 +297,21 @@ export default function SpreadScreen() {
                 <View style={styles.quotaBadge}>
                   <Text style={styles.quotaIcon}>{'\u2726'}</Text>
                   <Text style={styles.quotaTitle}>
-                    {hasFreeRemaining
+                    {!walletAddress
+                      ? t('connect_wallet_hint', 'Connect wallet to cast spread and seal consensus')
+                      : hasFreeRemaining
                       ? t('free_spreads_avail', '{n} Free Spreads Available', { n: quotaInfo?.freeSpreadsRemaining ?? 3 })
                       : balance >= extraCost
                       ? t('daily_allowance_reached_skr', 'Daily free allowance reached ({cost} SKR / spread)', { cost: extraCost })
                       : t('daily_allowance_reached_sol', 'Daily free allowance reached ({cost} SOL / spread)', { cost: extraCostSol })}
                   </Text>
                 </View>
-                <Text style={styles.balanceText}>{balance} SKR</Text>
+                {walletAddress ? (
+                  <Text style={styles.balanceText}>{balance} SKR</Text>
+                ) : null}
               </View>
 
-              {!hasFreeRemaining && (
+              {walletAddress && !hasFreeRemaining && (
                 <Text style={styles.warningText}>
                   {balance >= extraCost
                     ? t('exhausted_skr_desc', 'Your daily free allowance is exhausted. This casting will deduct {cost} SKR from your balance.', { cost: extraCost })
@@ -326,7 +338,9 @@ export default function SpreadScreen() {
                 <ActivityIndicator color="#100C06" />
               ) : (
                 <Text style={styles.drawButtonText}>
-                  {hasFreeRemaining
+                  {!walletAddress
+                    ? t('connect_wallet', 'CONNECT WALLET')
+                    : hasFreeRemaining
                     ? t('cast_the_spread', 'CAST THE SPREAD')
                     : balance >= extraCost
                     ? t('cast_for_skr', 'CAST FOR {cost} SKR', { cost: extraCost })
