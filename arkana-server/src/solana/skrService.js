@@ -99,11 +99,11 @@ function isUserSubscribed(user) {
 
 function getStreakMilestoneReward(streak = 0) {
   if (!streak || streak <= 0) return 0;
-  const cycleDay = ((streak - 1) % 28) + 1;
-  if (cycleDay === 28) return 5;
-  if (cycleDay === 21) return 3;
-  if (cycleDay === 14) return 2;
-  if (cycleDay === 7) return 1;
+  if (streak === 7) return 1;
+  if (streak === 14) return 2;
+  if (streak === 21) return 3;
+  // Day 28 and every 7 days thereafter (35, 42, 49, 56...) awards +5 bonus spreads
+  if (streak >= 28 && streak % 7 === 0) return 5;
   return 0;
 }
 
@@ -235,9 +235,11 @@ function recordClockIn(walletAddress, drawnCard) {
       user.streak = (user.streak || 0) + 1;
     } else {
       user.streak = 1;
+      user.claimedStreakMilestones = [];
     }
   } else {
     user.streak = 1;
+    user.claimedStreakMilestones = [];
   }
 
   user.lastClockIn = now.toISOString();

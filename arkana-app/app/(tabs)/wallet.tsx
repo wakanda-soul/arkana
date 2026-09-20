@@ -359,7 +359,7 @@ export default function WalletScreen() {
                   <Text style={[styles.milestoneBonus, (clockInState.streak >= 21) && styles.milestoneTextActive]}>+3 {t('spread_plural', 'SPREADS')}</Text>
                 </View>
                 <View style={[styles.milestoneItem, (clockInState.streak >= 28) && styles.milestoneItemActive]}>
-                  <Text style={[styles.milestoneDays, (clockInState.streak >= 28) && styles.milestoneTextActive]}>28 {t('days_abbr', 'DAYS')}</Text>
+                  <Text style={[styles.milestoneDays, (clockInState.streak >= 28) && styles.milestoneTextActive]}>28+ {t('days_abbr', 'DAYS')}</Text>
                   <Text style={[styles.milestoneBonus, (clockInState.streak >= 28) && styles.milestoneTextActive]}>+5 {t('spread_plural', 'SPREADS')}</Text>
                 </View>
               </View>
