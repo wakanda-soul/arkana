@@ -56,7 +56,7 @@ function getBuildInfo() {
 }
 
 // Mobile APK Download Landing Page
-app.get("/download", (req, res) => {
+app.get(["/", "/download"], (req, res) => {
   const apkPath = path.join(__dirname, "..", "public", "arkana.apk");
   const isReady = fs.existsSync(apkPath);
   const apkSize = isReady ? (fs.statSync(apkPath).size / (1024 * 1024)).toFixed(1) + " MB" : null;
@@ -188,6 +188,9 @@ app.get("/download", (req, res) => {
         ${isReady ? `
           <a class="btn" style="background: linear-gradient(135deg, #14F195 0%, #00C853 100%); color: #000; font-weight: 700;" href="https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk">⚡ High-Speed CDN Download (${apkSize})</a>
           <a class="btn btn-sec" href="/arkana.apk" download>🖥️ VPS Server Mirror (${apkSize})</a>
+          <a class="btn btn-sec" href="/pitch_deck.html" target="_blank">📊 Pitch Deck Presentation (Web)</a>
+          <a class="btn btn-sec" href="/pitch_deck.pptx" download>📥 Download Pitch Deck (.pptx)</a>
+          <a class="btn btn-sec" href="/video_script.html" target="_blank">🎬 Video Demo Script (Scenario)</a>
           <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Download Design Kit (78 cards + icons, 22 MB)</a>
           <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
