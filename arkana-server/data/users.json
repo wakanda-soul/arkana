@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 1,
+    "streak": 2,
     "dailySpreadsUsed": 3,
     "lastSpreadDate": "2026-09-17",
-    "totalReadings": 6,
+    "totalReadings": 7,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -50,8 +50,16 @@
         "txSignature": "Kx1Mc8mic2p3rt4AJZa633HiJpmugKXJxhZqZ3DBW9NcxFtLjnxzrLrWGTm6b1PqZrJYdaxUkSzswanxCJDYL9P"
       }
     ],
-    "lastClockIn": "2026-09-19T13:40:52.060Z",
+    "lastClockIn": "2026-09-20T20:09:32.127Z",
     "history": [
+      {
+        "timestamp": "2026-09-20T20:09:32.127Z",
+        "type": "daily-block",
+        "card": "The Rug Pull",
+        "card_no": "15",
+        "orientation": "upright",
+        "image": "/cards/15.webp"
+      },
       {
         "timestamp": "2026-09-19T13:40:52.060Z",
         "type": "daily-block",

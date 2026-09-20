@@ -52,6 +52,7 @@ export default function AltarScreen() {
     skrBalance: 0,
     freeSpreadsRemaining: 0,
     freeSpreadsMax: 0,
+    streakBonusSpreads: 0,
     extraSpreadCostSkr: 5,
     isSeekerHolder: false,
   });
@@ -204,6 +205,7 @@ export default function AltarScreen() {
         ...prev,
         canClockIn: false,
         streak: res.streak,
+        streakBonusSpreads: res.streakBonusSpreads !== undefined ? res.streakBonusSpreads : prev.streakBonusSpreads,
         freeSpreadsRemaining: prev.isSeekerHolder ? (prev.freeSpreadsMax ?? 3) : 0,
       }));
 
@@ -446,6 +448,13 @@ export default function AltarScreen() {
                 : t('seeker_exclusive_spreads', 'SEEKER GENESIS EXCLUSIVE \u00B7 0 FREE')}
             </Text>
           </View>
+          {(clockInState.streakBonusSpreads ?? 0) > 0 && (
+            <View style={styles.streakBonusPill}>
+              <Text style={styles.streakBonusPillText}>
+                {'\u2726'} {t('streak_bonus_pill', '+{n} STREAK BONUS', { n: clockInState.streakBonusSpreads ?? 0 })}
+              </Text>
+            </View>
+          )}
           <Text style={styles.quotaSub}>
             {clockInState.isSeekerHolder
               ? t('extra_spreads_skr', 'Extra spreads: 5 SKR')
@@ -759,6 +768,21 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
     color: ObsidianTokens.colors.ink.text42,
     fontSize: 9.5,
+  },
+  streakBonusPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(212, 163, 89, 0.12)",
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+  },
+  streakBonusPillText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 8.5,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
   sectionHeader: {
     marginBottom: 16,

@@ -17,6 +17,8 @@ export interface ClockInResult {
   isSeekerHolder: boolean;
   freeSpreadsRemaining?: number;
   freeSpreadsMax?: number;
+  streakBonusSpreads?: number;
+  streakBonusAwarded?: number;
   extraSpreadCostSkr?: number;
   askCostSkr?: number;
   skrToSolRate?: number;
@@ -34,8 +36,9 @@ export interface QuotaConsumeResult {
   cost: number;
   costSkr?: number;
   costSol?: number;
-  paidWith?: 'free' | 'skr' | 'sol';
+  paidWith?: 'free' | 'streak_reward' | 'skr' | 'sol';
   remainingFree: number;
+  streakBonusSpreads?: number;
   balance: number;
   canPayWithSol?: boolean;
   isSeekerHolder?: boolean;
@@ -172,6 +175,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
     skrBalance: 0,
     freeSpreadsRemaining: 0,
     freeSpreadsMax: 0,
+    streakBonusSpreads: 0,
     isSeekerHolder: false,
   };
 }
@@ -204,6 +208,8 @@ export async function executeClockIn(
   reading: ReadingResponse;
   txSignature?: string;
   slot?: number;
+  streakBonusAwarded?: number;
+  streakBonusSpreads?: number;
 }> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
@@ -218,6 +224,8 @@ export async function executeClockIn(
         streak: data.clockIn?.streak || 1,
         txSignature: data.txSignature || data.clockIn?.txSignature,
         slot: data.slot || data.clockIn?.slot,
+        streakBonusAwarded: data.clockIn?.streakBonusAwarded || 0,
+        streakBonusSpreads: data.clockIn?.streakBonusSpreads || 0,
         reading: {
           success: true,
           spread_name: data.reading.spread_name,
@@ -241,7 +249,7 @@ export async function executeClockIn(
 
   // Offline fallback
   const local = generateLocalReading('daily-block', 'Daily Consensus Clock-In');
-  return { success: true, streak: 1, reading: local };
+  return { success: true, streak: 1, streakBonusAwarded: 0, streakBonusSpreads: 0, reading: local };
 }
 
 export async function fetchReading(
