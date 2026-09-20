@@ -79,3 +79,5 @@ data/*.jsonl
 # Audio showcase vault
 audio_vault/
 arkana-server/public/audio_vault/
+taro2_extracted/
+apply_watermarks.py
