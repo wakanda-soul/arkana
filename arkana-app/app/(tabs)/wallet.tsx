@@ -330,6 +330,41 @@ export default function WalletScreen() {
               </Text>
             </View>
 
+            {/* Streak Milestone Rewards Card */}
+            <View style={styles.statsCard}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <Text style={styles.statsTitle}>{t('streak_rewards_title', 'STREAK MILESTONE REWARDS')}</Text>
+                <View style={styles.streakBalanceBadge}>
+                  <Text style={styles.streakBalanceBadgeText}>
+                    {clockInState.streakBonusSpreads ?? 0} {t('free_spreads_badge', 'Spreads')}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={{ fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }), fontSize: 10, color: ObsidianTokens.colors.ink.text55, marginBottom: 12, lineHeight: 15 }}>
+                {t('streak_rewards_explanation', 'Bonus spreads are permanently credited to your account for daily ritual milestones. They never expire and are used whenever your daily free allowance is exhausted.')}
+              </Text>
+
+              <View style={styles.milestoneGrid}>
+                <View style={[styles.milestoneItem, (clockInState.streak >= 7) && styles.milestoneItemActive]}>
+                  <Text style={[styles.milestoneDays, (clockInState.streak >= 7) && styles.milestoneTextActive]}>7 {t('days_abbr', 'DAYS')}</Text>
+                  <Text style={[styles.milestoneBonus, (clockInState.streak >= 7) && styles.milestoneTextActive]}>+1 {t('spread_singular', 'SPREAD')}</Text>
+                </View>
+                <View style={[styles.milestoneItem, (clockInState.streak >= 14) && styles.milestoneItemActive]}>
+                  <Text style={[styles.milestoneDays, (clockInState.streak >= 14) && styles.milestoneTextActive]}>14 {t('days_abbr', 'DAYS')}</Text>
+                  <Text style={[styles.milestoneBonus, (clockInState.streak >= 14) && styles.milestoneTextActive]}>+2 {t('spread_plural', 'SPREADS')}</Text>
+                </View>
+                <View style={[styles.milestoneItem, (clockInState.streak >= 21) && styles.milestoneItemActive]}>
+                  <Text style={[styles.milestoneDays, (clockInState.streak >= 21) && styles.milestoneTextActive]}>21 {t('days_abbr', 'DAYS')}</Text>
+                  <Text style={[styles.milestoneBonus, (clockInState.streak >= 21) && styles.milestoneTextActive]}>+3 {t('spread_plural', 'SPREADS')}</Text>
+                </View>
+                <View style={[styles.milestoneItem, (clockInState.streak >= 28) && styles.milestoneItemActive]}>
+                  <Text style={[styles.milestoneDays, (clockInState.streak >= 28) && styles.milestoneTextActive]}>28 {t('days_abbr', 'DAYS')}</Text>
+                  <Text style={[styles.milestoneBonus, (clockInState.streak >= 28) && styles.milestoneTextActive]}>+5 {t('spread_plural', 'SPREADS')}</Text>
+                </View>
+              </View>
+            </View>
+
             {/* Language Selection Card (Accessible when authenticated) */}
             <Pressable
               style={({ pressed }) => [styles.featureBox, styles.langBox, pressed && styles.cardPressed]}
@@ -872,6 +907,54 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 14,
     textAlign: "center",
+  },
+  streakBalanceBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(212, 163, 89, 0.15)",
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.gold.primary,
+  },
+  streakBalanceBadgeText: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    color: ObsidianTokens.colors.gold.primary,
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  milestoneGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  milestoneItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: ObsidianTokens.colors.ink.fill,
+    borderWidth: 1,
+    borderColor: ObsidianTokens.colors.ink.hairline,
+  },
+  milestoneItemActive: {
+    borderColor: ObsidianTokens.colors.gold.primary,
+    backgroundColor: "rgba(212, 163, 89, 0.08)",
+  },
+  milestoneDays: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    fontSize: 8.5,
+    color: ObsidianTokens.colors.ink.text42,
+    marginBottom: 2,
+  },
+  milestoneBonus: {
+    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
+    fontSize: 9,
+    fontWeight: "700",
+    color: ObsidianTokens.colors.ink.text55,
+  },
+  milestoneTextActive: {
+    color: ObsidianTokens.colors.gold.primary,
   },
   statDivider: {
     width: 1,

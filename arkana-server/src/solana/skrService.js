@@ -97,11 +97,22 @@ function isUserSubscribed(user) {
   return new Date(user.subscription.expiresAt).getTime() > Date.now();
 }
 
+function getStreakMilestoneReward(streak = 0) {
+  if (!streak || streak <= 0) return 0;
+  const cycleDay = ((streak - 1) % 28) + 1;
+  if (cycleDay === 28) return 5;
+  if (cycleDay === 21) return 3;
+  if (cycleDay === 14) return 2;
+  if (cycleDay === 7) return 1;
+  return 0;
+}
+
 /**
  * Check wallet Clock-In, spread quota, and streak repair status.
  * Notice: Free daily spreads:
  * - Seeker Genesis SBT: 3 base (up to 5 with streak)
  * - Seeker Oracle Pass (Subscription 333 SKR/mo): +5 spreads/day (total up to 8-10/day)
+ * - Streak Milestone Bonus Spreads: Stored on user account, never expire daily
  * - Other wallets: 0 base (require SKR/SOL or Subscription)
  */
 function getClockInStatus(walletAddress, clientHint = undefined) {
@@ -123,6 +134,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
       lastClockIn: null,
       freeSpreadsRemaining: 0,
       freeSpreadsMax: 0,
+      streakBonusSpreads: 0,
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
@@ -191,6 +203,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     skrBalance: 0,
     freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
+    streakBonusSpreads: user.streakBonusSpreads || 0,
     extraSpreadCostSkr: extraSpreadCost,
     askCostSkr: askCost,
     skrToSolRate,
@@ -207,6 +220,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
 /**
  * Record Daily Clock-In:
  * - Refills daily spread allowance and updates on-chain streak
+ * - Awards milestone bonus spreads on Day 7 (+1), 14 (+2), 21 (+3), 28 (+5)
  * - Zero token emission
  */
 function recordClockIn(walletAddress, drawnCard) {
@@ -228,6 +242,16 @@ function recordClockIn(walletAddress, drawnCard) {
 
   user.lastClockIn = now.toISOString();
   user.totalReadings = (user.totalReadings || 0) + 1;
+
+  // Streak milestone bonus spreads (Day 7: +1, Day 14: +2, Day 21: +3, Day 28: +5)
+  user.claimedStreakMilestones = user.claimedStreakMilestones || [];
+  const milestoneBonus = getStreakMilestoneReward(user.streak);
+  let streakBonusAwarded = 0;
+  if (milestoneBonus > 0 && !user.claimedStreakMilestones.includes(user.streak)) {
+    streakBonusAwarded = milestoneBonus;
+    user.streakBonusSpreads = (user.streakBonusSpreads || 0) + streakBonusAwarded;
+    user.claimedStreakMilestones.push(user.streak);
+  }
 
   // Zero emission mode: no token payouts on check-in
   const rewardSkr = 0;
@@ -256,6 +280,8 @@ function recordClockIn(walletAddress, drawnCard) {
     lastClockIn: user.lastClockIn,
     rewardSkr,
     freeSpreadsMax: maxFree,
+    streakBonusAwarded,
+    streakBonusSpreads: user.streakBonusSpreads || 0,
     skrBalance: 0,
     isSeekerHolder
   };
@@ -305,7 +331,7 @@ function consumeSpread(walletAddress, options = {}) {
   const maxFree = seekerBase + subscriptionBonus;
 
   if (maxFree > 0 && dailySpreadsUsed < maxFree) {
-    // Within free daily allowance (Seeker Genesis SBT or Active Subscription)
+    // 1. Within free daily allowance (Seeker Genesis SBT or Active Subscription)
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
@@ -321,13 +347,37 @@ function consumeSpread(walletAddress, options = {}) {
       costSol: 0,
       paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
+      streakBonusSpreads: user.streakBonusSpreads || 0,
       balance: 0,
       isSeekerHolder,
       isSubscribed
     };
   }
 
-  // Beyond free quota: on-chain payment verification (SKR or SOL)
+  // 2. Streak Milestone Bonus Spreads (Stored on account, consumed only after daily quota is used)
+  const streakBonus = user.streakBonusSpreads || 0;
+  if (itemType === "spread" && streakBonus > 0) {
+    user.streakBonusSpreads = streakBonus - 1;
+    user.totalReadings = (user.totalReadings || 0) + 1;
+    users[walletAddress] = user;
+    saveUsers(users);
+
+    return {
+      allowed: true,
+      isFree: true,
+      cost: 0,
+      costSkr: 0,
+      costSol: 0,
+      paidWith: "streak_reward",
+      remainingFree: 0,
+      streakBonusSpreads: user.streakBonusSpreads,
+      balance: 0,
+      isSeekerHolder,
+      isSubscribed
+    };
+  }
+
+  // 3. Beyond free & streak quota: on-chain payment verification (SKR or SOL)
   if (txSignature || payWithSol) {
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;

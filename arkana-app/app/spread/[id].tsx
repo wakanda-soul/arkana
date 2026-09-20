@@ -101,7 +101,9 @@ export default function SpreadScreen() {
     }
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
-    const hasFree = (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
+    const dailyFree = quotaInfo?.freeSpreadsRemaining ?? 0;
+    const streakBonus = quotaInfo?.streakBonusSpreads ?? 0;
+    const hasFree = (dailyFree + streakBonus) > 0;
     const balance = onChainSkr !== null ? onChainSkr : 0;
     const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
@@ -152,6 +154,7 @@ export default function SpreadScreen() {
             ? {
                 ...prev,
                 freeSpreadsRemaining: res.quota!.remainingFree,
+                streakBonusSpreads: res.quota!.streakBonusSpreads !== undefined ? res.quota!.streakBonusSpreads : prev.streakBonusSpreads,
                 skrBalance: res.quota!.balance,
               }
             : null
@@ -246,7 +249,9 @@ export default function SpreadScreen() {
     }
   };
 
-  const hasFreeRemaining = (quotaInfo?.freeSpreadsRemaining ?? 3) > 0;
+  const dailyFree = quotaInfo?.freeSpreadsRemaining ?? 0;
+  const streakBonus = quotaInfo?.streakBonusSpreads ?? 0;
+  const hasFreeRemaining = (dailyFree + streakBonus) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
   const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
   const balance = onChainSkr !== null ? onChainSkr : 0;
@@ -299,8 +304,12 @@ export default function SpreadScreen() {
                   <Text style={styles.quotaTitle}>
                     {!walletAddress
                       ? t('connect_wallet_hint', 'Connect wallet to cast spread and seal consensus')
-                      : hasFreeRemaining
-                      ? t('free_spreads_avail', '{n} Free Spreads Available', { n: quotaInfo?.freeSpreadsRemaining ?? 3 })
+                      : dailyFree > 0
+                      ? (streakBonus > 0
+                          ? t('free_and_streak_spreads_avail', '{n} Free Spreads (+{bonus} Streak Bonus)', { n: dailyFree, bonus: streakBonus })
+                          : t('free_spreads_avail', '{n} Free Spreads Available', { n: dailyFree }))
+                      : streakBonus > 0
+                      ? t('streak_reward_spreads_avail', '{n} Streak Reward Spreads Available', { n: streakBonus })
                       : balance >= extraCost
                       ? t('daily_allowance_reached_skr', 'Daily free allowance reached ({cost} SKR / spread)', { cost: extraCost })
                       : t('daily_allowance_reached_sol', 'Daily free allowance reached ({cost} SOL / spread)', { cost: extraCostSol })}
