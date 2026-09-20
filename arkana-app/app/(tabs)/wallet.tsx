@@ -400,7 +400,7 @@ export default function WalletScreen() {
                 <View style={styles.subCardFooter}>
                   <View style={styles.subTokenomicsInfo}>
                     <Text style={styles.subTokenomicsText}>
-                      {'\u25C8'} 50% Treasury \u00B7 50% Burned on Solana
+                      {t('sub_tokenomics_split', '◈ 50% Treasury · 50% Burned on Solana')}
                     </Text>
                     {subSolEstimate && !clockInState.isSubscribed ? (
                       <Text style={styles.subSolEstimateText}>
@@ -447,7 +447,7 @@ export default function WalletScreen() {
             <View style={styles.disconnectedCard}>
               <View style={styles.disconnectedBadgeRow}>
                 <View style={styles.disconnectedBadge}>
-                  <Text style={styles.disconnectedBadgeText}>SOLANA MOBILE ADAPTER</Text>
+                  <Text style={styles.disconnectedBadgeText}>{t('standard_wallet', 'SOLANA WALLET')}</Text>
                 </View>
                 <View style={styles.statusDotRow}>
                   <View style={[styles.liveDot, { backgroundColor: ObsidianTokens.colors.ink.text42 }]} />
@@ -472,7 +472,7 @@ export default function WalletScreen() {
                 {isConnecting ? (
                   <ActivityIndicator color="#100C06" />
                 ) : (
-                  <Text style={styles.connectMainBtnText}>{t('connect_wallet_mwa', 'CONNECT WALLET (MWA)')}</Text>
+                  <Text style={styles.connectMainBtnText}>{t('connect_wallet', 'CONNECT WALLET')}</Text>
                 )}
               </Pressable>
 
