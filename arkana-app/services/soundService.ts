@@ -23,14 +23,9 @@ let isAmbientMutedState = false;
 let isInitialized = false;
 let audioConfigured = false;
 
-// 19 Mastered Organic Sound Assets & Ambient Segments
+// 14 Mastered Organic Sound Assets
 const SOUND_ASSETS: Record<string, any> = {
-  ambient_hang_1: require('@/assets/audio/ambient_hang_1.mp3'),
-  ambient_hang_2: require('@/assets/audio/ambient_hang_2.mp3'),
-  ambient_hang_3: require('@/assets/audio/ambient_hang_3.mp3'),
-  ambient_hang_4: require('@/assets/audio/ambient_hang_4.mp3'),
-  ambient_hang_5: require('@/assets/audio/ambient_hang_5.mp3'),
-  ambient_hang: require('@/assets/audio/ambient_hang_1.mp3'),
+  ambient_hang: require('@/assets/audio/ambient_hang.mp3'),
   card_deal: require('@/assets/audio/card_deal.wav'),
   deck_gather: require('@/assets/audio/deck_gather.wav'),
   card_focus: require('@/assets/audio/card_focus.wav'),
@@ -45,25 +40,6 @@ const SOUND_ASSETS: Record<string, any> = {
   burn_ignite: require('@/assets/audio/burn_ignite.wav'),
   oracle_send: require('@/assets/audio/oracle_send.wav'),
 };
-
-const AMBIENT_KEYS = [
-  'ambient_hang_1',
-  'ambient_hang_2',
-  'ambient_hang_3',
-  'ambient_hang_4',
-  'ambient_hang_5',
-];
-let currentAmbientIndex = -1;
-let ambientStatusSubscription: { remove: () => void } | null = null;
-
-function pickNextAmbientKey(): string {
-  let nextIdx = Math.floor(Math.random() * AMBIENT_KEYS.length);
-  if (nextIdx === currentAmbientIndex && AMBIENT_KEYS.length > 1) {
-    nextIdx = (nextIdx + 1) % AMBIENT_KEYS.length;
-  }
-  currentAmbientIndex = nextIdx;
-  return AMBIENT_KEYS[nextIdx];
-}
 
 const cachedUris: Record<string, string> = {};
 const players: Record<string, AudioPlayer | null> = {};
@@ -368,8 +344,8 @@ export const soundService = {
   },
 
   /**
-   * Background Hang Ambient: 5 organic handpan meditative segments (~60s each)
-   * with 3.0s fade-in and 3.5s fade-out, randomly sequenced.
+   * Background Hang Ambient: Complete 8-minute continuous authentic handpan meditation,
+   * played seamlessly in a native continuous loop without clipping or artificial fades.
    */
   startAmbientHang(volume: number = 0.16): void {
     if (isMutedState || isAmbientMutedState) return;
@@ -377,49 +353,18 @@ export const soundService = {
       if (!audioConfigured) {
         configureAudio().catch(() => {});
       }
-      if (ambientPlayer && ambientPlayer.playing) {
-        return;
+      if (!ambientPlayer) {
+        const uri = cachedUris['ambient_hang'];
+        const source = uri ? { uri } : SOUND_ASSETS.ambient_hang;
+        ambientPlayer = createAudioPlayer(source);
+        ambientPlayer.loop = true;
       }
-      if (ambientPlayer && ambientPlayer.paused) {
-        ambientPlayer.volume = volume;
+      ambientPlayer.volume = volume;
+      if (!ambientPlayer.playing) {
         ambientPlayer.play();
-        return;
       }
-      this.playNextRandomAmbient(volume);
     } catch (err) {
       console.warn('[SoundService] Ambient playback warning:', err);
-    }
-  },
-
-  playNextRandomAmbient(volume: number = 0.16): void {
-    if (isMutedState || isAmbientMutedState) return;
-    try {
-      if (ambientStatusSubscription) {
-        try {
-          ambientStatusSubscription.remove();
-        } catch {}
-        ambientStatusSubscription = null;
-      }
-      if (ambientPlayer) {
-        try {
-          ambientPlayer.remove();
-        } catch {}
-        ambientPlayer = null;
-      }
-      const key = pickNextAmbientKey();
-      const uri = cachedUris[key];
-      const source = uri ? { uri } : SOUND_ASSETS[key];
-      ambientPlayer = createAudioPlayer(source);
-      ambientPlayer.loop = false;
-      ambientPlayer.volume = volume;
-      ambientStatusSubscription = ambientPlayer.addListener('playbackStatusUpdate', (status) => {
-        if (status.didJustFinish) {
-          this.playNextRandomAmbient(volume);
-        }
-      });
-      ambientPlayer.play();
-    } catch (err) {
-      console.warn('[SoundService] playNextRandomAmbient error:', err);
     }
   },
 
