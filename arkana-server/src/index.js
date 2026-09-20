@@ -191,6 +191,7 @@ app.get(["/", "/download"], (req, res) => {
           <a class="btn btn-sec" href="/pitch_deck.html" target="_blank">📊 Pitch Deck Presentation (Web)</a>
           <a class="btn btn-sec" href="/pitch_deck.pptx" download>📥 Download Pitch Deck (.pptx)</a>
           <a class="btn btn-sec" href="/video_script.html" target="_blank">🎬 Video Demo Script (Scenario)</a>
+          <a class="btn btn-sec" href="/video_script.md" download>📝 Video Script (.md)</a>
           <a class="btn btn-sec" href="/arkana-designs.zip" download>🎨 Download Design Kit (78 cards + icons, 22 MB)</a>
           <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
 
