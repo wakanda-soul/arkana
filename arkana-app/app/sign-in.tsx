@@ -82,7 +82,7 @@ export default function SignIn() {
           </Pressable>
 
           <Text style={styles.securityNote}>
-            Secured by Mobile Wallet Adapter & Hardware Keystore
+            Secured by Solana Seed Vault & Hardware Keystore
           </Text>
         </View>
       </SafeAreaView>

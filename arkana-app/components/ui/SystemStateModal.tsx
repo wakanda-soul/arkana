@@ -209,7 +209,7 @@ export function SystemStateModal({
                 <View style={styles.walletSourceCard}>
                   <View style={styles.walletSourceInfo}>
                     <Text style={styles.walletSourceName}>Solflare</Text>
-                    <Text style={styles.walletSourceType}>Native MWA & Ledger</Text>
+                    <Text style={styles.walletSourceType}>Native Solana & Ledger</Text>
                   </View>
                   <View style={styles.walletSourceButtons}>
                     <TouchableOpacity
