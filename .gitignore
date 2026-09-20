@@ -81,3 +81,11 @@ audio_vault/
 arkana-server/public/audio_vault/
 taro2_extracted/
 apply_watermarks.py
+
+# Video scripts & Hackathon pitch presentations
+video_script*
+pitch_deck*
+*.pptx
+arkana-server/public/video_script*
+arkana-server/public/pitch_deck*
+
