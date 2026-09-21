@@ -122,12 +122,12 @@ export function AltarOfferingCard({
           <Text style={styles.altarIcon}>{'\u2726'}</Text>
           <View style={styles.titleWrapper}>
             <Text style={styles.titleText}>
-              {t('altar_offering_title', 'ДАР АЛТАРЮ · ALTAR OFFERING')}
+              {t('altar_offering_title', 'ALTAR OFFERING')}
             </Text>
             <Text style={styles.subtitleText}>
               {t(
                 'altar_offering_sub',
-                '50% сжигается · 50% в казну · Deflationary Burn'
+                '50% Burned · 50% to Treasury · Deflationary Burn'
               )}
             </Text>
           </View>
@@ -146,14 +146,18 @@ export function AltarOfferingCard({
                 <Text style={[styles.tierAmountText, isSelected && styles.tierAmountTextActive]}>
                   {amount} SKR
                 </Text>
-                <Text style={[styles.tierLabelText, isSelected && styles.tierLabelTextActive]}>
+                <Text
+                  style={[styles.tierLabelText, isSelected && styles.tierLabelTextActive]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   {amount === 1
-                    ? t('tier_symbolic', 'Символ')
+                    ? t('tier_symbolic', 'Symbolic')
                     : amount === 5
-                    ? t('tier_minor', 'Скромный')
+                    ? t('tier_minor', 'Humble')
                     : amount === 15
-                    ? t('tier_sacred', 'Священный')
-                    : t('tier_grand', 'Великий')}
+                    ? t('tier_sacred', 'Sacred')
+                    : t('tier_grand', 'Grand')}
                 </Text>
               </Pressable>
             );
@@ -174,9 +178,9 @@ export function AltarOfferingCard({
               setForceSolMode(false);
             }}
           >
-            <Text style={[styles.sourceButtonText, !isSolMode && styles.sourceButtonTextActive]}>
+            <Text style={[styles.sourceButtonText, !isSolMode && styles.sourceButtonTextActive]} numberOfLines={1}>
               SKR {userSkrBalance !== null ? `(${userSkrBalance.toFixed(1)})` : ''}
-              {userSkrBalance !== null && userSkrBalance < selectedAmount ? ' [мало]' : ''}
+              {userSkrBalance !== null && userSkrBalance < selectedAmount ? t('skr_balance_low', ' [low]') : ''}
             </Text>
           </Pressable>
           <Pressable
@@ -194,10 +198,10 @@ export function AltarOfferingCard({
 
         {/* Rate indication */}
         <View style={styles.rateRow}>
-          <Text style={styles.rateText}>
+          <Text style={styles.rateText} numberOfLines={1} adjustsFontSizeToFit>
             {isSolMode
-              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX ExactOut автосвап')} (${solEstimate}) \u2192 50% в казну + 50% сжигается`
-              : `${t('direct_skr_payment_active', 'Прямой платёж SKR')} \u2192 50% в казну + 50% сжигается`}
+              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX ExactOut Auto-Swap')} (${solEstimate}) ${t('offering_rate_split', '\u2192 50% to Treasury + 50% Burned')}`
+              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} ${t('offering_rate_split', '\u2192 50% to Treasury + 50% Burned')}`}
           </Text>
         </View>
 
@@ -212,8 +216,8 @@ export function AltarOfferingCard({
           ) : (
             <Text style={styles.submitButtonText}>
               {isSolMode
-                ? `${t('send_offering_sol_btn', 'СВАПНУТЬ SOL & СЖЕЧЬ 50%')} (${solEstimate})`
-                : `${t('send_offering_btn', 'ПРИНЕСТИ ДАР')} (${selectedAmount} SKR)`}
+                ? `${t('send_offering_sol_btn', 'SWAP SOL & BURN 50%')} (${solEstimate})`
+                : `${t('send_offering_btn', 'MAKE SACRED OFFERING')} (${selectedAmount} SKR)`}
             </Text>
           )}
         </Pressable>
@@ -225,17 +229,17 @@ export function AltarOfferingCard({
           <View style={styles.modalCard}>
             <Text style={styles.modalIcon}>{'\u2726'}</Text>
             <Text style={styles.modalTitle}>
-              {t('offering_accepted_title', 'ДАР ПРИНЯТ АЛТАРЁМ')}
+              {t('offering_accepted_title', 'OFFERING CONSECRATED')}
             </Text>
             <Text style={styles.modalDesc}>
               {wasSwapped
                 ? t(
                     'offering_swap_accepted_desc',
-                    'SOL успешно конвертирован в SKR через Jupiter DEX! 50% сожжено навсегда в блокчейне Solana, 50% поступило в казну.'
+                    'SOL successfully swapped for SKR via Jupiter DEX! 50% burned forever on Solana, 50% transferred to treasury.'
                   )
                 : t(
                     'offering_accepted_desc',
-                    'Ваш дар заверен в блокчейне Solana. 50% сожжено навсегда, 50% поступило в казну.'
+                    'Your offering is consecrated on Solana. 50% burned forever, 50% transferred to treasury.'
                   )}
             </Text>
             {confirmedTx && (
@@ -245,7 +249,7 @@ export function AltarOfferingCard({
             )}
             <Pressable style={styles.modalCloseButton} onPress={() => setShowBlessing(false)}>
               <Text style={styles.modalCloseButtonText}>
-                {t('close_blessing_btn', 'ПРИНЯТЬ БЛАГОСЛОВЕНИЕ')}
+                {t('close_blessing_btn', 'RECEIVE BLESSING')}
               </Text>
             </Pressable>
           </View>
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 10,
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -321,8 +325,9 @@ const styles = StyleSheet.create({
   },
   tierLabelText: {
     color: '#777',
-    fontSize: 10,
+    fontSize: 9.5,
     marginTop: 3,
+    textAlign: 'center',
   },
   tierLabelTextActive: {
     color: ObsidianTokens.colors.gold.muted,
