@@ -11,7 +11,9 @@ export interface ClockInResult {
   repairStreakTarget?: number;
   streakRepairCostSkr?: number;
   lastClockIn: string | null;
-  todayCard?: { card_no: string; card: string; orientation: 'upright' | 'reversed' } | null;
+  todayCard?: { card_no: string; card: string; orientation: 'upright' | 'reversed'; txSignature?: string | null; slot?: number | null } | null;
+  txSignature?: string | null;
+  slot?: number | null;
   totalReadings: number;
   skrBalance: number;
   isSeekerHolder: boolean;

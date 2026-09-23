@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 2,
+    "streak": 3,
     "dailySpreadsUsed": 3,
     "lastSpreadDate": "2026-09-17",
-    "totalReadings": 7,
+    "totalReadings": 8,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -50,8 +50,16 @@
         "txSignature": "Kx1Mc8mic2p3rt4AJZa633HiJpmugKXJxhZqZ3DBW9NcxFtLjnxzrLrWGTm6b1PqZrJYdaxUkSzswanxCJDYL9P"
       }
     ],
-    "lastClockIn": "2026-09-20T20:09:32.127Z",
+    "lastClockIn": "2026-09-21T19:44:42.911Z",
     "history": [
+      {
+        "timestamp": "2026-09-21T19:44:42.911Z",
+        "type": "daily-block",
+        "card": "Verified Contract",
+        "card_no": "50",
+        "orientation": "upright",
+        "image": "/cards/50.webp"
+      },
       {
         "timestamp": "2026-09-20T20:09:32.127Z",
         "type": "daily-block",
@@ -68,7 +76,8 @@
         "orientation": "upright",
         "image": "/cards/43.webp"
       }
-    ]
+    ],
+    "claimedStreakMilestones": []
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,
@@ -78,10 +87,10 @@
     "isSeekerHolder": false
   },
   "7tPPv8qdzSp3J6fGTKpvomHL4iiT3W1PRQ6mv4qc7iQx": {
-    "streak": 1,
-    "dailySpreadsUsed": 0,
-    "lastSpreadDate": "2026-09-16",
-    "totalReadings": 6,
+    "streak": 0,
+    "dailySpreadsUsed": 1,
+    "lastSpreadDate": "2026-09-23",
+    "totalReadings": 8,
     "isSeekerHolder": true,
     "lastClockIn": "2026-09-16T17:34:50.782Z",
     "history": [
@@ -93,6 +102,8 @@
         "orientation": "upright",
         "image": "/cards/45.webp"
       }
-    ]
+    ],
+    "brokenStreak": 1,
+    "previousStreak": 1
   }
 }

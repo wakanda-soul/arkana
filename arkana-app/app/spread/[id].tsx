@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/components/auth/auth-provider";
 import { fetchReading, fetchClockInStatus, setRemoteSeekerStatus, ClockInResult, ReadingResponse, API_BASE_URL } from "@/services/oracleApi";
 import { TarotCard } from "@/components/tarot/TarotCard";
@@ -159,6 +160,18 @@ export default function SpreadScreen() {
               }
             : null
         );
+        if (walletAddress) {
+          try {
+            await AsyncStorage.setItem(
+              `arkana_quota_${walletAddress}`,
+              JSON.stringify({
+                remainingFree: res.quota.remainingFree,
+                streakBonusSpreads: res.quota.streakBonusSpreads,
+                updatedAt: Date.now(),
+              })
+            );
+          } catch {}
+        }
       }
       soundService.playConsensusSeal();
     } catch (e: any) {
