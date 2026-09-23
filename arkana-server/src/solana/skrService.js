@@ -223,7 +223,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
  * - Awards milestone bonus spreads on Day 7 (+1), 14 (+2), 21 (+3), 28 (+5)
  * - Zero token emission
  */
-function recordClockIn(walletAddress, drawnCard) {
+function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null) {
   const users = loadUsers();
   const now = new Date();
   const user = users[walletAddress] || { streak: 0, history: [], totalReadings: 0 };
@@ -265,7 +265,9 @@ function recordClockIn(walletAddress, drawnCard) {
     card: drawnCard.crypto_name,
     card_no: drawnCard.card_no,
     orientation: drawnCard.orientation,
-    image: drawnCard.image
+    image: drawnCard.image,
+    txSignature: txSignature || null,
+    slot: slot || null
   });
 
   if (user.history.length > 30) user.history.pop();
@@ -275,15 +277,22 @@ function recordClockIn(walletAddress, drawnCard) {
 
   const isSeekerHolder = checkSeekerStatus(user, walletAddress);
   const maxFree = isSeekerHolder ? getDailyFreeAllowance(user.streak) : 0;
+  const todayKey = now.toISOString().split("T")[0];
+  const lastSpreadDate = user.lastSpreadDate || "";
+  const dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
+  const remainingFree = Math.max(0, maxFree - dailySpreadsUsed);
 
   return {
     success: true,
     streak: user.streak,
     lastClockIn: user.lastClockIn,
     rewardSkr,
+    freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
     streakBonusAwarded,
     streakBonusSpreads: user.streakBonusSpreads || 0,
+    txSignature,
+    slot,
     skrBalance: 0,
     isSeekerHolder
   };

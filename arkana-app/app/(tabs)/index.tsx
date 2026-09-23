@@ -67,48 +67,121 @@ export default function AltarScreen() {
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
 
-  // Restore saved daily seal from local storage on mount
+  // Wallet-scoped daily seal and quota synchronization
   useEffect(() => {
-    const loadStoredDailySeal = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('arkana_daily_seal_info');
-        if (stored) {
+    // If no wallet is connected, reset to initial clean state
+    if (!walletAddress) {
+      setSavedSealedCard(null);
+      setSavedOrientation('UPRIGHT');
+      setSavedTxSig(undefined);
+      setSavedSlot(undefined);
+      setDailyReading(null);
+      setOnChainSkr(null);
+      setClockInState({
+        canClockIn: true,
+        streak: 1,
+        lastClockIn: null,
+        totalReadings: 1,
+        skrBalance: 0,
+        freeSpreadsRemaining: 0,
+        freeSpreadsMax: 0,
+        streakBonusSpreads: 0,
+        extraSpreadCostSkr: 5,
+        isSeekerHolder: false,
+      });
+      return;
+    }
+
+    let isMounted = true;
+    const pubkeyStr = walletAddress;
+
+    // Immediately reset previous wallet's sealed card state
+    setSavedSealedCard(null);
+    setSavedOrientation('UPRIGHT');
+    setSavedTxSig(undefined);
+    setSavedSlot(undefined);
+    setDailyReading(null);
+
+    // Clean up legacy global key if present
+    AsyncStorage.removeItem('arkana_daily_seal_info').catch(() => {});
+
+    // Check if THIS specific wallet has a saved daily seal in local storage for today
+    AsyncStorage.getItem(`arkana_daily_seal_info_${pubkeyStr}`)
+      .then((stored) => {
+        if (!isMounted || !stored) return;
+        try {
           const parsed = JSON.parse(stored);
           const todayDate = new Date().toISOString().split('T')[0];
-          if (parsed.dateStr === todayDate) {
-            const card = ALL_CARDS.find(c => c.card_no === parsed.cardNo) || ALL_CARDS[0];
+          if (parsed && parsed.dateStr === todayDate) {
+            const card = ALL_CARDS.find((c) => c.card_no === parsed.cardNo) || ALL_CARDS[0];
             setSavedSealedCard(card);
             setSavedOrientation(parsed.orientation || 'UPRIGHT');
             setSavedTxSig(parsed.txHash);
             setSavedSlot(parsed.slot);
           }
-        }
-      } catch {}
-    };
-    loadStoredDailySeal();
-  }, []);
+        } catch {}
+      })
+      .catch(() => {});
 
-  useEffect(() => {
-    if (!walletAddress) {
-      return;
-    }
+    // Check locally cached quota for this wallet
+    AsyncStorage.getItem(`arkana_quota_${pubkeyStr}`)
+      .then((cached) => {
+        if (!isMounted || !cached) return;
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed.remainingFree === 'number') {
+            setClockInState((prev) => ({
+              ...prev,
+              freeSpreadsRemaining: parsed.remainingFree,
+              streakBonusSpreads:
+                parsed.streakBonusSpreads !== undefined
+                  ? parsed.streakBonusSpreads
+                  : prev.streakBonusSpreads,
+            }));
+          }
+        } catch {}
+      })
+      .catch(() => {});
+
     const syncStatus = async () => {
       let isHolder = false;
       if (account?.publicKey) {
         try {
           isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
-          await setRemoteSeekerStatus(walletAddress, isHolder);
+          await setRemoteSeekerStatus(pubkeyStr, isHolder);
         } catch (err) {
           console.warn('[Seeker SBT] check failed in Altar:', err);
         }
       }
       try {
-        const status = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
+        const status = await fetchClockInStatus(pubkeyStr, account?.publicKey ? isHolder : undefined);
+        if (!isMounted) return;
         setClockInState(status);
-        if (!status.canClockIn && status.todayCard) {
-          const card = ALL_CARDS.find(c => c.card_no === status.todayCard?.card_no || c.crypto_name === status.todayCard?.card) || ALL_CARDS[0];
+
+        if (status.canClockIn) {
+          // This wallet has NOT clocked in today!
+          setSavedSealedCard(null);
+          setSavedTxSig(undefined);
+          setSavedSlot(undefined);
+          AsyncStorage.removeItem(`arkana_daily_seal_info_${pubkeyStr}`).catch(() => {});
+        } else if (status.todayCard) {
+          // This wallet HAS clocked in today
+          const card =
+            ALL_CARDS.find(
+              (c) =>
+                c.card_no === status.todayCard?.card_no ||
+                c.crypto_name === status.todayCard?.card
+            ) || ALL_CARDS[0];
           setSavedSealedCard(card);
-          setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
+          setSavedOrientation(
+            status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT'
+          );
+          if (status.todayCard.txSignature) {
+            setSavedTxSig(status.todayCard.txSignature);
+          }
+          if (status.todayCard.slot) {
+            setSavedSlot(status.todayCard.slot);
+          }
         }
       } catch (err) {
         console.warn('Failed to fetch clock-in status in Altar:', err);
@@ -119,29 +192,93 @@ export default function AltarScreen() {
 
     if (account?.publicKey || walletAddress) {
       try {
-        const pubkeyStr = walletAddress || account.publicKey.toString();
-        const userPub = new PublicKey(pubkeyStr);
-        fetchRealSkrBalance(connection, userPub).then(val => {
-          setOnChainSkr(val);
-        }).catch(() => {});
-      } catch {}
-    }
-  }, [walletAddress, account?.publicKey, connection]);
-
-  // Immediately refresh on-chain SKR balance and holder verification whenever user navigates to Altar tab
-  useFocusEffect(
-    useCallback(() => {
-      if (!walletAddress && !account?.publicKey) return;
-      let isMounted = true;
-      try {
-        const pubkeyStr = walletAddress || account.publicKey.toString();
         const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
-          .then(val => {
+          .then((val) => {
             if (isMounted) setOnChainSkr(val);
           })
           .catch(() => {});
       } catch {}
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [walletAddress, account?.publicKey, connection]);
+
+  // Immediately refresh on-chain balance, holder status, and clock-in/quota whenever returning to Altar tab
+  useFocusEffect(
+    useCallback(() => {
+      if (!walletAddress && !account?.publicKey) return;
+      let isMounted = true;
+      const pubkeyStr = walletAddress || account.publicKey.toString();
+
+      // Check if spread screen cached a newer quota locally
+      AsyncStorage.getItem(`arkana_quota_${pubkeyStr}`)
+        .then((cached) => {
+          if (cached && isMounted) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (parsed && typeof parsed.remainingFree === 'number') {
+                setClockInState((prev) => ({
+                  ...prev,
+                  freeSpreadsRemaining: parsed.remainingFree,
+                  streakBonusSpreads:
+                    parsed.streakBonusSpreads !== undefined
+                      ? parsed.streakBonusSpreads
+                      : prev.streakBonusSpreads,
+                }));
+              }
+            } catch {}
+          }
+        })
+        .catch(() => {});
+
+      // Refresh on-chain SKR balance
+      try {
+        const userPub = new PublicKey(pubkeyStr);
+        fetchRealSkrBalance(connection, userPub)
+          .then((val) => {
+            if (isMounted) setOnChainSkr(val);
+          })
+          .catch(() => {});
+      } catch {}
+
+      // Refresh clock-in status and remaining quota from backend
+      checkSeekerGenesisHolderOnChain(connection, new PublicKey(pubkeyStr))
+        .then(async (isHolder) => {
+          if (!isMounted) return;
+          try {
+            const status = await fetchClockInStatus(pubkeyStr, isHolder);
+            if (isMounted) {
+              setClockInState(status);
+              if (status.canClockIn) {
+                setSavedSealedCard(null);
+                setSavedTxSig(undefined);
+                setSavedSlot(undefined);
+                AsyncStorage.removeItem(`arkana_daily_seal_info_${pubkeyStr}`).catch(() => {});
+              } else if (status.todayCard) {
+                const card =
+                  ALL_CARDS.find(
+                    (c) =>
+                      c.card_no === status.todayCard?.card_no ||
+                      c.crypto_name === status.todayCard?.card
+                  ) || ALL_CARDS[0];
+                setSavedSealedCard(card);
+                setSavedOrientation(
+                  status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT'
+                );
+                if (status.todayCard.txSignature) {
+                  setSavedTxSig(status.todayCard.txSignature);
+                }
+                if (status.todayCard.slot) {
+                  setSavedSlot(status.todayCard.slot);
+                }
+              }
+            }
+          } catch {}
+        })
+        .catch(() => {});
 
       return () => {
         isMounted = false;
@@ -206,23 +343,25 @@ export default function AltarScreen() {
         canClockIn: false,
         streak: res.streak,
         streakBonusSpreads: res.streakBonusSpreads !== undefined ? res.streakBonusSpreads : prev.streakBonusSpreads,
-        freeSpreadsRemaining: prev.isSeekerHolder ? (prev.freeSpreadsMax ?? 3) : 0,
+        freeSpreadsRemaining: prev.freeSpreadsRemaining !== undefined ? prev.freeSpreadsRemaining : (prev.isSeekerHolder ? (prev.freeSpreadsMax ?? 3) : 0),
       }));
 
       const finalSignature = signature || res.txSignature;
       const finalSlot = slot || res.slot;
 
-      // Persist to local storage for today
-      try {
-        const todayDate = new Date().toISOString().split('T')[0];
-        await AsyncStorage.setItem('arkana_daily_seal_info', JSON.stringify({
-          dateStr: todayDate,
-          cardNo: card.card_no,
-          orientation,
-          txHash: finalSignature,
-          slot: finalSlot,
-        }));
-      } catch {}
+      // Persist to local storage for today, scoped by walletAddress
+      if (walletAddress) {
+        try {
+          const todayDate = new Date().toISOString().split('T')[0];
+          await AsyncStorage.setItem(`arkana_daily_seal_info_${walletAddress}`, JSON.stringify({
+            dateStr: todayDate,
+            cardNo: card.card_no,
+            orientation,
+            txHash: finalSignature,
+            slot: finalSlot,
+          }));
+        } catch {}
+      }
 
       setSavedSealedCard(card);
       setSavedOrientation(orientation);
@@ -421,11 +560,11 @@ export default function AltarScreen() {
           skrBalance={displaySkr}
           canRepairStreak={clockInState.canRepairStreak}
           streakRepairCostSkr={clockInState.streakRepairCostSkr || 1}
-          isAlreadyClockedIn={!clockInState.canClockIn || !!savedSealedCard}
-          initialSealedCard={savedSealedCard}
+          isAlreadyClockedIn={Boolean(walletAddress && !clockInState.canClockIn)}
+          initialSealedCard={Boolean(walletAddress && !clockInState.canClockIn) ? savedSealedCard : null}
           initialOrientation={savedOrientation}
-          initialTxSignature={savedTxSig}
-          initialSlot={savedSlot}
+          initialTxSignature={Boolean(walletAddress && !clockInState.canClockIn) ? savedTxSig : undefined}
+          initialSlot={Boolean(walletAddress && !clockInState.canClockIn) ? savedSlot : undefined}
           onRepairStreak={handleRepairStreak}
           onSignOnChain={handleSignRitualOnChain}
           onOpenRecord={() => setIsModalVisible(true)}

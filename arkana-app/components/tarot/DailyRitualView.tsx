@@ -117,24 +117,49 @@ export function DailyRitualView({
   const todayIndex = new Date().getDay();
   const todayName = dayNames[todayIndex];
 
-  // Sync if isAlreadyClockedIn changes externally
+  // Sync if isAlreadyClockedIn changes externally (e.g. wallet connected, switched, or disconnected)
+  const prevClockedInRef = useRef(isAlreadyClockedIn);
   useEffect(() => {
-    if (isAlreadyClockedIn && stage !== 'sealed') {
-      setStage('sealed');
+    if (isAlreadyClockedIn !== prevClockedInRef.current) {
+      prevClockedInRef.current = isAlreadyClockedIn;
+      if (isAlreadyClockedIn) {
+        setStage('sealed');
+        if (initialSealedCard) {
+          setSelectedCard(initialSealedCard);
+        }
+        setOrientation(initialOrientation || 'UPRIGHT');
+        setTxHash(initialTxSignature);
+        setSlotNumber(initialSlot);
+        setSignStep(1);
+        flipAnim.setValue(1);
+      } else {
+        setStage('idle');
+        setTxHash(undefined);
+        setSlotNumber(undefined);
+        setSignStep(1);
+        flipAnim.setValue(0);
+      }
+    } else if (isAlreadyClockedIn) {
       if (initialSealedCard) {
         setSelectedCard(initialSealedCard);
       }
       if (initialOrientation) {
         setOrientation(initialOrientation);
       }
-      if (initialTxSignature) {
+      if (initialTxSignature !== undefined) {
         setTxHash(initialTxSignature);
       }
-      if (initialSlot) {
+      if (initialSlot !== undefined) {
         setSlotNumber(initialSlot);
       }
+    } else if (!isAlreadyClockedIn && stage === 'sealed') {
+      setStage('idle');
+      setTxHash(undefined);
+      setSlotNumber(undefined);
+      setSignStep(1);
+      flipAnim.setValue(0);
     }
-  }, [isAlreadyClockedIn, initialSealedCard, initialOrientation, initialTxSignature, initialSlot]);
+  }, [isAlreadyClockedIn, initialSealedCard, initialOrientation, initialTxSignature, initialSlot, stage]);
 
   // Live countdown to next UTC midnight
   useEffect(() => {

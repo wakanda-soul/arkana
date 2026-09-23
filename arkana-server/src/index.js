@@ -358,7 +358,7 @@ app.post("/api/clock-in", async (req, res) => {
 
     let clockInResult = null;
     if (wallet) {
-      clockInResult = recordClockIn(wallet, reading.cards[0]);
+      clockInResult = recordClockIn(wallet, reading.cards[0], txSignature, slot);
     }
 
     logDialogue({
