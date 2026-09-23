@@ -200,8 +200,8 @@ export function AltarOfferingCard({
         <View style={styles.rateRow}>
           <Text style={styles.rateText} numberOfLines={1} adjustsFontSizeToFit>
             {isSolMode
-              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX ExactOut Auto-Swap')} (${solEstimate}) ${t('offering_rate_split', '\u2192 50% to Treasury + 50% Burned')}`
-              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} ${t('offering_rate_split', '\u2192 50% to Treasury + 50% Burned')}`}
+              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX Auto-Swap')} (${solEstimate}) \u2192 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365d Vault`
+              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} \u2192 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365d Vault`}
           </Text>
         </View>
 
@@ -216,7 +216,7 @@ export function AltarOfferingCard({
           ) : (
             <Text style={styles.submitButtonText}>
               {isSolMode
-                ? `${t('send_offering_sol_btn', 'SWAP SOL & BURN 50%')} (${solEstimate})`
+                ? `${t('send_offering_sol_btn', 'OFFERING & 365D ORE STAKE')} (${solEstimate})`
                 : `${t('send_offering_btn', 'MAKE SACRED OFFERING')} (${selectedAmount} SKR)`}
             </Text>
           )}
@@ -232,15 +232,10 @@ export function AltarOfferingCard({
               {t('offering_accepted_title', 'OFFERING CONSECRATED')}
             </Text>
             <Text style={styles.modalDesc}>
-              {wasSwapped
-                ? t(
-                    'offering_swap_accepted_desc',
-                    'SOL successfully swapped for SKR via Jupiter DEX! 50% burned forever on Solana, 50% transferred to treasury.'
-                  )
-                : t(
-                    'offering_accepted_desc',
-                    'Your offering is consecrated on Solana. 50% burned forever, 50% transferred to treasury.'
-                  )}
+              {t(
+                'offering_67_33_desc',
+                'Your offering is consecrated on Solana! 67% SKR (50% burned forever, 50% to treasury) + 33% ORE locked in the 365-day Sacred Vault with 100% staking yield claimable in the ORE menu.'
+              )}
             </Text>
             {confirmedTx && (
               <Text style={styles.modalTx}>

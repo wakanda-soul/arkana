@@ -1,0 +1,20 @@
+[package]
+name = "arkana-ore-vault-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+description = "API, state, and instructions for Arkana ORE Vault program"
+
+[dependencies]
+bytemuck.workspace = true
+bytemuck_derive.workspace = true
+num_enum.workspace = true
+ore-mint-api.workspace = true
+ore-stake-api.workspace = true
+serde.workspace = true
+solana-program.workspace = true
+spl-token.workspace = true
+spl-associated-token-account.workspace = true
+steel.workspace = true
+thiserror.workspace = true

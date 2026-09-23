@@ -89,3 +89,8 @@ pitch_deck*
 arkana-server/public/video_script*
 arkana-server/public/pitch_deck*
 
+# Rust
+target/
+**/target/
+
+

@@ -3970,6 +3970,18 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
     ru: '\u0410\u041B\u0422\u0410\u0420\u042C',
     id: 'HARI INI',
   },
+  "tab_ore": {
+    en: 'ORE',
+    zh: 'ORE',
+    hi: 'ORE',
+    es: 'ORE',
+    ar: 'ORE',
+    fr: 'ORE',
+    bn: 'ORE',
+    pt: 'ORE',
+    ru: '\u041E\u0420\u0415',
+    id: 'ORE',
+  },
   "tap_to_inspect": {
     en: 'TAP TO INSPECT',
     zh: '\u70B9\u51FB\u67E5\u770B\u8BE6\u60C5',
