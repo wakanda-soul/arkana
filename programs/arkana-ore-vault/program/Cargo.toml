@@ -1,0 +1,23 @@
+[package]
+name = "arkana-ore-vault-program"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+description = "Arkana ORE Vault on-chain program"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "arkana_ore_vault"
+
+[features]
+default = []
+
+[dependencies]
+arkana-ore-vault-api.workspace = true
+ore-mint-api.workspace = true
+ore-stake-api.workspace = true
+solana-program.workspace = true
+spl-token.workspace = true
+spl-associated-token-account.workspace = true
+steel.workspace = true

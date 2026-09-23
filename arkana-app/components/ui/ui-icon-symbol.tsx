@@ -16,6 +16,7 @@ const MAPPING = {
   'bubble.left.and.bubble.right.fill': 'chat',
   'book.closed.fill': 'menu-book',
   'flame.fill': 'whatshot',
+  'lock.shield.fill': 'security',
 } as const satisfies Record<string, ComponentProps<typeof MaterialIcons>['name']>
 
 export type UiIconSymbolName = keyof typeof MAPPING

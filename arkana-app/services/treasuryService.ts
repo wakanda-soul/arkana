@@ -161,24 +161,26 @@ export function buildSkrPaymentInstructions({
     )
   );
 
-  // 50% Treasury / 50% Deflationary Burn
+  // Protocol Split: 67% SKR (50% Burned + 50% Treasury) + 33% ORE 365-Day Vault
   const totalRaw = BigInt(Math.round(amountSkr * 1_000_000));
-  const treasuryRaw = totalRaw / 2n;
-  const burnRaw = totalRaw - treasuryRaw;
+  const skrShareRaw = (totalRaw * 67n) / 100n;
+  const treasuryRaw = skrShareRaw / 2n;
+  const burnRaw = skrShareRaw - treasuryRaw;
+  const oreShareRaw = totalRaw - skrShareRaw; // 33% for ORE 365d Vault Staking
 
-  // 2. Transfer 50% to Treasury
+  // 2. Transfer Treasury SKR share + ORE Staking share
   instructions.push(
     createTransferInstruction(
       userAta,
       treasuryAta,
       payer,
-      treasuryRaw,
+      treasuryRaw + oreShareRaw,
       [],
       TOKEN_PROGRAM_ID
     )
   );
 
-  // 3. Permanently Burn 50%
+  // 3. Permanently Burn 50% of the SKR share on-chain
   instructions.push(
     createBurnInstruction(
       userAta,
@@ -190,8 +192,8 @@ export function buildSkrPaymentInstructions({
     )
   );
 
-  // 4. Proof Memo
-  const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::TREASURY=50%::BURN=50%::TS=${Date.now()}`;
+  // 4. Proof Memo documenting 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365-Day Vault
+  const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::SKR_67%(BURN=50%_TREASURY=50%)::ORE_33%(365D_VAULT_STAKE)::TS=${Date.now()}`;
   instructions.push(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
@@ -356,23 +358,25 @@ export async function executePaymentOrSwap({
       )
     );
 
-    // 6. Transfer 50% SKR to Treasury ATA
+    // 6. Protocol Split: 67% SKR (50% Burned + 50% Treasury) + 33% ORE 365-Day Vault
     const totalRaw = BigInt(rawSkrNeeded);
-    const treasuryRaw = totalRaw / 2n;
-    const burnRaw = totalRaw - treasuryRaw;
+    const skrShareRaw = (totalRaw * 67n) / 100n;
+    const treasuryRaw = skrShareRaw / 2n;
+    const burnRaw = skrShareRaw - treasuryRaw;
+    const oreShareRaw = totalRaw - skrShareRaw; // 33% for ORE 365d Vault Staking
 
     swapInstructions.push(
       createTransferInstruction(
         userAta,
         treasuryAta,
         payer,
-        treasuryRaw,
+        treasuryRaw + oreShareRaw,
         [],
         TOKEN_PROGRAM_ID
       )
     );
 
-    // 7. Permanently Burn 50% SKR on-chain
+    // 7. Permanently Burn 50% of the SKR share on-chain
     swapInstructions.push(
       createBurnInstruction(
         userAta,
@@ -384,8 +388,8 @@ export async function executePaymentOrSwap({
       )
     );
 
-    // 8. SPL Memo documenting Swap + 50% Treasury + 50% Deflationary Burn
-    const memoText = `ARKANA::${actionLabel}::SWAP_SOL_TO_SKR=${amountSkr}::TREASURY=50%::BURN=50%::TS=${Date.now()}`;
+    // 8. SPL Memo documenting 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365-Day Vault
+    const memoText = `ARKANA::${actionLabel}::SWAP_SOL_TO_SKR=${amountSkr}::SKR_67%(BURN=50%_TREASURY=50%)::ORE_33%(365D_VAULT_STAKE)::TS=${Date.now()}`;
     swapInstructions.push(
       new TransactionInstruction({
         programId: SOLANA_MEMO_PROGRAM_ID,

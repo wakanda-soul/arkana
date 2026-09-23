@@ -64,6 +64,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="ore"
+        options={{
+          title: t('tab_ore', 'ORE'),
+          tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="lock.shield.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="wallet"
         options={{
           title: t('tab_me', 'ME'),
