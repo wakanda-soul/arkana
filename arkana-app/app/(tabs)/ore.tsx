@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +26,8 @@ import {
   getUserVaultPda,
   getTranchePda,
   createClaimTrancheYieldInstruction,
+  createDepositTrancheInstruction,
+  fetchRealOreBalance,
   TrancheData,
   UserVaultData,
 } from '@/services/oreVaultService';
@@ -41,6 +44,10 @@ export default function OreVaultScreen() {
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
   const [tranches, setTranches] = useState<TrancheData[]>([]);
   const [userVault, setUserVault] = useState<UserVaultData | null>(null);
+  const [userOreBalance, setUserOreBalance] = useState<number | null>(null);
+  const [depositAmount, setDepositAmount] = useState<string>('50');
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [depositSuccessTx, setDepositSuccessTx] = useState<string | null>(null);
 
   // Load User Vault and Tranches
   const loadVaultData = useCallback(async () => {
@@ -53,6 +60,15 @@ export default function OreVaultScreen() {
     try {
       setIsLoading(true);
       const userPubkey = new PublicKey(walletAddress);
+
+      // Fetch user real ORE balance
+      try {
+        const oreBal = await fetchRealOreBalance(connection, userPubkey);
+        setUserOreBalance(oreBal);
+      } catch (err) {
+        console.warn('Failed to fetch ORE balance:', err);
+      }
+
       const [userVaultPda] = getUserVaultPda(userPubkey);
 
       const vaultAccountInfo = await connection.getAccountInfo(userVaultPda, 'confirmed');
@@ -157,6 +173,44 @@ export default function OreVaultScreen() {
     }
   };
 
+  // Handle depositing ORE into a new 365-day tranche
+  const handleDepositTranche = async () => {
+    const amountNum = parseFloat(depositAmount);
+    if (isNaN(amountNum) || amountNum <= 0) return;
+    if (userOreBalance !== null && amountNum > userOreBalance) return;
+    if (!walletAddress || !signAndSendTransactions) return;
+
+    try {
+      setIsDepositing(true);
+      soundService.triggerHapticHeavy();
+      const userPubkey = new PublicKey(walletAddress);
+      const amountUnits = BigInt(Math.round(amountNum * 1e11)); // ORE 11 decimals
+      const nextTrancheId = (userVault?.trancheCount || 0) + 1;
+
+      const depositIx = await createDepositTrancheInstruction(
+        userPubkey,
+        nextTrancheId,
+        amountUnits
+      );
+
+      const { signature } = await executeSolanaTransaction({
+        connection,
+        payerKey: userPubkey,
+        instructions: [depositIx],
+        signAndSendTransactions,
+      });
+
+      soundService.playMajorArcanaReveal();
+      setDepositSuccessTx(signature);
+      await loadVaultData();
+    } catch (e: any) {
+      console.warn('Error depositing ORE tranche:', e);
+      soundService.playTxError();
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
   const totalOreStakedUi = userVault
     ? (userVault.totalStakedOre / 1e11).toFixed(4)
     : '0.0000';
@@ -257,6 +311,147 @@ export default function OreVaultScreen() {
           </View>
         </View>
 
+        {/* Stake ORE Card */}
+        <LinearGradient
+          colors={['#241C16', '#140F11', '#08070B']}
+          style={styles.stakeCard}
+        >
+          <View style={styles.stakeHeaderRow}>
+            <View style={styles.stakeTitleGroup}>
+              <Text style={styles.stakeTitle}>
+                {t('ore_stake_card_title', 'STAKE ORE (365-DAY TIME-LOCK)')}
+              </Text>
+              <Text style={styles.stakeSubtitle}>
+                {t(
+                  'ore_stake_card_desc',
+                  'Lock $ORE directly into the Sacred Vault. Earn continuous staking yield for 365 days. Principal transitions to Treasury at maturity.'
+                )}
+              </Text>
+            </View>
+          </View>
+
+          {/* User ORE Balance Indicator */}
+          <View style={styles.oreBalanceRow}>
+            <Text style={styles.oreBalanceLabel}>
+              {t('ore_wallet_balance', 'Available in Wallet:')}
+            </Text>
+            <Pressable
+              onPress={() => {
+                if (userOreBalance !== null) {
+                  setDepositAmount(userOreBalance.toString());
+                }
+              }}
+            >
+              <Text style={styles.oreBalanceValue}>
+                {userOreBalance !== null ? `${userOreBalance.toLocaleString()} ORE` : '...'}
+                <Text style={styles.maxText}> (MAX)</Text>
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Quick Preset Buttons */}
+          <View style={styles.presetRow}>
+            {[25, 50, 100, 250].map((amt) => {
+              const isSelected = depositAmount === amt.toString();
+              return (
+                <Pressable
+                  key={amt}
+                  style={[styles.presetBtn, isSelected && styles.presetBtnActive]}
+                  onPress={() => {
+                    soundService.playTap();
+                    setDepositAmount(amt.toString());
+                  }}
+                >
+                  <Text style={[styles.presetBtnText, isSelected && styles.presetBtnTextActive]}>
+                    {amt}
+                  </Text>
+                </Pressable>
+              );
+            })}
+            <Pressable
+              style={[
+                styles.presetBtn,
+                userOreBalance !== null &&
+                  depositAmount === userOreBalance.toString() &&
+                  styles.presetBtnActive,
+              ]}
+              onPress={() => {
+                soundService.playTap();
+                if (userOreBalance !== null) {
+                  setDepositAmount(userOreBalance.toString());
+                }
+              }}
+            >
+              <Text
+                style={[
+                  styles.presetBtnText,
+                  userOreBalance !== null &&
+                    depositAmount === userOreBalance.toString() &&
+                    styles.presetBtnTextActive,
+                ]}
+              >
+                MAX
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Custom Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.amountInput}
+              value={depositAmount}
+              onChangeText={setDepositAmount}
+              placeholder="0.0"
+              placeholderTextColor="#666"
+              keyboardType="decimal-pad"
+            />
+            <View style={styles.inputSuffixBadge}>
+              <OreLogo size={14} color="#C8A24A" />
+              <Text style={styles.inputSuffixText}>ORE</Text>
+            </View>
+          </View>
+
+          {/* Open Tranche Button */}
+          <Pressable
+            style={[
+              styles.depositButton,
+              (isDepositing ||
+                !depositAmount ||
+                parseFloat(depositAmount) <= 0 ||
+                (userOreBalance !== null && parseFloat(depositAmount) > userOreBalance)) &&
+                styles.depositButtonDisabled,
+            ]}
+            onPress={handleDepositTranche}
+            disabled={
+              isDepositing ||
+              !depositAmount ||
+              parseFloat(depositAmount) <= 0 ||
+              (userOreBalance !== null && parseFloat(depositAmount) > userOreBalance)
+            }
+          >
+            {isDepositing ? (
+              <ActivityIndicator size="small" color="#08070B" />
+            ) : (
+              <Text style={styles.depositButtonText}>
+                {userOreBalance !== null && parseFloat(depositAmount) > userOreBalance
+                  ? t('ore_insufficient_balance', 'Insufficient ORE Balance')
+                  : `${t('ore_open_tranche_btn', 'OPEN 365-DAY TRANCHE')} (${depositAmount || 0} ORE)`}
+              </Text>
+            )}
+          </Pressable>
+
+          {depositSuccessTx && (
+            <View style={styles.depositSuccessBanner}>
+              <Text style={styles.depositSuccessText}>
+                {t('ore_tranche_created_success', 'Tranche created successfully on Solana!')}
+              </Text>
+              <Text style={styles.depositSuccessTx} numberOfLines={1}>
+                TX: {depositSuccessTx.slice(0, 12)}...{depositSuccessTx.slice(-8)}
+              </Text>
+            </View>
+          )}
+        </LinearGradient>
+
         {/* Tranches Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
@@ -276,7 +471,7 @@ export default function OreVaultScreen() {
             <Text style={styles.emptyStateDesc}>
               {t(
                 'ore_empty_desc',
-                'Make an offering at the Sacred Altar or purchase a reading. 33% will automatically be converted to ORE and begin earning 365-day staking yield for your wallet.'
+                'Stake your ORE tokens above to open 365-day tranches and start earning yield, or make an offering at the Sacred Altar (33% feeds the ORE staking pool).'
               )}
             </Text>
           </View>
@@ -653,5 +848,150 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#08070B',
     letterSpacing: 1,
+  },
+  stakeCard: {
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.4)',
+    marginBottom: 20,
+  },
+  stakeHeaderRow: {
+    marginBottom: 12,
+  },
+  stakeTitleGroup: {},
+  stakeTitle: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#EDE7DC',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  stakeSubtitle: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10.5,
+    lineHeight: 15,
+    color: 'rgba(237, 231, 220, 0.6)',
+  },
+  oreBalanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 6,
+  },
+  oreBalanceLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: 'rgba(237, 231, 220, 0.65)',
+  },
+  oreBalanceValue: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: '#C8A24A',
+    fontWeight: '700',
+  },
+  maxText: {
+    color: '#C8A24A',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  presetRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  presetBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.25)',
+    borderRadius: 8,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  presetBtnActive: {
+    backgroundColor: 'rgba(200, 162, 74, 0.2)',
+    borderColor: '#C8A24A',
+  },
+  presetBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: '#DDD',
+    fontWeight: '600',
+  },
+  presetBtnTextActive: {
+    color: '#C8A24A',
+    fontWeight: '700',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(8, 7, 12, 0.8)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.35)',
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  amountInput: {
+    flex: 1,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 14,
+    color: '#EDE7DC',
+    paddingVertical: 10,
+  },
+  inputSuffixBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(200, 162, 74, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  inputSuffixText: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#C8A24A',
+  },
+  depositButton: {
+    backgroundColor: '#C8A24A',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  depositButtonDisabled: {
+    opacity: 0.45,
+  },
+  depositButtonText: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#08070B',
+    letterSpacing: 1,
+  },
+  depositSuccessBanner: {
+    marginTop: 12,
+    backgroundColor: 'rgba(105, 219, 124, 0.12)',
+    borderWidth: 1,
+    borderColor: '#69DB7C',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  depositSuccessText: {
+    color: '#69DB7C',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  depositSuccessTx: {
+    color: 'rgba(237, 231, 220, 0.7)',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
   },
 });
