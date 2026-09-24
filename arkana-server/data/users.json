@@ -20,9 +20,9 @@
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 1,
-    "dailySpreadsUsed": 3,
+    "dailySpreadsUsed": 5,
     "lastSpreadDate": "2026-09-24",
-    "totalReadings": 12,
+    "totalReadings": 14,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -72,6 +72,22 @@
         "costSol": 0.001,
         "itemType": "spread",
         "txSignature": "3FcDR5c4HDPJj2Hx2gSYQ8BuTwbJTyQG52xJe2BqumFF2FZy9y1eabxg6J7XmXnkj576aY61SHKN5CbgjHygMe6g"
+      },
+      {
+        "timestamp": "2026-09-24T20:34:46.300Z",
+        "paidWith": "skr",
+        "costSkr": 5,
+        "costSol": 0.001,
+        "itemType": "spread",
+        "txSignature": "56rgGLidu5QnNkQxheZ6ie7z7JMMXbbk2FiBQxGrN5TPTkqqCeAbcAZtE7L9iLxJuprdM6PNGJD8o6NVozu8QDjJ"
+      },
+      {
+        "timestamp": "2026-09-24T20:39:37.299Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "45iQXnQW824fUAZGA4eZNkKnJuE7Cx44wzqAcUtNuCkYw1NphYikws6BBB2U15JcrtiBhPJwQzMBkXvZxdAnbviD"
       }
     ],
     "lastClockIn": "2026-09-24T18:28:27.242Z",
@@ -113,7 +129,28 @@
     ],
     "claimedStreakMilestones": [],
     "brokenStreak": 3,
-    "previousStreak": 3
+    "previousStreak": 3,
+    "offerings": [
+      {
+        "timestamp": "2026-09-24T20:39:07.965Z",
+        "amountSkr": 50,
+        "treasurySkr": 16.5,
+        "burnedSkr": 16.5,
+        "oreShareSkr": 17,
+        "txSignature": "n15bFVQECvo7E6PPmivjoLwBfKZE8ueYm3E97ma9omGk7DYpCSDYLSe7LCqiohGUXKVZjXo54zqD4iFyR7P3msN",
+        "message": "Offering of 50 SKR to Sacred Altar"
+      },
+      {
+        "timestamp": "2026-09-24T20:35:42.469Z",
+        "amountSkr": 50,
+        "treasurySkr": 16.5,
+        "burnedSkr": 16.5,
+        "oreShareSkr": 17,
+        "txSignature": "62qwEg1pfwAX8yTJZiCGkWxFb17edLzcdmL4rcJAKR9PLdR3UUReSJCpbbChKUJUnNeiHvAdU1MAZ3fVAKtXXcS5",
+        "message": "Offering of 50 SKR to Sacred Altar"
+      }
+    ],
+    "totalOfferedSkr": 100
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,

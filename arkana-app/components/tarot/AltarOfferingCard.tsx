@@ -196,7 +196,7 @@ export function AltarOfferingCard({
             onPress={() => setForceSolMode(true)}
           >
             <Text style={[styles.sourceButtonText, isSolMode && styles.sourceButtonTextActive]}>
-              ⚡ SOL (Jupiter Swap)
+              {t('sol_jupiter_swap_tab', '⚡ SOL (Jupiter Swap)')}
             </Text>
           </Pressable>
         </View>
@@ -221,7 +221,7 @@ export function AltarOfferingCard({
           ) : (
             <Text style={styles.submitButtonText}>
               {isSolMode
-                ? `${t('send_offering_sol_btn', 'OFFERING & 365D ORE STAKE')} (${solEstimate})`
+                ? `${t('send_offering_sol_btn', 'MAKE SACRED OFFERING')} (${solEstimate})`
                 : `${t('send_offering_btn', 'MAKE SACRED OFFERING')} (${selectedAmount} SKR)`}
             </Text>
           )}

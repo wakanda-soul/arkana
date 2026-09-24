@@ -429,13 +429,13 @@ export default function WalletScreen() {
                 </View>
 
                 <Text style={styles.subCardDesc}>
-                  {t('oracle_pass_sub', '+5 spreads daily (8 total with Seeker SBT) \u00B7 50% burned on-chain')}
+                  {t('oracle_pass_sub', '+5 spreads daily (8 total with Seeker SBT) \u00B7 33% Burn + 33% Treasury + 34% ORE Yield')}
                 </Text>
 
                 <View style={styles.subCardFooter}>
                   <View style={styles.subTokenomicsInfo}>
                     <Text style={styles.subTokenomicsText}>
-                      {t('sub_tokenomics_split', '◈ 50% Treasury · 50% Burned on Solana')}
+                      {t('sub_tokenomics_split', '◈ 33% Burn · 33% Treasury · 34% ORE Yield')}
                     </Text>
                     {subSolEstimate && !clockInState.isSubscribed ? (
                       <Text style={styles.subSolEstimateText}>
