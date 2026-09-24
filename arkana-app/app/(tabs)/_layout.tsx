@@ -3,6 +3,7 @@ import React from 'react'
 import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
+import { OreLogo } from '@/components/ui/OreLogo'
 import { useLanguage } from '@/services/i18n'
 import { soundService } from '@/services/soundService'
 
@@ -67,7 +68,7 @@ export default function TabLayout() {
         name="ore"
         options={{
           title: t('tab_ore', 'ORE'),
-          tabBarIcon: ({ color }) => <UiIconSymbol size={22} name="lock.shield.fill" color={color} />,
+          tabBarIcon: ({ color }) => <OreLogo size={20} color={color} />,
         }}
       />
       <Tabs.Screen
