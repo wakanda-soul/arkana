@@ -17,6 +17,7 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { useLanguage } from '@/services/i18n';
 import { soundService } from '@/services/soundService';
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol';
+import { OreLogo } from '@/components/ui/OreLogo';
 import {
   ARKANA_VAULT_PROGRAM_ID,
   ORE_MINT_ADDRESS,
@@ -193,7 +194,7 @@ export default function OreVaultScreen() {
           style={styles.statsCard}
         >
           <View style={styles.statsHeader}>
-            <UiIconSymbol name="lock.shield.fill" size={26} color="#C8A24A" />
+            <OreLogo size={26} color="#C8A24A" />
             <Text style={styles.statsBadge}>
               {t('ore_badge_365', '365-DAY TIME-LOCK')}
             </Text>
