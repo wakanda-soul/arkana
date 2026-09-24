@@ -8,6 +8,7 @@ import {
 } from '@solana/web3.js';
 import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { APP_IDENTITY } from '@/constants/app-config';
+import { getNetworkConfig } from '@/constants/networkConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 
@@ -108,7 +109,7 @@ export async function executeSolanaTransaction({
 
         signature = await transact(async (wallet: Web3MobileWallet) => {
           await wallet.authorize({
-            chain: 'solana:mainnet',
+            chain: getNetworkConfig().clusterId,
             identity: APP_IDENTITY,
           });
           const sigs = await wallet.signAndSendTransactions({
@@ -124,7 +125,7 @@ export async function executeSolanaTransaction({
   } else {
     signature = await transact(async (wallet: Web3MobileWallet) => {
       await wallet.authorize({
-        chain: 'solana:mainnet',
+        chain: getNetworkConfig().clusterId,
         identity: APP_IDENTITY,
       });
       const sigs = await wallet.signAndSendTransactions({
@@ -176,7 +177,7 @@ export async function submitConsensusProofOnChain({
   });
 }
 
-export const SKR_MINT = new PublicKey('SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3');
+export const SKR_MINT = getNetworkConfig().skrMint;
 
 export async function fetchRealSkrBalance(
   connection: Connection,

@@ -1,10 +1,12 @@
 mod claim;
 mod deposit;
+mod distribute;
 mod harvest;
 mod init;
 
 use claim::*;
 use deposit::*;
+use distribute::*;
 use harvest::*;
 use init::*;
 
@@ -23,6 +25,7 @@ pub fn process_instruction(
         ArkanaVaultInstruction::DepositTranche => process_deposit_tranche(accounts, data)?,
         ArkanaVaultInstruction::ClaimTrancheYield => process_claim_tranche_yield(accounts, data)?,
         ArkanaVaultInstruction::HarvestMaturedTranche => process_harvest_matured_tranche(accounts, data)?,
+        ArkanaVaultInstruction::DistributeReward => process_distribute_reward(accounts, data)?,
     }
 
     Ok(())

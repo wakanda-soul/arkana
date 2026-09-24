@@ -13,4 +13,4 @@ pub mod prelude {
 use steel::*;
 
 // Program ID for Arkana ORE Vault
-declare_id!("HZrfoHKA76URt1jfa2bn9Tmunjb8gBehGUW4rgmSASnH");
+declare_id!("B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C");

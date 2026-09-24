@@ -69,11 +69,11 @@ export default function OreVaultScreen() {
       }
 
       // Parse UserVault account data
-      // Steel layout: [owner: 32 bytes][tranche_count: 4 bytes][padding: 4 bytes][total_staked: 8 bytes][total_claimed: 8 bytes]
+      // Steel layout: [discriminator: 8 bytes][owner: 32 bytes][tranche_count: 4 bytes][padding: 4 bytes][total_staked: 8 bytes][total_claimed: 8 bytes]
       const data = vaultAccountInfo.data;
-      const trancheCount = data.readUInt32LE(32);
-      const totalStakedOre = Number(data.readBigUInt64LE(40));
-      const totalYieldClaimed = Number(data.readBigUInt64LE(48));
+      const trancheCount = data.readUInt32LE(40);
+      const totalStakedOre = Number(data.readBigUInt64LE(48));
+      const totalYieldClaimed = Number(data.readBigUInt64LE(56));
 
       setUserVault({
         owner: walletAddress,
@@ -89,15 +89,15 @@ export default function OreVaultScreen() {
       for (let i = 1; i <= trancheCount; i++) {
         const [tranchePda] = getTranchePda(userPubkey, i);
         const trancheAccount = await connection.getAccountInfo(tranchePda, 'confirmed');
-        if (trancheAccount && trancheAccount.data.length >= 108) {
+        if (trancheAccount && trancheAccount.data.length >= 112) {
           const tData = trancheAccount.data;
-          // [owner: 32][tranche_id: 4][is_matured: 1][padding: 3][deposited_amount: 8][deposited_at: 8][expires_at: 8]
-          const trancheId = tData.readUInt32LE(32);
-          const isMatured = tData.readUInt8(36) === 1;
-          const depositedAmount = Number(tData.readBigUInt64LE(40));
-          const depositedAt = Number(tData.readBigInt64LE(48));
-          const expiresAt = Number(tData.readBigInt64LE(56));
-          const claimedRewards = Number(tData.readBigUInt64LE(100));
+          // [discriminator: 8][owner: 32][tranche_id: 4][is_matured: 1][padding: 3][deposited_amount: 8][deposited_at: 8][expires_at: 8]...[claimed_rewards: 8]
+          const trancheId = tData.readUInt32LE(40);
+          const isMatured = tData.readUInt8(44) === 1;
+          const depositedAmount = Number(tData.readBigUInt64LE(48));
+          const depositedAt = Number(tData.readBigInt64LE(56));
+          const expiresAt = Number(tData.readBigInt64LE(64));
+          const claimedRewards = Number(tData.readBigUInt64LE(104));
 
           const secondsLeft = Math.max(0, expiresAt - now);
           const daysRemaining = Math.ceil(secondsLeft / 86400);
