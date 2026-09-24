@@ -20,6 +20,12 @@ pub enum ArkanaVaultInstruction {
 
     /// Swap SKR from pool and deposit ORE into a new 365-day staking tranche.
     SwapAndDepositTranche = 5,
+
+    /// Deposit SOL, transfer lamports to vault authority, and lock equivalent ORE into 365-day tranche.
+    SwapAndDepositSolTranche = 6,
+
+    /// Admin / authority creates a 365-day tranche for a user (used for backfill & migrations).
+    AdminCreateTranche = 7,
 }
 
 #[repr(C)]
@@ -61,9 +67,27 @@ pub struct SwapAndDepositTranche {
     pub skr_amount: [u8; 8],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct SwapAndDepositSolTranche {
+    /// Indivisible units of SKR that this SOL payment corresponds to (for 1:1 ORE calculation)
+    pub equivalent_skr_amount: [u8; 8],
+    /// SOL lamports to transfer to vault authority
+    pub sol_lamports: [u8; 8],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct AdminCreateTranche {
+    /// Indivisible units of ORE to deposit into target user's tranche.
+    pub ore_amount: [u8; 8],
+}
+
 instruction!(ArkanaVaultInstruction, Initialize);
 instruction!(ArkanaVaultInstruction, DepositTranche);
 instruction!(ArkanaVaultInstruction, ClaimTrancheYield);
 instruction!(ArkanaVaultInstruction, HarvestMaturedTranche);
 instruction!(ArkanaVaultInstruction, DistributeReward);
 instruction!(ArkanaVaultInstruction, SwapAndDepositTranche);
+instruction!(ArkanaVaultInstruction, SwapAndDepositSolTranche);
+instruction!(ArkanaVaultInstruction, AdminCreateTranche);

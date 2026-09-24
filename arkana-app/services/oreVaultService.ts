@@ -207,6 +207,45 @@ export async function createSwapAndDepositTrancheInstruction(
 }
 
 /**
+ * Creates the SwapAndDepositSolTranche instruction.
+ * Swaps SOL lamports directly into vault pool and deposits into a new 365-day ORE staking tranche.
+ */
+export async function createSwapAndDepositSolTrancheInstruction(
+  userPubkey: PublicKey,
+  trancheId: number,
+  equivalentSkrUnits: bigint,
+  solLamports: bigint
+): Promise<TransactionInstruction> {
+  const [configPda] = getConfigPda();
+  const [vaultAuthorityPda] = getVaultAuthorityPda();
+  const [userVaultPda] = getUserVaultPda(userPubkey);
+  const [tranchePda] = getTranchePda(userPubkey, trancheId);
+
+  const oreMint = getNetworkConfig().oreMint;
+  const vaultOreAta = getAssociatedTokenAddressSync(oreMint, vaultAuthorityPda, true);
+
+  const data = Buffer.alloc(17);
+  data.writeUInt8(6, 0); // Instruction::SwapAndDepositSolTranche = 6
+  data.writeBigUInt64LE(equivalentSkrUnits, 1);
+  data.writeBigUInt64LE(solLamports, 9);
+
+  return new TransactionInstruction({
+    programId: ARKANA_VAULT_PROGRAM_ID,
+    keys: [
+      { pubkey: userPubkey, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
+      { pubkey: userVaultPda, isSigner: false, isWritable: true },
+      { pubkey: tranchePda, isSigner: false, isWritable: true },
+      { pubkey: vaultOreAta, isSigner: false, isWritable: true },
+      { pubkey: oreMint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data
+  });
+}
+
+/**
  * Creates the ClaimTrancheYield instruction.
  * User claims all accrued ORE yield on their tranche directly to their wallet.
  */
