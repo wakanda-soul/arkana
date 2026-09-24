@@ -12,6 +12,8 @@ import { ed25519 } from '@noble/curves/ed25519';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance, executeSolanaTransaction } from './solanaService';
+import { isDevnet } from '@/constants/networkConfig';
+import { createSwapAndDepositTrancheInstruction, getUserVaultPda } from './oreVaultService';
 
 /**
  * Arkana Founder Offline Master Public Key
@@ -128,20 +130,23 @@ function deserializeJupiterInstruction(instruction: any): TransactionInstruction
 
 /**
  * Build SPL Token instructions for direct SKR payments:
- * - 50% transferred to Arkana Treasury
- * - 50% burned permanently on-chain (createBurnInstruction)
+ * - 33% transferred to Arkana Treasury
+ * - 33% burned permanently on-chain (createBurnInstruction)
+ * - 34% swapped via vault pool and locked into 365-day ORE Sacred Vault tranche
  */
-export function buildSkrPaymentInstructions({
+export async function buildSkrPaymentInstructions({
+  connection,
   userPublicKey,
   treasuryPublicKey,
   amountSkr,
   actionLabel = 'PAYMENT',
 }: {
+  connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
-}): TransactionInstruction[] {
+}): Promise<TransactionInstruction[]> {
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
   const userAta = getAssociatedTokenAddressSync(SKR_MINT, payer, true);
@@ -162,18 +167,19 @@ export function buildSkrPaymentInstructions({
   );
 
   // Protocol Split: 33% Burn + 33% Treasury + 34% ORE 365-Day Staking Yield
-  const totalRaw = BigInt(Math.round(amountSkr * 1_000_000));
+  const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
+  const totalRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
   const burnRaw = (totalRaw * 33n) / 100n;
   const treasuryRaw = (totalRaw * 33n) / 100n;
   const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34% for ORE Staking Yield
 
-  // 2. Transfer Treasury SKR share (33%) + ORE Staking share (34%)
+  // 2. Transfer Treasury SKR share (33%)
   instructions.push(
     createTransferInstruction(
       userAta,
       treasuryAta,
       payer,
-      treasuryRaw + oreShareRaw,
+      treasuryRaw,
       [],
       TOKEN_PROGRAM_ID
     )
@@ -191,7 +197,36 @@ export function buildSkrPaymentInstructions({
     )
   );
 
-  // 4. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
+  // 4. On-chain Atomic Swap & Deposit into ORE Sacred Vault (365-Day Time-Lock)
+  try {
+    const [userVaultPda] = getUserVaultPda(payer);
+    const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
+    let nextTrancheId = 1;
+    if (uVaultAcc && uVaultAcc.data.length >= 64) {
+      nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
+    }
+
+    const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
+      payer,
+      nextTrancheId,
+      oreShareRaw
+    );
+    instructions.push(swapAndDepositIx);
+  } catch (vaultErr) {
+    console.warn('Failed to build on-chain SwapAndDeposit instruction, routing to treasury as fallback:', vaultErr);
+    instructions.push(
+      createTransferInstruction(
+        userAta,
+        treasuryAta,
+        payer,
+        oreShareRaw,
+        [],
+        TOKEN_PROGRAM_ID
+      )
+    );
+  }
+
+  // 5. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
   const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
   instructions.push(
     new TransactionInstruction({
@@ -235,8 +270,9 @@ export async function executePaymentOrSwap({
   const currentSkr = await fetchRealSkrBalance(connection, payer);
 
   if (!forceSolSwap && currentSkr >= amountSkr) {
-    // Direct on-chain SKR transaction: 50% Treasury + 50% Burn
-    const instructions = buildSkrPaymentInstructions({
+    // Direct on-chain SKR transaction: 33% Treasury + 33% Burn + 34% ORE Swap & Staking Tranche
+    const instructions = await buildSkrPaymentInstructions({
+      connection,
       userPublicKey: payer,
       treasuryPublicKey: treasury,
       amountSkr,
@@ -363,12 +399,13 @@ export async function executePaymentOrSwap({
     const treasuryRaw = (totalRaw * 33n) / 100n;
     const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34% for ORE Staking Yield
 
+    // 6. Transfer Treasury SKR share (33%)
     swapInstructions.push(
       createTransferInstruction(
         userAta,
         treasuryAta,
         payer,
-        treasuryRaw + oreShareRaw,
+        treasuryRaw,
         [],
         TOKEN_PROGRAM_ID
       )
@@ -386,7 +423,35 @@ export async function executePaymentOrSwap({
       )
     );
 
-    // 8. SPL Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
+    // 8. Swap & Deposit 34% into ORE Sacred Vault
+    try {
+      const [userVaultPda] = getUserVaultPda(payer);
+      const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
+      let nextTrancheId = 1;
+      if (uVaultAcc && uVaultAcc.data.length >= 64) {
+        nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
+      }
+      const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
+        payer,
+        nextTrancheId,
+        oreShareRaw
+      );
+      swapInstructions.push(swapAndDepositIx);
+    } catch (vaultErr) {
+      console.warn('Vault instruction skipped in Jupiter swap, sending to treasury:', vaultErr);
+      swapInstructions.push(
+        createTransferInstruction(
+          userAta,
+          treasuryAta,
+          payer,
+          oreShareRaw,
+          [],
+          TOKEN_PROGRAM_ID
+        )
+      );
+    }
+
+    // 9. SPL Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
     const memoText = `ARKANA::${actionLabel}::SWAP_SOL_TO_SKR=${amountSkr}::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
     swapInstructions.push(
       new TransactionInstruction({

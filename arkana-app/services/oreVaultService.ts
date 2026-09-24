@@ -7,7 +7,8 @@ import {
 import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress
+  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync
 } from '@solana/spl-token';
 import { getNetworkConfig } from '@/constants/networkConfig';
 
@@ -151,6 +152,52 @@ export async function createDepositTrancheInstruction(
       { pubkey: userTokensAta, isSigner: false, isWritable: true },
       { pubkey: vaultTokensAta, isSigner: false, isWritable: true },
       { pubkey: ORE_MINT_ADDRESS, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
+    ],
+    data
+  });
+}
+
+/**
+ * Creates the SwapAndDepositTranche instruction.
+ * Swaps SKR from user into the vault pool and locks ORE into a new 365-day staking tranche.
+ */
+export async function createSwapAndDepositTrancheInstruction(
+  userPubkey: PublicKey,
+  trancheId: number,
+  amountSkrUnits: bigint
+): Promise<TransactionInstruction> {
+  const [configPda] = getConfigPda();
+  const [vaultAuthorityPda] = getVaultAuthorityPda();
+  const [userVaultPda] = getUserVaultPda(userPubkey);
+  const [tranchePda] = getTranchePda(userPubkey, trancheId);
+
+  const skrMint = getNetworkConfig().skrMint;
+  const oreMint = getNetworkConfig().oreMint;
+
+  const userSkrAta = getAssociatedTokenAddressSync(skrMint, userPubkey, true);
+  const vaultSkrAta = getAssociatedTokenAddressSync(skrMint, vaultAuthorityPda, true);
+  const vaultOreAta = getAssociatedTokenAddressSync(oreMint, vaultAuthorityPda, true);
+
+  const data = Buffer.alloc(9);
+  data.writeUInt8(5, 0); // Instruction::SwapAndDepositTranche = 5
+  data.writeBigUInt64LE(amountSkrUnits, 1);
+
+  return new TransactionInstruction({
+    programId: ARKANA_VAULT_PROGRAM_ID,
+    keys: [
+      { pubkey: userPubkey, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
+      { pubkey: userVaultPda, isSigner: false, isWritable: true },
+      { pubkey: tranchePda, isSigner: false, isWritable: true },
+      { pubkey: userSkrAta, isSigner: false, isWritable: true },
+      { pubkey: vaultSkrAta, isSigner: false, isWritable: true },
+      { pubkey: vaultOreAta, isSigner: false, isWritable: true },
+      { pubkey: skrMint, isSigner: false, isWritable: false },
+      { pubkey: oreMint, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }

@@ -2807,8 +2807,8 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
     id: 'RITUAL EKONOMI SUCI',
   },
   "ore_loop_desc": {
-    en: 'On every transaction in Arkana, 33% of $SKR is burned forever, 33% is allocated to the Arkana Treasury, and 34% is directed into the $ORE Sacred Vault 365-day staking yield stream. When paying in $SKR, conversion is done directly from $SKR.',
-    ru: 'С каждого платежа в Arkana 33% $SKR сжигается навсегда, 33% поступает в казну, а 34% направляется в стейкинг $ORE для генерации доходности. При оплате в $SKR конвертация происходит напрямую из $SKR.',
+    en: 'On every transaction in Arkana, 33% of $SKR is burned forever, 33% is allocated to the Arkana Treasury, and 34% is directed into the $ORE Sacred Vault 365-day staking yield stream.',
+    ru: 'С каждого платежа в Arkana 33% $SKR сжигается навсегда, 33% поступает в казну, а 34% направляется в стейкинг $ORE для генерации доходности.',
     es: 'En cada transacción en Arkana, el 33% de $SKR se quema para siempre, el 33% va al Tesoro y el 34% se destina al staking de $ORE.',
     pt: 'Em cada transação na Arkana, 33% do $SKR é queimado para sempre, 33% vai ao Tesouro e 34% vai para o staking de $ORE.',
     fr: 'Sur chaque transaction dans Arkana, 33% des $SKR sont brûlés à jamais, 33% sont alloués au Trésor et 34% au staking $ORE.',
