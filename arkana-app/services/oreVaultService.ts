@@ -114,6 +114,7 @@ export interface TrancheData {
   daysRemaining: number;
   isExpired: boolean;
   canHarvest: boolean;
+  txSignature?: string;
 }
 
 // ============================================================================
