@@ -33,10 +33,10 @@ export function AltarOfferingCard({
   const [forceSolMode, setForceSolMode] = useState<boolean>(false);
   const [wasSwapped, setWasSwapped] = useState<boolean>(false);
 
-  // Exact 67/33 Protocol Split breakdown
-  const burnSkr = Number((selectedAmount * 0.67 * 0.5).toFixed(2));
-  const treasurySkr = Number((selectedAmount * 0.67 * 0.5).toFixed(2));
-  const oreShareSkr = Number((selectedAmount * 0.33).toFixed(2));
+  // Exact 33 / 33 / 34 Protocol Split breakdown
+  const burnSkr = Number((selectedAmount * 0.33).toFixed(2));
+  const treasurySkr = Number((selectedAmount * 0.33).toFixed(2));
+  const oreShareSkr = Number((selectedAmount * 0.34).toFixed(2));
 
   useEffect(() => {
     let isMounted = true;
@@ -132,7 +132,7 @@ export function AltarOfferingCard({
             <Text style={styles.subtitleText}>
               {t(
                 'altar_offering_sub',
-                '50% Burned · 50% to Treasury · Deflationary Burn'
+                '33% Burned · 33% Treasury · 34% ORE Staking Yield'
               )}
             </Text>
           </View>
@@ -205,8 +205,8 @@ export function AltarOfferingCard({
         <View style={styles.rateRow}>
           <Text style={styles.rateText} numberOfLines={1} adjustsFontSizeToFit>
             {isSolMode
-              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX Auto-Swap')} (${solEstimate}) \u2192 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365d Vault`
-              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} \u2192 67% SKR (50% Burn + 50% Treasury) + 33% ORE 365d Vault`}
+              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX Auto-Swap')} (${solEstimate}) \u2192 33% Burn + 33% Treasury + 34% ORE Yield`
+              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} \u2192 33% Burn + 33% Treasury + 34% ORE Yield`}
           </Text>
         </View>
 
@@ -263,8 +263,8 @@ export function AltarOfferingCard({
 
             <Text style={styles.modalDesc}>
               {t(
-                'offering_67_33_desc',
-                '67% is allocated to SKR deflation and treasury reserve, while 33% feeds the ORE Sacred Vault 365-day staking yield stream.'
+                'offering_33_34_desc',
+                '33% of SKR is burned forever, 33% is allocated to Treasury reserve, and 34% feeds the ORE Sacred Vault 365-day staking yield stream.'
               )}
             </Text>
             {confirmedTx && (

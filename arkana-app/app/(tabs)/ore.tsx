@@ -282,7 +282,7 @@ export default function OreVaultScreen() {
           </View>
         </LinearGradient>
 
-        {/* The Sacred 67/33 Economic Loop Explained */}
+        {/* The Sacred 33/33/34 Economic Loop Explained */}
         <View style={styles.ruleCard}>
           <Text style={styles.ruleTitle}>
             {t('ore_loop_title', 'THE SACRED ECONOMIC RITUAL')}
@@ -290,22 +290,29 @@ export default function OreVaultScreen() {
           <Text style={styles.ruleDesc}>
             {t(
               'ore_loop_desc',
-              'On every payment in Arkana, 67% is swapped to $SKR (50% burned forever + 50% to treasury), while 33% is swapped to $ORE and locked in this vault for 365 days. You claim 100% of the staking yield during the year, after which the principal transitions permanently into the Arkana Treasury.'
+              'On every transaction in Arkana, 33% of $SKR is burned forever, 33% is allocated to the Arkana Treasury, and 34% is directed into the $ORE Sacred Vault 365-day staking yield stream. When paying in $SKR, conversion is done directly from $SKR.'
             )}
           </Text>
 
           <View style={styles.ruleBreakdown}>
             <View style={styles.ruleItem}>
-              <Text style={styles.rulePctGold}>67% SKR</Text>
+              <Text style={styles.rulePctGold}>33%</Text>
               <Text style={styles.ruleItemSub}>
-                {t('ore_skr_desc', '50% Burned + 50% Treasury')}
+                {t('ore_burn_desc', 'Burned Forever')}
               </Text>
             </View>
 
             <View style={styles.ruleItem}>
-              <Text style={styles.rulePctGold}>33% ORE</Text>
+              <Text style={styles.rulePctGold}>33%</Text>
               <Text style={styles.ruleItemSub}>
-                {t('ore_ore_desc', '365d Vault + 100% Yield')}
+                {t('ore_treasury_desc', 'Arkana Treasury')}
+              </Text>
+            </View>
+
+            <View style={styles.ruleItem}>
+              <Text style={styles.rulePctGold}>34%</Text>
+              <Text style={styles.ruleItemSub}>
+                {t('ore_yield_desc', 'ORE Staking Yield')}
               </Text>
             </View>
           </View>
