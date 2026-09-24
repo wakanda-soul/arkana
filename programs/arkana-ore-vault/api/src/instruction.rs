@@ -17,6 +17,9 @@ pub enum ArkanaVaultInstruction {
 
     /// Distribute reward ORE into the staking pool.
     DistributeReward = 4,
+
+    /// Swap SKR from pool and deposit ORE into a new 365-day staking tranche.
+    SwapAndDepositTranche = 5,
 }
 
 #[repr(C)]
@@ -51,8 +54,16 @@ pub struct DistributeReward {
     pub amount: [u8; 8],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct SwapAndDepositTranche {
+    /// Indivisible units of SKR to swap for ORE and deposit into tranche.
+    pub skr_amount: [u8; 8],
+}
+
 instruction!(ArkanaVaultInstruction, Initialize);
 instruction!(ArkanaVaultInstruction, DepositTranche);
 instruction!(ArkanaVaultInstruction, ClaimTrancheYield);
 instruction!(ArkanaVaultInstruction, HarvestMaturedTranche);
 instruction!(ArkanaVaultInstruction, DistributeReward);
+instruction!(ArkanaVaultInstruction, SwapAndDepositTranche);

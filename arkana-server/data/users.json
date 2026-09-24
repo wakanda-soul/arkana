@@ -20,9 +20,9 @@
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
     "streak": 1,
-    "dailySpreadsUsed": 2,
+    "dailySpreadsUsed": 3,
     "lastSpreadDate": "2026-09-24",
-    "totalReadings": 11,
+    "totalReadings": 12,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -64,6 +64,14 @@
         "costSol": 0.001,
         "itemType": "spread",
         "txSignature": "sXEYW4kPzeDcf6q3HX3ShxZZXVWA9X1c5UQXfvC5r1HGw2Xyhk8NQP4WrU2pUDMPzB9bz5xnHwMxCmXbivCZb1q"
+      },
+      {
+        "timestamp": "2026-09-24T19:29:48.006Z",
+        "paidWith": "skr",
+        "costSkr": 5,
+        "costSol": 0.001,
+        "itemType": "spread",
+        "txSignature": "3FcDR5c4HDPJj2Hx2gSYQ8BuTwbJTyQG52xJe2BqumFF2FZy9y1eabxg6J7XmXnkj576aY61SHKN5CbgjHygMe6g"
       }
     ],
     "lastClockIn": "2026-09-24T18:28:27.242Z",
