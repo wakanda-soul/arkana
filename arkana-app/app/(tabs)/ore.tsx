@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +20,7 @@ import { useLanguage } from '@/services/i18n';
 import { soundService } from '@/services/soundService';
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol';
 import { OreLogo } from '@/components/ui/OreLogo';
+import { getNetworkConfig } from '@/constants/networkConfig';
 import {
   ARKANA_VAULT_PROGRAM_ID,
   ORE_MINT_ADDRESS,
@@ -83,40 +86,53 @@ export default function OreVaultScreen() {
         totalYieldClaimed,
       });
 
-      // Fetch individual tranches
-      const loadedTranches: TrancheData[] = [];
+      // Fetch individual tranches in parallel
       const now = Math.floor(Date.now() / 1000);
+      const trancheIndices = Array.from({ length: trancheCount }, (_, idx) => idx + 1);
 
-      for (let i = 1; i <= trancheCount; i++) {
-        const [tranchePda] = getTranchePda(userPubkey, i);
-        const trancheAccount = await connection.getAccountInfo(tranchePda, 'confirmed');
-        if (trancheAccount && trancheAccount.data.length >= 112) {
-          const tData = trancheAccount.data;
-          // [discriminator: 8][owner: 32][tranche_id: 4][is_matured: 1][padding: 3][deposited_amount: 8][deposited_at: 8][expires_at: 8]...[claimed_rewards: 8]
-          const trancheId = tData.readUInt32LE(40);
-          const isMatured = tData.readUInt8(44) === 1;
-          const depositedAmount = Number(tData.readBigUInt64LE(48));
-          const depositedAt = Number(tData.readBigInt64LE(56));
-          const expiresAt = Number(tData.readBigInt64LE(64));
-          const claimedRewards = Number(tData.readBigUInt64LE(104));
+      const loadedTranches = (
+        await Promise.all(
+          trancheIndices.map(async (i) => {
+            try {
+              const [tranchePda] = getTranchePda(userPubkey, i);
+              const [trancheAccount, sigs] = await Promise.all([
+                connection.getAccountInfo(tranchePda, 'confirmed'),
+                connection.getSignaturesForAddress(tranchePda, { limit: 1 }).catch(() => []),
+              ]);
 
-          const secondsLeft = Math.max(0, expiresAt - now);
-          const daysRemaining = Math.ceil(secondsLeft / 86400);
+              if (trancheAccount && trancheAccount.data.length >= 112) {
+                const tData = trancheAccount.data;
+                const trancheId = tData.readUInt32LE(40);
+                const isMatured = tData.readUInt8(44) === 1;
+                const depositedAmount = Number(tData.readBigUInt64LE(48));
+                const depositedAt = Number(tData.readBigInt64LE(56));
+                const expiresAt = Number(tData.readBigInt64LE(64));
+                const claimedRewards = Number(tData.readBigUInt64LE(104));
 
-          loadedTranches.push({
-            owner: walletAddress,
-            trancheId,
-            isMatured,
-            depositedAmount,
-            depositedAt,
-            expiresAt,
-            claimedRewards,
-            daysRemaining,
-            isExpired: now >= expiresAt,
-            canHarvest: now >= expiresAt && !isMatured,
-          });
-        }
-      }
+                const secondsLeft = Math.max(0, expiresAt - now);
+                const daysRemaining = Math.ceil(secondsLeft / 86400);
+
+                return {
+                  owner: walletAddress,
+                  trancheId,
+                  isMatured,
+                  depositedAmount,
+                  depositedAt,
+                  expiresAt,
+                  claimedRewards,
+                  daysRemaining,
+                  isExpired: now >= expiresAt,
+                  canHarvest: now >= expiresAt && !isMatured,
+                  txSignature: sigs && sigs.length > 0 ? sigs[0].signature : undefined,
+                } as TrancheData;
+              }
+            } catch (err) {
+              console.warn(`Error loading tranche #${i}:`, err);
+            }
+            return null;
+          })
+        )
+      ).filter((t): t is TrancheData => t !== null);
 
       setTranches(loadedTranches);
     } catch (e) {
@@ -152,6 +168,57 @@ export default function OreVaultScreen() {
     } catch (e: any) {
       console.warn('Error claiming ORE yield:', e);
       soundService.playTxError();
+      const msg = e?.message || String(e);
+      if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
+        Alert.alert(
+          t('ore_no_yield_title', 'Доходность накапливается'),
+          t('ore_no_yield_msg', 'На данный момент нет невостребованной доходности. Награды начисляются по мере распределений протокола ORE.')
+        );
+      }
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  // Handle claiming rewards for ALL tranches in a single transaction
+  const handleClaimAllTranches = async () => {
+    if (!walletAddress || !signAndSendTransactions || tranches.length === 0) return;
+    try {
+      setIsClaiming(true);
+      soundService.triggerHapticHeavy();
+      const userPubkey = new PublicKey(walletAddress);
+
+      // Collect eligible (unmatured) tranches
+      const activeTranches = tranches.filter((t) => !t.isMatured);
+      if (activeTranches.length === 0) {
+        return;
+      }
+
+      // Build claim instructions for all active tranches into 1 transaction
+      const claimIxs = await Promise.all(
+        activeTranches.map((t) => createClaimTrancheYieldInstruction(userPubkey, t.trancheId))
+      );
+
+      const { signature } = await executeSolanaTransaction({
+        connection,
+        payerKey: userPubkey,
+        instructions: claimIxs,
+        signAndSendTransactions,
+      });
+
+      soundService.playMajorArcanaReveal();
+      setClaimSuccess(signature);
+      await loadVaultData();
+    } catch (e: any) {
+      console.warn('Error claiming all ORE yield:', e);
+      soundService.playTxError();
+      const msg = e?.message || String(e);
+      if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
+        Alert.alert(
+          t('ore_no_yield_title', 'Доходность накапливается'),
+          t('ore_no_yield_msg', 'На данный момент нет невостребованной доходности. Награды начисляются по мере распределений протокола ORE.')
+        );
+      }
     } finally {
       setIsClaiming(false);
     }
@@ -217,6 +284,29 @@ export default function OreVaultScreen() {
               <Text style={styles.statValueSilver}>{totalYieldClaimedUi} ORE</Text>
             </View>
           </View>
+
+          {/* Claim All Tranches Yield Button */}
+          {tranches.length > 0 && (
+            <Pressable
+              style={[
+                styles.claimAllButton,
+                isClaiming && styles.claimButtonDisabled,
+              ]}
+              onPress={handleClaimAllTranches}
+              disabled={isClaiming}
+            >
+              {isClaiming ? (
+                <ActivityIndicator size="small" color="#08070B" />
+              ) : (
+                <View style={styles.claimAllContent}>
+                  <UiIconSymbol name="sparkles" size={14} color="#08070B" />
+                  <Text style={styles.claimAllButtonText}>
+                    {t('ore_claim_all_yield_btn', 'CLAIM ALL YIELD')}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          )}
 
           <View style={styles.vaultAddressRow}>
             <Text style={styles.vaultAddressLabel}>
@@ -358,6 +448,24 @@ export default function OreVaultScreen() {
                     )}
                   </Pressable>
                 )}
+
+                {/* Solana Explorer Link */}
+                <Pressable
+                  style={styles.explorerLinkBtn}
+                  onPress={() => {
+                    const userPubkey = new PublicKey(walletAddress);
+                    const explorerUrl = tranche.txSignature
+                      ? `https://explorer.solana.com/tx/${tranche.txSignature}${getNetworkConfig().explorerSuffix}`
+                      : `https://explorer.solana.com/address/${getTranchePda(userPubkey, tranche.trancheId)[0].toBase58()}${getNetworkConfig().explorerSuffix}`;
+                    Linking.openURL(explorerUrl);
+                  }}
+                  hitSlop={8}
+                >
+                  <UiIconSymbol name="arrow.up.right" size={12} color="#C8A24A" />
+                  <Text style={styles.explorerLinkText}>
+                    {t('ore_view_on_explorer', 'View on Solana Explorer')}
+                  </Text>
+                </Pressable>
               </View>
             );
           })
@@ -660,5 +768,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#08070B',
     letterSpacing: 1,
+  },
+  claimAllButton: {
+    backgroundColor: '#C8A24A',
+    borderRadius: 8,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  claimAllContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  claimAllButtonText: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#08070B',
+    letterSpacing: 1.2,
+  },
+  explorerLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 10,
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(200, 162, 74, 0.12)',
+  },
+  explorerLinkText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: '#C8A24A',
+    letterSpacing: 0.5,
   },
 });

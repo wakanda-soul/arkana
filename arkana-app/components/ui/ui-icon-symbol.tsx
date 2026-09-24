@@ -17,6 +17,7 @@ const MAPPING = {
   'book.closed.fill': 'menu-book',
   'flame.fill': 'whatshot',
   'lock.shield.fill': 'security',
+  'arrow.up.right': 'open-in-new',
 } as const satisfies Record<string, ComponentProps<typeof MaterialIcons>['name']>
 
 export type UiIconSymbolName = keyof typeof MAPPING
