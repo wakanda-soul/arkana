@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 3,
-    "dailySpreadsUsed": 3,
-    "lastSpreadDate": "2026-09-17",
-    "totalReadings": 8,
+    "streak": 1,
+    "dailySpreadsUsed": 2,
+    "lastSpreadDate": "2026-09-24",
+    "totalReadings": 11,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -48,10 +48,36 @@
         "costSol": 0.0002,
         "itemType": "chat",
         "txSignature": "Kx1Mc8mic2p3rt4AJZa633HiJpmugKXJxhZqZ3DBW9NcxFtLjnxzrLrWGTm6b1PqZrJYdaxUkSzswanxCJDYL9P"
+      },
+      {
+        "timestamp": "2026-09-24T18:23:50.976Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "53AD6oxAF98rZvTZjEHhgHNtyJALb9hw8VRzypBE2s4Yy7ztroy8AvABLoASi1fCfCL8iWeT2UJK8XKUJMwmPesF"
+      },
+      {
+        "timestamp": "2026-09-24T18:29:14.982Z",
+        "paidWith": "skr",
+        "costSkr": 5,
+        "costSol": 0.001,
+        "itemType": "spread",
+        "txSignature": "sXEYW4kPzeDcf6q3HX3ShxZZXVWA9X1c5UQXfvC5r1HGw2Xyhk8NQP4WrU2pUDMPzB9bz5xnHwMxCmXbivCZb1q"
       }
     ],
-    "lastClockIn": "2026-09-21T19:44:42.911Z",
+    "lastClockIn": "2026-09-24T18:28:27.242Z",
     "history": [
+      {
+        "timestamp": "2026-09-24T18:28:27.242Z",
+        "type": "daily-block",
+        "card": "Validator Overload",
+        "card_no": "31",
+        "orientation": "upright",
+        "image": "/cards/31.webp",
+        "txSignature": "5Pvb9AuKUxxfDRc5DmSkYdbPSFchAhbqeJFWEuDceYgBTpjqg2PjUzNv96sGW4wDnx2ySbUogQmAKDrAfXahdttB",
+        "slot": 503597147
+      },
       {
         "timestamp": "2026-09-21T19:44:42.911Z",
         "type": "daily-block",
@@ -77,7 +103,9 @@
         "image": "/cards/43.webp"
       }
     ],
-    "claimedStreakMilestones": []
+    "claimedStreakMilestones": [],
+    "brokenStreak": 3,
+    "previousStreak": 3
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,
