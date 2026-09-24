@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { PublicKey, Connection } from '@solana/web3.js';
@@ -32,6 +32,11 @@ export function AltarOfferingCard({
   const [userSkrBalance, setUserSkrBalance] = useState<number | null>(null);
   const [forceSolMode, setForceSolMode] = useState<boolean>(false);
   const [wasSwapped, setWasSwapped] = useState<boolean>(false);
+
+  // Exact 67/33 Protocol Split breakdown
+  const burnSkr = Number((selectedAmount * 0.67 * 0.5).toFixed(2));
+  const treasurySkr = Number((selectedAmount * 0.67 * 0.5).toFixed(2));
+  const oreShareSkr = Number((selectedAmount * 0.33).toFixed(2));
 
   useEffect(() => {
     let isMounted = true;
@@ -231,10 +236,35 @@ export function AltarOfferingCard({
             <Text style={styles.modalTitle}>
               {t('offering_accepted_title', 'OFFERING CONSECRATED')}
             </Text>
+            <Text style={styles.modalSubtitle}>
+              {t('offering_blessing_sub', 'Your sacred offering is sealed on Solana consensus.')}
+            </Text>
+
+            {/* Sacred Protocol Split Breakdown */}
+            <View style={styles.breakdownCard}>
+              <View style={styles.breakdownRow}>
+                <Text style={styles.breakdownLabel}>🔥 {t('modal_burned_label', 'Burned Forever:')}</Text>
+                <Text style={styles.breakdownValueBurn}>{burnSkr} SKR</Text>
+              </View>
+              <View style={styles.breakdownDivider} />
+              <View style={styles.breakdownRow}>
+                <Text style={styles.breakdownLabel}>🏛️ {t('modal_treasury_label', 'Arkana Treasury:')}</Text>
+                <Text style={styles.breakdownValueTreasury}>{treasurySkr} SKR</Text>
+              </View>
+              <View style={styles.breakdownDivider} />
+              <View style={styles.breakdownRow}>
+                <View>
+                  <Text style={styles.breakdownLabel}>🔮 {t('modal_ore_staking_label', 'Allocated to ORE Staking:')}</Text>
+                  <Text style={styles.breakdownSubLabel}>{t('modal_ore_pool_sub', '365d Vault Pool Reserve')}</Text>
+                </View>
+                <Text style={styles.breakdownValueOre}>{oreShareSkr} SKR</Text>
+              </View>
+            </View>
+
             <Text style={styles.modalDesc}>
               {t(
                 'offering_67_33_desc',
-                'Your offering is consecrated on Solana! 67% SKR (50% burned forever, 50% to treasury) + 33% ORE locked in the 365-day Sacred Vault with 100% staking yield claimable in the ORE menu.'
+                '67% is allocated to SKR deflation and treasury reserve, while 33% feeds the ORE Sacred Vault 365-day staking yield stream.'
               )}
             </Text>
             {confirmedTx && (
@@ -404,7 +434,62 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: 'rgba(237, 231, 220, 0.7)',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  breakdownCard: {
+    width: '100%',
+    backgroundColor: 'rgba(8, 7, 16, 0.85)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.35)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  breakdownDivider: {
+    height: 1,
+    backgroundColor: 'rgba(200, 162, 74, 0.15)',
+    marginVertical: 3,
+  },
+  breakdownLabel: {
+    fontSize: 11,
+    color: 'rgba(237, 231, 220, 0.75)',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+  },
+  breakdownSubLabel: {
+    fontSize: 9.5,
+    color: 'rgba(200, 162, 74, 0.6)',
+    marginTop: 1,
+  },
+  breakdownValueBurn: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF6B6B',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+  },
+  breakdownValueTreasury: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#69DB7C',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+  },
+  breakdownValueOre: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#C8A24A',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
   },
   modalDesc: {
     color: '#BBB',

@@ -236,3 +236,19 @@ export async function createHarvestMaturedTrancheInstruction(
     data
   });
 }
+
+/**
+ * Fetches real on-chain ORE token balance for any wallet
+ */
+export async function fetchRealOreBalance(
+  connection: Connection,
+  walletPublicKey: PublicKey
+): Promise<number> {
+  try {
+    const userTokensAta = await getAssociatedTokenAddress(ORE_MINT_ADDRESS, walletPublicKey);
+    const balance = await connection.getTokenAccountBalance(userTokensAta, 'confirmed');
+    return balance.value.uiAmount || 0;
+  } catch (err) {
+    return 0;
+  }
+}
