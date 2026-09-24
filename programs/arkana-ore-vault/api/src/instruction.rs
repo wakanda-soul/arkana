@@ -14,6 +14,9 @@ pub enum ArkanaVaultInstruction {
 
     /// Harvest a matured tranche (>= 365 days) permanently into the Arkana Treasury.
     HarvestMaturedTranche = 3,
+
+    /// Distribute reward ORE into the staking pool.
+    DistributeReward = 4,
 }
 
 #[repr(C)]
@@ -41,7 +44,15 @@ pub struct HarvestMaturedTranche {
     pub tranche_id: [u8; 4],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct DistributeReward {
+    /// Indivisible units of ORE to distribute to active stakers.
+    pub amount: [u8; 8],
+}
+
 instruction!(ArkanaVaultInstruction, Initialize);
 instruction!(ArkanaVaultInstruction, DepositTranche);
 instruction!(ArkanaVaultInstruction, ClaimTrancheYield);
 instruction!(ArkanaVaultInstruction, HarvestMaturedTranche);
+instruction!(ArkanaVaultInstruction, DistributeReward);

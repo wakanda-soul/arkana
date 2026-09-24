@@ -30,6 +30,9 @@ pub struct VaultConfig {
     /// Reserved padding for memory alignment
     pub _padding1: [u8; 6],
 
+    /// Current global rewards factor (accumulated rewards per staked unit)
+    pub rewards_factor: Numeric,
+
     /// Total cumulative ORE currently staked across active tranches
     pub total_staked_ore: u64,
 
