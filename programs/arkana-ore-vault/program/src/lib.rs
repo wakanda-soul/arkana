@@ -29,6 +29,8 @@ pub fn process_instruction(
         ArkanaVaultInstruction::HarvestMaturedTranche => process_harvest_matured_tranche(accounts, data)?,
         ArkanaVaultInstruction::DistributeReward => process_distribute_reward(accounts, data)?,
         ArkanaVaultInstruction::SwapAndDepositTranche => process_swap_and_deposit_tranche(accounts, data)?,
+        ArkanaVaultInstruction::SwapAndDepositSolTranche => process_swap_and_deposit_sol_tranche(accounts, data)?,
+        ArkanaVaultInstruction::AdminCreateTranche => process_admin_create_tranche(accounts, data)?,
     }
 
     Ok(())

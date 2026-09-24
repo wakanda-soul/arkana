@@ -13,7 +13,11 @@ import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance, executeSolanaTransaction } from './solanaService';
 import { isDevnet } from '@/constants/networkConfig';
-import { createSwapAndDepositTrancheInstruction, getUserVaultPda } from './oreVaultService';
+import {
+  createSwapAndDepositTrancheInstruction,
+  createSwapAndDepositSolTrancheInstruction,
+  getUserVaultPda
+} from './oreVaultService';
 
 /**
  * Arkana Founder Offline Master Public Key
@@ -239,6 +243,108 @@ export async function buildSkrPaymentInstructions({
   return instructions;
 }
 
+/**
+ * Build SOL instructions for payments when paying in SOL (or on Devnet without Jupiter):
+ * - 33% transferred to Arkana Treasury
+ * - 33% transferred to Solana Incinerator (permanently burned on-chain)
+ * - 34% transferred to Vault Authority + SwapAndDepositSolTranche into 365-day ORE tranche!
+ * - Proof Memo documenting the 33/33/34 split
+ */
+export async function buildSolPaymentInstructions({
+  connection,
+  userPublicKey,
+  treasuryPublicKey,
+  amountSkr,
+  actionLabel = 'PAYMENT',
+}: {
+  connection: Connection;
+  userPublicKey: PublicKey;
+  treasuryPublicKey: PublicKey;
+  amountSkr: number;
+  actionLabel?: string;
+}): Promise<TransactionInstruction[]> {
+  const payer = new PublicKey(userPublicKey.toString());
+  const treasury = new PublicKey(treasuryPublicKey.toString());
+  let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
+
+  // Guard rent exemption if treasury is new
+  try {
+    const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
+    if (treasuryBalance === 0 && lamports < 650240) {
+      lamports = 650240;
+    }
+  } catch {}
+
+  const totalLamports = BigInt(lamports);
+  const treasuryLamports = (totalLamports * 33n) / 100n;
+  const burnLamports = (totalLamports * 33n) / 100n;
+  const vaultLamports = totalLamports - treasuryLamports - burnLamports; // Exactly 34%
+
+  const instructions: TransactionInstruction[] = [];
+
+  // 1. 33% SOL to Treasury
+  instructions.push(
+    SystemProgram.transfer({
+      fromPubkey: payer,
+      toPubkey: treasury,
+      lamports: treasuryLamports,
+    })
+  );
+
+  // 2. 33% SOL to Burn (Solana Incinerator)
+  const INCINERATOR_ADDRESS = new PublicKey('1nc1nerator11111111111111111111111111111111');
+  instructions.push(
+    SystemProgram.transfer({
+      fromPubkey: payer,
+      toPubkey: INCINERATOR_ADDRESS,
+      lamports: burnLamports,
+    })
+  );
+
+  // 3. 34% SOL to ORE Sacred Vault -> creates 365-day ORE tranche for user!
+  const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
+  const totalSkrRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
+  const oreShareRaw = (totalSkrRaw * 34n) / 100n;
+
+  try {
+    const [userVaultPda] = getUserVaultPda(payer);
+    const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
+    let nextTrancheId = 1;
+    if (uVaultAcc && uVaultAcc.data.length >= 64) {
+      nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
+    }
+
+    const swapAndDepositSolIx = await createSwapAndDepositSolTrancheInstruction(
+      payer,
+      nextTrancheId,
+      oreShareRaw,
+      vaultLamports
+    );
+    instructions.push(swapAndDepositSolIx);
+  } catch (vaultErr) {
+    console.warn('Failed to build on-chain SwapAndDepositSol instruction, routing to treasury as fallback:', vaultErr);
+    instructions.push(
+      SystemProgram.transfer({
+        fromPubkey: payer,
+        toPubkey: treasury,
+        lamports: vaultLamports,
+      })
+    );
+  }
+
+  // 4. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
+  const memoText = `ARKANA::${actionLabel}::SOL_PAYMENT::SKR_EQUIV=${amountSkr}::LAMPORTS=${lamports}::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
+  instructions.push(
+    new TransactionInstruction({
+      programId: SOLANA_MEMO_PROGRAM_ID,
+      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
+      data: Buffer.from(memoText, 'utf-8'),
+    })
+  );
+
+  return instructions;
+}
+
 export interface ExecutePaymentOrSwapParams {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -289,37 +395,21 @@ export async function executePaymentOrSwap({
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
-  // For micro-service fees (EXTRA_SPREAD / ORACLE_ASK), execute direct SOL Buyback Transfer
-  // into Treasury with on-chain Memo. This guarantees 1 single transaction and 1 single Phantom prompt,
-  // completely avoiding DEX liquidity slippage failures and duplicate wallet prompts!
-  if (!forceSolSwap && currentSkr < amountSkr && (actionLabel === 'EXTRA_SPREAD' || actionLabel === 'ORACLE_ASK')) {
-    let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-
-    // Solana Protocol Rent-Exemption Guard:
-    try {
-      const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
-      if (treasuryBalance === 0 && lamports < 650240) {
-        lamports = 650240;
-      }
-    } catch {}
-
-    const directSolInstructions: TransactionInstruction[] = [
-      SystemProgram.transfer({
-        fromPubkey: payer,
-        toPubkey: treasury,
-        lamports,
-      }),
-      new TransactionInstruction({
-        programId: SOLANA_MEMO_PROGRAM_ID,
-        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-        data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
-      }),
-    ];
+  // On Devnet, custom tokens do not exist on Jupiter DEX.
+  // Execute atomic on-chain SOL payment: 33% Treasury + 33% Burn + 34% ORE Sacred Vault Tranche in 1 single transaction!
+  if (isDevnet()) {
+    const instructions = await buildSolPaymentInstructions({
+      connection,
+      userPublicKey: payer,
+      treasuryPublicKey: treasury,
+      amountSkr,
+      actionLabel,
+    });
 
     const { signature } = await executeSolanaTransaction({
       connection,
       payerKey: payer,
-      instructions: directSolInstructions,
+      instructions,
       signAndSendTransactions,
     });
 
@@ -498,31 +588,15 @@ export async function executePaymentOrSwap({
       throw swapErr;
     }
 
-    console.warn('Jupiter atomic swap failed or unavailable, falling back to direct SOL treasury transfer:', swapErr);
+    console.warn('Jupiter atomic swap failed or unavailable, executing on-chain SOL 33/33/34 flow:', swapErr);
 
-    // Fallback: direct SOL transfer with Buyback Memo into Treasury
-    let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
-
-    // Solana Protocol Rent-Exemption Guard:
-    try {
-      const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
-      if (treasuryBalance === 0 && lamports < 650240) {
-        lamports = 650240;
-      }
-    } catch {}
-
-    const fallbackInstructions: TransactionInstruction[] = [
-      SystemProgram.transfer({
-        fromPubkey: payer,
-        toPubkey: treasury,
-        lamports,
-      }),
-      new TransactionInstruction({
-        programId: SOLANA_MEMO_PROGRAM_ID,
-        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-        data: Buffer.from(`ARKANA::${actionLabel}::SKR_BUYBACK=${amountSkr}::LAMPORTS=${lamports}::TS=${Date.now()}`, 'utf-8'),
-      }),
-    ];
+    const fallbackInstructions = await buildSolPaymentInstructions({
+      connection,
+      userPublicKey: payer,
+      treasuryPublicKey: treasury,
+      amountSkr,
+      actionLabel,
+    });
 
     const { signature } = await executeSolanaTransaction({
       connection,
