@@ -486,8 +486,9 @@ function recordOffering(walletAddress, { txSignature, amountSkr, message = "Alta
   user.offerings.unshift({
     timestamp: new Date().toISOString(),
     amountSkr: amount,
-    treasurySkr: Number((amount * 0.5).toFixed(2)),
-    burnedSkr: Number((amount * 0.5).toFixed(2)),
+    treasurySkr: Number((amount * 0.33).toFixed(2)),
+    burnedSkr: Number((amount * 0.33).toFixed(2)),
+    oreShareSkr: Number((amount * 0.34).toFixed(2)),
     txSignature: txSignature || "offering_" + Math.random().toString(36).slice(2, 10),
     message
   });
