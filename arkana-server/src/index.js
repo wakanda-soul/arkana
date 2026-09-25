@@ -254,6 +254,21 @@ app.get("/api/version", (req, res) => {
   res.json(getBuildInfo());
 });
 
+// Solana Mainnet RPC Proxy (Bypasses browser CORS / 403 restrictions)
+app.post("/api/solana-rpc", async (req, res) => {
+  try {
+    const upstreamRes = await fetch("https://api.mainnet-beta.solana.com", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body)
+    });
+    const data = await upstreamRes.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: err.message }, id: req.body?.id || null });
+  }
+});
+
 // List all 78 cards
 app.get("/api/deck", (req, res) => {
   try {
