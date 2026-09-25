@@ -8,7 +8,7 @@ export type SupportedNetwork = 'mainnet' | 'devnet';
  * Set to 'devnet' to test all vaults, tranches, tokens (tSKR, tORE), and yields on Devnet.
  * Set to 'mainnet' to immediately restore full production mainnet configuration.
  */
-export const ACTIVE_NETWORK: SupportedNetwork = 'devnet';
+export const ACTIVE_NETWORK: SupportedNetwork = 'mainnet';
 
 export type SolanaChainId = 'solana:mainnet' | 'solana:devnet' | 'solana:testnet';
 
@@ -31,7 +31,7 @@ export const MAINNET_CONFIG: NetworkConfig = {
   clusterId: 'solana:mainnet',
   clusterName: 'Mainnet',
   clusterNetwork: ClusterNetwork.Mainnet,
-  endpoint: clusterApiUrl('mainnet-beta'),
+  endpoint: 'https://solana-rpc.publicnode.com',
   skrMint: new PublicKey('SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3'),
   oreMint: new PublicKey('oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp'),
   oreStakeProgramId: new PublicKey('stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH'),

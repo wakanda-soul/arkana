@@ -14,6 +14,7 @@ import { Buffer } from 'buffer';
 import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance, executeSolanaTransaction } from './solanaService';
 import { isDevnet } from '@/constants/networkConfig';
 import {
+  createDepositTrancheInstruction,
   createSwapAndDepositTrancheInstruction,
   createSwapAndDepositSolTrancheInstruction,
   getUserVaultPda
@@ -210,12 +211,54 @@ export async function buildSkrPaymentInstructions({
       nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
     }
 
-    const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
-      payer,
-      nextTrancheId,
-      oreShareRaw
-    );
-    instructions.push(swapAndDepositIx);
+    if (isDevnet()) {
+      const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
+        payer,
+        nextTrancheId,
+        oreShareRaw
+      );
+      instructions.push(swapAndDepositIx);
+    } else {
+      // Mainnet: Jupiter DEX swap SKR -> ORE and deposit into ORE Sacred Vault
+      const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT.toBase58()}&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${oreShareRaw}&slippageBps=100`;
+      const quoteRes = await fetch(quoteUrl);
+      if (quoteRes.ok) {
+        const quoteData = await quoteRes.json();
+        const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userPublicKey: payer.toBase58(),
+            quoteResponse: quoteData,
+            wrapAndUnwrapSol: true,
+            useSharedAccounts: true,
+          }),
+        });
+        if (insRes.ok) {
+          const insData = await insRes.json();
+          if (insData.setupInstructions) {
+            instructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
+          }
+          if (insData.swapInstruction) {
+            instructions.push(deserializeJupiterInstruction(insData.swapInstruction));
+          }
+          if (insData.cleanupInstruction) {
+            instructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
+          }
+          const outOreUnits = BigInt(quoteData.outAmount);
+          const depositIx = await createDepositTrancheInstruction(
+            payer,
+            nextTrancheId,
+            outOreUnits
+          );
+          instructions.push(depositIx);
+        } else {
+          throw new Error('Jupiter swap instructions failed');
+        }
+      } else {
+        throw new Error('Jupiter quote failed');
+      }
+    }
   } catch (vaultErr) {
     console.warn('Failed to build on-chain SwapAndDeposit instruction, routing to treasury as fallback:', vaultErr);
     instructions.push(
@@ -314,13 +357,55 @@ export async function buildSolPaymentInstructions({
       nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
     }
 
-    const swapAndDepositSolIx = await createSwapAndDepositSolTrancheInstruction(
-      payer,
-      nextTrancheId,
-      oreShareRaw,
-      vaultLamports
-    );
-    instructions.push(swapAndDepositSolIx);
+    if (isDevnet()) {
+      const swapAndDepositSolIx = await createSwapAndDepositSolTrancheInstruction(
+        payer,
+        nextTrancheId,
+        oreShareRaw,
+        vaultLamports
+      );
+      instructions.push(swapAndDepositSolIx);
+    } else {
+      // Mainnet: Jupiter DEX swap SOL -> ORE and deposit into ORE Sacred Vault
+      const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${vaultLamports}&slippageBps=100`;
+      const quoteRes = await fetch(quoteUrl);
+      if (quoteRes.ok) {
+        const quoteData = await quoteRes.json();
+        const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userPublicKey: payer.toBase58(),
+            quoteResponse: quoteData,
+            wrapAndUnwrapSol: true,
+            useSharedAccounts: true,
+          }),
+        });
+        if (insRes.ok) {
+          const insData = await insRes.json();
+          if (insData.setupInstructions) {
+            instructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
+          }
+          if (insData.swapInstruction) {
+            instructions.push(deserializeJupiterInstruction(insData.swapInstruction));
+          }
+          if (insData.cleanupInstruction) {
+            instructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
+          }
+          const outOreUnits = BigInt(quoteData.outAmount);
+          const depositIx = await createDepositTrancheInstruction(
+            payer,
+            nextTrancheId,
+            outOreUnits
+          );
+          instructions.push(depositIx);
+        } else {
+          throw new Error('Jupiter swap instructions failed');
+        }
+      } else {
+        throw new Error('Jupiter quote failed');
+      }
+    }
   } catch (vaultErr) {
     console.warn('Failed to build on-chain SwapAndDepositSol instruction, routing to treasury as fallback:', vaultErr);
     instructions.push(
@@ -521,12 +606,55 @@ export async function executePaymentOrSwap({
       if (uVaultAcc && uVaultAcc.data.length >= 64) {
         nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
       }
-      const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
-        payer,
-        nextTrancheId,
-        oreShareRaw
-      );
-      swapInstructions.push(swapAndDepositIx);
+
+      if (isDevnet()) {
+        const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
+          payer,
+          nextTrancheId,
+          oreShareRaw
+        );
+        swapInstructions.push(swapAndDepositIx);
+      } else {
+        // Mainnet: Jupiter DEX swap SKR -> ORE and deposit into ORE Sacred Vault
+        const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT.toBase58()}&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${oreShareRaw}&slippageBps=100`;
+        const quoteRes = await fetch(quoteUrl);
+        if (quoteRes.ok) {
+          const quoteData = await quoteRes.json();
+          const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userPublicKey: payer.toBase58(),
+              quoteResponse: quoteData,
+              wrapAndUnwrapSol: true,
+              useSharedAccounts: true,
+            }),
+          });
+          if (insRes.ok) {
+            const insData = await insRes.json();
+            if (insData.setupInstructions) {
+              swapInstructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
+            }
+            if (insData.swapInstruction) {
+              swapInstructions.push(deserializeJupiterInstruction(insData.swapInstruction));
+            }
+            if (insData.cleanupInstruction) {
+              swapInstructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
+            }
+            const outOreUnits = BigInt(quoteData.outAmount);
+            const depositIx = await createDepositTrancheInstruction(
+              payer,
+              nextTrancheId,
+              outOreUnits
+            );
+            swapInstructions.push(depositIx);
+          } else {
+            throw new Error('Jupiter swap instructions failed');
+          }
+        } else {
+          throw new Error('Jupiter quote failed');
+        }
+      }
     } catch (vaultErr) {
       console.warn('Vault instruction skipped in Jupiter swap, sending to treasury:', vaultErr);
       swapInstructions.push(
