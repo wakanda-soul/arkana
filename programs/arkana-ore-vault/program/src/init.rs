@@ -2,7 +2,7 @@ use arkana_ore_vault_api::prelude::*;
 use steel::*;
 
 /// Initializes the global vault configuration.
-/// Can only be called once. Treasury address is strictly immutable.
+/// Can only be called once by the Arkana Treasury with the official ORE mint.
 pub fn process_initialize(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
     let [signer_info, config_info, vault_authority_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program] =
         accounts
@@ -12,7 +12,12 @@ pub fn process_initialize(accounts: &[AccountInfo<'_>], _data: &[u8]) -> Program
 
     // Verify signers and addresses
     signer_info.is_signer()?;
-    ore_mint_info.as_mint()?;
+    // Strictly enforce Treasury authorization
+    signer_info.has_address(&ARKANA_TREASURY_ADDRESS)?;
+
+    // Strictly enforce official ORE mint
+    ore_mint_info.has_address(&ORE_MINT_ADDRESS)?.as_mint()?;
+
     system_program.is_program(&system_program::ID)?;
     token_program.is_program(&spl_token::ID)?;
     associated_token_program.is_program(&spl_associated_token_account::ID)?;
@@ -39,7 +44,7 @@ pub fn process_initialize(accounts: &[AccountInfo<'_>], _data: &[u8]) -> Program
 
     let config = config_info.as_account_mut::<VaultConfig>(&arkana_ore_vault_api::ID)?;
     config.treasury = ARKANA_TREASURY_ADDRESS; // Hardcoded, untamperable
-    config.ore_mint = *ore_mint_info.key;
+    config.ore_mint = ORE_MINT_ADDRESS;
     config.vault_authority_bump = auth_bump;
     config.is_initialized = 1;
     config.rewards_factor = Numeric::ZERO;

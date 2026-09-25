@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arkana ORE Sacred Vault — Mainnet Initialization</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b0e14;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #141b26;
+      border: 1px solid #2d3748;
+      border-radius: 16px;
+      max-width: 600px;
+      width: 100%;
+      padding: 32px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .badge-mainnet { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .badge-status { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .info-box {
+      background: #0d121c;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-label { color: #64748b; font-weight: 600; min-width: 110px; }
+    .info-val { color: #cbd5e1; font-family: monospace; }
+    .btn {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-connect {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+    }
+    .btn-connect:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+    }
+    .btn-init {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .btn-init:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+      line-height: 1.4;
+    }
+    .alert-error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+    .alert-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; }
+    .alert-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid #3b82f6; }
+    a { color: #60a5fa; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div style="display: flex; gap: 8px;">
+      <span class="badge badge-mainnet">Mainnet Beta</span>
+      <span class="badge badge-status" id="vaultStatusBadge">Checking Status...</span>
+    </div>
+
+    <h1>Arkana ORE Vault Initializer</h1>
+    <p class="subtitle">
+      One-click cryptographic activation for the 365-day Arkana ORE Sacred Vault on Solana Mainnet.
+    </p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Program ID:</span>
+        <span class="info-val">B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Required Founder:</span>
+        <span class="info-val">4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">ORE Mint:</span>
+        <span class="info-val">oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Config PDA:</span>
+        <span class="info-val">62gWMANZwExNiwaji3CLsfcBPTdqqhhLWv4z7B4Ny8sn</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Vault Authority:</span>
+        <span class="info-val">27TANa4RPhmPpaUkG4D9EmYwMhyngsnftc2DyYFdBcpM</span>
+      </div>
+    </div>
+
+    <div id="actionArea">
+      <button class="btn btn-connect" id="btnConnect" onclick="connectWallet()">
+        Connect Phantom / Solflare
+      </button>
+    </div>
+
+    <div id="alertMsg" class="alert"></div>
+  </div>
+
+  <script>
+    const PROGRAM_ID = new solanaWeb3.PublicKey("B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C");
+    const ORE_MINT = new solanaWeb3.PublicKey("oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp");
+    const REQUIRED_FOUNDER = new solanaWeb3.PublicKey("4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny");
+    const CONFIG_PDA = new solanaWeb3.PublicKey("62gWMANZwExNiwaji3CLsfcBPTdqqhhLWv4z7B4Ny8sn");
+    const VAULT_AUTH_PDA = new solanaWeb3.PublicKey("27TANa4RPhmPpaUkG4D9EmYwMhyngsnftc2DyYFdBcpM");
+    const VAULT_TOKENS_ATA = new solanaWeb3.PublicKey("5P6jLrvDCg13JteMkVoDu1zPFq4sMjiQrL3GjZ23guRP");
+
+    const SYSTEM_PROGRAM_ID = solanaWeb3.SystemProgram.programId;
+    const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    const ASSOCIATED_TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+
+    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+    let currentWallet = null;
+
+    async function checkVaultStatus() {
+      const badge = document.getElementById("vaultStatusBadge");
+      try {
+        const acc = await connection.getAccountInfo(CONFIG_PDA);
+        if (acc && acc.data.length > 0) {
+          badge.textContent = "ALREADY INITIALIZED";
+          badge.style.color = "#10b981";
+          badge.style.borderColor = "#10b981";
+          showAlert("Vault is already initialized and fully active on Mainnet!", "success");
+          document.getElementById("actionArea").innerHTML = `
+            <a href="https://solscan.io/account/${CONFIG_PDA.toBase58()}" target="_blank" style="text-decoration:none;">
+              <button class="btn btn-init">View Active Vault on Solscan</button>
+            </a>
+          `;
+          return true;
+        } else {
+          badge.textContent = "AWAITING INITIALIZATION";
+          badge.style.color = "#f59e0b";
+          badge.style.borderColor = "#f59e0b";
+          return false;
+        }
+      } catch (err) {
+        console.error(err);
+        badge.textContent = "AWAITING INITIALIZATION";
+        return false;
+      }
+    }
+
+    function showAlert(text, type = "info") {
+      const el = document.getElementById("alertMsg");
+      el.className = `alert alert-${type}`;
+      el.innerHTML = text;
+      el.style.display = "block";
+    }
+
+    async function connectWallet() {
+      try {
+        const provider = window.phantom?.solana || window.solana;
+        if (!provider) {
+          showAlert("Solana wallet extension (Phantom/Solflare) not detected in your browser.", "error");
+          return;
+        }
+
+        const resp = await provider.connect();
+        currentWallet = resp.publicKey;
+
+        if (currentWallet.toBase58() !== REQUIRED_FOUNDER.toBase58()) {
+          showAlert(
+            `Connected wallet: <b>${currentWallet.toBase58().slice(0, 6)}...${currentWallet.toBase58().slice(-4)}</b><br>` +
+            `Access Denied: Only the verified Founder Treasury <b>${REQUIRED_FOUNDER.toBase58().slice(0, 6)}...${REQUIRED_FOUNDER.toBase58().slice(-4)}</b> is authorized to initialize the Vault.`,
+            "error"
+          );
+          return;
+        }
+
+        showAlert(`Connected Founder Treasury: <b>${REQUIRED_FOUNDER.toBase58()}</b>`, "info");
+        document.getElementById("actionArea").innerHTML = `
+          <button class="btn btn-init" id="btnInit" onclick="initializeVault()">
+            Initialize Arkana ORE Sacred Vault
+          </button>
+        `;
+      } catch (err) {
+        showAlert("Wallet connection rejected: " + err.message, "error");
+      }
+    }
+
+    async function initializeVault() {
+      const btn = document.getElementById("btnInit");
+      btn.disabled = true;
+      btn.textContent = "Preparing Transaction...";
+      showAlert("Building initialization transaction...", "info");
+
+      try {
+        const provider = window.phantom?.solana || window.solana;
+        if (!provider) throw new Error("Wallet disconnected");
+
+        const ix = new solanaWeb3.TransactionInstruction({
+          programId: PROGRAM_ID,
+          keys: [
+            { pubkey: REQUIRED_FOUNDER, isSigner: true, isWritable: true },
+            { pubkey: CONFIG_PDA, isSigner: false, isWritable: true },
+            { pubkey: VAULT_AUTH_PDA, isSigner: false, isWritable: true },
+            { pubkey: VAULT_TOKENS_ATA, isSigner: false, isWritable: true },
+            { pubkey: ORE_MINT, isSigner: false, isWritable: false },
+            { pubkey: SYSTEM_PROGRAM_ID, isSigner: false, isWritable: false },
+            { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+            { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+          ],
+          data: new Uint8Array([0]), // Initialize = 0
+        });
+
+        const latestBlockhash = await connection.getLatestBlockhash("confirmed");
+        const tx = new solanaWeb3.Transaction({
+          feePayer: REQUIRED_FOUNDER,
+          recentBlockhash: latestBlockhash.blockhash,
+        }).add(ix);
+
+        showAlert("Please approve the transaction in your Phantom/Solflare wallet...", "info");
+        const { signature } = await provider.signAndSendTransaction(tx);
+
+        showAlert(
+          `Transaction submitted! Confirming on Solana Mainnet...<br>Tx: <a href="https://solscan.io/tx/${signature}" target="_blank">${signature.slice(0, 16)}...</a>`,
+          "info"
+        );
+
+        await connection.confirmTransaction({
+          signature,
+          blockhash: latestBlockhash.blockhash,
+          lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+        }, "confirmed");
+
+        showAlert(
+          `🎉 <b>Arkana ORE Sacred Vault is successfully initialized!</b><br>` +
+          `<a href="https://solscan.io/tx/${signature}" target="_blank">View Transaction on Solscan</a>`,
+          "success"
+        );
+        btn.textContent = "Vault Initialized!";
+        btn.disabled = true;
+        checkVaultStatus();
+      } catch (err) {
+        console.error(err);
+        showAlert("Initialization failed: " + (err.message || err), "error");
+        btn.disabled = false;
+        btn.textContent = "Retry Initialization";
+      }
+    }
+
+    checkVaultStatus();
+  </script>
+</body>
+</html>

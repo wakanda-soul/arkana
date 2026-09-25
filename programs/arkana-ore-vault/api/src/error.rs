@@ -29,6 +29,9 @@ pub enum ArkanaVaultError {
 
     #[error("Mathematical overflow during calculation")]
     MathOverflow = 8,
+
+    #[error("No active tranches in vault to distribute rewards to")]
+    NoActiveTranches = 9,
 }
 
 error!(ArkanaVaultError);

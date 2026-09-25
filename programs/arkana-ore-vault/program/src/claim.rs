@@ -38,6 +38,11 @@ pub fn process_claim_tranche_yield(accounts: &[AccountInfo<'_>], data: &[u8]) ->
         return Err(ArkanaVaultError::Unauthorized.into());
     }
 
+    // Strict check: Matured tranches can no longer claim rewards
+    if tranche.is_matured != 0 || tranche.deposited_amount == 0 {
+        return Err(ArkanaVaultError::TrancheAlreadyMatured.into());
+    }
+
     user_tokens_info.as_associated_token_account(signer_info.key, &config.ore_mint)?;
     vault_tokens_info.as_associated_token_account(&vault_auth_addr, &config.ore_mint)?;
 

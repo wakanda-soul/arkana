@@ -6,7 +6,7 @@ pub fn process_distribute_reward(accounts: &[AccountInfo<'_>], data: &[u8]) -> P
     let args = DistributeReward::try_from_bytes(data)?;
     let amount = u64::from_le_bytes(args.amount);
     if amount == 0 {
-        return Err(ProgramError::InvalidArgument);
+        return Err(ArkanaVaultError::ZeroDeposit.into());
     }
 
     let [signer_info, config_info, vault_authority_info, vault_tokens_info, user_tokens_info, ore_mint_info, token_program] =
@@ -21,6 +21,15 @@ pub fn process_distribute_reward(accounts: &[AccountInfo<'_>], data: &[u8]) -> P
     let (config_addr, _) = config_pda();
     config_info.has_address(&config_addr)?;
     let config = config_info.as_account_mut::<VaultConfig>(&arkana_ore_vault_api::ID)?;
+
+    if config.is_initialized == 0 {
+        return Err(ProgramError::UninitializedAccount);
+    }
+
+    // Safety check: Cannot distribute rewards if there are no active stakers (prevents trapping tokens)
+    if config.total_staked_ore == 0 {
+        return Err(ArkanaVaultError::NoActiveTranches.into());
+    }
 
     ore_mint_info.has_address(&config.ore_mint)?.as_mint()?;
 
@@ -40,10 +49,8 @@ pub fn process_distribute_reward(accounts: &[AccountInfo<'_>], data: &[u8]) -> P
     )?;
 
     // 2. Increase rewards_factor proportionally to total staked ORE
-    if config.total_staked_ore > 0 {
-        let delta = Numeric::from_u64(amount) / Numeric::from_u64(config.total_staked_ore);
-        config.rewards_factor += delta;
-    }
+    let delta = Numeric::from_u64(amount) / Numeric::from_u64(config.total_staked_ore);
+    config.rewards_factor += delta;
 
     Ok(())
 }
