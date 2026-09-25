@@ -7,7 +7,8 @@ use steel::*;
 /// Security:
 /// - Strictly requires clock.unix_timestamp >= tranche.expires_at
 /// - Strictly requires recipient to be the hardcoded Arkana Treasury ATA
-/// - Cannot be called twice on the same tranche
+/// - Only the tranche owner or Arkana Treasury can invoke harvest
+/// - Cannot be called twice on the same tranche (sets is_matured = 1, deposited_amount = 0)
 pub fn process_harvest_matured_tranche(
     accounts: &[AccountInfo<'_>],
     data: &[u8],
@@ -48,16 +49,21 @@ pub fn process_harvest_matured_tranche(
     if tranche.tranche_id != tranche_id {
         return Err(ProgramError::InvalidAccountData);
     }
-    if tranche.is_matured != 0 {
+    if tranche.is_matured != 0 || tranche.deposited_amount == 0 {
         return Err(ArkanaVaultError::TrancheAlreadyMatured.into());
     }
 
-    // 2. Strict 365-day Locking Period Check
+    // 2. Caller must be the tranche owner or the Arkana Treasury
+    if *signer_info.key != tranche.owner && *signer_info.key != ARKANA_TREASURY_ADDRESS {
+        return Err(ArkanaVaultError::Unauthorized.into());
+    }
+
+    // 3. Strict 365-day Locking Period Check
     if clock.unix_timestamp < tranche.expires_at {
         return Err(ArkanaVaultError::TrancheNotMatured.into());
     }
 
-    // 3. Ensure Treasury ATA exists and belongs to the Arkana Treasury
+    // 4. Ensure Treasury ATA exists and belongs to the Arkana Treasury
     if treasury_tokens_info.data_is_empty() {
         create_associated_token_account(
             signer_info,
@@ -76,7 +82,7 @@ pub fn process_harvest_matured_tranche(
 
     let amount = tranche.deposited_amount;
 
-    // 4. Transfer principal ORE directly into Arkana Treasury ATA
+    // 5. Transfer principal ORE directly into Arkana Treasury ATA
     transfer_signed_with_bump(
         vault_authority_info,
         vault_tokens_info,
@@ -87,8 +93,9 @@ pub fn process_harvest_matured_tranche(
         vault_auth_bump,
     )?;
 
-    // 5. Mark Tranche as matured and update aggregates
+    // 6. Mark Tranche as matured and zero out deposited amount to eliminate any phantom yield
     tranche.is_matured = 1;
+    tranche.deposited_amount = 0;
 
     user_vault.total_staked_ore = user_vault.total_staked_ore.saturating_sub(amount);
     config.total_staked_ore = config.total_staked_ore.saturating_sub(amount);

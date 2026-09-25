@@ -36,7 +36,7 @@ export const MAINNET_CONFIG: NetworkConfig = {
   oreMint: new PublicKey('oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp'),
   oreStakeProgramId: new PublicKey('stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH'),
   treasuryAddress: new PublicKey('4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny'),
-  arkanaVaultProgramId: new PublicKey('HZrfoHKA76URt1jfa2bn9Tmunjb8gBehGUW4rgmSASnH'),
+  arkanaVaultProgramId: new PublicKey('B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C'),
   explorerSuffix: '',
 };
 
