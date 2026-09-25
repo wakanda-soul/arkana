@@ -99,6 +99,7 @@ export interface UserVaultData {
   owner: string;
   trancheCount: number;
   totalStakedOre: number; // in indivisible units
+  totalClaimableOre: number; // in indivisible units
   totalYieldClaimed: number;
 }
 
@@ -110,6 +111,7 @@ export interface TrancheData {
   depositedAt: number; // unix timestamp in seconds
   expiresAt: number; // unix timestamp in seconds
   claimedRewards: number;
+  claimableRewards: number; // in indivisible units
   // Computed helpers for UI
   daysRemaining: number;
   isExpired: boolean;
