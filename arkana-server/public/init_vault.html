@@ -22,7 +22,7 @@
       background: #141b26;
       border: 1px solid #2d3748;
       border-radius: 16px;
-      max-width: 600px;
+      max-width: 620px;
       width: 100%;
       padding: 32px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -56,7 +56,7 @@
       border: 1px solid #1e293b;
       border-radius: 12px;
       padding: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       font-size: 13px;
     }
     .info-row {
@@ -174,7 +174,20 @@
     const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
     const ASSOCIATED_TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
-    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+    // Use internal backend RPC proxy (immune to CORS/403) with fallback to publicnode
+    const rpcEndpoints = [
+      window.location.origin + "/api/solana-rpc",
+      "https://solana-rpc.publicnode.com"
+    ];
+    let activeRpcIndex = 0;
+    let connection = new solanaWeb3.Connection(rpcEndpoints[0], "confirmed");
+
+    function getNextConnection() {
+      activeRpcIndex = (activeRpcIndex + 1) % rpcEndpoints.length;
+      connection = new solanaWeb3.Connection(rpcEndpoints[activeRpcIndex], "confirmed");
+      return connection;
+    }
+
     let currentWallet = null;
 
     async function checkVaultStatus() {
@@ -185,7 +198,7 @@
           badge.textContent = "ALREADY INITIALIZED";
           badge.style.color = "#10b981";
           badge.style.borderColor = "#10b981";
-          showAlert("Vault is already initialized and fully active on Mainnet!", "success");
+          showAlert("Vault is already initialized and active on Mainnet!", "success");
           document.getElementById("actionArea").innerHTML = `
             <a href="https://solscan.io/account/${CONFIG_PDA.toBase58()}" target="_blank" style="text-decoration:none;">
               <button class="btn btn-init">View Active Vault on Solscan</button>
@@ -199,7 +212,18 @@
           return false;
         }
       } catch (err) {
-        console.error(err);
+        console.warn("Retrying with next RPC endpoint...", err);
+        try {
+          const nextConn = getNextConnection();
+          const acc = await nextConn.getAccountInfo(CONFIG_PDA);
+          if (acc && acc.data.length > 0) {
+            badge.textContent = "ALREADY INITIALIZED";
+            badge.style.color = "#10b981";
+            badge.style.borderColor = "#10b981";
+            showAlert("Vault is already initialized and active on Mainnet!", "success");
+            return true;
+          }
+        } catch (e2) {}
         badge.textContent = "AWAITING INITIALIZATION";
         return false;
       }
@@ -268,14 +292,31 @@
           data: new Uint8Array([0]), // Initialize = 0
         });
 
-        const latestBlockhash = await connection.getLatestBlockhash("confirmed");
+        // Try getting blockhash with fallback
+        let latestBlockhash;
+        try {
+          latestBlockhash = await connection.getLatestBlockhash("confirmed");
+        } catch (bhErr) {
+          console.warn("Primary RPC failed, falling back to secondary RPC...", bhErr);
+          const fbConn = getNextConnection();
+          latestBlockhash = await fbConn.getLatestBlockhash("confirmed");
+        }
+
         const tx = new solanaWeb3.Transaction({
           feePayer: REQUIRED_FOUNDER,
           recentBlockhash: latestBlockhash.blockhash,
         }).add(ix);
 
         showAlert("Please approve the transaction in your Phantom/Solflare wallet...", "info");
-        const { signature } = await provider.signAndSendTransaction(tx);
+        
+        let signature;
+        if (provider.signAndSendTransaction) {
+          const res = await provider.signAndSendTransaction(tx);
+          signature = res.signature;
+        } else {
+          const signed = await provider.signTransaction(tx);
+          signature = await connection.sendRawTransaction(signed.serialize());
+        }
 
         showAlert(
           `Transaction submitted! Confirming on Solana Mainnet...<br>Tx: <a href="https://solscan.io/tx/${signature}" target="_blank">${signature.slice(0, 16)}...</a>`,
