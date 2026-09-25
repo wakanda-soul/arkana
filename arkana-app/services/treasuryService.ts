@@ -1,11 +1,11 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, AddressLookupTableAccount } from '@solana/web3.js';
+import { Connection, PublicKey, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import {
   createTransferInstruction,
   createBurnInstruction,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { ed25519 } from '@noble/curves/ed25519';
 // @ts-ignore
@@ -13,12 +13,6 @@ import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 import { SKR_MINT, SOLANA_MEMO_PROGRAM_ID, fetchRealSkrBalance, executeSolanaTransaction } from './solanaService';
 import { isDevnet } from '@/constants/networkConfig';
-import {
-  createDepositTrancheInstruction,
-  createSwapAndDepositTrancheInstruction,
-  createSwapAndDepositSolTrancheInstruction,
-  getUserVaultPda
-} from './oreVaultService';
 
 /**
  * Arkana Founder Offline Master Public Key
@@ -119,25 +113,11 @@ export async function getLiveSolQuoteForSkr(
 }
 
 /**
- * Deserialize a Jupiter DEX instruction into a Solana Web3 TransactionInstruction
- */
-function deserializeJupiterInstruction(instruction: any): TransactionInstruction {
-  return new TransactionInstruction({
-    programId: new PublicKey(instruction.programId),
-    keys: instruction.accounts.map((key: any) => ({
-      pubkey: new PublicKey(key.pubkey),
-      isSigner: key.isSigner,
-      isWritable: key.isWritable,
-    })),
-    data: Buffer.from(instruction.data, 'base64'),
-  });
-}
-
-/**
  * Build SPL Token instructions for direct SKR payments:
  * - 33% transferred to Arkana Treasury
  * - 33% burned permanently on-chain (createBurnInstruction)
- * - 34% swapped via vault pool and locked into 365-day ORE Sacred Vault tranche
+ * - 34% transferred to Treasury as ORE Staking Yield Reserve
+ * Total: 67% Treasury (including ORE Staking Yield Reserve) + 33% Deflationary Burn
  */
 export async function buildSkrPaymentInstructions({
   connection,
@@ -171,14 +151,13 @@ export async function buildSkrPaymentInstructions({
     )
   );
 
-  // Protocol Split: 33% Burn + 33% Treasury + 34% ORE 365-Day Staking Yield
+  // Protocol Split: 33% Burn + 33% Treasury + 34% ORE Staking Yield Reserve
   const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
   const totalRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
   const burnRaw = (totalRaw * 33n) / 100n;
-  const treasuryRaw = (totalRaw * 33n) / 100n;
-  const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34% for ORE Staking Yield
+  const treasuryRaw = totalRaw - burnRaw; // Exactly 67% (33% Treasury + 34% ORE Yield Reserve)
 
-  // 2. Transfer Treasury SKR share (33%)
+  // 2. Transfer Treasury SKR share + ORE Yield Reserve (67%)
   instructions.push(
     createTransferInstruction(
       userAta,
@@ -202,78 +181,7 @@ export async function buildSkrPaymentInstructions({
     )
   );
 
-  // 4. On-chain Atomic Swap & Deposit into ORE Sacred Vault (365-Day Time-Lock)
-  try {
-    const [userVaultPda] = getUserVaultPda(payer);
-    const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
-    let nextTrancheId = 1;
-    if (uVaultAcc && uVaultAcc.data.length >= 64) {
-      nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
-    }
-
-    if (isDevnet()) {
-      const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
-        payer,
-        nextTrancheId,
-        oreShareRaw
-      );
-      instructions.push(swapAndDepositIx);
-    } else {
-      // Mainnet: Jupiter DEX swap SKR -> ORE and deposit into ORE Sacred Vault
-      const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT.toBase58()}&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${oreShareRaw}&slippageBps=100`;
-      const quoteRes = await fetch(quoteUrl);
-      if (quoteRes.ok) {
-        const quoteData = await quoteRes.json();
-        const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userPublicKey: payer.toBase58(),
-            quoteResponse: quoteData,
-            wrapAndUnwrapSol: true,
-            useSharedAccounts: true,
-          }),
-        });
-        if (insRes.ok) {
-          const insData = await insRes.json();
-          if (insData.setupInstructions) {
-            instructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
-          }
-          if (insData.swapInstruction) {
-            instructions.push(deserializeJupiterInstruction(insData.swapInstruction));
-          }
-          if (insData.cleanupInstruction) {
-            instructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
-          }
-          const outOreUnits = BigInt(quoteData.outAmount);
-          const depositIx = await createDepositTrancheInstruction(
-            payer,
-            nextTrancheId,
-            outOreUnits
-          );
-          instructions.push(depositIx);
-        } else {
-          throw new Error('Jupiter swap instructions failed');
-        }
-      } else {
-        throw new Error('Jupiter quote failed');
-      }
-    }
-  } catch (vaultErr) {
-    console.warn('Failed to build on-chain SwapAndDeposit instruction, routing to treasury as fallback:', vaultErr);
-    instructions.push(
-      createTransferInstruction(
-        userAta,
-        treasuryAta,
-        payer,
-        oreShareRaw,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
-  }
-
-  // 5. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
+  // 4. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
   const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
   instructions.push(
     new TransactionInstruction({
@@ -287,10 +195,10 @@ export async function buildSkrPaymentInstructions({
 }
 
 /**
- * Build SOL instructions for payments when paying in SOL (or on Devnet without Jupiter):
+ * Build SOL instructions for payments when paying in SOL:
  * - 33% transferred to Arkana Treasury
  * - 33% transferred to Solana Incinerator (permanently burned on-chain)
- * - 34% transferred to Vault Authority + SwapAndDepositSolTranche into 365-day ORE tranche!
+ * - 34% transferred to Treasury as ORE Staking Yield Reserve
  * - Proof Memo documenting the 33/33/34 split
  */
 export async function buildSolPaymentInstructions({
@@ -319,13 +227,12 @@ export async function buildSolPaymentInstructions({
   } catch {}
 
   const totalLamports = BigInt(lamports);
-  const treasuryLamports = (totalLamports * 33n) / 100n;
   const burnLamports = (totalLamports * 33n) / 100n;
-  const vaultLamports = totalLamports - treasuryLamports - burnLamports; // Exactly 34%
+  const treasuryLamports = totalLamports - burnLamports; // Exactly 67% (33% Treasury + 34% ORE Yield Reserve)
 
   const instructions: TransactionInstruction[] = [];
 
-  // 1. 33% SOL to Treasury
+  // 1. 67% SOL to Arkana Treasury (33% Treasury + 34% ORE Yield Reserve)
   instructions.push(
     SystemProgram.transfer({
       fromPubkey: payer,
@@ -334,7 +241,7 @@ export async function buildSolPaymentInstructions({
     })
   );
 
-  // 2. 33% SOL to Burn (Solana Incinerator)
+  // 2. 33% SOL to Burn (Solana Incinerator - permanent deflationary burn)
   const INCINERATOR_ADDRESS = new PublicKey('1nc1nerator11111111111111111111111111111111');
   instructions.push(
     SystemProgram.transfer({
@@ -344,80 +251,7 @@ export async function buildSolPaymentInstructions({
     })
   );
 
-  // 3. 34% SOL to ORE Sacred Vault -> creates 365-day ORE tranche for user!
-  const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
-  const totalSkrRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
-  const oreShareRaw = (totalSkrRaw * 34n) / 100n;
-
-  try {
-    const [userVaultPda] = getUserVaultPda(payer);
-    const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
-    let nextTrancheId = 1;
-    if (uVaultAcc && uVaultAcc.data.length >= 64) {
-      nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
-    }
-
-    if (isDevnet()) {
-      const swapAndDepositSolIx = await createSwapAndDepositSolTrancheInstruction(
-        payer,
-        nextTrancheId,
-        oreShareRaw,
-        vaultLamports
-      );
-      instructions.push(swapAndDepositSolIx);
-    } else {
-      // Mainnet: Jupiter DEX swap SOL -> ORE and deposit into ORE Sacred Vault
-      const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${vaultLamports}&slippageBps=100`;
-      const quoteRes = await fetch(quoteUrl);
-      if (quoteRes.ok) {
-        const quoteData = await quoteRes.json();
-        const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userPublicKey: payer.toBase58(),
-            quoteResponse: quoteData,
-            wrapAndUnwrapSol: true,
-            useSharedAccounts: true,
-          }),
-        });
-        if (insRes.ok) {
-          const insData = await insRes.json();
-          if (insData.setupInstructions) {
-            instructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
-          }
-          if (insData.swapInstruction) {
-            instructions.push(deserializeJupiterInstruction(insData.swapInstruction));
-          }
-          if (insData.cleanupInstruction) {
-            instructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
-          }
-          const outOreUnits = BigInt(quoteData.outAmount);
-          const depositIx = await createDepositTrancheInstruction(
-            payer,
-            nextTrancheId,
-            outOreUnits
-          );
-          instructions.push(depositIx);
-        } else {
-          throw new Error('Jupiter swap instructions failed');
-        }
-      } else {
-        throw new Error('Jupiter quote failed');
-      }
-    }
-  } catch (vaultErr) {
-    console.warn('Failed to build on-chain SwapAndDepositSol instruction, routing to treasury as fallback:', vaultErr);
-    instructions.push(
-      SystemProgram.transfer({
-        fromPubkey: payer,
-        toPubkey: treasury,
-        lamports: vaultLamports,
-      })
-    );
-  }
-
-  // 4. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
+  // 3. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
   const memoText = `ARKANA::${actionLabel}::SOL_PAYMENT::SKR_EQUIV=${amountSkr}::LAMPORTS=${lamports}::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
   instructions.push(
     new TransactionInstruction({
@@ -442,9 +276,8 @@ export interface ExecutePaymentOrSwapParams {
 
 /**
  * Universal payment or swap executor adhering to Solana Mobile Hackathon standard:
- * - If user has sufficient SKR (and !forceSolSwap) -> 50% Treasury + 50% Burn via VersionedTransaction.
- * - If user has insufficient SKR (or forceSolSwap) -> Atomic Jupiter DEX Swap (SOL -> exact SKR) + 50% Treasury + 50% Deflationary Burn in a single atomic transaction.
- * - Fallback: If Jupiter route is temporarily unavailable, gracefully executes direct SOL Buyback transfer into Treasury.
+ * - If user has sufficient SKR (and !forceSolSwap) -> 33% Burn + 33% Treasury + 34% ORE Yield via VersionedTransaction.
+ * - If user has insufficient SKR (or forceSolSwap) -> Atomic on-chain SOL payment: 33% Deflationary Burn (Incinerator) + 33% Treasury + 34% ORE Yield in a single atomic transaction.
  */
 export async function executePaymentOrSwap({
   connection,
@@ -461,7 +294,7 @@ export async function executePaymentOrSwap({
   const currentSkr = await fetchRealSkrBalance(connection, payer);
 
   if (!forceSolSwap && currentSkr >= amountSkr) {
-    // Direct on-chain SKR transaction: 33% Treasury + 33% Burn + 34% ORE Swap & Staking Tranche
+    // Direct on-chain SKR transaction: 33% Treasury + 33% Burn + 34% ORE Yield
     const instructions = await buildSkrPaymentInstructions({
       connection,
       userPublicKey: payer,
@@ -480,259 +313,21 @@ export async function executePaymentOrSwap({
     return { signature, paidWith: 'skr', costSkr: amountSkr };
   }
 
-  // On Devnet, custom tokens do not exist on Jupiter DEX.
-  // Execute atomic on-chain SOL payment: 33% Treasury + 33% Burn + 34% ORE Sacred Vault Tranche in 1 single transaction!
-  if (isDevnet()) {
-    const instructions = await buildSolPaymentInstructions({
-      connection,
-      userPublicKey: payer,
-      treasuryPublicKey: treasury,
-      amountSkr,
-      actionLabel,
-    });
+  // SOL payment: 33% Deflationary Burn (Incinerator) + 33% Treasury + 34% ORE Yield
+  const instructions = await buildSolPaymentInstructions({
+    connection,
+    userPublicKey: payer,
+    treasuryPublicKey: treasury,
+    amountSkr,
+    actionLabel,
+  });
 
-    const { signature } = await executeSolanaTransaction({
-      connection,
-      payerKey: payer,
-      instructions,
-      signAndSendTransactions,
-    });
+  const { signature } = await executeSolanaTransaction({
+    connection,
+    payerKey: payer,
+    instructions,
+    signAndSendTransactions,
+  });
 
-    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
-  }
-
-  // Atomic Jupiter DEX Swap (SOL -> exact SKR) + 50% Treasury + 50% Deflationary Burn
-  const rawSkrNeeded = Math.round(amountSkr * 1_000_000);
-  try {
-    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${rawSkrNeeded}&swapMode=ExactOut&slippageBps=100`;
-    const quoteRes = await fetch(quoteUrl);
-    if (!quoteRes.ok) {
-      throw new Error(`Jupiter quote error: ${quoteRes.status} ${quoteRes.statusText}`);
-    }
-    const quoteData = await quoteRes.json();
-    if (!quoteData || !quoteData.inAmount) {
-      throw new Error('Invalid quote returned from Jupiter DEX API');
-    }
-
-    const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userPublicKey: payer.toBase58(),
-        quoteResponse: quoteData,
-        wrapAndUnwrapSol: true,
-        useSharedAccounts: true,
-      }),
-    });
-
-    if (!insRes.ok) {
-      throw new Error(`Jupiter swap-instructions error: ${insRes.status} ${insRes.statusText}`);
-    }
-
-    const insData = await insRes.json();
-
-    const swapInstructions: TransactionInstruction[] = [];
-
-    // 1. Compute budget instructions from Jupiter
-    if (insData.computeBudgetInstructions && Array.isArray(insData.computeBudgetInstructions)) {
-      swapInstructions.push(...insData.computeBudgetInstructions.map(deserializeJupiterInstruction));
-    }
-
-    // 2. Setup instructions (WSOL ATA creation / sync / output ATA creation)
-    if (insData.setupInstructions && Array.isArray(insData.setupInstructions)) {
-      swapInstructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
-    }
-
-    // 3. Swap instruction (Raydium CLMM via Jupiter)
-    if (insData.swapInstruction) {
-      swapInstructions.push(deserializeJupiterInstruction(insData.swapInstruction));
-    }
-
-    // 4. Cleanup instruction (unwrap WSOL)
-    if (insData.cleanupInstruction) {
-      swapInstructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
-    }
-
-    // 5. Ensure Treasury ATA exists idempotently
-    const userAta = getAssociatedTokenAddressSync(SKR_MINT, payer, true);
-    const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasury, true);
-
-    swapInstructions.push(
-      createAssociatedTokenAccountIdempotentInstruction(
-        payer,
-        treasuryAta,
-        treasury,
-        SKR_MINT,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      )
-    );
-
-    // 6. Protocol Split: 33% Burn + 33% Treasury + 34% ORE 365-Day Staking Yield
-    const totalRaw = BigInt(rawSkrNeeded);
-    const burnRaw = (totalRaw * 33n) / 100n;
-    const treasuryRaw = (totalRaw * 33n) / 100n;
-    const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34% for ORE Staking Yield
-
-    // 6. Transfer Treasury SKR share (33%)
-    swapInstructions.push(
-      createTransferInstruction(
-        userAta,
-        treasuryAta,
-        payer,
-        treasuryRaw,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
-
-    // 7. Permanently Burn 33% of the SKR on-chain
-    swapInstructions.push(
-      createBurnInstruction(
-        userAta,
-        SKR_MINT,
-        payer,
-        burnRaw,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
-
-    // 8. Swap & Deposit 34% into ORE Sacred Vault
-    try {
-      const [userVaultPda] = getUserVaultPda(payer);
-      const uVaultAcc = await connection.getAccountInfo(userVaultPda, 'confirmed');
-      let nextTrancheId = 1;
-      if (uVaultAcc && uVaultAcc.data.length >= 64) {
-        nextTrancheId = uVaultAcc.data.readUInt32LE(40) + 1;
-      }
-
-      if (isDevnet()) {
-        const swapAndDepositIx = await createSwapAndDepositTrancheInstruction(
-          payer,
-          nextTrancheId,
-          oreShareRaw
-        );
-        swapInstructions.push(swapAndDepositIx);
-      } else {
-        // Mainnet: Jupiter DEX swap SKR -> ORE and deposit into ORE Sacred Vault
-        const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT.toBase58()}&outputMint=oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp&amount=${oreShareRaw}&slippageBps=100`;
-        const quoteRes = await fetch(quoteUrl);
-        if (quoteRes.ok) {
-          const quoteData = await quoteRes.json();
-          const insRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userPublicKey: payer.toBase58(),
-              quoteResponse: quoteData,
-              wrapAndUnwrapSol: true,
-              useSharedAccounts: true,
-            }),
-          });
-          if (insRes.ok) {
-            const insData = await insRes.json();
-            if (insData.setupInstructions) {
-              swapInstructions.push(...insData.setupInstructions.map(deserializeJupiterInstruction));
-            }
-            if (insData.swapInstruction) {
-              swapInstructions.push(deserializeJupiterInstruction(insData.swapInstruction));
-            }
-            if (insData.cleanupInstruction) {
-              swapInstructions.push(deserializeJupiterInstruction(insData.cleanupInstruction));
-            }
-            const outOreUnits = BigInt(quoteData.outAmount);
-            const depositIx = await createDepositTrancheInstruction(
-              payer,
-              nextTrancheId,
-              outOreUnits
-            );
-            swapInstructions.push(depositIx);
-          } else {
-            throw new Error('Jupiter swap instructions failed');
-          }
-        } else {
-          throw new Error('Jupiter quote failed');
-        }
-      }
-    } catch (vaultErr) {
-      console.warn('Vault instruction skipped in Jupiter swap, sending to treasury:', vaultErr);
-      swapInstructions.push(
-        createTransferInstruction(
-          userAta,
-          treasuryAta,
-          payer,
-          oreShareRaw,
-          [],
-          TOKEN_PROGRAM_ID
-        )
-      );
-    }
-
-    // 9. SPL Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
-    const memoText = `ARKANA::${actionLabel}::SWAP_SOL_TO_SKR=${amountSkr}::SPLIT(BURN=33%_TREASURY=33%_ORE_YIELD=34%)::TS=${Date.now()}`;
-    swapInstructions.push(
-      new TransactionInstruction({
-        programId: SOLANA_MEMO_PROGRAM_ID,
-        keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-        data: Buffer.from(memoText, 'utf-8'),
-      })
-    );
-
-    // Fetch Address Lookup Tables
-    const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
-    if (insData.addressLookupTableAddresses && Array.isArray(insData.addressLookupTableAddresses)) {
-      const altResults = await Promise.all(
-        insData.addressLookupTableAddresses.map((addr: string) =>
-          connection.getAddressLookupTable(new PublicKey(addr)).catch(() => ({ value: null }))
-        )
-      );
-      for (const res of altResults) {
-        if (res && res.value) {
-          addressLookupTableAccounts.push(res.value);
-        }
-      }
-    }
-
-    const { signature } = await executeSolanaTransaction({
-      connection,
-      payerKey: payer,
-      instructions: swapInstructions,
-      addressLookupTableAccounts,
-      signAndSendTransactions,
-    });
-
-    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
-  } catch (swapErr: any) {
-    // If user explicitly rejected or cancelled in Phantom, do NOT fallback!
-    const isUserCancellation =
-      swapErr?.code === -32003 ||
-      swapErr?.code === 4001 ||
-      /reject|denied|declined|cancel|cancelled|canceled|closed|dismissed|abort/i.test(
-        String(swapErr?.message || '')
-      );
-
-    if (isUserCancellation) {
-      throw swapErr;
-    }
-
-    console.warn('Jupiter atomic swap failed or unavailable, executing on-chain SOL 33/33/34 flow:', swapErr);
-
-    const fallbackInstructions = await buildSolPaymentInstructions({
-      connection,
-      userPublicKey: payer,
-      treasuryPublicKey: treasury,
-      amountSkr,
-      actionLabel,
-    });
-
-    const { signature } = await executeSolanaTransaction({
-      connection,
-      payerKey: payer,
-      instructions: fallbackInstructions,
-      signAndSendTransactions,
-    });
-
-    return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
-  }
+  return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
 }

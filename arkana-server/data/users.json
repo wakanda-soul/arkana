@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 1,
+    "streak": 2,
     "dailySpreadsUsed": 5,
     "lastSpreadDate": "2026-09-24",
-    "totalReadings": 14,
+    "totalReadings": 15,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -90,8 +90,18 @@
         "txSignature": "45iQXnQW824fUAZGA4eZNkKnJuE7Cx44wzqAcUtNuCkYw1NphYikws6BBB2U15JcrtiBhPJwQzMBkXvZxdAnbviD"
       }
     ],
-    "lastClockIn": "2026-09-24T18:28:27.242Z",
+    "lastClockIn": "2026-09-25T16:20:27.522Z",
     "history": [
+      {
+        "timestamp": "2026-09-25T16:20:27.522Z",
+        "type": "daily-block",
+        "card": "The Oracle",
+        "card_no": "02",
+        "orientation": "upright",
+        "image": "/cards/02.webp",
+        "txSignature": "57ey65oAZSJkvokw6nNBPeuuGQofHPD6fb3WW29KoKknaM6TjQMXvFSB6oMt9z8wNsGnrikgNKKfUQyFKiPS3cKj",
+        "slot": 450404483
+      },
       {
         "timestamp": "2026-09-24T18:28:27.242Z",
         "type": "daily-block",

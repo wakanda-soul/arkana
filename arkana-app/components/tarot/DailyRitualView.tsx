@@ -1325,7 +1325,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.2,
     color: ObsidianTokens.colors.gold.primary,
-    marginTop: 18,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 14,
   },
   ghostCancelBtn: {
     borderWidth: 1,
@@ -1514,13 +1516,14 @@ const styles = StyleSheet.create({
   signingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     marginTop: 18,
     backgroundColor: ObsidianTokens.colors.ink.fill,
     borderColor: ObsidianTokens.colors.gold.subtle,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 999,
   },
   signingDot: {
@@ -1528,6 +1531,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: ObsidianTokens.colors.gold.primary,
+    alignSelf: 'center',
   },
   dotGreen: {
     backgroundColor: '#14F195',

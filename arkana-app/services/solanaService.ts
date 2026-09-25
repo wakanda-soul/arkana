@@ -8,7 +8,8 @@ import {
 } from '@solana/web3.js';
 import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { APP_IDENTITY } from '@/constants/app-config';
-import { getNetworkConfig } from '@/constants/networkConfig';
+import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 
@@ -183,6 +184,18 @@ export async function fetchRealSkrBalance(
   connection: Connection,
   walletPublicKey: PublicKey
 ): Promise<number> {
+  const decimals = isDevnet() ? 9 : 6;
+  try {
+    const userAta = getAssociatedTokenAddressSync(SKR_MINT, walletPublicKey, true);
+    const info = await connection.getAccountInfo(userAta, 'confirmed');
+    if (info && info.data && info.data.length >= 72) {
+      const amount = info.data.readBigUInt64LE(64);
+      return Number(amount) / Math.pow(10, decimals);
+    }
+  } catch (ataErr) {
+    console.warn('Direct ATA fetch error:', ataErr);
+  }
+
   try {
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPublicKey, {
       mint: SKR_MINT,
