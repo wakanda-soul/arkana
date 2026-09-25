@@ -16,7 +16,7 @@ export class AppConfig {
     {
       id: 'solana:mainnet',
       name: 'Mainnet',
-      endpoint: clusterApiUrl('mainnet-beta'),
+      endpoint: 'https://solana-rpc.publicnode.com',
       network: ClusterNetwork.Mainnet,
     },
     {
