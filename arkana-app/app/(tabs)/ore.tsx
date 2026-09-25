@@ -25,6 +25,7 @@ import {
   ARKANA_VAULT_PROGRAM_ID,
   ORE_MINT_ADDRESS,
   ARKANA_TREASURY_ADDRESS,
+  getConfigPda,
   getUserVaultPda,
   getTranchePda,
   createClaimTrancheYieldInstruction,
@@ -56,9 +57,13 @@ export default function OreVaultScreen() {
     try {
       setIsLoading(true);
       const userPubkey = new PublicKey(walletAddress);
+      const [configPda] = getConfigPda();
       const [userVaultPda] = getUserVaultPda(userPubkey);
 
-      const vaultAccountInfo = await connection.getAccountInfo(userVaultPda, 'confirmed');
+      const [configAccountInfo, vaultAccountInfo] = await Promise.all([
+        connection.getAccountInfo(configPda, 'confirmed'),
+        connection.getAccountInfo(userVaultPda, 'confirmed'),
+      ]);
 
       if (!vaultAccountInfo || vaultAccountInfo.data.length < 56) {
         // Vault not yet initialized on-chain for this wallet
@@ -66,10 +71,19 @@ export default function OreVaultScreen() {
           owner: walletAddress,
           trancheCount: 0,
           totalStakedOre: 0,
+          totalClaimableOre: 0,
           totalYieldClaimed: 0,
         });
         setTranches([]);
         return;
+      }
+
+      // Read current global rewards_factor from VaultConfig (Numeric I80F48 at offset 80)
+      let currentRewardsFactor = BigInt(0);
+      if (configAccountInfo && configAccountInfo.data.length >= 96) {
+        const factorLow = configAccountInfo.data.readBigUInt64LE(80);
+        const factorHigh = configAccountInfo.data.readBigInt64LE(88);
+        currentRewardsFactor = (factorHigh << BigInt(64)) | factorLow;
       }
 
       // Parse UserVault account data
@@ -79,16 +93,10 @@ export default function OreVaultScreen() {
       const totalStakedOre = Number(data.readBigUInt64LE(48));
       const totalYieldClaimed = Number(data.readBigUInt64LE(56));
 
-      setUserVault({
-        owner: walletAddress,
-        trancheCount,
-        totalStakedOre,
-        totalYieldClaimed,
-      });
-
       // Fetch individual tranches in parallel
       const now = Math.floor(Date.now() / 1000);
       const trancheIndices = Array.from({ length: trancheCount }, (_, idx) => idx + 1);
+      const SCALE_48 = BigInt(1) << BigInt(48);
 
       const loadedTranches = (
         await Promise.all(
@@ -104,10 +112,21 @@ export default function OreVaultScreen() {
                 const tData = trancheAccount.data;
                 const trancheId = tData.readUInt32LE(40);
                 const isMatured = tData.readUInt8(44) === 1;
-                const depositedAmount = Number(tData.readBigUInt64LE(48));
+                const depositedBig = tData.readBigUInt64LE(48);
+                const depositedAmount = Number(depositedBig);
                 const depositedAt = Number(tData.readBigInt64LE(56));
                 const expiresAt = Number(tData.readBigInt64LE(64));
+                const lastFactorLow = tData.readBigUInt64LE(88);
+                const lastFactorHigh = tData.readBigInt64LE(96);
+                const lastRewardsFactor = (lastFactorHigh << BigInt(64)) | lastFactorLow;
                 const claimedRewards = Number(tData.readBigUInt64LE(104));
+
+                let claimableRewards = 0;
+                if (!isMatured && currentRewardsFactor > lastRewardsFactor) {
+                  const diff = currentRewardsFactor - lastRewardsFactor;
+                  const claimableUnits = (diff * depositedBig) / SCALE_48;
+                  claimableRewards = Number(claimableUnits);
+                }
 
                 const secondsLeft = Math.max(0, expiresAt - now);
                 const daysRemaining = Math.ceil(secondsLeft / 86400);
@@ -120,6 +139,7 @@ export default function OreVaultScreen() {
                   depositedAt,
                   expiresAt,
                   claimedRewards,
+                  claimableRewards,
                   daysRemaining,
                   isExpired: now >= expiresAt,
                   canHarvest: now >= expiresAt && !isMatured,
@@ -133,6 +153,19 @@ export default function OreVaultScreen() {
           })
         )
       ).filter((t): t is TrancheData => t !== null);
+
+      const totalClaimableOre = loadedTranches.reduce(
+        (sum, t) => sum + (t.claimableRewards || 0),
+        0
+      );
+
+      setUserVault({
+        owner: walletAddress,
+        trancheCount,
+        totalStakedOre,
+        totalClaimableOre,
+        totalYieldClaimed,
+      });
 
       setTranches(loadedTranches);
     } catch (e) {
@@ -228,6 +261,10 @@ export default function OreVaultScreen() {
     ? (userVault.totalStakedOre / 1e11).toFixed(4)
     : '0.0000';
 
+  const totalClaimableOreUi = userVault
+    ? (userVault.totalClaimableOre / 1e11).toFixed(4)
+    : '0.0000';
+
   const totalYieldClaimedUi = userVault
     ? (userVault.totalYieldClaimed / 1e11).toFixed(4)
     : '0.0000';
@@ -270,18 +307,33 @@ export default function OreVaultScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statCol}>
               <Text style={styles.statLabel}>
-                {t('ore_stat_staked', 'STAKED ORE')}
+                {t('ore_stat_locked', 'LOCKED')}
               </Text>
-              <Text style={styles.statValueGold}>{totalOreStakedUi} ORE</Text>
+              <Text style={styles.statValueGold} numberOfLines={1}>
+                {totalOreStakedUi} <Text style={styles.statUnitGold}>ORE</Text>
+              </Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statCol}>
+              <Text style={styles.statLabelGreen}>
+                {t('ore_stat_claimable', 'CLAIMABLE')}
+              </Text>
+              <Text style={styles.statValueGreen} numberOfLines={1}>
+                {totalClaimableOreUi} <Text style={styles.statUnitGreen}>ORE</Text>
+              </Text>
             </View>
 
             <View style={styles.statDivider} />
 
             <View style={styles.statCol}>
               <Text style={styles.statLabel}>
-                {t('ore_stat_claimed', 'CLAIMED YIELD')}
+                {t('ore_stat_claimed', 'CLAIMED')}
               </Text>
-              <Text style={styles.statValueSilver}>{totalYieldClaimedUi} ORE</Text>
+              <Text style={styles.statValueSilver} numberOfLines={1}>
+                {totalYieldClaimedUi} <Text style={styles.statUnitSilver}>ORE</Text>
+              </Text>
             </View>
           </View>
 
@@ -302,6 +354,7 @@ export default function OreVaultScreen() {
                   <UiIconSymbol name="sparkles" size={14} color="#08070B" />
                   <Text style={styles.claimAllButtonText}>
                     {t('ore_claim_all_yield_btn', 'CLAIM ALL YIELD')}
+                    {userVault && userVault.totalClaimableOre > 0 ? ` (${totalClaimableOreUi} ORE)` : ''}
                   </Text>
                 </View>
               )}
@@ -380,6 +433,7 @@ export default function OreVaultScreen() {
         ) : (
           tranches.map((tranche) => {
             const amountUi = (tranche.depositedAmount / 1e11).toFixed(4);
+            const claimableUi = (tranche.claimableRewards / 1e11).toFixed(4);
             const claimedUi = (tranche.claimedRewards / 1e11).toFixed(4);
             const progressPct = Math.min(
               100,
@@ -418,18 +472,31 @@ export default function OreVaultScreen() {
                 </View>
 
                 <View style={styles.trancheInfoRow}>
-                  <View>
+                  <View style={styles.trancheStatCol}>
                     <Text style={styles.trancheInfoLabel}>
-                      {t('ore_staked_label', 'LOCKED PRINCIPAL')}
+                      {t('ore_stat_locked', 'LOCKED')}
                     </Text>
-                    <Text style={styles.trancheInfoValue}>{amountUi} ORE</Text>
+                    <Text style={styles.trancheInfoValue} numberOfLines={1}>
+                      {amountUi} <Text style={styles.trancheUnit}>ORE</Text>
+                    </Text>
                   </View>
 
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.trancheInfoLabel}>
-                      {t('ore_claimed_label', 'YIELD CLAIMED')}
+                  <View style={[styles.trancheStatCol, { alignItems: 'center' }]}>
+                    <Text style={styles.trancheInfoLabelGreen}>
+                      {t('ore_stat_claimable', 'CLAIMABLE')}
                     </Text>
-                    <Text style={styles.trancheInfoValueGold}>{claimedUi} ORE</Text>
+                    <Text style={styles.trancheInfoValueGreen} numberOfLines={1}>
+                      {claimableUi} <Text style={styles.trancheUnitGreen}>ORE</Text>
+                    </Text>
+                  </View>
+
+                  <View style={[styles.trancheStatCol, { alignItems: 'flex-end' }]}>
+                    <Text style={styles.trancheInfoLabel}>
+                      {t('ore_stat_claimed', 'CLAIMED')}
+                    </Text>
+                    <Text style={styles.trancheInfoValueSilver} numberOfLines={1}>
+                      {claimedUi} <Text style={styles.trancheUnitSilver}>ORE</Text>
+                    </Text>
                   </View>
                 </View>
 
@@ -444,6 +511,7 @@ export default function OreVaultScreen() {
                     ) : (
                       <Text style={styles.claimButtonText}>
                         {t('ore_claim_yield_btn', 'CLAIM ORE YIELD')}
+                        {tranche.claimableRewards > 0 ? ` (${claimableUi} ORE)` : ''}
                       </Text>
                     )}
                   </Pressable>
@@ -538,34 +606,63 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   statCol: {
+    flex: 1,
     alignItems: 'center',
   },
   statLabel: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
-    fontSize: 11,
+    fontSize: 10,
     color: 'rgba(237, 231, 220, 0.6)',
-    letterSpacing: 1,
-    marginBottom: 6,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  statLabelGreen: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    color: '#4ADE80',
+    letterSpacing: 0.8,
+    marginBottom: 4,
   },
   statValueGold: {
     fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
-    fontSize: 22,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#C8A24A',
   },
+  statValueGreen: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#4ADE80',
+  },
   statValueSilver: {
     fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
-    fontSize: 22,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#EDE7DC',
   },
+  statUnitGold: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(200, 162, 74, 0.7)',
+  },
+  statUnitGreen: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(74, 222, 128, 0.8)',
+  },
+  statUnitSilver: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(237, 231, 220, 0.5)',
+  },
   statDivider: {
     width: 1,
-    height: 40,
+    height: 32,
     backgroundColor: 'rgba(200, 162, 74, 0.2)',
   },
   vaultAddressRow: {
@@ -732,7 +829,11 @@ const styles = StyleSheet.create({
   trancheInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  trancheStatCol: {
+    flex: 1,
   },
   trancheInfoLabel: {
     fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
@@ -740,17 +841,44 @@ const styles = StyleSheet.create({
     color: 'rgba(237, 231, 220, 0.5)',
     marginBottom: 4,
   },
+  trancheInfoLabelGreen: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    color: '#4ADE80',
+    marginBottom: 4,
+  },
   trancheInfoValue: {
     fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#EDE7DC',
   },
-  trancheInfoValueGold: {
+  trancheInfoValueGreen: {
     fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4ADE80',
+  },
+  trancheInfoValueSilver: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#C8A24A',
+  },
+  trancheUnit: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(237, 231, 220, 0.6)',
+  },
+  trancheUnitGreen: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(74, 222, 128, 0.8)',
+  },
+  trancheUnitSilver: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 9,
+    color: 'rgba(200, 162, 74, 0.7)',
   },
   claimButton: {
     backgroundColor: '#C8A24A',
