@@ -29,6 +29,9 @@ const {
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { verifyPayment, isSeekerHolderOnChain } = require("./solana/paymentVerifier");
+const { createNonce, verifySignIn, hasWalletSession } = require("./auth/session");
+
+const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please sign in with your wallet again." };
 
 /**
  * Uses a free / streak spread when available. Otherwise charges only if the request carries a
@@ -256,6 +259,20 @@ app.get(["/", "/download"], (req, res) => {
 });
 
 // Health check
+// Wallet sign-in: the wallet signs a one-time message, the server issues a session token
+app.post("/api/auth/nonce", (req, res) => {
+  const message = createNonce(req.body && req.body.wallet);
+  if (!message) return res.status(400).json({ success: false, error: "Invalid wallet address" });
+  res.json({ success: true, message });
+});
+
+app.post("/api/auth/verify", (req, res) => {
+  const { wallet, message, signature } = req.body || {};
+  const result = verifySignIn({ wallet, message, signature });
+  if (!result.ok) return res.status(401).json({ success: false, error: result.error });
+  res.json({ success: true, token: result.token, expiresAt: result.expiresAt });
+});
+
 app.get("/api/health", (req, res) => {
   const build = getBuildInfo();
   res.json({
@@ -320,8 +337,10 @@ app.get("/api/clock-in/:wallet", (req, res) => {
 // Check and consume spread quota or deduct 5 SKR fee
 app.post("/api/spread/consume", (req, res) => {
   try {
-    const { wallet, isSeeker } = req.body;
-    const result = consumeSpread(wallet, { isSeeker: isSeeker !== undefined ? Boolean(isSeeker) : undefined });
+    const { wallet } = req.body;
+    if (!wallet) return res.status(401).json({ success: false, error: "Connect your wallet first." });
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const result = consumeSpread(wallet, {});
     if (!result.allowed) {
       return res.status(402).json(result);
     }
@@ -351,6 +370,7 @@ app.post("/api/clock-in", async (req, res) => {
     if (!wallet) {
       return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
     if (!getClockInStatus(wallet).canClockIn) {
       return res.status(409).json({ success: false, alreadyClockedIn: true, error: "Already clocked in today." });
     }
@@ -446,6 +466,7 @@ app.post("/api/reading", async (req, res) => {
     if (!wallet) {
       return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
     {
       quotaResult = await consumeWithVerifiedPayment(wallet, {
         type: "spread",
@@ -525,6 +546,7 @@ app.post("/api/chat", async (req, res) => {
   if (!wallet || wallet === "anonymous") {
     return res.status(401).json({ success: false, error: "Connect your wallet first." });
   }
+  if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
   {
     quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature });
 
@@ -739,9 +761,12 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 // Also bind standard HTTP port 80 for frictionless mobile downloads
 try {
   const http = require("http");
-  http.createServer(app).listen(80, "0.0.0.0", () => {
-    console.log(`🔮 Arkana HTTP download listener running on http://0.0.0.0:80`);
-  });
+  http
+    .createServer(app)
+    .on("error", (err) => console.warn("Could not bind port 80:", err.message))
+    .listen(80, "0.0.0.0", () => {
+      console.log(`🔮 Arkana HTTP download listener running on http://0.0.0.0:80`);
+    });
 } catch (err) {
   console.warn("Could not bind port 80:", err.message);
 }

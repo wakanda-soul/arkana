@@ -101,3 +101,4 @@ arkana-server/data/users.json
 arkana-server/data/lookup_table.json
 arkana-server/public/version.json
 arkana-server/data/used_payments.json
+arkana-server/data/sessions.json

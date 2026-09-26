@@ -1,4 +1,4 @@
-import { createContext, type PropsWithChildren, use, useMemo } from 'react'
+import { createContext, type PropsWithChildren, use, useEffect, useMemo } from 'react'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { AppConfig } from '@/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
@@ -56,10 +56,21 @@ function useConnectMutation() {
 }
 
 import { soundService } from '@/services/soundService'
+import { ensureWalletSession, clearWalletSession } from '@/services/sessionService'
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const { accounts, disconnect } = useMobileWallet()
+  const { accounts, disconnect, signMessage } = useMobileWallet()
   const connectMutation = useConnectMutation()
+  const walletAddress = accounts?.[0]?.publicKey?.toBase58?.() ?? null
+
+  // One free message signature per wallet (renewed every ~30 days) proves to the server
+  // that requests spending this wallet's quota come from its owner.
+  useEffect(() => {
+    if (!walletAddress) return
+    ensureWalletSession(walletAddress, (message) => signMessage(message)).catch((err) =>
+      console.warn('[Auth] Wallet session sign-in skipped:', err?.message || err),
+    )
+  }, [walletAddress, signMessage])
 
   const value: AuthState = useMemo(
     () => ({
@@ -78,6 +89,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         try {
           await AsyncStorage.removeItem('arkana_wallet_authorization')
         } catch {}
+        await clearWalletSession()
         soundService.playWalletDisconnect()
         await disconnect()
       },

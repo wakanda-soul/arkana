@@ -1,3 +1,4 @@
+import { apiHeaders } from './sessionService';
 import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
 
 // Public VPS IP for testing, or localhost for local dev
@@ -186,7 +187,7 @@ export async function setRemoteSeekerStatus(wallet: string, isSeekerHolder: bool
   try {
     const res = await fetch(`${API_BASE_URL}/api/seeker/status`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, isSeekerHolder }),
     });
     if (res.ok) {
@@ -216,7 +217,7 @@ export async function executeClockIn(
   try {
     const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, cardNo, orientation, language, txSignature, slot }),
     });
     if (res.ok) {
@@ -270,7 +271,7 @@ export async function fetchReading(
     }
     const res = await fetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify(payload),
     });
     if (res.status === 402) {
@@ -301,7 +302,7 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
     }
     const res = await fetch(`${API_BASE_URL}/api/spread/consume`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -316,7 +317,7 @@ export async function repairStreak(wallet: string, txSignature: string): Promise
   try {
     const res = await fetch(`${API_BASE_URL}/api/streak/repair`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature }),
     });
     const data = await res.json();
@@ -348,7 +349,7 @@ export async function sendOracleChatMessage({
 }> {
   const res = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await apiHeaders(),
     body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, language }),
   });
 
@@ -378,7 +379,7 @@ export async function submitAltarOfferingApi({
   try {
     const res = await fetch(`${API_BASE_URL}/api/offering`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, amountSkr, message }),
     });
     return await res.json();
@@ -399,7 +400,7 @@ export async function activateSubscriptionApi({
   try {
     const res = await fetch(`${API_BASE_URL}/api/subscription/activate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, durationDays }),
     });
     return await res.json();
