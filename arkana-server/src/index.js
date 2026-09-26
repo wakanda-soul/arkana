@@ -598,6 +598,23 @@ app.post("/api/subscription/activate", (req, res) => {
 });
 
 // Admin Economy Config Endpoints
+// Admin endpoints (economy config, dialogue logs) require ARKANA_ADMIN_TOKEN.
+// Without the token configured they are disabled entirely.
+function requireAdmin(req, res, next) {
+  const expected = process.env.ARKANA_ADMIN_TOKEN;
+  const header = req.get("authorization") || "";
+  const provided = req.get("x-admin-token") || (header.startsWith("Bearer ") ? header.slice(7) : "");
+  const crypto = require("crypto");
+  const ok =
+    expected &&
+    provided &&
+    provided.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  if (!ok) return res.status(404).json({ success: false, error: "Not found" });
+  next();
+}
+app.use("/api/admin", requireAdmin);
+
 app.get("/api/admin/config", (req, res) => {
   const config = loadEconomyConfig();
   res.json({ success: true, config });

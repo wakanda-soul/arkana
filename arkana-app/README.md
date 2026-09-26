@@ -1,71 +1,48 @@
-# Arkana Mobile Client
+# Arkana app
 
-Native Android application for Arkana, built with React Native, Expo, and the Solana Mobile Wallet Adapter (MWA). Designed for the Solana Seeker phone and standard Android devices running Android 10+.
+Android app for Arkana, built with Expo, React Native and Solana Mobile Wallet Adapter. Made for the Seeker, runs on any Android 10+ phone.
 
----
+## Screens
 
-## App Screens & Structure
+Expo Router, five tabs:
 
-The client runs on Expo Router with tab navigation:
+- `app/(tabs)/index.tsx`, **Today.** Daily Clock-In, streak, free spreads left, entry to spreads.
+- `app/spread/[id].tsx`, **spreads.** Card layouts, 3D flips, the seven-part reading.
+- `app/(tabs)/oracle.tsx`, **Ask.** Chat with Arkana. When the free quota is used up, a question costs 1 SKR.
+- `app/(tabs)/codex.tsx`, **Deck.** All 78 cards with upright and reversed meanings, offline.
+- `app/(tabs)/ore.tsx`, **ORE.** The user's daily tranches in the ORE Vault, staked ORE, yield and days left until each tranche matures.
+- `app/(tabs)/wallet.tsx`, **Me.** Wallet, SKR / SOL / ORE balances, offerings, the Seeker Oracle Pass, language.
 
-- `app/(tabs)/index.tsx`: The Altar. Features the Daily Block Clock-In, current streak counter, daily free spread allowance, and shortcuts to full spread layouts.
-- `app/spread/[id].tsx`: Interactive spread altar. Lays out cards in authentic Tarot Cross and Compass geometries, manages 3D card flips, checks SKR quota, and displays the 7-beat reading.
-- `app/(tabs)/oracle.tsx`: Live conversational terminal with Arkana Oracle, proxied through a low-latency Gemini Flash backend.
-- `app/(tabs)/codex.tsx`: Complete index of all 78 Arcana cards. Tap any card to open the inspection modal with upright and reversed interpretations.
-- `app/(tabs)/wallet.tsx`: Seeker identity hub. Connects to Phantom, Solflare, or Seed Vault, tracks SKR balances, and manages on-chain sessions.
+On first launch the user picks one of 10 languages. English is the default.
 
----
+## Payments
 
-## Key Dependencies
+`services/treasuryService.ts` builds every payment. The result is always 33% SKR burned, 33% SKR to the treasury and 34% swapped to ORE into the user's daily tranche.
 
-- `@solana-mobile/mobile-wallet-adapter-protocol`: Native MWA authorization and transaction signing on Android.
-- `react-native-reanimated`: 60/120fps card flip physics and spring animations.
-- `expo-haptics`: Tactile feedback for shuffling, reveals, and check-in confirmation.
-- `react-native-safe-area-context`: Dynamic padding for Android 3-button and gesture navigation bars.
+- With enough SKR: the split is paid from SKR, and the 34% share is swapped SKR to ORE through Jupiter.
+- Otherwise SOL is swapped to exactly 66% of the price in SKR (burn and treasury) and SOL worth 34% of the price goes to ORE.
+- The tranche deposit uses the swap's guaranteed minimum output, so slippage can never make the transaction fail or take ORE the user already had.
+- The payment is sent as one transaction. The Arkana lookup table keeps it under Solana's 1232-byte limit. If a route is too large anyway, it is split in two and the user still approves once.
 
----
+Before any payment the app checks the treasury address against the founder's offline Ed25519 signature (`verifyTreasuryAttestation`).
 
-## Development Setup
+`services/oreVaultService.ts` builds the ORE Vault instructions: deposit, claim yield, harvest and the `SyncStake` crank.
 
-### 1. Install Dependencies
+## Development
 
 ```bash
 npm install
+npx expo start          # dev server
+npx expo run:android    # build and run on a connected phone
+npx tsc --noEmit        # type check
 ```
 
-### 2. Start Expo Dev Server
+Wallet features need a real Android phone with Phantom, Solflare or Seed Vault. The network (mainnet or devnet) is set in `constants/networkConfig.ts`.
 
-```bash
-npx expo start
-```
+## Offline
 
-### 3. Run on Device
+If the server is unreachable, `services/oracleApi.ts` switches to the on-device engine. Cards, combinations and readings keep working without the network.
 
-To test MWA and Seed Vault, connect a physical Android device or Seeker developer phone with USB debugging enabled:
+## Versions
 
-```bash
-npx expo run:android
-```
-
-### 4. TypeScript Validation
-
-Verify types across the app:
-
-```bash
-npx tsc --noEmit
-```
-
----
-
-## Offline Support
-
-If the backend server is unreachable, `services/oracleApi.ts` automatically switches to the client-side deterministic engine. All 78 card passports and combination rules run offline without crashing or stalling the user experience.
-
----
-
-## On-Chain Economy & Treasury Security
-
-- **50% Deflationary Burn**: Every SKR payment (spreads, offerings, subscription) executes an on-chain SPL Token burn of 50% via `createBurnInstruction`. The remaining 50% funds the protocol treasury.
-- **Jupiter DEX Auto-Swap**: Allows users with SOL to automatically swap to SKR via Jupiter DEX `ExactOut` routing within a single transaction.
-- **Seeker Oracle Pass**: 333 SKR / month subscription granting +5 spreads per day (8/day for Seeker Genesis SBT holders).
-- **Cryptographic Attestation**: Treasury updates require offline Ed25519 signatures from the Founder Master Keypair, verified locally on-device by `@noble/curves/ed25519`.
+`release.json` holds major.minor. CI adds the patch number and the build number, see the root README.
