@@ -425,8 +425,8 @@ interface PaymentGroup {
 
 /**
  * A payment is two independent groups that never depend on each other's output:
- * - skrGroup: 33% SKR burn + 33% SKR to the treasury (preceded by SOL -> SKR for SOL payments)
- * - oreGroup: 34% -> ORE swap + daily tranche deposit (staked in ORE Stake) + proof memo
+ * - skrGroup: 33% SKR burn + 33% SKR to the treasury (preceded by SOL -> SKR for SOL payments) + proof memo
+ * - oreGroup: 34% -> ORE swap + daily tranche deposit (staked in ORE Stake)
  * They are sent as one transaction when it fits, otherwise as two transactions
  * approved together in a single wallet prompt.
  */
@@ -485,15 +485,15 @@ export async function buildSkrPaymentPlan({
   const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw });
 
   return {
-    skrGroup: { instructions: burnAndTreasury, swaps: [] },
-    oreGroup: {
+    skrGroup: {
       instructions: [
-        ...oreLeg.instructions,
-        // Compact Proof Memo to preserve Solana MTU limit
+        ...burnAndTreasury,
+        // Compact proof memo; the server verifies the burn + treasury transfer in this transaction
         buildMemoInstruction(payer, `ARKANA:${actionLabel}:${oreLeg.targetTrancheId}`),
       ],
-      swaps: oreLeg.swaps,
+      swaps: [],
     },
+    oreGroup: { instructions: oreLeg.instructions, swaps: oreLeg.swaps },
     addressLookupTableAccounts: [...(await getArkanaLookupTable(connection)), ...oreLeg.addressLookupTableAccounts],
   };
 }
@@ -545,14 +545,15 @@ export async function buildSolPaymentPlan({
   const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports });
 
   return {
-    skrGroup: { instructions: [...solToSkr.instructions, ...burnAndTreasury], swaps: [solToSkr] },
-    oreGroup: {
+    skrGroup: {
       instructions: [
-        ...oreLeg.instructions,
+        ...solToSkr.instructions,
+        ...burnAndTreasury,
         buildMemoInstruction(payer, `ARKANA:${actionLabel}:SOL:${oreLeg.targetTrancheId}`),
       ],
-      swaps: oreLeg.swaps,
+      swaps: [solToSkr],
     },
+    oreGroup: { instructions: oreLeg.instructions, swaps: oreLeg.swaps },
     addressLookupTableAccounts: [
       ...(await getArkanaLookupTable(connection)),
       ...solToSkr.addressLookupTableAccounts,
@@ -659,12 +660,13 @@ export async function executePaymentOrSwap({
     actionLabel,
   });
 
-  const { signature } = await executeSolanaTransaction({
+  const { signatures } = await executeSolanaTransaction({
     connection,
     payerKey: payer,
     buildTransactions: (blockhash) => compilePaymentTransactions(payer, blockhash, plan),
     signAndSendTransactions,
   });
 
-  return { signature, paidWith, costSkr: amountSkr };
+  // The first transaction holds the burn, the treasury transfer and the memo: the server verifies it
+  return { signature: signatures[0], paidWith, costSkr: amountSkr };
 }

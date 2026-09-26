@@ -28,6 +28,7 @@ const {
   updateEconomyConfig
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
+const { verifyPayment, isSeekerHolderOnChain } = require("./solana/paymentVerifier");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -311,10 +312,12 @@ app.post("/api/spread/consume", (req, res) => {
 });
 
 // Update or verify Seeker Genesis SBT status
-app.post("/api/seeker/status", (req, res) => {
+app.post("/api/seeker/status", async (req, res) => {
   try {
-    const { wallet, isSeekerHolder } = req.body;
-    const status = setSeekerHolderStatus(wallet, isSeekerHolder);
+    const { wallet } = req.body;
+    if (!wallet) return res.status(400).json({ error: "Wallet address is required" });
+    // Verified on-chain; the client's own claim is not trusted
+    const status = setSeekerHolderStatus(wallet, await isSeekerHolderOnChain(wallet));
     res.json({ success: true, wallet, isSeekerHolder: status });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -584,13 +587,23 @@ app.post("/api/offering", (req, res) => {
 });
 
 // Activate Seeker Oracle Pass (Subscription 333 SKR / 30 Days)
-app.post("/api/subscription/activate", (req, res) => {
+app.post("/api/subscription/activate", async (req, res) => {
   try {
-    const { wallet, txSignature, durationDays = 30 } = req.body;
+    const { wallet, txSignature } = req.body;
     if (!wallet) {
       return res.status(400).json({ error: "Wallet address is required" });
     }
-    const result = recordSubscription(wallet, { txSignature, durationDays });
+    const payment = await verifyPayment({
+      wallet,
+      signature: txSignature,
+      amountSkr: 333,
+      actionLabel: "SUBSCRIPTION_PASS",
+    });
+    if (!payment.ok) {
+      return res.status(402).json({ success: false, error: payment.error });
+    }
+    // Duration is fixed by the server: one paid pass = 30 days
+    const result = recordSubscription(wallet, { txSignature, durationDays: 30 });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -67,17 +67,11 @@ function getDailyFreeAllowance(streak = 0) {
 }
 
 function checkSeekerStatus(user, walletAddress, clientHint) {
-  if (clientHint !== undefined) {
-    if (user) {
-      user.isSeekerHolder = Boolean(clientHint);
-    }
-    return Boolean(clientHint);
-  }
+  // The client hint is ignored: Seeker status is only set by /api/seeker/status after
+  // the server verified the Seeker Genesis Token on-chain.
   if (user && user.isSeekerHolder !== undefined) {
     return Boolean(user.isSeekerHolder);
   }
-  if (!walletAddress) return false;
-  // All addresses require genuine on-chain SBT verification (via checkSeekerGenesisHolderOnChain on mobile client)
   return false;
 }
 
@@ -507,6 +501,7 @@ function recordOffering(walletAddress, { txSignature, amountSkr, message = "Alta
 /**
  * Activate Seeker Oracle Pass (Subscription): 333 SKR / 30 days (+5 spreads/day)
  */
+/** Called only after verifyPayment() confirmed the 333 SKR payment on-chain. */
 function recordSubscription(walletAddress, { txSignature, durationDays = 30 }) {
   if (!walletAddress) {
     return { success: false, error: "Wallet is required." };
@@ -523,7 +518,7 @@ function recordSubscription(walletAddress, { txSignature, durationDays = 30 }) {
     activatedAt: now.toISOString(),
     expiresAt: newExpiry.toISOString(),
     costSkr: 333,
-    txSignature: txSignature || "sub_" + Math.random().toString(36).slice(2, 10)
+    txSignature
   };
 
   users[walletAddress] = user;

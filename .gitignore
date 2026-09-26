@@ -100,3 +100,4 @@ arkana-server/data/users.json
 # Server-side lookup table keeper state
 arkana-server/data/lookup_table.json
 arkana-server/public/version.json
+arkana-server/data/used_payments.json
