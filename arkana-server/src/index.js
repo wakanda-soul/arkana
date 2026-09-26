@@ -348,6 +348,12 @@ app.post("/api/seeker/status", async (req, res) => {
 app.post("/api/clock-in", async (req, res) => {
   try {
     const { wallet, language = "en", cardNo, orientation = "upright", txSignature: clientTx, slot: clientSlot } = req.body;
+    if (!wallet) {
+      return res.status(401).json({ success: false, error: "Connect your wallet first." });
+    }
+    if (!getClockInStatus(wallet).canClockIn) {
+      return res.status(409).json({ success: false, alreadyClockedIn: true, error: "Already clocked in today." });
+    }
     let reading = null;
 
     if (cardNo) {

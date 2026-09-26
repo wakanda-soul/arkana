@@ -224,6 +224,10 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
   const lastDate = user.lastClockIn ? new Date(user.lastClockIn) : null;
   if (lastDate) {
     const diffHours = (now - lastDate) / (1000 * 60 * 60);
+    // One Clock-In per day: otherwise the streak (and its bonus spreads) could be farmed
+    if (diffHours < 20) {
+      return { success: false, alreadyClockedIn: true, streak: user.streak || 0, error: "Already clocked in today." };
+    }
     if (diffHours < 48) {
       user.streak = (user.streak || 0) + 1;
     } else {
