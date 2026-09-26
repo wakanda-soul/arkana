@@ -28,7 +28,8 @@ Node.js API behind the Arkana app: the deck engine, readings, the AI proxy for A
 | `GET` | `/api/lookup-table` | Arkana lookup table address |
 | `POST` | `/api/offering`, `/api/subscription/activate`, `/api/streak/repair` | Record paid actions |
 | `POST` | `/api/seeker/status` | Seeker Genesis holder status |
-| `POST` | `/api/solana-rpc` | RPC proxy for the app |
+| `POST` | `/api/solana-rpc` | Read-only RPC proxy (a few methods) for the vault admin pages |
+| `POST` | `/api/auth/nonce`, `/api/auth/verify` | Wallet sign-in: sign a message, get a 30-day session |
 | `*` | `/api/admin/*` | Economy config and dialogue logs, requires `ARKANA_ADMIN_TOKEN` |
 
 ## Configuration
@@ -41,7 +42,12 @@ Node.js API behind the Arkana app: the deck engine, readings, the AI proxy for A
 | `ARKANA_ADMIN_TOKEN` | Token for `/api/admin/*` (header `x-admin-token`). Admin endpoints are off without it |
 | `ARKANA_ALT_KEYPAIR` | Keypair that pays for the lookup table, default `~/.config/solana/id.json` |
 | `ARKANA_ALT_KEEPER` | `off` disables the lookup table keeper |
-| `SOLANA_RPC_URL` | RPC for the keeper, default publicnode |
+| `SOLANA_RPC_URL` | Private RPC for payment checks, the keeper and the admin-page proxy |
+| `ARKANA_REQUIRE_SESSION` | `off` accepts requests without a wallet session (only while 1.0.x apps are in use) |
+
+## AI sandbox
+
+User text reaches the AI model, so the model must not be able to read anything on the server. The model CLI runs through `deploy/arkana-agy` (installed as `/usr/local/bin/arkana-agy`), a bubblewrap sandbox that sees only system libraries, an empty `/tmp` and its own home `/var/lib/arkana-ai/home` holding just the CLI auth token. Setup: `apt install bubblewrap`, copy the script, create that home with the auth token.
 
 ## Running
 

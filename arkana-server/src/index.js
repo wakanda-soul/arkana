@@ -57,7 +57,49 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "16kb" }));
+
+// Never let one bad request take the whole server down
+process.on("unhandledRejection", (err) => console.error("[unhandledRejection]", err));
+
+const { PublicKey } = require("@solana/web3.js");
+function isValidWallet(wallet) {
+  try {
+    return typeof wallet === "string" && wallet.length <= 44 && PublicKey.isOnCurve(new PublicKey(wallet).toBytes());
+  } catch {
+    return false;
+  }
+}
+
+// Any wallet the client names must be a real Solana address (also blocks "__proto__" style keys)
+app.use("/api", (req, res, next) => {
+  const wallet = (req.body && req.body.wallet) ?? (req.query && req.query.wallet);
+  if (wallet !== undefined && wallet !== null && wallet !== "" && wallet !== "anonymous" && !isValidWallet(wallet)) {
+    return res.status(400).json({ success: false, error: "Invalid wallet address" });
+  }
+  next();
+});
+
+// Simple per-IP rate limit for endpoints that call the AI model or hit the chain
+const rateBuckets = new Map();
+function rateLimit(max, windowMs) {
+  return (req, res, next) => {
+    const key = `${req.path}|${req.ip || req.socket.remoteAddress}`;
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now - bucket.start > windowMs) {
+      rateBuckets.set(key, { start: now, count: 1 });
+      if (rateBuckets.size > 100000) rateBuckets.clear();
+      return next();
+    }
+    if (++bucket.count > max) {
+      return res.status(429).json({ success: false, error: "Too many requests. Please slow down." });
+    }
+    next();
+  };
+}
+app.use(["/api/chat", "/api/reading", "/api/clock-in"], rateLimit(20, 60 * 1000));
+app.use(["/api/auth", "/api/seeker/status", "/api/solana-rpc"], rateLimit(30, 60 * 1000));
 
 // Serve static files (card images, logos, APKs)
 app.use(express.static(path.join(__dirname, "..", "public")));
@@ -292,17 +334,29 @@ app.get("/api/version", (req, res) => {
 });
 
 // Solana Mainnet RPC Proxy (Bypasses browser CORS / 403 restrictions)
+// Read-only RPC proxy for the vault admin pages. The upstream URL (with its API key) stays on the server.
+const RPC_PROXY_METHODS = new Set([
+  "getAccountInfo",
+  "getBalance",
+  "getLatestBlockhash",
+  "getSignatureStatuses",
+  "getBlockHeight",
+  "getSlot",
+]);
 app.post("/api/solana-rpc", async (req, res) => {
+  const body = req.body;
+  if (!body || Array.isArray(body) || !RPC_PROXY_METHODS.has(body.method)) {
+    return res.status(403).json({ jsonrpc: "2.0", error: { code: -32601, message: "Method not allowed" }, id: body?.id ?? null });
+  }
   try {
-    const upstreamRes = await fetch("https://api.mainnet-beta.solana.com", {
+    const upstreamRes = await fetch(process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({ jsonrpc: "2.0", id: body.id ?? 1, method: body.method, params: body.params }),
     });
-    const data = await upstreamRes.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: err.message }, id: req.body?.id || null });
+    res.json(await upstreamRes.json());
+  } catch {
+    res.status(502).json({ jsonrpc: "2.0", error: { code: -32603, message: "RPC unavailable" }, id: body.id ?? null });
   }
 });
 
@@ -326,9 +380,12 @@ app.get("/api/clock-in/:wallet", (req, res) => {
   try {
     const walletParam = req.params.wallet;
     const wallet = (walletParam === "status" && req.query.wallet) ? req.query.wallet : walletParam;
-    const isSeeker = req.query.isSeeker !== undefined ? (req.query.isSeeker === "true" || req.query.isSeeker === "1") : undefined;
-    const status = getClockInStatus(wallet, isSeeker);
-    res.json(status);
+    if (!isValidWallet(wallet)) return res.status(400).json({ error: "Invalid wallet address" });
+    const status = getClockInStatus(wallet);
+    if (hasWalletSession(req, wallet)) return res.json(status);
+    // Without the owner's session, hide payment signatures, offerings and today's card
+    const { todayCard, subscription, totalOfferedSkr, lastOffering, txSignature, history, ...publicStatus } = status;
+    res.json({ ...publicStatus, isSubscribed: Boolean(subscription && subscription.active) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -364,6 +421,7 @@ app.post("/api/seeker/status", async (req, res) => {
 });
 
 // Perform Daily Clock In (1 card draw)
+const clockInsInFlight = new Set();
 app.post("/api/clock-in", async (req, res) => {
   try {
     const { wallet, language = "en", cardNo, orientation = "upright", txSignature: clientTx, slot: clientSlot } = req.body;
@@ -371,9 +429,11 @@ app.post("/api/clock-in", async (req, res) => {
       return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
     if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
-    if (!getClockInStatus(wallet).canClockIn) {
+    if (clockInsInFlight.has(wallet) || !getClockInStatus(wallet).canClockIn) {
       return res.status(409).json({ success: false, alreadyClockedIn: true, error: "Already clocked in today." });
     }
+    clockInsInFlight.add(wallet);
+    res.on("close", () => clockInsInFlight.delete(wallet));
     let reading = null;
 
     if (cardNo) {
@@ -481,11 +541,10 @@ app.post("/api/reading", async (req, res) => {
       }
     }
 
+    // Cards are always drawn on the server with a secure RNG; client "cards" / "seed" are ignored
     const reading = getReading({
-      spread,
-      category,
-      seed: seed ? parseInt(seed) : null,
-      cardsArg: cards,
+      spread: typeof spread === "string" ? spread : "network-scan",
+      category: typeof category === "string" ? category : "crypto",
       allowReversed: true
     });
 
@@ -534,9 +593,17 @@ app.post("/api/reading", async (req, res) => {
 app.post("/api/chat", async (req, res) => {
   const startTime = Date.now();
   const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
-  const { message, history = [], wallet = "anonymous", payWithSol = false, txSignature = null, language = "en" } = req.body;
+  const { wallet = "anonymous", txSignature = null } = req.body;
+  const message = typeof req.body.message === "string" ? req.body.message.slice(0, 1000) : "";
+  const language = typeof req.body.language === "string" ? req.body.language.slice(0, 8) : "en";
+  const history = Array.isArray(req.body.history)
+    ? req.body.history
+        .slice(-10)
+        .filter((h) => h && typeof h.text === "string")
+        .map((h) => ({ sender: h.sender === "user" ? "user" : "oracle", text: h.text.slice(0, 1000) }))
+    : [];
 
-  if (!message || !message.trim()) {
+  if (!message.trim()) {
     return res.status(400).json({ error: "Message is required" });
   }
 

@@ -97,7 +97,8 @@ function loadData() {
 }
 
 function makeRng(seed) {
-  if (seed === null || seed === undefined) return Math.random;
+  // No seed: cryptographically secure draws, nobody can predict or grind the cards
+  if (seed === null || seed === undefined) return () => require("crypto").randomInt(0, 2 ** 32) / 2 ** 32;
   let a = seed >>> 0;
   return function () {
     a |= 0;

@@ -28,6 +28,7 @@ const TOKEN_2022_PROGRAM = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEp
 const SEEKER_CACHE_MS = 60 * 60 * 1000;
 
 const connection = new Connection(RPC_URL, "confirmed");
+const inFlight = new Set();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function loadUsed() {
@@ -90,10 +91,19 @@ async function verifyPayment({ wallet, signature, amountSkr, actionLabel }) {
   if (!wallet || !signature || !amountSkr || !actionLabel) {
     return { ok: false, error: "Payment signature is required." };
   }
-  if (loadUsed()[signature]) {
+  // Reserve the signature synchronously: parallel requests with one payment must not all pass
+  if (loadUsed()[signature] || inFlight.has(signature)) {
     return { ok: false, error: "This payment was already used." };
   }
+  inFlight.add(signature);
+  try {
+    return await verifyReserved({ wallet, signature, amountSkr, actionLabel });
+  } finally {
+    inFlight.delete(signature);
+  }
+}
 
+async function verifyReserved({ wallet, signature, amountSkr, actionLabel }) {
   const tx = await fetchTransaction(signature);
   if (!tx) return { ok: false, error: "Payment transaction not found on-chain yet. Try again in a minute." };
   if (tx.meta?.err) return { ok: false, error: "Payment transaction failed on-chain." };

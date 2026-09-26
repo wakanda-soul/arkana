@@ -241,6 +241,8 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
 
   user.lastClockIn = now.toISOString();
   user.totalReadings = (user.totalReadings || 0) + 1;
+  // Starting a new streak ends the chance to repair the old one
+  user.brokenStreak = null;
 
   // Streak milestone bonus spreads (Day 7: +1, Day 14: +2, Day 21: +3, Day 28: +5)
   user.claimedStreakMilestones = user.claimedStreakMilestones || [];
@@ -490,7 +492,7 @@ function recordOffering(walletAddress, { txSignature, amountSkr, message = "Alta
     burnedSkr: Number((amount * 0.33).toFixed(2)),
     oreShareSkr: Number((amount * 0.34).toFixed(2)),
     txSignature,
-    message
+    message: String(message || "").slice(0, 140)
   });
 
   user.totalOfferedSkr = Number(((user.totalOfferedSkr || 0) + amount).toFixed(2));

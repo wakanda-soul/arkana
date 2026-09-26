@@ -73,13 +73,13 @@ function generateOfflineSynthesis(reading, userQuestion = "") {
 const fs = require("fs");
 const { execFile } = require("child_process");
 
-const AGY_BIN = process.env.AGY_BIN || (fs.existsSync("/root/.local/bin/agy") ? "/root/.local/bin/agy" : "agy");
-const AGY_ENV = {
-  ...process.env,
-  PATH: `/root/.local/bin:/root/.gemini/antigravity-cli/bin:/root/.local/share/solana/install/active_release/bin:${process.env.PATH || ""}`,
-  HOME: process.env.HOME || "/root"
-};
-
+// The model CLI runs in a bubblewrap sandbox (/usr/local/bin/arkana-agy): it cannot see project files,
+// keys, .env or chat history, and gets no server environment variables. User text reaches the model,
+// so the model must never be able to read anything worth leaking.
+const AGY_BIN = process.env.AGY_BIN || "/usr/local/bin/arkana-agy";
+const AGY_ENV = { PATH: "/usr/local/bin:/usr/bin:/bin" };
+const AGY_OPTIONS = { timeout: 35000, env: AGY_ENV, cwd: "/tmp", maxBuffer: 256 * 1024 };
+const MAX_QUESTION_LENGTH = 500;
 
 const ORACLE_CHAT_PROMPT = `You are Arkana, the Solana Oracle: an ancient, calm, slightly-cyberpunk female oracle and seer that reads the Arcana of the Chain deck - a handcrafted 78-card blockchain oracle deck. You do not predict the future. You interpret symbolic archetypes through the language of the blockchain and help the user see their situation from a new angle.
 
@@ -552,7 +552,7 @@ Arkana, speak:`;
     execFile(
       AGY_BIN,
       ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", fullPrompt],
-      { timeout: 35000, env: AGY_ENV },
+      AGY_OPTIONS,
       (err, stdout) => {
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI] agy fallback triggered:", err ? err.message : "empty response");
@@ -656,7 +656,7 @@ JSON:`;
     execFile(
       AGY_BIN,
       ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", prompt],
-      { timeout: 35000, env: AGY_ENV },
+      AGY_OPTIONS,
       (err, stdout) => {
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI Reading] agy fallback triggered:", err ? err.message : "empty");
@@ -691,7 +691,8 @@ JSON:`;
 }
 
 async function generateReadingProse(reading, userQuestion = "", language = "en") {
-  return generateAIReadingProse(reading, userQuestion, language);
+  const question = sanitizeUserInput(typeof userQuestion === "string" ? userQuestion : "").slice(0, MAX_QUESTION_LENGTH);
+  return generateAIReadingProse(reading, question, language);
 }
 
 module.exports = {
