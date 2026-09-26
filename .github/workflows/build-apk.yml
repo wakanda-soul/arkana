@@ -45,7 +45,15 @@ jobs:
         run: |
           BUILD_NUM="${{ github.run_number }}"
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          VERSION_NAME="1.0.${BUILD_NUM}"
+          # Semantic version: major.minor from release.json, patch counts builds since that minor started.
+          # Bump "version" and set "firstBuild" to the next run number to start a new minor (x.y.0).
+          MAJOR_MINOR=$(node -p "require('./release.json').version")
+          FIRST_BUILD=$(node -p "require('./release.json').firstBuild")
+          PATCH=$(( BUILD_NUM - FIRST_BUILD ))
+          if [ "$PATCH" -lt 0 ]; then PATCH=0; fi
+          VERSION_NAME="${MAJOR_MINOR}.${PATCH}"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "SHORT_SHA=$SHORT_SHA" >> "$GITHUB_ENV"
           
           echo "=== Setting up dynamic build metadata ==="
           echo "Build Number (versionCode): $BUILD_NUM"
@@ -144,7 +152,10 @@ jobs:
           APK_FILE=$(find arkana-app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -n "$APK_FILE" ]; then
             echo "Found APK at: $APK_FILE"
-            cp "$APK_FILE" "arkana-v1.0.${BUILD_NUM}.apk"
+            cp "$APK_FILE" "arkana-v${VERSION_NAME}.apk"
+            # Release metadata for the download server (scripts/sync_release.sh)
+            printf '{\n  "version": "%s",\n  "buildNumber": %s,\n  "commitSha": "%s",\n  "updatedAt": "%s"\n}\n' \
+              "$VERSION_NAME" "$BUILD_NUM" "$SHORT_SHA" "$(date -u '+%Y-%m-%d %H:%M UTC')" > version.json
             cp "$APK_FILE" arkana-latest.apk
             cp "$APK_FILE" arkana-v1.0.0-beta.apk
             ls -lh arkana-*.apk
@@ -159,7 +170,8 @@ jobs:
         with:
           name: arkana-solana-mobile-apk
           path: |
-            arkana-v1.0.${{ github.run_number }}.apk
+            arkana-v${{ env.VERSION_NAME }}.apk
+            version.json
             arkana-latest.apk
             arkana-v1.0.0-beta.apk
           retention-days: 30
@@ -170,9 +182,10 @@ jobs:
           echo "Publishing APKs via gh release tool..."
           gh release upload v1.0.0-beta arkana-latest.apk --clobber || true
           gh release upload v1.0.0-beta arkana-v1.0.0-beta.apk --clobber || true
-          if [ -f "arkana-v1.0.${{ github.run_number }}.apk" ]; then
-            gh release upload v1.0.0-beta "arkana-v1.0.${{ github.run_number }}.apk" --clobber || true
+          if [ -f "arkana-v${VERSION_NAME}.apk" ]; then
+            gh release upload v1.0.0-beta "arkana-v${VERSION_NAME}.apk" --clobber || true
           fi
+          gh release upload v1.0.0-beta version.json --clobber || true
           echo "Release upload completed."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

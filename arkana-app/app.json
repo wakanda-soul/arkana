@@ -2,7 +2,7 @@
   "expo": {
     "name": "Arkana",
     "slug": "arkana-app",
-    "version": "1.0.7",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "arkana-app",
@@ -16,7 +16,7 @@
         "backgroundColor": "#08070B"
       },
       "package": "com.anonymous.arkana_app",
-      "versionCode": 8,
+      "versionCode": 123,
       "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": true,
       "launchMode": "singleTask",
