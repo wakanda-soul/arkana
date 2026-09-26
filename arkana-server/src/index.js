@@ -27,6 +27,7 @@ const {
   loadEconomyConfig,
   updateEconomyConfig
 } = require("./solana/skrService");
+const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -555,6 +556,11 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // Public Cryptographic Treasury Attestation Endpoint
+// Arkana Address Lookup Table used by the app to fit payments into one transaction
+app.get("/api/lookup-table", (req, res) => {
+  res.json({ success: true, address: getLookupTableAddress() });
+});
+
 app.get("/api/treasury", (req, res) => {
   const config = loadEconomyConfig();
   res.json({
@@ -648,6 +654,7 @@ app.post("/api/streak/repair", (req, res) => {
 
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔮 Arkana Oracle Server is running on http://0.0.0.0:${PORT}`);
+  startLookupTableKeeper();
 });
 
 // Also bind standard HTTP port 80 for frictionless mobile downloads

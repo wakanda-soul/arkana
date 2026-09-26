@@ -1,12 +1,14 @@
 use arkana_ore_vault_api::prelude::*;
 use steel::*;
 
+use crate::stake::OreStakeAccounts;
+
 /// Claims accrued ORE staking yield from an active tranche directly to user's wallet.
 pub fn process_claim_tranche_yield(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult {
     let args = ClaimTrancheYield::try_from_bytes(data)?;
     let tranche_id = u32::from_le_bytes(args.tranche_id);
 
-    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, user_tokens_info, vault_tokens_info, ore_mint_info, token_program] =
+    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, user_tokens_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program, stake_info, stake_tokens_info, stake_treasury_info, stake_treasury_tokens_info, vesting_info, ore_stake_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -45,6 +47,24 @@ pub fn process_claim_tranche_yield(accounts: &[AccountInfo<'_>], data: &[u8]) ->
 
     user_tokens_info.as_associated_token_account(signer_info.key, &config.ore_mint)?;
     vault_tokens_info.as_associated_token_account(&vault_auth_addr, &config.ore_mint)?;
+
+    // Pull pending ORE Stake yield into the vault first
+    let ore_stake = OreStakeAccounts {
+        vault_authority: vault_authority_info,
+        vault_tokens: vault_tokens_info,
+        ore_mint: ore_mint_info,
+        stake: stake_info,
+        stake_tokens: stake_tokens_info,
+        stake_treasury: stake_treasury_info,
+        stake_treasury_tokens: stake_treasury_tokens_info,
+        vesting: vesting_info,
+        system_program,
+        token_program,
+        associated_token_program,
+        ore_stake_program,
+    };
+    ore_stake.validate()?;
+    ore_stake.sync_rewards(config)?;
 
     // Read current rewards factor from VaultConfig
     let current_rewards_factor = config.rewards_factor;

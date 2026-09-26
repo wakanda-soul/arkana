@@ -41,8 +41,10 @@ export function createConsensusMemoInstruction(
 export interface ExecuteTransactionParams {
   connection: Connection;
   payerKey: PublicKey;
-  instructions: TransactionInstruction[];
+  instructions?: TransactionInstruction[];
   addressLookupTableAccounts?: AddressLookupTableAccount[];
+  /** Builds several transactions from the fresh blockhash; all are approved in ONE wallet prompt. */
+  buildTransactions?: (blockhash: string) => VersionedTransaction[];
   signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
 }
 
@@ -58,8 +60,9 @@ export async function executeSolanaTransaction({
   payerKey,
   instructions,
   addressLookupTableAccounts,
+  buildTransactions,
   signAndSendTransactions,
-}: ExecuteTransactionParams): Promise<{ signature: string; slot?: number }> {
+}: ExecuteTransactionParams): Promise<{ signature: string; signatures: string[]; slot?: number }> {
   let blockhash: string;
   let minContextSlot: number;
   try {
@@ -76,20 +79,26 @@ export async function executeSolanaTransaction({
     }
   }
 
-  const message = new TransactionMessage({
-    payerKey,
-    recentBlockhash: blockhash,
-    instructions,
-  }).compileToV0Message(addressLookupTableAccounts);
+  const transactions: VersionedTransaction[] = buildTransactions
+    ? buildTransactions(blockhash)
+    : [
+        new VersionedTransaction(
+          new TransactionMessage({
+            payerKey,
+            recentBlockhash: blockhash,
+            instructions: instructions || [],
+          }).compileToV0Message(addressLookupTableAccounts)
+        ),
+      ];
 
-  const versionedTx = new VersionedTransaction(message);
-
-  let signature: string | undefined;
+  let signatures: string[] = [];
+  const toSignatureList = (result: any): string[] =>
+    (Array.isArray(result) ? result : [result]).map((r: any) => (typeof r === 'string' ? r : String(r)));
 
   if (signAndSendTransactions) {
     try {
-      const result = await signAndSendTransactions(versionedTx, minContextSlot);
-      signature = Array.isArray(result) ? result[0] : (typeof result === 'string' ? result : String(result));
+      const result = await signAndSendTransactions(transactions, minContextSlot);
+      signatures = toSignatureList(result);
     } catch (err: any) {
       const isUserCancellation =
         err?.code === -32003 ||
@@ -108,33 +117,34 @@ export async function executeSolanaTransaction({
           await AsyncStorage.removeItem('arkana_wallet_authorization');
         } catch {}
 
-        signature = await transact(async (wallet: Web3MobileWallet) => {
+        signatures = await transact(async (wallet: Web3MobileWallet) => {
           await wallet.authorize({
             chain: getNetworkConfig().clusterId,
             identity: APP_IDENTITY,
           });
-          const sigs = await wallet.signAndSendTransactions({
-            transactions: [versionedTx],
+          return await wallet.signAndSendTransactions({
+            transactions,
             minContextSlot,
           });
-          return sigs[0];
         });
+        signatures = toSignatureList(signatures);
       } else {
         throw err;
       }
     }
   } else {
-    signature = await transact(async (wallet: Web3MobileWallet) => {
-      await wallet.authorize({
-        chain: getNetworkConfig().clusterId,
-        identity: APP_IDENTITY,
-      });
-      const sigs = await wallet.signAndSendTransactions({
-        transactions: [versionedTx],
-        minContextSlot,
-      });
-      return sigs[0];
-    });
+    signatures = toSignatureList(
+      await transact(async (wallet: Web3MobileWallet) => {
+        await wallet.authorize({
+          chain: getNetworkConfig().clusterId,
+          identity: APP_IDENTITY,
+        });
+        return await wallet.signAndSendTransactions({
+          transactions,
+          minContextSlot,
+        });
+      })
+    );
   }
 
   let slot: number | undefined = minContextSlot;
@@ -142,7 +152,8 @@ export async function executeSolanaTransaction({
     slot = await connection.getSlot('confirmed');
   } catch {}
 
-  return { signature: signature!, slot };
+  // The last transaction carries the proof memo
+  return { signature: signatures[signatures.length - 1], signatures, slot };
 }
 
 export interface SubmitProofParams {

@@ -91,6 +91,25 @@ export function getOreVestingPda(): [PublicKey, number] {
   );
 }
 
+/**
+ * ORE Stake accounts appended to Deposit / Claim / Harvest / SyncStake.
+ * The vault authority PDA owns one ORE Stake account holding all tranche principal.
+ */
+export function getOreStakeAccountMetas() {
+  const [vaultAuthorityPda] = getVaultAuthorityPda();
+  const [stakePda] = getOreStakePda(vaultAuthorityPda);
+  const [oreTreasuryPda] = getOreTreasuryPda();
+  const [vestingPda] = getOreVestingPda();
+  return [
+    { pubkey: stakePda, isSigner: false, isWritable: true },
+    { pubkey: getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, stakePda, true), isSigner: false, isWritable: true },
+    { pubkey: oreTreasuryPda, isSigner: false, isWritable: true },
+    { pubkey: getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, oreTreasuryPda, true), isSigner: false, isWritable: true },
+    { pubkey: vestingPda, isSigner: false, isWritable: true },
+    { pubkey: ORE_STAKE_PROGRAM_ID, isSigner: false, isWritable: false },
+  ];
+}
+
 // ============================================================================
 // TYPES & DATA STRUCTURES
 // ============================================================================
@@ -179,7 +198,7 @@ export async function createDepositTrancheInstruction(
     keys: [
       { pubkey: userPubkey, isSigner: true, isWritable: true },
       { pubkey: configPda, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
       { pubkey: userVaultPda, isSigner: false, isWritable: true },
       { pubkey: tranchePda, isSigner: false, isWritable: true },
       { pubkey: userTokensAta, isSigner: false, isWritable: true },
@@ -187,92 +206,8 @@ export async function createDepositTrancheInstruction(
       { pubkey: ORE_MINT_ADDRESS, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
-    ],
-    data
-  });
-}
-
-/**
- * Creates the SwapAndDepositTranche instruction.
- * Swaps SKR from user into the vault pool and locks ORE into a new 365-day staking tranche.
- */
-export async function createSwapAndDepositTrancheInstruction(
-  userPubkey: PublicKey,
-  trancheId: number,
-  amountSkrUnits: bigint
-): Promise<TransactionInstruction> {
-  const [configPda] = getConfigPda();
-  const [vaultAuthorityPda] = getVaultAuthorityPda();
-  const [userVaultPda] = getUserVaultPda(userPubkey);
-  const [tranchePda] = getTranchePda(userPubkey, trancheId);
-
-  const skrMint = getNetworkConfig().skrMint;
-  const oreMint = getNetworkConfig().oreMint;
-
-  const userSkrAta = getAssociatedTokenAddressSync(skrMint, userPubkey, true);
-  const vaultSkrAta = getAssociatedTokenAddressSync(skrMint, vaultAuthorityPda, true);
-  const vaultOreAta = getAssociatedTokenAddressSync(oreMint, vaultAuthorityPda, true);
-
-  const data = Buffer.alloc(9);
-  data.writeUInt8(5, 0); // Instruction::SwapAndDepositTranche = 5
-  data.writeBigUInt64LE(amountSkrUnits, 1);
-
-  return new TransactionInstruction({
-    programId: ARKANA_VAULT_PROGRAM_ID,
-    keys: [
-      { pubkey: userPubkey, isSigner: true, isWritable: true },
-      { pubkey: configPda, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
-      { pubkey: userVaultPda, isSigner: false, isWritable: true },
-      { pubkey: tranchePda, isSigner: false, isWritable: true },
-      { pubkey: userSkrAta, isSigner: false, isWritable: true },
-      { pubkey: vaultSkrAta, isSigner: false, isWritable: true },
-      { pubkey: vaultOreAta, isSigner: false, isWritable: true },
-      { pubkey: skrMint, isSigner: false, isWritable: false },
-      { pubkey: oreMint, isSigner: false, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
-    ],
-    data
-  });
-}
-
-/**
- * Creates the SwapAndDepositSolTranche instruction.
- * Swaps SOL lamports directly into vault pool and deposits into a new 365-day ORE staking tranche.
- */
-export async function createSwapAndDepositSolTrancheInstruction(
-  userPubkey: PublicKey,
-  trancheId: number,
-  equivalentSkrUnits: bigint,
-  solLamports: bigint
-): Promise<TransactionInstruction> {
-  const [configPda] = getConfigPda();
-  const [vaultAuthorityPda] = getVaultAuthorityPda();
-  const [userVaultPda] = getUserVaultPda(userPubkey);
-  const [tranchePda] = getTranchePda(userPubkey, trancheId);
-
-  const oreMint = getNetworkConfig().oreMint;
-  const vaultOreAta = getAssociatedTokenAddressSync(oreMint, vaultAuthorityPda, true);
-
-  const data = Buffer.alloc(17);
-  data.writeUInt8(6, 0); // Instruction::SwapAndDepositSolTranche = 6
-  data.writeBigUInt64LE(equivalentSkrUnits, 1);
-  data.writeBigUInt64LE(solLamports, 9);
-
-  return new TransactionInstruction({
-    programId: ARKANA_VAULT_PROGRAM_ID,
-    keys: [
-      { pubkey: userPubkey, isSigner: true, isWritable: true },
-      { pubkey: configPda, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
-      { pubkey: userVaultPda, isSigner: false, isWritable: true },
-      { pubkey: tranchePda, isSigner: false, isWritable: true },
-      { pubkey: vaultOreAta, isSigner: false, isWritable: true },
-      { pubkey: oreMint, isSigner: false, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ...getOreStakeAccountMetas(),
     ],
     data
   });
@@ -303,13 +238,16 @@ export async function createClaimTrancheYieldInstruction(
     keys: [
       { pubkey: userPubkey, isSigner: true, isWritable: true },
       { pubkey: configPda, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
       { pubkey: userVaultPda, isSigner: false, isWritable: true },
       { pubkey: tranchePda, isSigner: false, isWritable: true },
       { pubkey: userTokensAta, isSigner: false, isWritable: true },
       { pubkey: vaultTokensAta, isSigner: false, isWritable: true },
       { pubkey: ORE_MINT_ADDRESS, isSigner: false, isWritable: false },
-      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ...getOreStakeAccountMetas(),
     ],
     data
   });
@@ -344,7 +282,7 @@ export async function createHarvestMaturedTrancheInstruction(
     keys: [
       { pubkey: callerPubkey, isSigner: true, isWritable: true },
       { pubkey: configPda, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
       { pubkey: userVaultPda, isSigner: false, isWritable: true },
       { pubkey: tranchePda, isSigner: false, isWritable: true },
       { pubkey: userPubkey, isSigner: false, isWritable: true },
@@ -355,9 +293,36 @@ export async function createHarvestMaturedTrancheInstruction(
       { pubkey: ORE_MINT_ADDRESS, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ...getOreStakeAccountMetas(),
     ],
     data
+  });
+}
+
+/**
+ * Creates the permissionless SyncStake instruction: claims ORE Stake yield into the vault
+ * (credited to every tranche) and stakes principal that is not staked yet.
+ */
+export function createSyncStakeInstruction(signerPubkey: PublicKey): TransactionInstruction {
+  const [configPda] = getConfigPda();
+  const [vaultAuthorityPda] = getVaultAuthorityPda();
+  const vaultTokensAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, vaultAuthorityPda, true);
+
+  return new TransactionInstruction({
+    programId: ARKANA_VAULT_PROGRAM_ID,
+    keys: [
+      { pubkey: signerPubkey, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: vaultAuthorityPda, isSigner: false, isWritable: true },
+      { pubkey: vaultTokensAta, isSigner: false, isWritable: true },
+      { pubkey: ORE_MINT_ADDRESS, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ...getOreStakeAccountMetas(),
+    ],
+    data: Buffer.from([5]), // Instruction::SyncStake
   });
 }
 

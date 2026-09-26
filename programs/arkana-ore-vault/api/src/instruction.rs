@@ -6,7 +6,7 @@ pub enum ArkanaVaultInstruction {
     /// Initialize global vault config (can only be run once by Arkana Treasury).
     Initialize = 0,
 
-    /// Deposit ORE into a new 365-day staking tranche.
+    /// Deposit ORE into the user's daily 365-day tranche and stake it in ORE Stake.
     DepositTranche = 1,
 
     /// Claim accrued staking yield from an active tranche.
@@ -18,6 +18,9 @@ pub enum ArkanaVaultInstruction {
 
     /// Distribute reward ORE into the staking pool.
     DistributeReward = 4,
+
+    /// Permissionless crank: claim ORE Stake yield into the vault and stake idle principal.
+    SyncStake = 5,
 }
 
 #[repr(C)]
@@ -56,4 +59,9 @@ instruction!(ArkanaVaultInstruction, Initialize);
 instruction!(ArkanaVaultInstruction, DepositTranche);
 instruction!(ArkanaVaultInstruction, ClaimTrancheYield);
 instruction!(ArkanaVaultInstruction, HarvestMaturedTranche);
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct SyncStake {}
+
 instruction!(ArkanaVaultInstruction, DistributeReward);
+instruction!(ArkanaVaultInstruction, SyncStake);

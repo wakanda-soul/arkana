@@ -23,6 +23,8 @@ export interface NetworkConfig {
   oreStakeProgramId: PublicKey;
   treasuryAddress: PublicKey;
   arkanaVaultProgramId: PublicKey;
+  /** Arkana Address Lookup Table kept filled by arkana-server (vault, ORE Stake, pool accounts) */
+  arkanaLookupTable: PublicKey | null;
   explorerSuffix: string;
 }
 
@@ -37,6 +39,7 @@ export const MAINNET_CONFIG: NetworkConfig = {
   oreStakeProgramId: new PublicKey('stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH'),
   treasuryAddress: new PublicKey('4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny'),
   arkanaVaultProgramId: new PublicKey('B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C'),
+  arkanaLookupTable: new PublicKey('EbVx4VK1faruN2oPfwSA5B5B934VUtSRfVsXy1KzVg4v'),
   explorerSuffix: '',
 };
 
@@ -51,6 +54,7 @@ export const DEVNET_CONFIG: NetworkConfig = {
   oreStakeProgramId: new PublicKey('stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH'),
   treasuryAddress: new PublicKey('4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny'),
   arkanaVaultProgramId: new PublicKey('B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C'),
+  arkanaLookupTable: null,
   explorerSuffix: '?cluster=devnet',
 };
 

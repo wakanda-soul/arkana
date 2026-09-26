@@ -1,10 +1,12 @@
 use arkana_ore_vault_api::prelude::*;
 use steel::*;
 
+use crate::stake::OreStakeAccounts;
+
 /// Harvests a matured tranche (>= 365 days).
 ///
 /// Economics:
-/// - Principal ORE goes permanently to the Arkana Treasury.
+/// - Principal ORE is unstaked from ORE Stake and goes permanently to the Arkana Treasury.
 /// - All unclaimed yield goes back to the tranche owner.
 /// - The tranche account is closed and its rent SOL is refunded to the tranche owner.
 ///
@@ -22,7 +24,7 @@ pub fn process_harvest_matured_tranche(
     let tranche_id = u32::from_le_bytes(args.tranche_id);
 
     let clock = Clock::get()?;
-    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, owner_info, owner_tokens_info, treasury_info, treasury_tokens_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program] =
+    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, owner_info, owner_tokens_info, treasury_info, treasury_tokens_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program, stake_info, stake_tokens_info, stake_treasury_info, stake_treasury_tokens_info, vesting_info, ore_stake_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -76,6 +78,29 @@ pub fn process_harvest_matured_tranche(
     if tranche.is_matured == 0 && tranche.deposited_amount > 0 {
         vault_tokens_info.as_associated_token_account(&vault_auth_addr, &config.ore_mint)?;
         let principal = tranche.deposited_amount;
+
+        let ore_stake = OreStakeAccounts {
+            vault_authority: vault_authority_info,
+            vault_tokens: vault_tokens_info,
+            ore_mint: ore_mint_info,
+            stake: stake_info,
+            stake_tokens: stake_tokens_info,
+            stake_treasury: stake_treasury_info,
+            stake_treasury_tokens: stake_treasury_tokens_info,
+            vesting: vesting_info,
+            system_program,
+            token_program,
+            associated_token_program,
+            ore_stake_program,
+        };
+        ore_stake.validate()?;
+        ore_stake.sync_rewards(config)?;
+
+        // Principal not staked yet (pre ORE Stake tranches) is already in the vault token account
+        let idle_principal = config
+            .total_staked_ore
+            .saturating_sub(ore_stake.staked_balance()?);
+        ore_stake.unstake(principal.saturating_sub(idle_principal))?;
 
         // 4. Settle all unclaimed yield to the tranche owner
         let mut reward_amount = 0u64;

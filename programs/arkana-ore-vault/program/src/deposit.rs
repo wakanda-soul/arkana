@@ -1,7 +1,9 @@
 use arkana_ore_vault_api::prelude::*;
 use steel::*;
 
-/// Deposits ORE into a new 365-day staking tranche.
+use crate::stake::OreStakeAccounts;
+
+/// Deposits ORE into the user's daily 365-day tranche and stakes it in ORE Stake.
 /// All fees and rent are paid by the user. Arkana pays 0.
 pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult {
     let args = DepositTranche::try_from_bytes(data)?;
@@ -11,7 +13,7 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
     }
 
     let clock = Clock::get()?;
-    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, user_tokens_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program] =
+    let [signer_info, config_info, vault_authority_info, user_vault_info, tranche_info, user_tokens_info, vault_tokens_info, ore_mint_info, system_program, token_program, associated_token_program, stake_info, stake_tokens_info, stake_treasury_info, stake_treasury_tokens_info, vesting_info, ore_stake_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -37,6 +39,25 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
 
     user_tokens_info.as_associated_token_account(signer_info.key, &config.ore_mint)?;
     vault_tokens_info.as_associated_token_account(&vault_auth_addr, &config.ore_mint)?;
+
+    let ore_stake = OreStakeAccounts {
+        vault_authority: vault_authority_info,
+        vault_tokens: vault_tokens_info,
+        ore_mint: ore_mint_info,
+        stake: stake_info,
+        stake_tokens: stake_tokens_info,
+        stake_treasury: stake_treasury_info,
+        stake_treasury_tokens: stake_treasury_tokens_info,
+        vesting: vesting_info,
+        system_program,
+        token_program,
+        associated_token_program,
+        ore_stake_program,
+    };
+    ore_stake.validate()?;
+
+    // Credit pending ORE Stake yield to existing tranches before any balance changes
+    ore_stake.sync_rewards(config)?;
 
     // 1. Initialize or load UserVault
     let (user_vault_addr, _) = user_vault_pda(signer_info.key);
@@ -174,6 +195,13 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
         token_program,
         amount,
     )?;
+
+    // Stake the new principal in ORE Stake, plus any principal not staked yet
+    // (tranches deposited before ORE Stake integration)
+    let idle_principal = config
+        .total_staked_ore
+        .saturating_sub(ore_stake.staked_balance()?);
+    ore_stake.stake(signer_info, amount.saturating_add(idle_principal))?;
 
     // 6. Update aggregates
     user_vault.total_staked_ore = user_vault

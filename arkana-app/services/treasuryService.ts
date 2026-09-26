@@ -4,6 +4,9 @@ import {
   TransactionInstruction,
   SystemProgram,
   AddressLookupTableAccount,
+  ComputeBudgetProgram,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import {
   createTransferInstruction,
@@ -23,7 +26,7 @@ import {
   fetchRealSkrBalance,
   executeSolanaTransaction,
 } from './solanaService';
-import { isDevnet } from '@/constants/networkConfig';
+import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
 import {
   ORE_MINT_ADDRESS,
   createDepositTrancheInstruction,
@@ -128,9 +131,30 @@ export async function getLiveSolQuoteForSkr(
   };
 }
 
+const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
+
+/** Compute units reserved for Arkana's own instructions (ATA, transfer, burn, vault deposit + ORE Stake CPI ~260k, memo). */
+const ARKANA_BASE_COMPUTE_UNITS = 350_000;
+const MAX_COMPUTE_UNITS = 1_400_000;
+
+interface JupiterSwapResult {
+  instructions: TransactionInstruction[];
+  addressLookupTableAccounts: AddressLookupTableAccount[];
+  /** Quoted input amount (ExactOut: expected spend). */
+  inAmount: bigint;
+  /** Quoted output amount (ExactIn: expected, NOT guaranteed). */
+  outAmount: bigint;
+  /** Guaranteed minimum output: ExactIn = otherAmountThreshold, ExactOut = exact outAmount. */
+  minOutAmount: bigint;
+  computeUnitLimit: number;
+  computeUnitPrice: bigint;
+}
+
 /**
  * Query Jupiter API for swap instructions from inputMint to outputMint.
- * Deserializes returned setup, swap, and cleanup instructions into web3.js TransactionInstruction objects.
+ * Returns setup, swap, and cleanup instructions as web3.js TransactionInstructions.
+ * Jupiter's compute budget instructions are NOT included: they are returned as numbers,
+ * so several swaps can share one ComputeBudget pair in a single transaction.
  */
 export async function fetchJupiterSwapInstructions({
   connection,
@@ -138,6 +162,7 @@ export async function fetchJupiterSwapInstructions({
   inputMint,
   outputMint,
   amountRaw,
+  swapMode = 'ExactIn',
   slippageBps = 300,
 }: {
   connection: Connection;
@@ -145,22 +170,20 @@ export async function fetchJupiterSwapInstructions({
   inputMint: PublicKey;
   outputMint: PublicKey;
   amountRaw: bigint;
+  swapMode?: 'ExactIn' | 'ExactOut';
   slippageBps?: number;
-}): Promise<{
-  instructions: TransactionInstruction[];
-  addressLookupTableAccounts: AddressLookupTableAccount[];
-  outAmount: bigint;
-}> {
-  const isDirect = inputMint.toBase58() === 'So11111111111111111111111111111111111111112';
-  const extraParams = isDirect ? '&onlyDirectRoutes=true' : '&maxAccounts=24';
-  const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&slippageBps=${slippageBps}${extraParams}`;
+}): Promise<JupiterSwapResult> {
+  // SOL legs use direct pools and other legs cap accounts, to keep the whole payment in one transaction
+  const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
+  const extraParams = isSolLeg ? '&onlyDirectRoutes=true' : '&maxAccounts=24';
+  const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}${extraParams}`;
   const quoteRes = await fetch(quoteUrl);
   if (!quoteRes.ok) {
     throw new Error(`DEX swap quote unavailable for ${inputMint.toBase58()} -> ${outputMint.toBase58()} (${quoteRes.status})`);
   }
   const quote = await quoteRes.json();
-  if (!quote || !quote.outAmount) {
-    throw new Error('DEX returned no output amount for swap.');
+  if (!quote || !quote.outAmount || !quote.inAmount || !quote.otherAmountThreshold) {
+    throw new Error('DEX returned no route for swap.');
   }
 
   const swapRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
@@ -192,10 +215,15 @@ export async function fetchJupiterSwapInstructions({
       data: Buffer.from(ix.data, 'base64'),
     });
 
-  // Only include primary compute budget instruction to save packet size
-  if (swapData.computeBudgetInstructions && swapData.computeBudgetInstructions.length > 0) {
-    instructions.push(deserialize(swapData.computeBudgetInstructions[0]));
+  // ComputeBudget: [2, u32 LE] = SetComputeUnitLimit, [3, u64 LE] = SetComputeUnitPrice
+  let computeUnitLimit = 0;
+  let computeUnitPrice = 0n;
+  for (const ix of swapData.computeBudgetInstructions || []) {
+    const data = Buffer.from(ix.data, 'base64');
+    if (data[0] === 2 && data.length >= 5) computeUnitLimit = data.readUInt32LE(1);
+    if (data[0] === 3 && data.length >= 9) computeUnitPrice = data.readBigUInt64LE(1);
   }
+
   if (swapData.setupInstructions) {
     for (const ix of swapData.setupInstructions) {
       instructions.push(deserialize(ix));
@@ -222,44 +250,69 @@ export async function fetchJupiterSwapInstructions({
     }
   }
 
+  const outAmount = BigInt(quote.outAmount);
   return {
     instructions,
     addressLookupTableAccounts,
-    outAmount: BigInt(quote.outAmount),
+    inAmount: BigInt(quote.inAmount),
+    outAmount,
+    minOutAmount: swapMode === 'ExactIn' ? BigInt(quote.otherAmountThreshold) : outAmount,
+    computeUnitLimit,
+    computeUnitPrice,
   };
 }
 
 /**
- * Build SPL Token instructions for direct SKR payments:
- * - 33% burned permanently on-chain (createBurnInstruction)
- * - 33% transferred to Arkana Treasury
- * - 34% swapped directly to ORE and staked into the User's Daily Tranche PDA
+ * One ComputeBudget pair for the whole transaction, sized for every swap inside it.
  */
-export async function buildSkrPaymentInstructions({
+function buildComputeBudgetInstructions(swaps: JupiterSwapResult[]): TransactionInstruction[] {
+  const units = Math.min(
+    MAX_COMPUTE_UNITS,
+    ARKANA_BASE_COMPUTE_UNITS + swaps.reduce((sum, s) => sum + (s.computeUnitLimit || 300_000), 0)
+  );
+  const microLamports = swaps.reduce((max, s) => (s.computeUnitPrice > max ? s.computeUnitPrice : max), 0n);
+
+  const ixs = [ComputeBudgetProgram.setComputeUnitLimit({ units })];
+  if (microLamports > 0n) {
+    ixs.push(ComputeBudgetProgram.setComputeUnitPrice({ microLamports }));
+  }
+  return ixs;
+}
+
+/**
+ * Arkana split of every payment (the result is identical for SKR and SOL payments):
+ * - 33% of the price in SKR burned permanently on-chain
+ * - 33% of the price in SKR transferred to the Arkana Treasury
+ * - 34% of the price swapped to ORE at market rate and deposited by the user into their Daily Tranche
+ */
+function splitPrice(totalRaw: bigint): { burnRaw: bigint; treasuryRaw: bigint; oreShareRaw: bigint } {
+  const burnRaw = (totalRaw * 33n) / 100n;
+  const treasuryRaw = (totalRaw * 33n) / 100n;
+  const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34%!
+  return { burnRaw, treasuryRaw, oreShareRaw };
+}
+
+/**
+ * 33% SKR to the Arkana Treasury + 33% SKR burned, from the user's SKR account.
+ */
+async function buildBurnAndTreasuryInstructions({
   connection,
-  userPublicKey,
-  treasuryPublicKey,
-  amountSkr,
-  actionLabel = 'PAYMENT',
+  payer,
+  treasury,
+  burnRaw,
+  treasuryRaw,
 }: {
   connection: Connection;
-  userPublicKey: PublicKey;
-  treasuryPublicKey: PublicKey;
-  amountSkr: number;
-  actionLabel?: string;
-}): Promise<{
-  instructions: TransactionInstruction[];
-  addressLookupTableAccounts: AddressLookupTableAccount[];
-}> {
-  const payer = new PublicKey(userPublicKey.toString());
-  const treasury = new PublicKey(treasuryPublicKey.toString());
+  payer: PublicKey;
+  treasury: PublicKey;
+  burnRaw: bigint;
+  treasuryRaw: bigint;
+}): Promise<TransactionInstruction[]> {
   const userAta = getAssociatedTokenAddressSync(SKR_MINT, payer, true);
   const treasuryAta = getAssociatedTokenAddressSync(SKR_MINT, treasury, true);
-
   const instructions: TransactionInstruction[] = [];
-  const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
 
-  // 1. Ensure Treasury ATA exists (only create if not exists on-chain)
+  // Ensure Treasury ATA exists (only create if not exists on-chain)
   const treasuryAtaInfo = await connection.getAccountInfo(treasuryAta, 'confirmed');
   if (!treasuryAtaInfo) {
     instructions.push(
@@ -274,38 +327,42 @@ export async function buildSkrPaymentInstructions({
     );
   }
 
-  // Protocol Split: 33% Burn + 33% Treasury + 34% ORE Staking Yield
-  const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
-  const totalRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
-  const burnRaw = (totalRaw * 33n) / 100n;
-  const treasuryRaw = (totalRaw * 33n) / 100n;
-  const oreShareRaw = totalRaw - burnRaw - treasuryRaw; // Exactly 34%!
-
-  // 2. Transfer Treasury SKR share (33%)
+  // Transfer Treasury SKR share (33%)
   instructions.push(
-    createTransferInstruction(
-      userAta,
-      treasuryAta,
-      payer,
-      treasuryRaw,
-      [],
-      TOKEN_PROGRAM_ID
-    )
+    createTransferInstruction(userAta, treasuryAta, payer, treasuryRaw, [], TOKEN_PROGRAM_ID)
   );
 
-  // 3. Permanently Burn 33% of the SKR on-chain
-  instructions.push(
-    createBurnInstruction(
-      userAta,
-      SKR_MINT,
-      payer,
-      burnRaw,
-      [],
-      TOKEN_PROGRAM_ID
-    )
-  );
+  // Permanently Burn 33% of the SKR on-chain
+  instructions.push(createBurnInstruction(userAta, SKR_MINT, payer, burnRaw, [], TOKEN_PROGRAM_ID));
 
-  // 4. Ensure User ORE ATA exists (only create if not exists on-chain)
+  return instructions;
+}
+
+/**
+ * 34% leg: swap inputMint -> ORE at market rate and deposit it into the user's Daily Tranche PDA.
+ *
+ * The deposit uses the swap's guaranteed minimum output, so the transaction never
+ * depends on the quote being hit exactly. Positive slippage stays in the user's wallet.
+ */
+async function buildOreTrancheInstructions({
+  connection,
+  payer,
+  inputMint,
+  amountInRaw,
+}: {
+  connection: Connection;
+  payer: PublicKey;
+  inputMint: PublicKey;
+  amountInRaw: bigint;
+}): Promise<{
+  instructions: TransactionInstruction[];
+  addressLookupTableAccounts: AddressLookupTableAccount[];
+  swaps: JupiterSwapResult[];
+  targetTrancheId: number;
+}> {
+  const instructions: TransactionInstruction[] = [];
+
+  // Ensure User ORE ATA exists (only create if not exists on-chain)
   const userOreAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, payer, true);
   const userOreAtaInfo = await connection.getAccountInfo(userOreAta, 'confirmed');
   if (!userOreAtaInfo) {
@@ -321,60 +378,90 @@ export async function buildSkrPaymentInstructions({
     );
   }
 
-  // 5. Determine target daily tranche (Top-Up into today's tranche or create new)
+  // Determine target daily tranche (Top-Up into today's tranche or create new)
   const { targetTrancheId } = await getTargetTrancheInfo(connection, payer);
 
-  if (!isDevnet()) {
-    // Mainnet: Live Jupiter DEX swap from SKR to ORE
-    const swapData = await fetchJupiterSwapInstructions({
-      connection,
-      userPublicKey: payer,
-      inputMint: SKR_MINT,
-      outputMint: ORE_MINT_ADDRESS,
-      amountRaw: oreShareRaw,
-    });
-
-    instructions.push(...swapData.instructions);
-    addressLookupTableAccounts.push(...swapData.addressLookupTableAccounts);
-
-    // Deposit the swapped ORE into user's daily tranche PDA
-    const depositIx = await createDepositTrancheInstruction(
-      payer,
-      targetTrancheId,
-      swapData.outAmount
-    );
-    instructions.push(depositIx);
-  } else {
+  if (isDevnet()) {
     // Devnet fallback simulation
-    const estimatedOre = BigInt(Math.max(1, Math.round(Number(oreShareRaw) / 1000)));
-    const depositIx = await createDepositTrancheInstruction(
-      payer,
-      targetTrancheId,
-      estimatedOre
-    );
-    instructions.push(depositIx);
+    const estimatedOre = BigInt(Math.max(1, Math.round(Number(amountInRaw) / 1000)));
+    instructions.push(await createDepositTrancheInstruction(payer, targetTrancheId, estimatedOre));
+    return { instructions, addressLookupTableAccounts: [], swaps: [], targetTrancheId };
   }
 
-  // 6. Compact Proof Memo (strictly <= 24 bytes to preserve Solana MTU limit)
-  const memoText = `ARKANA:${actionLabel}:${targetTrancheId}`;
-  instructions.push(
-    new TransactionInstruction({
-      programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-      data: Buffer.from(memoText, 'utf-8'),
-    })
-  );
+  // Mainnet: Live Jupiter DEX swap to ORE at market rate
+  const swapData = await fetchJupiterSwapInstructions({
+    connection,
+    userPublicKey: payer,
+    inputMint,
+    outputMint: ORE_MINT_ADDRESS,
+    amountRaw: amountInRaw,
+  });
+  instructions.push(...swapData.instructions);
 
-  return { instructions, addressLookupTableAccounts };
+  // Deposit the guaranteed swap output into user's daily tranche PDA
+  instructions.push(await createDepositTrancheInstruction(payer, targetTrancheId, swapData.minOutAmount));
+
+  return {
+    instructions,
+    addressLookupTableAccounts: swapData.addressLookupTableAccounts,
+    swaps: [swapData],
+    targetTrancheId,
+  };
+}
+
+function buildMemoInstruction(payer: PublicKey, memoText: string): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: SOLANA_MEMO_PROGRAM_ID,
+    keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
+    data: Buffer.from(memoText, 'utf-8'),
+  });
+}
+
+/** One independent half of a payment: its instructions and the swaps inside it. */
+interface PaymentGroup {
+  instructions: TransactionInstruction[];
+  swaps: JupiterSwapResult[];
 }
 
 /**
- * Build SOL instructions for payments when paying in SOL:
- * - 33% transferred to Arkana Treasury
- * - 33% transferred to Solana Incinerator (permanently burned on-chain)
- * - 34% swapped directly to ORE and staked into the User's Daily Tranche PDA
+ * A payment is two independent groups that never depend on each other's output:
+ * - skrGroup: 33% SKR burn + 33% SKR to the treasury (preceded by SOL -> SKR for SOL payments)
+ * - oreGroup: 34% -> ORE swap + daily tranche deposit (staked in ORE Stake) + proof memo
+ * They are sent as one transaction when it fits, otherwise as two transactions
+ * approved together in a single wallet prompt.
  */
-export async function buildSolPaymentInstructions({
+export interface PaymentPlan {
+  skrGroup: PaymentGroup;
+  oreGroup: PaymentGroup;
+  addressLookupTableAccounts: AddressLookupTableAccount[];
+}
+
+let cachedArkanaLookupTable: AddressLookupTableAccount | null = null;
+
+/**
+ * Arkana's own Address Lookup Table (maintained by arkana-server): vault, ORE Stake and
+ * frequently used pool accounts, so a whole payment fits into one transaction.
+ */
+async function getArkanaLookupTable(connection: Connection): Promise<AddressLookupTableAccount[]> {
+  const address = getNetworkConfig().arkanaLookupTable;
+  if (!address) return [];
+  try {
+    if (!cachedArkanaLookupTable) {
+      const res = await connection.getAddressLookupTable(address);
+      cachedArkanaLookupTable = res.value;
+    }
+    return cachedArkanaLookupTable ? [cachedArkanaLookupTable] : [];
+  } catch (e) {
+    console.warn('Arkana lookup table unavailable:', e);
+    return [];
+  }
+}
+
+/**
+ * Plan for direct SKR payments:
+ * 33% SKR burn + 33% SKR treasury + 34% SKR -> ORE daily tranche.
+ */
+export async function buildSkrPaymentPlan({
   connection,
   userPublicKey,
   treasuryPublicKey,
@@ -386,108 +473,149 @@ export async function buildSolPaymentInstructions({
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
-}): Promise<{
-  instructions: TransactionInstruction[];
-  addressLookupTableAccounts: AddressLookupTableAccount[];
-}> {
+}): Promise<PaymentPlan> {
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
-  let { lamports } = await getLiveSolQuoteForSkr(amountSkr);
 
-  // Guard rent exemption if treasury is new
+  const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
+  const totalRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
+  const { burnRaw, treasuryRaw, oreShareRaw } = splitPrice(totalRaw);
+
+  const burnAndTreasury = await buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw });
+  const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw });
+
+  return {
+    skrGroup: { instructions: burnAndTreasury, swaps: [] },
+    oreGroup: {
+      instructions: [
+        ...oreLeg.instructions,
+        // Compact Proof Memo to preserve Solana MTU limit
+        buildMemoInstruction(payer, `ARKANA:${actionLabel}:${oreLeg.targetTrancheId}`),
+      ],
+      swaps: oreLeg.swaps,
+    },
+    addressLookupTableAccounts: [...(await getArkanaLookupTable(connection)), ...oreLeg.addressLookupTableAccounts],
+  };
+}
+
+/**
+ * Plan for payments in SOL, with the same end result as an SKR payment:
+ * 1. SOL -> exactly 66% of the price in SKR (Jupiter ExactOut), then 33% burned + 33% to the treasury
+ * 2. SOL worth 34% of the price -> ORE (market rate), deposited into the user's daily tranche
+ */
+export async function buildSolPaymentPlan({
+  connection,
+  userPublicKey,
+  treasuryPublicKey,
+  amountSkr,
+  actionLabel = 'PAYMENT',
+}: {
+  connection: Connection;
+  userPublicKey: PublicKey;
+  treasuryPublicKey: PublicKey;
+  amountSkr: number;
+  actionLabel?: string;
+}): Promise<PaymentPlan> {
+  if (isDevnet()) {
+    throw new Error('SOL payments need a live Jupiter route and are available on mainnet only. Use tSKR on devnet.');
+  }
+
+  const payer = new PublicKey(userPublicKey.toString());
+  const treasury = new PublicKey(treasuryPublicKey.toString());
+  const totalRaw = BigInt(Math.round(amountSkr * 1_000_000));
+  const { burnRaw, treasuryRaw, oreShareRaw } = splitPrice(totalRaw);
+
+  // SOL value of the 34% share at the live SOL/SKR market rate
+  const { lamports: priceLamports } = await getLiveSolQuoteForSkr(amountSkr);
+  const oreShareLamports = (BigInt(priceLamports) * oreShareRaw) / totalRaw;
+
+  // 1. SOL -> exactly burnRaw + treasuryRaw SKR (Jupiter setup creates the user's SKR ATA if needed)
+  const solToSkr = await fetchJupiterSwapInstructions({
+    connection,
+    userPublicKey: payer,
+    inputMint: WSOL_MINT,
+    outputMint: SKR_MINT,
+    amountRaw: burnRaw + treasuryRaw,
+    swapMode: 'ExactOut',
+    slippageBps: 100,
+  });
+  const burnAndTreasury = await buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw });
+
+  // 2. SOL -> ORE for the 34% share, deposited into today's tranche
+  const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports });
+
+  return {
+    skrGroup: { instructions: [...solToSkr.instructions, ...burnAndTreasury], swaps: [solToSkr] },
+    oreGroup: {
+      instructions: [
+        ...oreLeg.instructions,
+        buildMemoInstruction(payer, `ARKANA:${actionLabel}:SOL:${oreLeg.targetTrancheId}`),
+      ],
+      swaps: oreLeg.swaps,
+    },
+    addressLookupTableAccounts: [
+      ...(await getArkanaLookupTable(connection)),
+      ...solToSkr.addressLookupTableAccounts,
+      ...oreLeg.addressLookupTableAccounts,
+    ],
+  };
+}
+
+/** Largest serialized size a Solana transaction may have. */
+const MAX_TRANSACTION_BYTES = 1232;
+
+function compileTransaction(
+  payer: PublicKey,
+  blockhash: string,
+  instructions: TransactionInstruction[],
+  addressLookupTableAccounts: AddressLookupTableAccount[]
+): VersionedTransaction | null {
   try {
-    const treasuryBalance = await connection.getBalance(treasury, 'confirmed');
-    if (treasuryBalance === 0 && lamports < 650240) {
-      lamports = 650240;
-    }
-  } catch {}
-
-  const totalLamports = BigInt(lamports);
-  const burnLamports = (totalLamports * 33n) / 100n;
-  const treasuryLamports = (totalLamports * 33n) / 100n;
-  const oreLamports = totalLamports - burnLamports - treasuryLamports; // Exactly 34%!
-
-  const instructions: TransactionInstruction[] = [];
-  const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
-
-  // 1. 33% SOL to Arkana Treasury
-  instructions.push(
-    SystemProgram.transfer({
-      fromPubkey: payer,
-      toPubkey: treasury,
-      lamports: treasuryLamports,
-    })
-  );
-
-  // 2. 33% SOL to Burn (Solana Incinerator - permanent deflationary burn)
-  const INCINERATOR_ADDRESS = new PublicKey('1nc1nerator11111111111111111111111111111111');
-  instructions.push(
-    SystemProgram.transfer({
-      fromPubkey: payer,
-      toPubkey: INCINERATOR_ADDRESS,
-      lamports: burnLamports,
-    })
-  );
-
-  // 3. Ensure User ORE ATA exists (only create if not exists on-chain)
-  const userOreAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, payer, true);
-  const userOreAtaInfo = await connection.getAccountInfo(userOreAta, 'confirmed');
-  if (!userOreAtaInfo) {
-    instructions.push(
-      createAssociatedTokenAccountIdempotentInstruction(
-        payer,
-        userOreAta,
-        payer,
-        ORE_MINT_ADDRESS,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      )
-    );
+    const message = new TransactionMessage({ payerKey: payer, recentBlockhash: blockhash, instructions })
+      .compileToV0Message(addressLookupTableAccounts);
+    const tx = new VersionedTransaction(message);
+    return tx.serialize().length <= MAX_TRANSACTION_BYTES ? tx : null;
+  } catch {
+    // web3.js throws "encoding overruns Uint8Array" when the message exceeds the packet size
+    return null;
   }
+}
 
-  const { targetTrancheId } = await getTargetTrancheInfo(connection, payer);
-  const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
+/**
+ * Turns a payment plan into transactions: one atomic transaction when it fits,
+ * otherwise the two independent groups as two transactions (still one wallet approval).
+ */
+export function compilePaymentTransactions(
+  payer: PublicKey,
+  blockhash: string,
+  plan: PaymentPlan
+): VersionedTransaction[] {
+  const { skrGroup, oreGroup, addressLookupTableAccounts } = plan;
 
-  if (!isDevnet()) {
-    // Mainnet: Live Jupiter DEX swap from SOL to ORE
-    const swapData = await fetchJupiterSwapInstructions({
-      connection,
-      userPublicKey: payer,
-      inputMint: WSOL_MINT,
-      outputMint: ORE_MINT_ADDRESS,
-      amountRaw: oreLamports,
-    });
-
-    instructions.push(...swapData.instructions);
-    addressLookupTableAccounts.push(...swapData.addressLookupTableAccounts);
-
-    const depositIx = await createDepositTrancheInstruction(
-      payer,
-      targetTrancheId,
-      swapData.outAmount
-    );
-    instructions.push(depositIx);
-  } else {
-    const estimatedOre = BigInt(Math.max(1, Math.round(Number(oreLamports) / 1000)));
-    const depositIx = await createDepositTrancheInstruction(
-      payer,
-      targetTrancheId,
-      estimatedOre
-    );
-    instructions.push(depositIx);
-  }
-
-  // 4. Compact Proof Memo (strictly <= 24 bytes to preserve Solana MTU limit)
-  const memoText = `ARKANA:${actionLabel}:${targetTrancheId}`;
-  instructions.push(
-    new TransactionInstruction({
-      programId: SOLANA_MEMO_PROGRAM_ID,
-      keys: [{ pubkey: payer, isSigner: true, isWritable: false }],
-      data: Buffer.from(memoText, 'utf-8'),
-    })
+  const single = compileTransaction(
+    payer,
+    blockhash,
+    [
+      ...buildComputeBudgetInstructions([...skrGroup.swaps, ...oreGroup.swaps]),
+      ...skrGroup.instructions,
+      ...oreGroup.instructions,
+    ],
+    addressLookupTableAccounts
   );
+  if (single) return [single];
 
-  return { instructions, addressLookupTableAccounts };
+  const split = [skrGroup, oreGroup].map((group) =>
+    compileTransaction(
+      payer,
+      blockhash,
+      [...buildComputeBudgetInstructions(group.swaps), ...group.instructions],
+      addressLookupTableAccounts
+    )
+  );
+  if (split.some((tx) => !tx)) {
+    throw new Error('DEX route is too large for a Solana transaction. Please try again in a moment.');
+  }
+  return split as VersionedTransaction[];
 }
 
 export interface ExecutePaymentOrSwapParams {
@@ -501,9 +629,11 @@ export interface ExecutePaymentOrSwapParams {
 }
 
 /**
- * Universal payment or swap executor adhering to Solana Mobile Hackathon standard:
- * - If user has sufficient SKR (and !forceSolSwap) -> 33% Burn + 33% Treasury + 34% ORE DEX Swap & Daily Tranche Staking.
- * - If user has insufficient SKR (or forceSolSwap) -> 33% SOL Burn (Incinerator) + 33% Treasury + 34% ORE DEX Swap & Daily Tranche Staking.
+ * Universal payment executor. Every payment ends the same way:
+ * 33% SKR burned + 33% SKR to the Arkana Treasury + 34% ORE in the user's daily tranche (staked in ORE Stake).
+ * - Enough SKR (and !forceSolSwap): paid from the user's SKR.
+ * - Otherwise: SOL is swapped to 66% SKR (burn + treasury) and 34% ORE (tranche) at market rate.
+ * The user always approves once: one transaction, or two transactions in the same wallet prompt.
  */
 export async function executePaymentOrSwap({
   connection,
@@ -518,30 +648,10 @@ export async function executePaymentOrSwap({
   const treasury = new PublicKey(treasuryPublicKey.toString());
 
   const currentSkr = await fetchRealSkrBalance(connection, payer);
+  const paidWith: 'skr' | 'sol_swap' = !forceSolSwap && currentSkr >= amountSkr ? 'skr' : 'sol_swap';
 
-  if (!forceSolSwap && currentSkr >= amountSkr) {
-    // Direct on-chain SKR transaction: 33% Treasury + 33% Burn + 34% ORE Swap & Staking
-    const { instructions, addressLookupTableAccounts } = await buildSkrPaymentInstructions({
-      connection,
-      userPublicKey: payer,
-      treasuryPublicKey: treasury,
-      amountSkr,
-      actionLabel,
-    });
-
-    const { signature } = await executeSolanaTransaction({
-      connection,
-      payerKey: payer,
-      instructions,
-      addressLookupTableAccounts,
-      signAndSendTransactions,
-    });
-
-    return { signature, paidWith: 'skr', costSkr: amountSkr };
-  }
-
-  // SOL payment: 33% Deflationary Burn (Incinerator) + 33% Treasury + 34% ORE Swap & Staking
-  const { instructions, addressLookupTableAccounts } = await buildSolPaymentInstructions({
+  const buildPlan = paidWith === 'skr' ? buildSkrPaymentPlan : buildSolPaymentPlan;
+  const plan = await buildPlan({
     connection,
     userPublicKey: payer,
     treasuryPublicKey: treasury,
@@ -552,10 +662,9 @@ export async function executePaymentOrSwap({
   const { signature } = await executeSolanaTransaction({
     connection,
     payerKey: payer,
-    instructions,
-    addressLookupTableAccounts,
+    buildTransactions: (blockhash) => compilePaymentTransactions(payer, blockhash, plan),
     signAndSendTransactions,
   });
 
-  return { signature, paidWith: 'sol_swap', costSkr: amountSkr };
+  return { signature, paidWith, costSkr: amountSkr };
 }

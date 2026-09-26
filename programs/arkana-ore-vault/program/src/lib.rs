@@ -3,12 +3,15 @@ mod deposit;
 mod distribute;
 mod harvest;
 mod init;
+mod stake;
+mod sync;
 
 use claim::*;
 use deposit::*;
 use distribute::*;
 use harvest::*;
 use init::*;
+use sync::*;
 
 use arkana_ore_vault_api::instruction::*;
 use steel::*;
@@ -26,6 +29,7 @@ pub fn process_instruction(
         ArkanaVaultInstruction::ClaimTrancheYield => process_claim_tranche_yield(accounts, data)?,
         ArkanaVaultInstruction::HarvestMaturedTranche => process_harvest_matured_tranche(accounts, data)?,
         ArkanaVaultInstruction::DistributeReward => process_distribute_reward(accounts, data)?,
+        ArkanaVaultInstruction::SyncStake => process_sync_stake(accounts, data)?,
     }
 
     Ok(())
