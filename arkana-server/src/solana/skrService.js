@@ -382,8 +382,8 @@ function consumeSpread(walletAddress, options = {}) {
     };
   }
 
-  // 3. Beyond free & streak quota: on-chain payment verification (SKR or SOL)
-  if (txSignature || payWithSol) {
+  // 3. Beyond free & streak quota: only a payment the server verified on-chain (see paymentVerifier)
+  if (options.paymentVerified && txSignature) {
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
     user.lastSpreadDate = todayKey;
@@ -395,7 +395,7 @@ function consumeSpread(walletAddress, options = {}) {
       costSkr,
       costSol,
       itemType,
-      txSignature: txSignature || "tx_" + Math.random().toString(36).slice(2, 10)
+      txSignature
     });
     users[walletAddress] = user;
     saveUsers(users);
@@ -435,7 +435,8 @@ function consumeSpread(walletAddress, options = {}) {
  * Repair or preserve user streak using SKR
  * Default cost is 1 SKR (configurable dynamically via loadEconomyConfig)
  */
-function repairStreak(walletAddress, txSignature = null) {
+/** Called only after verifyPayment() confirmed the STREAK_REPAIR payment on-chain. */
+function repairStreak(walletAddress, txSignature) {
   if (!walletAddress) {
     return { success: false, error: "Wallet address is required." };
   }
@@ -445,14 +446,15 @@ function repairStreak(walletAddress, txSignature = null) {
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0 };
 
-  // Restore streak to broken streak or increment current streak
-  const restoredStreak = user.brokenStreak || user.previousStreak || Math.max(1, (user.streak || 0) + 1);
-  user.streak = restoredStreak;
+  // Only a streak that was actually broken can be restored
+  if (!user.brokenStreak || user.brokenStreak <= 0) {
+    return { success: false, error: "There is no broken streak to repair." };
+  }
+
+  user.streak = user.brokenStreak;
   user.brokenStreak = null;
   user.lastClockIn = new Date().toISOString();
-  if (txSignature) {
-    user.repairTx = txSignature;
-  }
+  user.repairTx = txSignature;
 
   users[walletAddress] = user;
   saveUsers(users);
@@ -466,7 +468,8 @@ function repairStreak(walletAddress, txSignature = null) {
 }
 
 /**
- * Record an Altar Offering (Tips) with 50% Burn + 50% Treasury
+ * Record an Altar Offering (33% burn + 33% treasury + 34% ORE tranche).
+ * Called only after verifyPayment() confirmed the ALTAR_OFFERING payment on-chain.
  */
 function recordOffering(walletAddress, { txSignature, amountSkr, message = "Altar Offering" }) {
   if (!walletAddress) {
@@ -483,7 +486,7 @@ function recordOffering(walletAddress, { txSignature, amountSkr, message = "Alta
     treasurySkr: Number((amount * 0.33).toFixed(2)),
     burnedSkr: Number((amount * 0.33).toFixed(2)),
     oreShareSkr: Number((amount * 0.34).toFixed(2)),
-    txSignature: txSignature || "offering_" + Math.random().toString(36).slice(2, 10),
+    txSignature,
     message
   });
 

@@ -31,6 +31,8 @@ import { useLanguage } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { submitConsensusProofOnChain, fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { PublicKey } from "@solana/web3.js";
+import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
+import { API_BASE_URL } from "@/services/oracleApi";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -402,19 +404,29 @@ export default function AltarScreen() {
     if (isRepairing) return;
     const cost = clockInState.streakRepairCostSkr || 1;
     const currentSkr = displaySkr;
-    if (currentSkr < cost) {
-      showError("Insufficient SKR", `You need ${cost} SKR to repair your streak.`);
+    if (!walletAddress || !signAndSendTransactions) {
+      showError("Streak Repair", "Connect your wallet first.");
       return;
     }
     setIsRepairing(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const res = await repairStreak(walletAddress);
+      // Real on-chain payment (SKR, or SOL swapped at market rate); the server verifies it
+      const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
+      const payment = await executePaymentOrSwap({
+        connection,
+        userPublicKey: new PublicKey(walletAddress),
+        treasuryPublicKey: treasuryPubkey,
+        amountSkr: cost,
+        actionLabel: 'STREAK_REPAIR',
+        signAndSendTransactions,
+      });
+      const res = await repairStreak(walletAddress, payment.signature);
       if (res.success) {
         setClockInState(prev => ({
           ...prev,
           streak: res.streak,
-          skrBalance: currentSkr,
+          skrBalance: Math.max(0, currentSkr - cost),
           canRepairStreak: false,
         }));
         try {

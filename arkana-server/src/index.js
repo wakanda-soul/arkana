@@ -30,6 +30,40 @@ const {
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { verifyPayment, isSeekerHolderOnChain } = require("./solana/paymentVerifier");
 
+/**
+ * Uses a free / streak spread when available. Otherwise charges only if the request carries a
+ * payment signature that verifies on-chain for this wallet, action and price.
+ */
+/** Requests without a wallet (guest mode): 3 free readings/questions per IP per day, shared. */
+const guestUsage = new Map();
+const GUEST_DAILY_LIMIT = 3;
+function consumeGuestQuota(req) {
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const day = new Date().toISOString().slice(0, 10);
+  const entry = guestUsage.get(ip);
+  const used = entry && entry.day === day ? entry.used : 0;
+  if (used >= GUEST_DAILY_LIMIT) return false;
+  guestUsage.set(ip, { day, used: used + 1 });
+  if (guestUsage.size > 50000) guestUsage.clear();
+  return true;
+}
+
+async function consumeWithVerifiedPayment(wallet, { type, txSignature }) {
+  const free = consumeSpread(wallet, { type });
+  if (free.allowed || !txSignature) return free;
+
+  const config = loadEconomyConfig();
+  const amountSkr = type === "chat" ? (config.askCostSkr || 1) : (config.extraSpreadCostSkr || 5);
+  const payment = await verifyPayment({
+    wallet,
+    signature: txSignature,
+    amountSkr,
+    actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
+  });
+  if (!payment.ok) return { ...free, allowed: false, reason: payment.error };
+  return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -416,13 +450,13 @@ app.post("/api/reading", async (req, res) => {
 
     // Check & consume quota if wallet provided
     let quotaResult = null;
+    if (!wallet && !consumeGuestQuota(req)) {
+      return res.status(402).json({ success: false, error: "Connect a wallet to continue today." });
+    }
     if (wallet) {
-      quotaResult = consumeSpread(wallet, {
+      quotaResult = await consumeWithVerifiedPayment(wallet, {
         type: "spread",
-        cost: 5,
-        payWithSol: Boolean(req.body.payWithSol),
-        txSignature: req.body.txSignature || null,
-        isSeeker: req.body.isSeeker !== undefined ? Boolean(req.body.isSeeker) : undefined
+        txSignature: req.body.txSignature || null
       });
       if (!quotaResult.allowed) {
         return res.status(402).json({
@@ -494,13 +528,11 @@ app.post("/api/chat", async (req, res) => {
 
   // Enforce shared daily quota for chat queries (1 SKR or 0.0002 SOL beyond free 3)
   let quotaResult = null;
+  if ((!wallet || wallet === "anonymous") && !consumeGuestQuota(req)) {
+    return res.status(402).json({ success: false, error: "Connect a wallet to continue today." });
+  }
   if (wallet && wallet !== "anonymous") {
-    quotaResult = consumeSpread(wallet, {
-      type: "chat",
-      cost: 1,
-      payWithSol: Boolean(payWithSol),
-      txSignature
-    });
+    quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature });
 
     if (!quotaResult.allowed) {
       return res.status(402).json({
@@ -573,13 +605,21 @@ app.get("/api/treasury", (req, res) => {
 });
 
 // Record Altar Offering (Tips) with 50% Burn + 50% Treasury
-app.post("/api/offering", (req, res) => {
+app.post("/api/offering", async (req, res) => {
   try {
     const { wallet, txSignature, amountSkr, message } = req.body;
     if (!wallet) {
       return res.status(400).json({ error: "Wallet address is required" });
     }
-    const result = recordOffering(wallet, { txSignature, amountSkr, message });
+    const amount = Number(amountSkr);
+    if (![1, 5, 15, 50].includes(amount)) {
+      return res.status(400).json({ success: false, error: "Unknown offering amount" });
+    }
+    const payment = await verifyPayment({ wallet, signature: txSignature, amountSkr: amount, actionLabel: "ALTAR_OFFERING" });
+    if (!payment.ok) {
+      return res.status(402).json({ success: false, error: payment.error });
+    }
+    const result = recordOffering(wallet, { txSignature, amountSkr: amount, message });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -669,10 +709,25 @@ app.get("/api/admin/logs/export", (req, res) => {
 });
 
 // Streak repair endpoint
-app.post("/api/streak/repair", (req, res) => {
+app.post("/api/streak/repair", async (req, res) => {
   try {
-    const { wallet } = req.body;
-    const result = repairStreak(wallet);
+    const { wallet, txSignature } = req.body;
+    if (!wallet) return res.status(400).json({ success: false, error: "Wallet address is required." });
+    // Check before charging, so nobody pays for a streak that cannot be repaired
+    if (!getClockInStatus(wallet).brokenStreak) {
+      return res.status(400).json({ success: false, error: "There is no broken streak to repair." });
+    }
+    const config = loadEconomyConfig();
+    const payment = await verifyPayment({
+      wallet,
+      signature: txSignature,
+      amountSkr: config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1,
+      actionLabel: "STREAK_REPAIR",
+    });
+    if (!payment.ok) {
+      return res.status(402).json({ success: false, error: payment.error });
+    }
+    const result = repairStreak(wallet, txSignature);
     if (!result.success) {
       return res.status(400).json(result);
     }

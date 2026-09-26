@@ -312,12 +312,12 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
   }
 }
 
-export async function repairStreak(wallet: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
+export async function repairStreak(wallet: string, txSignature: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/streak/repair`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet }),
+      body: JSON.stringify({ wallet, txSignature }),
     });
     const data = await res.json();
     return data;
