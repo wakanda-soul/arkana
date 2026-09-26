@@ -19,10 +19,10 @@
     "previousStreak": 1
   },
   "9A3DT9eyVpa4GCLiEVUS5s8fHhE7RiktRkNTxwXWYvC3": {
-    "streak": 2,
-    "dailySpreadsUsed": 5,
-    "lastSpreadDate": "2026-09-24",
-    "totalReadings": 15,
+    "streak": 3,
+    "dailySpreadsUsed": 1,
+    "lastSpreadDate": "2026-09-26",
+    "totalReadings": 20,
     "isSeekerHolder": false,
     "txHistory": [
       {
@@ -88,10 +88,52 @@
         "costSol": 0.0002,
         "itemType": "chat",
         "txSignature": "45iQXnQW824fUAZGA4eZNkKnJuE7Cx44wzqAcUtNuCkYw1NphYikws6BBB2U15JcrtiBhPJwQzMBkXvZxdAnbviD"
+      },
+      {
+        "timestamp": "2026-09-25T20:40:55.356Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "2n5WHyyM6UEFe4FUYBzgBevgrcobHBdaP3xvfVugz6ycKj2WPcJguhgAEHLMqwWZ81yLbqC4oB1doMv3ZbwQzYmc"
+      },
+      {
+        "timestamp": "2026-09-25T20:42:05.683Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "4LihxwcHpUpSP1FGLwC2NSqBzhDa2gEmwx6AiaoL5HPvSx7myAFUZXrBCWyJ9o27a6wXyXKPg6gKesAdEKASjYuf"
+      },
+      {
+        "timestamp": "2026-09-25T20:42:49.211Z",
+        "paidWith": "sol",
+        "costSkr": 5,
+        "costSol": 0.001,
+        "itemType": "spread",
+        "txSignature": "SSrPDG9dFjM1WSh1h1VfdUNE1iG8fp3wtdwV1zFiJMxLEvyRA6UFbGVABDGAAcMBpaohm9fCrXyLUq78uY1pn31"
+      },
+      {
+        "timestamp": "2026-09-26T19:45:20.048Z",
+        "paidWith": "skr",
+        "costSkr": 1,
+        "costSol": 0.0002,
+        "itemType": "chat",
+        "txSignature": "s9ktd1DEF7s6sf8B88R128bVtzNYc5sZa9Jjs9MGEjhezHPDzZ6dtsvAdcS8a9aypi5fcUt2moQPL9aDEpWEr3z"
       }
     ],
-    "lastClockIn": "2026-09-25T16:20:27.522Z",
+    "lastClockIn": "2026-09-26T19:44:34.770Z",
     "history": [
+      {
+        "timestamp": "2026-09-26T19:44:34.770Z",
+        "type": "daily-block",
+        "card": "Protocol Collapse",
+        "card_no": "59",
+        "orientation": "upright",
+        "image": "/cards/59.webp",
+        "txSignature": "8i9Qmv7E7gVweAx9Niuvoi8E5UbZt8L1aMqg3ZyJDh8PXiQnLTcwCeDygGZ9YUBvz9GHHUJtVzRHNWhA8eAnSW1",
+        "slot": 450772149
+      },
       {
         "timestamp": "2026-09-25T16:20:27.522Z",
         "type": "daily-block",
@@ -142,6 +184,15 @@
     "previousStreak": 3,
     "offerings": [
       {
+        "timestamp": "2026-09-25T20:44:54.482Z",
+        "amountSkr": 1,
+        "treasurySkr": 0.33,
+        "burnedSkr": 0.33,
+        "oreShareSkr": 0.34,
+        "txSignature": "4LSrnRUpHBFt4pp3JN7GvGFMq1wGdxHSh5JGeVeMWmdEMYnxjozwAYyPHDjvRvo7nQ5BaogBgv1WV64ZigbCTUXr",
+        "message": "Offering of 1 SKR to Sacred Altar"
+      },
+      {
         "timestamp": "2026-09-24T20:39:07.965Z",
         "amountSkr": 50,
         "treasurySkr": 16.5,
@@ -160,7 +211,7 @@
         "message": "Offering of 50 SKR to Sacred Altar"
       }
     ],
-    "totalOfferedSkr": 100
+    "totalOfferedSkr": 101
   },
   "9KNUx71jUqgvcpvbw5dTjxM3frzCWE7iRhppfJJYXHrR": {
     "streak": 0,

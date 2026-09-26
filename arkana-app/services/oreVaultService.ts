@@ -98,9 +98,39 @@ export function getOreVestingPda(): [PublicKey, number] {
 export interface UserVaultData {
   owner: string;
   trancheCount: number;
+  lastDepositDay: number;
   totalStakedOre: number; // in indivisible units
   totalClaimableOre: number; // in indivisible units
   totalYieldClaimed: number;
+}
+
+/**
+ * Determine whether today's transaction will create a new Daily Tranche
+ * or top up the existing Daily Tranche (0 rent!)
+ */
+export async function getTargetTrancheInfo(
+  connection: Connection,
+  userPubkey: PublicKey
+): Promise<{ targetTrancheId: number; isTopUp: boolean; tranchePda: PublicKey }> {
+  const [userVaultPda] = getUserVaultPda(userPubkey);
+  const vaultAccountInfo = await connection.getAccountInfo(userVaultPda, 'confirmed');
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const todayDayId = Math.floor(nowSec / 86400);
+
+  let trancheCount = 0;
+  let lastDepositDay = 0;
+
+  if (vaultAccountInfo && vaultAccountInfo.data.length >= 64) {
+    trancheCount = vaultAccountInfo.data.readUInt32LE(40);
+    lastDepositDay = vaultAccountInfo.data.readUInt32LE(44);
+  }
+
+  const isTopUp = trancheCount > 0 && lastDepositDay === todayDayId;
+  const targetTrancheId = isTopUp ? trancheCount : trancheCount + 1;
+  const [tranchePda] = getTranchePda(userPubkey, targetTrancheId);
+
+  return { targetTrancheId, isTopUp, tranchePda };
 }
 
 export interface TrancheData {

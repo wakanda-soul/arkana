@@ -58,8 +58,8 @@ pub struct UserVault {
     /// Number of tranches opened by this user
     pub tranche_count: u32,
 
-    /// Alignment padding
-    pub _padding: [u8; 4],
+    /// Day ID (unix_timestamp / 86400) of the most recent deposit
+    pub last_deposit_day: u32,
 
     /// Total active ORE staked across all active tranches for this user
     pub total_staked_ore: u64,
