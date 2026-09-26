@@ -3,6 +3,10 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
+    # Server, program and docs changes do not need a new APK
+    paths:
+      - 'arkana-app/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 concurrency:
