@@ -4,7 +4,7 @@ Crypto tarot and daily block consensus built for Solana Mobile and the Seeker ec
 
 Arkana turns blockchain mechanics into a 78-card symbolic oracle. It connects to your hardware Seed Vault via Mobile Wallet Adapter (MWA), lets you cast spreads with fair local RNG, and synthesizes 7-beat narrative readings through a fast on-chain oracle engine.
 
-[⚡ Download Android APK](http://184.174.39.62/arkana.apk) · [🎨 Design Kit (78 cards, 22 MB)](http://184.174.39.62/arkana-designs.zip) · [Releases](https://github.com/wakanda-soul/arkana/releases)
+[⚡ Download Android APK](http://184.174.39.62/arkana.apk) · [📦 Web Download Portal](http://184.174.39.62/download) · [Releases](https://github.com/wakanda-soul/arkana/releases)
 
 ---
 
