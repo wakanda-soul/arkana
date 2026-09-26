@@ -34,20 +34,6 @@ const { verifyPayment, isSeekerHolderOnChain } = require("./solana/paymentVerifi
  * Uses a free / streak spread when available. Otherwise charges only if the request carries a
  * payment signature that verifies on-chain for this wallet, action and price.
  */
-/** Requests without a wallet (guest mode): 3 free readings/questions per IP per day, shared. */
-const guestUsage = new Map();
-const GUEST_DAILY_LIMIT = 3;
-function consumeGuestQuota(req) {
-  const ip = req.ip || req.socket.remoteAddress || "unknown";
-  const day = new Date().toISOString().slice(0, 10);
-  const entry = guestUsage.get(ip);
-  const used = entry && entry.day === day ? entry.used : 0;
-  if (used >= GUEST_DAILY_LIMIT) return false;
-  guestUsage.set(ip, { day, used: used + 1 });
-  if (guestUsage.size > 50000) guestUsage.clear();
-  return true;
-}
-
 async function consumeWithVerifiedPayment(wallet, { type, txSignature }) {
   const free = consumeSpread(wallet, { type });
   if (free.allowed || !txSignature) return free;
@@ -450,10 +436,11 @@ app.post("/api/reading", async (req, res) => {
 
     // Check & consume quota if wallet provided
     let quotaResult = null;
-    if (!wallet && !consumeGuestQuota(req)) {
-      return res.status(402).json({ success: false, error: "Connect a wallet to continue today." });
+    // Every reading needs a connected wallet: free spreads come only from Seeker / streak / pass quotas
+    if (!wallet) {
+      return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
-    if (wallet) {
+    {
       quotaResult = await consumeWithVerifiedPayment(wallet, {
         type: "spread",
         txSignature: req.body.txSignature || null
@@ -528,10 +515,11 @@ app.post("/api/chat", async (req, res) => {
 
   // Enforce shared daily quota for chat queries (1 SKR or 0.0002 SOL beyond free 3)
   let quotaResult = null;
-  if ((!wallet || wallet === "anonymous") && !consumeGuestQuota(req)) {
-    return res.status(402).json({ success: false, error: "Connect a wallet to continue today." });
+  // Every question needs a connected wallet
+  if (!wallet || wallet === "anonymous") {
+    return res.status(401).json({ success: false, error: "Connect your wallet first." });
   }
-  if (wallet && wallet !== "anonymous") {
+  {
     quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature });
 
     if (!quotaResult.allowed) {

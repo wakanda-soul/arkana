@@ -60,10 +60,9 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
 }
 
-function getDailyFreeAllowance(streak = 0) {
-  if (streak >= 7) return 5; // 7+ day streak loyalty bonus
-  if (streak >= 3) return 4; // 3-6 day streak bonus
-  return 3;                  // Base daily free allowance
+/** Seeker Genesis holders get 3 free spreads per day. Streaks give banked bonus spreads instead (see getStreakMilestoneReward). */
+function getDailyFreeAllowance() {
+  return 3;
 }
 
 function checkSeekerStatus(user, walletAddress, clientHint) {
