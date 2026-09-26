@@ -29,6 +29,7 @@ import {
   getUserVaultPda,
   getTranchePda,
   createClaimTrancheYieldInstruction,
+  fetchRealOreBalance,
   TrancheData,
   UserVaultData,
 } from '@/services/oreVaultService';
@@ -45,6 +46,7 @@ export default function OreVaultScreen() {
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
   const [tranches, setTranches] = useState<TrancheData[]>([]);
   const [userVault, setUserVault] = useState<UserVaultData | null>(null);
+
 
   // Load User Vault and Tranches
   const loadVaultData = useCallback(async () => {
@@ -70,6 +72,7 @@ export default function OreVaultScreen() {
         setUserVault({
           owner: walletAddress,
           trancheCount: 0,
+          lastDepositDay: 0,
           totalStakedOre: 0,
           totalClaimableOre: 0,
           totalYieldClaimed: 0,
@@ -87,9 +90,10 @@ export default function OreVaultScreen() {
       }
 
       // Parse UserVault account data
-      // Steel layout: [discriminator: 8 bytes][owner: 32 bytes][tranche_count: 4 bytes][padding: 4 bytes][total_staked: 8 bytes][total_claimed: 8 bytes]
+      // Steel layout: [discriminator: 8 bytes][owner: 32 bytes][tranche_count: 4 bytes][last_deposit_day: 4 bytes][total_staked: 8 bytes][total_claimed: 8 bytes]
       const data = vaultAccountInfo.data;
       const trancheCount = data.readUInt32LE(40);
+      const lastDepositDay = data.readUInt32LE(44);
       const totalStakedOre = Number(data.readBigUInt64LE(48));
       const totalYieldClaimed = Number(data.readBigUInt64LE(56));
 
@@ -162,6 +166,7 @@ export default function OreVaultScreen() {
       setUserVault({
         owner: walletAddress,
         trancheCount,
+        lastDepositDay,
         totalStakedOre,
         totalClaimableOre,
         totalYieldClaimed,
@@ -407,6 +412,8 @@ export default function OreVaultScreen() {
           </View>
         </View>
 
+
+
         {/* Tranches Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
@@ -426,7 +433,7 @@ export default function OreVaultScreen() {
             <Text style={styles.emptyStateDesc}>
               {t(
                 'ore_empty_desc',
-                'Make an offering at the Sacred Altar or purchase a reading. 34% of every transaction is automatically converted to ORE and locked into 365-day staking tranches, earning you 100% continuous yield!'
+                'You have no personal 365-day ORE staking tranches locked yet. 34% of what you spend in Arkana on readings and offerings is dedicated to the ORE Sacred Vault.'
               )}
             </Text>
           </View>
@@ -440,12 +447,28 @@ export default function OreVaultScreen() {
               Math.max(0, ((365 - tranche.daysRemaining) / 365) * 100)
             );
 
+            const isToday =
+              Math.floor(tranche.depositedAt / 86400) ===
+              Math.floor(Date.now() / 1000 / 86400);
+
+            const formattedDate = new Date(tranche.depositedAt * 1000).toLocaleDateString(
+              undefined,
+              { month: 'short', day: 'numeric', year: 'numeric' }
+            );
+
             return (
               <View key={tranche.trancheId} style={styles.trancheCard}>
                 <View style={styles.trancheHeader}>
-                  <Text style={styles.trancheIdText}>
-                    {t('ore_tranche_prefix', 'TRANCHE')} #{tranche.trancheId}
-                  </Text>
+                  <View style={styles.trancheHeaderTitleGroup}>
+                    <Text style={styles.trancheIdText}>
+                      {isToday
+                        ? `${t('ore_today_badge', 'TODAY')}, ${formattedDate}`
+                        : formattedDate}
+                    </Text>
+                    <Text style={styles.trancheDaySub}>
+                      ({t('ore_day_label', 'Day')} #{tranche.trancheId})
+                    </Text>
+                  </View>
                   <View
                     style={[
                       styles.trancheStatusBadge,
@@ -787,11 +810,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  trancheHeaderTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
   trancheIdText: {
     fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#EDE7DC',
+  },
+  trancheDaySub: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
+    color: '#C8A24A',
+    opacity: 0.8,
   },
   trancheStatusBadge: {
     backgroundColor: 'rgba(200, 162, 74, 0.15)',
@@ -933,5 +968,150 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#C8A24A',
     letterSpacing: 0.5,
+  },
+  stakeCard: {
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.4)',
+    marginBottom: 20,
+  },
+  stakeHeaderRow: {
+    marginBottom: 12,
+  },
+  stakeTitleGroup: {},
+  stakeTitle: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#EDE7DC',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  stakeSubtitle: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10.5,
+    lineHeight: 15,
+    color: 'rgba(237, 231, 220, 0.6)',
+  },
+  oreBalanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 6,
+  },
+  oreBalanceLabel: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: 'rgba(237, 231, 220, 0.65)',
+  },
+  oreBalanceValue: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: '#C8A24A',
+    fontWeight: '700',
+  },
+  maxText: {
+    color: '#C8A24A',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  presetRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  presetBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.25)',
+    borderRadius: 8,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  presetBtnActive: {
+    backgroundColor: 'rgba(200, 162, 74, 0.2)',
+    borderColor: '#C8A24A',
+  },
+  presetBtnText: {
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 11,
+    color: '#DDD',
+    fontWeight: '600',
+  },
+  presetBtnTextActive: {
+    color: '#C8A24A',
+    fontWeight: '700',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(8, 7, 12, 0.8)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(200, 162, 74, 0.35)',
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  amountInput: {
+    flex: 1,
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 14,
+    color: '#EDE7DC',
+    paddingVertical: 10,
+  },
+  inputSuffixBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(200, 162, 74, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  inputSuffixText: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#C8A24A',
+  },
+  depositButton: {
+    backgroundColor: '#C8A24A',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  depositButtonDisabled: {
+    opacity: 0.45,
+  },
+  depositButtonText: {
+    fontFamily: Platform.select({ ios: 'Cinzel', android: 'Cinzel', default: 'serif' }),
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#08070B',
+    letterSpacing: 1,
+  },
+  depositSuccessBanner: {
+    marginTop: 12,
+    backgroundColor: 'rgba(105, 219, 124, 0.12)',
+    borderWidth: 1,
+    borderColor: '#69DB7C',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  depositSuccessText: {
+    color: '#69DB7C',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  depositSuccessTx: {
+    color: 'rgba(237, 231, 220, 0.7)',
+    fontFamily: Platform.select({ ios: 'SpaceMono', android: 'SpaceMono', default: 'monospace' }),
+    fontSize: 10,
   },
 });

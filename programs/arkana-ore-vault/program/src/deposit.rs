@@ -54,50 +54,117 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
             user_vault_info.as_account_mut::<UserVault>(&arkana_ore_vault_api::ID)?;
         user_vault.owner = *signer_info.key;
         user_vault.tranche_count = 0;
+        user_vault.last_deposit_day = 0;
         user_vault.total_staked_ore = 0;
         user_vault.total_yield_claimed = 0;
     }
 
     let user_vault =
         user_vault_info.as_account_mut::<UserVault>(&arkana_ore_vault_api::ID)?;
-    let next_tranche_id = user_vault
-        .tranche_count
-        .checked_add(1)
-        .ok_or(ArkanaVaultError::MathOverflow)?;
+    let today = (clock.unix_timestamp / 86400) as u32;
 
-    // 2. Create the new Tranche PDA
-    let (tranche_addr, _) = tranche_pda(signer_info.key, next_tranche_id);
+    let is_same_day = user_vault.tranche_count > 0 && user_vault.last_deposit_day == today;
+    let target_tranche_id = if is_same_day {
+        user_vault.tranche_count
+    } else {
+        user_vault
+            .tranche_count
+            .checked_add(1)
+            .ok_or(ArkanaVaultError::MathOverflow)?
+    };
+
+    // 2. Validate Tranche PDA address
+    let (tranche_addr, _) = tranche_pda(signer_info.key, target_tranche_id);
     tranche_info.has_address(&tranche_addr)?;
-
-    create_program_account::<Tranche>(
-        tranche_info,
-        system_program,
-        signer_info,
-        &arkana_ore_vault_api::ID,
-        &[
-            TRANCHE_SEED,
-            signer_info.key.as_ref(),
-            &next_tranche_id.to_le_bytes(),
-        ],
-    )?;
 
     // 3. Baseline rewards factor from VaultConfig
     let current_rewards_factor = config.rewards_factor;
 
-    // 4. Populate Tranche State
-    let tranche = tranche_info.as_account_mut::<Tranche>(&arkana_ore_vault_api::ID)?;
-    tranche.owner = *signer_info.key;
-    tranche.tranche_id = next_tranche_id;
-    tranche.is_matured = 0;
-    tranche.deposited_amount = amount;
-    tranche.deposited_at = clock.unix_timestamp;
-    tranche.expires_at = clock
-        .unix_timestamp
-        .checked_add(TRANCHE_LOCK_DURATION_SECONDS)
-        .ok_or(ArkanaVaultError::MathOverflow)?;
-    tranche.rewards_factor_at_deposit = current_rewards_factor;
-    tranche.last_rewards_factor = current_rewards_factor;
-    tranche.claimed_rewards = 0;
+    if tranche_info.data_is_empty() {
+        // First deposit of the day: create new Tranche account (pays 1-time rent for the day)
+        create_program_account::<Tranche>(
+            tranche_info,
+            system_program,
+            signer_info,
+            &arkana_ore_vault_api::ID,
+            &[
+                TRANCHE_SEED,
+                signer_info.key.as_ref(),
+                &target_tranche_id.to_le_bytes(),
+            ],
+        )?;
+
+        let tranche = tranche_info.as_account_mut::<Tranche>(&arkana_ore_vault_api::ID)?;
+        tranche.owner = *signer_info.key;
+        tranche.tranche_id = target_tranche_id;
+        tranche.is_matured = 0;
+        tranche.deposited_amount = amount;
+        tranche.deposited_at = clock.unix_timestamp;
+        tranche.expires_at = clock
+            .unix_timestamp
+            .checked_add(TRANCHE_LOCK_DURATION_SECONDS)
+            .ok_or(ArkanaVaultError::MathOverflow)?;
+        tranche.rewards_factor_at_deposit = current_rewards_factor;
+        tranche.last_rewards_factor = current_rewards_factor;
+        tranche.claimed_rewards = 0;
+
+        user_vault.tranche_count = target_tranche_id;
+        user_vault.last_deposit_day = today;
+        config.total_tranches_count = config
+            .total_tranches_count
+            .checked_add(1)
+            .ok_or(ArkanaVaultError::MathOverflow)?;
+    } else {
+        // Subsequent deposit on the same day: Top-up existing Tranche account (0 rent!)
+        let tranche = tranche_info.as_account_mut::<Tranche>(&arkana_ore_vault_api::ID)?;
+        if tranche.owner != *signer_info.key {
+            return Err(ArkanaVaultError::Unauthorized.into());
+        }
+        if tranche.tranche_id != target_tranche_id {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if tranche.is_matured != 0 {
+            return Err(ArkanaVaultError::TrancheAlreadyMatured.into());
+        }
+
+        // Settle accrued yield on old balance before adding new principal
+        if current_rewards_factor > tranche.last_rewards_factor {
+            let factor_diff = current_rewards_factor - tranche.last_rewards_factor;
+            let personal_rewards = factor_diff * Numeric::from_u64(tranche.deposited_amount);
+            let reward_amount = personal_rewards.to_u64();
+            if reward_amount > 0 {
+                let (_, vault_auth_bump) = vault_authority_pda();
+                transfer_signed_with_bump(
+                    vault_authority_info,
+                    vault_tokens_info,
+                    user_tokens_info,
+                    token_program,
+                    reward_amount,
+                    &[VAULT_AUTHORITY_SEED],
+                    vault_auth_bump,
+                )?;
+                tranche.claimed_rewards = tranche
+                    .claimed_rewards
+                    .checked_add(reward_amount)
+                    .ok_or(ArkanaVaultError::MathOverflow)?;
+                user_vault.total_yield_claimed = user_vault
+                    .total_yield_claimed
+                    .checked_add(reward_amount)
+                    .ok_or(ArkanaVaultError::MathOverflow)?;
+                config.total_yield_distributed = config
+                    .total_yield_distributed
+                    .checked_add(reward_amount)
+                    .ok_or(ArkanaVaultError::MathOverflow)?;
+            }
+            tranche.last_rewards_factor = current_rewards_factor;
+        }
+
+        // Top-up principal
+        tranche.deposited_amount = tranche
+            .deposited_amount
+            .checked_add(amount)
+            .ok_or(ArkanaVaultError::MathOverflow)?;
+    }
 
     // 5. Transfer ORE from user to vault authority
     transfer(
@@ -109,7 +176,6 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
     )?;
 
     // 6. Update aggregates
-    user_vault.tranche_count = next_tranche_id;
     user_vault.total_staked_ore = user_vault
         .total_staked_ore
         .checked_add(amount)
@@ -118,10 +184,6 @@ pub fn process_deposit_tranche(accounts: &[AccountInfo<'_>], data: &[u8]) -> Pro
     config.total_staked_ore = config
         .total_staked_ore
         .checked_add(amount)
-        .ok_or(ArkanaVaultError::MathOverflow)?;
-    config.total_tranches_count = config
-        .total_tranches_count
-        .checked_add(1)
         .ok_or(ArkanaVaultError::MathOverflow)?;
 
     Ok(())
