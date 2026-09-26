@@ -317,7 +317,9 @@ export async function createClaimTrancheYieldInstruction(
 
 /**
  * Creates the HarvestMaturedTranche instruction.
- * After 365 days, transitions the principal ORE into the Arkana Treasury.
+ * After 365 days: principal ORE goes to the Arkana Treasury, unclaimed yield goes to the
+ * tranche owner, and the tranche account is closed with its rent SOL refunded to the owner.
+ * The caller can be the owner or the Arkana Treasury (keeper); the owner is always the recipient.
  */
 export async function createHarvestMaturedTrancheInstruction(
   callerPubkey: PublicKey,
@@ -329,6 +331,7 @@ export async function createHarvestMaturedTrancheInstruction(
   const [userVaultPda] = getUserVaultPda(userPubkey);
   const [tranchePda] = getTranchePda(userPubkey, trancheId);
 
+  const ownerTokensAta = await getAssociatedTokenAddress(ORE_MINT_ADDRESS, userPubkey);
   const treasuryTokensAta = await getAssociatedTokenAddress(ORE_MINT_ADDRESS, ARKANA_TREASURY_ADDRESS);
   const vaultTokensAta = await getAssociatedTokenAddress(ORE_MINT_ADDRESS, vaultAuthorityPda, true);
 
@@ -344,6 +347,8 @@ export async function createHarvestMaturedTrancheInstruction(
       { pubkey: vaultAuthorityPda, isSigner: false, isWritable: false },
       { pubkey: userVaultPda, isSigner: false, isWritable: true },
       { pubkey: tranchePda, isSigner: false, isWritable: true },
+      { pubkey: userPubkey, isSigner: false, isWritable: true },
+      { pubkey: ownerTokensAta, isSigner: false, isWritable: true },
       { pubkey: ARKANA_TREASURY_ADDRESS, isSigner: false, isWritable: false },
       { pubkey: treasuryTokensAta, isSigner: false, isWritable: true },
       { pubkey: vaultTokensAta, isSigner: false, isWritable: true },

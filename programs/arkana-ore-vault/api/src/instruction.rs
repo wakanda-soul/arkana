@@ -12,7 +12,8 @@ pub enum ArkanaVaultInstruction {
     /// Claim accrued staking yield from an active tranche.
     ClaimTrancheYield = 2,
 
-    /// Harvest a matured tranche (>= 365 days) permanently into the Arkana Treasury.
+    /// Harvest a matured tranche (>= 365 days): principal to the Arkana Treasury,
+    /// unclaimed yield and tranche rent back to the owner.
     HarvestMaturedTranche = 3,
 
     /// Distribute reward ORE into the staking pool.

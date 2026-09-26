@@ -94,3 +94,6 @@ target/
 **/target/
 
 
+
+# Live user data (wallets, reading history) - never publish
+arkana-server/data/users.json
