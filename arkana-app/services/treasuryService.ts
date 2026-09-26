@@ -151,7 +151,9 @@ export async function fetchJupiterSwapInstructions({
   addressLookupTableAccounts: AddressLookupTableAccount[];
   outAmount: bigint;
 }> {
-  const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&slippageBps=${slippageBps}`;
+  const isDirect = inputMint.toBase58() === 'So11111111111111111111111111111111111111112';
+  const extraParams = isDirect ? '&onlyDirectRoutes=true' : '&maxAccounts=24';
+  const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&slippageBps=${slippageBps}${extraParams}`;
   const quoteRes = await fetch(quoteUrl);
   if (!quoteRes.ok) {
     throw new Error(`DEX swap quote unavailable for ${inputMint.toBase58()} -> ${outputMint.toBase58()} (${quoteRes.status})`);
@@ -190,10 +192,9 @@ export async function fetchJupiterSwapInstructions({
       data: Buffer.from(ix.data, 'base64'),
     });
 
-  if (swapData.computeBudgetInstructions) {
-    for (const ix of swapData.computeBudgetInstructions) {
-      instructions.push(deserialize(ix));
-    }
+  // Only include primary compute budget instruction to save packet size
+  if (swapData.computeBudgetInstructions && swapData.computeBudgetInstructions.length > 0) {
+    instructions.push(deserialize(swapData.computeBudgetInstructions[0]));
   }
   if (swapData.setupInstructions) {
     for (const ix of swapData.setupInstructions) {
@@ -258,17 +259,20 @@ export async function buildSkrPaymentInstructions({
   const instructions: TransactionInstruction[] = [];
   const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
 
-  // 1. Ensure Treasury ATA exists idempotently
-  instructions.push(
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      treasuryAta,
-      treasury,
-      SKR_MINT,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    )
-  );
+  // 1. Ensure Treasury ATA exists (only create if not exists on-chain)
+  const treasuryAtaInfo = await connection.getAccountInfo(treasuryAta, 'confirmed');
+  if (!treasuryAtaInfo) {
+    instructions.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        payer,
+        treasuryAta,
+        treasury,
+        SKR_MINT,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+  }
 
   // Protocol Split: 33% Burn + 33% Treasury + 34% ORE Staking Yield
   const decimalsMultiplier = isDevnet() ? 1_000_000_000 : 1_000_000;
@@ -301,18 +305,21 @@ export async function buildSkrPaymentInstructions({
     )
   );
 
-  // 4. Ensure User ORE ATA exists idempotently
+  // 4. Ensure User ORE ATA exists (only create if not exists on-chain)
   const userOreAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, payer, true);
-  instructions.push(
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      userOreAta,
-      payer,
-      ORE_MINT_ADDRESS,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    )
-  );
+  const userOreAtaInfo = await connection.getAccountInfo(userOreAta, 'confirmed');
+  if (!userOreAtaInfo) {
+    instructions.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        payer,
+        userOreAta,
+        payer,
+        ORE_MINT_ADDRESS,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+  }
 
   // 5. Determine target daily tranche (Top-Up into today's tranche or create new)
   const { targetTrancheId } = await getTargetTrancheInfo(connection, payer);
@@ -348,8 +355,8 @@ export async function buildSkrPaymentInstructions({
     instructions.push(depositIx);
   }
 
-  // 6. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
-  const memoText = `ARKANA::${actionLabel}::TOTAL=${amountSkr}_SKR::SPLIT(BURN=33%_TREASURY=33%_ORE_DAILY_TRANCHE=${targetTrancheId})::TS=${Date.now()}`;
+  // 6. Compact Proof Memo (strictly <= 24 bytes to preserve Solana MTU limit)
+  const memoText = `ARKANA:${actionLabel}:${targetTrancheId}`;
   instructions.push(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
@@ -422,18 +429,21 @@ export async function buildSolPaymentInstructions({
     })
   );
 
-  // 3. Ensure User ORE ATA exists idempotently
+  // 3. Ensure User ORE ATA exists (only create if not exists on-chain)
   const userOreAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, payer, true);
-  instructions.push(
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      userOreAta,
-      payer,
-      ORE_MINT_ADDRESS,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    )
-  );
+  const userOreAtaInfo = await connection.getAccountInfo(userOreAta, 'confirmed');
+  if (!userOreAtaInfo) {
+    instructions.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        payer,
+        userOreAta,
+        payer,
+        ORE_MINT_ADDRESS,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+  }
 
   const { targetTrancheId } = await getTargetTrancheInfo(connection, payer);
   const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
@@ -467,8 +477,8 @@ export async function buildSolPaymentInstructions({
     instructions.push(depositIx);
   }
 
-  // 4. Proof Memo documenting 33% Burn + 33% Treasury + 34% ORE Staking Yield
-  const memoText = `ARKANA::${actionLabel}::SOL_PAYMENT::SKR_EQUIV=${amountSkr}::LAMPORTS=${lamports}::SPLIT(BURN=33%_TREASURY=33%_ORE_DAILY_TRANCHE=${targetTrancheId})::TS=${Date.now()}`;
+  // 4. Compact Proof Memo (strictly <= 24 bytes to preserve Solana MTU limit)
+  const memoText = `ARKANA:${actionLabel}:${targetTrancheId}`;
   instructions.push(
     new TransactionInstruction({
       programId: SOLANA_MEMO_PROGRAM_ID,
