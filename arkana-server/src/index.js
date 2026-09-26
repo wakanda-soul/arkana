@@ -37,7 +37,7 @@ const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please
  * Uses a free / streak spread when available. Otherwise charges only if the request carries a
  * payment signature that verifies on-chain for this wallet, action and price.
  */
-async function consumeWithVerifiedPayment(wallet, { type, txSignature }) {
+async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatures }) {
   const free = consumeSpread(wallet, { type });
   if (free.allowed || !txSignature) return free;
 
@@ -46,6 +46,7 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature }) {
   const payment = await verifyPayment({
     wallet,
     signature: txSignature,
+    extraSignatures: txSignatures,
     amountSkr,
     actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
   });
@@ -530,7 +531,8 @@ app.post("/api/reading", async (req, res) => {
     {
       quotaResult = await consumeWithVerifiedPayment(wallet, {
         type: "spread",
-        txSignature: req.body.txSignature || null
+        txSignature: req.body.txSignature || null,
+        txSignatures: req.body.txSignatures
       });
       if (!quotaResult.allowed) {
         return res.status(402).json({
@@ -615,7 +617,7 @@ app.post("/api/chat", async (req, res) => {
   }
   if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
   {
-    quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature });
+    quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature, txSignatures: req.body.txSignatures });
 
     if (!quotaResult.allowed) {
       return res.status(402).json({
@@ -698,7 +700,7 @@ app.post("/api/offering", async (req, res) => {
     if (![1, 5, 15, 50].includes(amount)) {
       return res.status(400).json({ success: false, error: "Unknown offering amount" });
     }
-    const payment = await verifyPayment({ wallet, signature: txSignature, amountSkr: amount, actionLabel: "ALTAR_OFFERING" });
+    const payment = await verifyPayment({ wallet, signature: txSignature, extraSignatures: req.body.txSignatures, amountSkr: amount, actionLabel: "ALTAR_OFFERING" });
     if (!payment.ok) {
       return res.status(402).json({ success: false, error: payment.error });
     }
@@ -719,6 +721,7 @@ app.post("/api/subscription/activate", async (req, res) => {
     const payment = await verifyPayment({
       wallet,
       signature: txSignature,
+      extraSignatures: req.body.txSignatures,
       amountSkr: 333,
       actionLabel: "SUBSCRIPTION_PASS",
     });
@@ -804,6 +807,7 @@ app.post("/api/streak/repair", async (req, res) => {
     const payment = await verifyPayment({
       wallet,
       signature: txSignature,
+      extraSignatures: req.body.txSignatures,
       amountSkr: config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1,
       actionLabel: "STREAK_REPAIR",
     });

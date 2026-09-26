@@ -619,6 +619,13 @@ export function compilePaymentTransactions(
   return split as VersionedTransaction[];
 }
 
+const extraPaymentSignatures = new Map<string, string[]>();
+
+/** Other transactions of a payment that was split in two (empty for single-transaction payments). */
+export function getExtraPaymentSignatures(signature?: string | null): string[] {
+  return (signature && extraPaymentSignatures.get(signature)) || [];
+}
+
 export interface ExecutePaymentOrSwapParams {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -667,6 +674,8 @@ export async function executePaymentOrSwap({
     signAndSendTransactions,
   });
 
-  // The first transaction holds the burn, the treasury transfer and the memo: the server verifies it
+  // The first transaction holds the burn, the treasury transfer and the memo; a split payment
+  // has the ORE tranche deposit in a second one. The server verifies both.
+  extraPaymentSignatures.set(signatures[0], signatures.slice(1));
   return { signature: signatures[0], paidWith, costSkr: amountSkr };
 }

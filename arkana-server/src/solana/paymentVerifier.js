@@ -14,7 +14,13 @@ const { Connection, PublicKey } = require("@solana/web3.js");
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://solana-rpc.publicnode.com";
 const USED_FILE = path.join(__dirname, "..", "..", "data", "used_payments.json");
 
+const bs58 = require("bs58").default || require("bs58");
+
 const SKR_MINT = "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3";
+const ORE_MINT = "oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp";
+const ARKANA_VAULT_PROGRAM = "B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C";
+/** The tranche deposit is the swap's guaranteed minimum (up to 3% slippage) at a slightly older quote. */
+const ORE_SHARE_TOLERANCE_PCT = 85n;
 const SKR_DECIMALS = 6;
 const TREASURY = "4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny";
 const TOKEN_PROGRAMS = new Set([
@@ -87,34 +93,75 @@ function toRaw(amountSkr) {
  * Verifies that `signature` is a real Arkana payment of `amountSkr` by `wallet` for `actionLabel`.
  * Marks the signature as used on success. Returns { ok: true } or { ok: false, error }.
  */
-async function verifyPayment({ wallet, signature, amountSkr, actionLabel }) {
+/**
+ * `signature` is the transaction with the burn, the treasury transfer and the memo.
+ * `extraSignatures` holds the ORE tranche transaction when the app had to split the payment in two.
+ */
+async function verifyPayment({ wallet, signature, extraSignatures = [], amountSkr, actionLabel }) {
   if (!wallet || !signature || !amountSkr || !actionLabel) {
     return { ok: false, error: "Payment signature is required." };
   }
-  // Reserve the signature synchronously: parallel requests with one payment must not all pass
-  if (loadUsed()[signature] || inFlight.has(signature)) {
+  const extras = (Array.isArray(extraSignatures) ? extraSignatures : [])
+    .filter((s) => typeof s === "string" && s && s !== signature)
+    .slice(0, 2);
+  const all = [signature, ...extras];
+  // Reserve the signatures synchronously: parallel requests with one payment must not all pass
+  const used = loadUsed();
+  if (all.some((s) => used[s] || inFlight.has(s))) {
     return { ok: false, error: "This payment was already used." };
   }
-  inFlight.add(signature);
+  all.forEach((s) => inFlight.add(s));
   try {
-    return await verifyReserved({ wallet, signature, amountSkr, actionLabel });
+    return await verifyReserved({ wallet, signature, extras, amountSkr, actionLabel });
   } finally {
-    inFlight.delete(signature);
+    all.forEach((s) => inFlight.delete(s));
   }
 }
 
-async function verifyReserved({ wallet, signature, amountSkr, actionLabel }) {
+/** Loads a payment transaction and checks it succeeded, is recent and was signed by `wallet`. */
+async function loadPaymentTx(signature, wallet) {
   const tx = await fetchTransaction(signature);
-  if (!tx) return { ok: false, error: "Payment transaction not found on-chain yet. Try again in a minute." };
-  if (tx.meta?.err) return { ok: false, error: "Payment transaction failed on-chain." };
+  if (!tx) return { error: "Payment transaction not found on-chain yet. Try again in a minute." };
+  if (tx.meta?.err) return { error: "Payment transaction failed on-chain." };
   if (!tx.blockTime || Date.now() / 1000 - tx.blockTime > MAX_TX_AGE_SECONDS) {
-    return { ok: false, error: "Payment transaction is too old." };
+    return { error: "Payment transaction is too old." };
   }
-
   const signers = tx.transaction.message.accountKeys.filter((k) => k.signer).map((k) => k.pubkey.toBase58());
-  if (!signers.includes(wallet)) {
-    return { ok: false, error: "Payment was not signed by this wallet." };
+  if (!signers.includes(wallet)) return { error: "Payment was not signed by this wallet." };
+  return { tx };
+}
+
+/** ORE deposited by `wallet` into its Arkana tranche (DepositTranche = instruction 1). */
+function oreDeposited(tx, wallet) {
+  let total = 0n;
+  for (const ix of tx.transaction.message.instructions) {
+    const programId = ix.programId?.toBase58?.() || ix.programId;
+    if (programId !== ARKANA_VAULT_PROGRAM || !ix.data) continue;
+    const data = Buffer.from(bs58.decode(ix.data));
+    const signer = ix.accounts?.[0]?.toBase58?.() || ix.accounts?.[0];
+    if (data.length >= 9 && data[0] === 1 && signer === wallet) total += data.readBigUInt64LE(1);
   }
+  return total;
+}
+
+/** ORE the 34% share of `amountSkr` buys at market right now (Jupiter quote), or null. */
+async function oreForSkrShare(amountSkr) {
+  try {
+    const shareRaw = toRaw(amountSkr) - 2n * ((toRaw(amountSkr) * 33n) / 100n);
+    const res = await fetch(
+      `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT}&outputMint=${ORE_MINT}&amount=${shareRaw}&slippageBps=300&maxAccounts=24`
+    );
+    if (!res.ok) return null;
+    return BigInt((await res.json()).outAmount);
+  } catch {
+    return null;
+  }
+}
+
+async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabel }) {
+  const primary = await loadPaymentTx(signature, wallet);
+  if (primary.error) return { ok: false, error: primary.error };
+  const tx = primary.tx;
 
   const logs = (tx.meta.logMessages || []).join("\n");
   const isCurrentFormat = logs.includes(`ARKANA:${actionLabel}:`);
@@ -172,6 +219,26 @@ async function verifyReserved({ wallet, signature, amountSkr, actionLabel }) {
     }
   }
 
+  // 34% of the price must have gone to ORE in the user's tranche (1.1+ apps; 1.0.x did not always deposit)
+  if (isCurrentFormat) {
+    let deposited = oreDeposited(tx, wallet);
+    for (const extra of extras) {
+      const loaded = await loadPaymentTx(extra, wallet);
+      if (loaded.error) return { ok: false, error: loaded.error };
+      deposited += oreDeposited(loaded.tx, wallet);
+    }
+    if (deposited === 0n) {
+      return { ok: false, error: "Payment did not deposit the 34% ORE share." };
+    }
+    const expected = await oreForSkrShare(amountSkr);
+    if (expected && deposited * 100n < expected * ORE_SHARE_TOLERANCE_PCT) {
+      return { ok: false, error: "Payment deposited too little ORE." };
+    }
+  }
+
+  for (const extra of extras) {
+    markUsed(extra, { wallet, actionLabel, amountSkr, partOf: signature, verifiedAt: new Date().toISOString() });
+  }
   markUsed(signature, { wallet, actionLabel, amountSkr, blockTime: tx.blockTime, verifiedAt: new Date().toISOString() });
   return { ok: true };
 }

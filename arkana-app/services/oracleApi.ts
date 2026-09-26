@@ -1,3 +1,4 @@
+import { getExtraPaymentSignatures } from './treasuryService';
 import { apiHeaders } from './sessionService';
 import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
 
@@ -265,7 +266,7 @@ export async function fetchReading(
   txSignature?: string | null
 ): Promise<ReadingResponse> {
   try {
-    const payload: any = { spread, question, wallet, payWithSol, language, txSignature };
+    const payload: any = { spread, question, wallet, payWithSol, language, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) };
     if (isSeeker !== undefined) {
       payload.isSeeker = isSeeker;
     }
@@ -318,7 +319,7 @@ export async function repairStreak(wallet: string, txSignature: string): Promise
     const res = await fetch(`${API_BASE_URL}/api/streak/repair`, {
       method: 'POST',
       headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, txSignature }),
+      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) }),
     });
     const data = await res.json();
     return data;
@@ -350,7 +351,7 @@ export async function sendOracleChatMessage({
   const res = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: await apiHeaders(),
-    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, language }),
+    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), language }),
   });
 
   const data = await res.json();
@@ -380,7 +381,7 @@ export async function submitAltarOfferingApi({
     const res = await fetch(`${API_BASE_URL}/api/offering`, {
       method: 'POST',
       headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, txSignature, amountSkr, message }),
+      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), amountSkr, message }),
     });
     return await res.json();
   } catch (e: any) {
@@ -401,7 +402,7 @@ export async function activateSubscriptionApi({
     const res = await fetch(`${API_BASE_URL}/api/subscription/activate`, {
       method: 'POST',
       headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, txSignature, durationDays }),
+      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), durationDays }),
     });
     return await res.json();
   } catch (e: any) {
