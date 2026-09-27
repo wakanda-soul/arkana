@@ -800,7 +800,7 @@ app.post("/api/streak/repair", async (req, res) => {
     const { wallet, txSignature } = req.body;
     if (!wallet) return res.status(400).json({ success: false, error: "Wallet address is required." });
     // Check before charging, so nobody pays for a streak that cannot be repaired
-    if (!getClockInStatus(wallet).brokenStreak) {
+    if (!getClockInStatus(wallet).canRepairStreak) {
       return res.status(400).json({ success: false, error: "There is no broken streak to repair." });
     }
     const config = loadEconomyConfig();

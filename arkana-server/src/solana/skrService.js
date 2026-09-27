@@ -164,6 +164,12 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     // Days follow the UTC calendar: a new Daily Consensus opens at 00:00 UTC
     const daysSince = utcDaysBetween(lastDate, now);
     canClockIn = daysSince >= 1;
+    if (daysSince < 2 && user.brokenStreak) {
+      // The streak is alive: a leftover broken value must not offer a paid repair
+      user.brokenStreak = null;
+      users[walletAddress] = user;
+      saveUsers(users);
+    }
     if (daysSince >= 2) {
       if (user.streak > 0) {
         user.brokenStreak = user.streak;
@@ -193,8 +199,8 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   return {
     canClockIn,
     streak: currentStreak,
-    brokenStreak: user.brokenStreak || null,
-    canRepairStreak: canRepairStreak || (user.brokenStreak > 0),
+    brokenStreak: canRepairStreak ? user.brokenStreak || null : null,
+    canRepairStreak: canRepairStreak && user.brokenStreak > 0,
     repairStreakTarget,
     streakRepairCostSkr: repairCost,
     lastClockIn: user.lastClockIn,
@@ -466,7 +472,9 @@ function repairStreak(walletAddress, txSignature) {
 
   user.streak = user.brokenStreak;
   user.brokenStreak = null;
-  user.lastClockIn = new Date().toISOString();
+  // Count the repair as yesterday's Clock-In, so today's Clock-In continues the restored streak
+  const now = new Date();
+  user.lastClockIn = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - 1000).toISOString();
   user.repairTx = txSignature;
 
   users[walletAddress] = user;
