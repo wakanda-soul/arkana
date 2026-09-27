@@ -61,6 +61,12 @@ function saveUsers(users) {
 }
 
 /** Seeker Genesis holders get 3 free spreads per day. Streaks give banked bonus spreads instead (see getStreakMilestoneReward). */
+/** Whole UTC calendar days between two moments (same UTC date = 0, yesterday = 1). */
+function utcDaysBetween(earlier, later) {
+  const day = (d) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return Math.round((day(later) - day(earlier)) / 86400000);
+}
+
 function getDailyFreeAllowance() {
   return 3;
 }
@@ -155,9 +161,10 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   let currentStreak = user.streak || 0;
 
   if (lastDate) {
-    const diffHours = (now - lastDate) / (1000 * 60 * 60);
-    canClockIn = diffHours >= 20;
-    if (diffHours >= 48) {
+    // Days follow the UTC calendar: a new Daily Consensus opens at 00:00 UTC
+    const daysSince = utcDaysBetween(lastDate, now);
+    canClockIn = daysSince >= 1;
+    if (daysSince >= 2) {
       if (user.streak > 0) {
         user.brokenStreak = user.streak;
         user.previousStreak = user.streak;
@@ -223,12 +230,13 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
 
   const lastDate = user.lastClockIn ? new Date(user.lastClockIn) : null;
   if (lastDate) {
-    const diffHours = (now - lastDate) / (1000 * 60 * 60);
-    // One Clock-In per day: otherwise the streak (and its bonus spreads) could be farmed
-    if (diffHours < 20) {
+    const daysSince = utcDaysBetween(lastDate, now);
+    // One Clock-In per UTC day: otherwise the streak (and its bonus spreads) could be farmed
+    if (daysSince < 1) {
       return { success: false, alreadyClockedIn: true, streak: user.streak || 0, error: "Already clocked in today." };
     }
-    if (diffHours < 48) {
+    // Yesterday (UTC) continues the streak; a missed UTC day breaks it
+    if (daysSince === 1) {
       user.streak = (user.streak || 0) + 1;
     } else {
       user.streak = 1;
