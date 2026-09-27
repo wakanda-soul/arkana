@@ -132,8 +132,10 @@ export default function OreVaultScreen() {
                   claimableRewards = Number(claimableUnits);
                 }
 
-                const secondsLeft = Math.max(0, expiresAt - now);
-                const daysRemaining = Math.ceil(secondsLeft / 86400);
+                // Days follow the UTC calendar, like the Daily Consensus: the deposit day is day 1,
+                // each 00:00 UTC takes one day off the 365-day lock
+                const utcDay = (sec: number) => Math.floor(sec / 86400);
+                const daysRemaining = now >= expiresAt ? 0 : Math.max(1, 365 - (utcDay(now) - utcDay(depositedAt)));
 
                 return {
                   owner: walletAddress,
@@ -156,7 +158,10 @@ export default function OreVaultScreen() {
             return null;
           })
         )
-      ).filter((t): t is TrancheData => t !== null);
+      )
+        .filter((t): t is TrancheData => t !== null)
+        // Newest day first
+        .sort((a, b) => b.depositedAt - a.depositedAt);
 
       const totalClaimableOre = loadedTranches.reduce(
         (sum, t) => sum + (t.claimableRewards || 0),
@@ -209,8 +214,8 @@ export default function OreVaultScreen() {
       const msg = e?.message || String(e);
       if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
         Alert.alert(
-          t('ore_no_yield_title', 'Доходность накапливается'),
-          t('ore_no_yield_msg', 'На данный момент нет невостребованной доходности. Награды начисляются по мере распределений протокола ORE.')
+          t('ore_no_yield_title', 'Yield is accruing'),
+          t('ore_no_yield_msg', 'There is no unclaimed yield yet. Rewards arrive as the ORE protocol distributes them.')
         );
       }
     } finally {
@@ -253,8 +258,8 @@ export default function OreVaultScreen() {
       const msg = e?.message || String(e);
       if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
         Alert.alert(
-          t('ore_no_yield_title', 'Доходность накапливается'),
-          t('ore_no_yield_msg', 'На данный момент нет невостребованной доходности. Награды начисляются по мере распределений протокола ORE.')
+          t('ore_no_yield_title', 'Yield is accruing'),
+          t('ore_no_yield_msg', 'There is no unclaimed yield yet. Rewards arrive as the ORE protocol distributes them.')
         );
       }
     } finally {
@@ -447,13 +452,15 @@ export default function OreVaultScreen() {
               Math.max(0, ((365 - tranche.daysRemaining) / 365) * 100)
             );
 
-            const isToday =
-              Math.floor(tranche.depositedAt / 86400) ===
-              Math.floor(Date.now() / 1000 / 86400);
+            const depositDay = Math.floor(tranche.depositedAt / 86400);
+            const todayDay = Math.floor(Date.now() / 1000 / 86400);
+            const isToday = depositDay === todayDay;
+            const lockDay = Math.min(365, todayDay - depositDay + 1);
 
+            // UTC date, so the card date matches the UTC day the tranche belongs to
             const formattedDate = new Date(tranche.depositedAt * 1000).toLocaleDateString(
               undefined,
-              { month: 'short', day: 'numeric', year: 'numeric' }
+              { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }
             );
 
             return (
@@ -466,7 +473,7 @@ export default function OreVaultScreen() {
                         : formattedDate}
                     </Text>
                     <Text style={styles.trancheDaySub}>
-                      ({t('ore_day_label', 'Day')} #{tranche.trancheId})
+                      {t('ore_day_label', 'Day')} {lockDay} / 365
                     </Text>
                   </View>
                   <View
