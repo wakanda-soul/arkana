@@ -107,9 +107,9 @@ export async function getLiveSolQuoteForSkr(
 ): Promise<{ solAmount: number; lamports: number; quoteResponse?: any }> {
   const rawSkrNeeded = Math.round(amountSkr * 1_000_000);
   try {
-    const res = await fetch(
-      `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${rawSkrNeeded}&swapMode=ExactOut&slippageBps=100`
-    );
+    const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${SKR_MINT.toBase58()}&amount=${rawSkrNeeded}&swapMode=ExactOut&slippageBps=100`;
+    let res = await jupiterFetch(quoteUrl);
+    if (!res.ok) res = await jupiterFetch(quoteUrl + '&maxAccounts=24');
     if (res.ok) {
       const quote = await res.json();
       if (quote && quote.inAmount) {
@@ -129,6 +129,19 @@ export async function getLiveSolQuoteForSkr(
     solAmount: fallbackSol,
     lamports: Math.round(fallbackSol * 1e9),
   };
+}
+
+/**
+ * fetch() for the Jupiter API. The free API rate-limits bursts (HTTP 429), and one payment makes several
+ * calls in a row, so retry a few times with a growing pause.
+ */
+async function jupiterFetch(url: string, init?: RequestInit): Promise<Response> {
+  let res = await fetch(url, init);
+  for (let attempt = 1; res.status === 429 && attempt <= 4; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 600 * 2 ** attempt));
+    res = await fetch(url, init);
+  }
+  return res;
 }
 
 const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
@@ -176,8 +189,12 @@ export async function fetchJupiterSwapInstructions({
   // SOL legs use direct pools and other legs cap accounts, to keep the whole payment in one transaction
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
   const extraParams = isSolLeg ? '&onlyDirectRoutes=true' : '&maxAccounts=24';
-  const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}${extraParams}`;
-  const quoteRes = await fetch(quoteUrl);
+  const baseQuoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}`;
+  let quoteRes = await jupiterFetch(baseQuoteUrl + extraParams);
+  // Liquidity moves between pools: when no direct pool can fill the swap, allow a short multi-hop route
+  if (!quoteRes.ok && isSolLeg) {
+    quoteRes = await jupiterFetch(baseQuoteUrl + '&maxAccounts=24');
+  }
   if (!quoteRes.ok) {
     throw new Error(`DEX swap quote unavailable for ${inputMint.toBase58()} -> ${outputMint.toBase58()} (${quoteRes.status})`);
   }
@@ -186,7 +203,7 @@ export async function fetchJupiterSwapInstructions({
     throw new Error('DEX returned no route for swap.');
   }
 
-  const swapRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+  const swapRes = await jupiterFetch('https://api.jup.ag/swap/v1/swap-instructions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -526,7 +543,11 @@ export async function buildSolPaymentPlan({
   const { burnRaw, treasuryRaw, oreShareRaw } = splitPrice(totalRaw);
 
   // SOL value of the 34% share at the live SOL/SKR market rate
-  const { lamports: priceLamports } = await getLiveSolQuoteForSkr(amountSkr);
+  const { lamports: priceLamports, quoteResponse } = await getLiveSolQuoteForSkr(amountSkr);
+  // Never pay at the display fallback rate: without a live quote the SOL payment is not built
+  if (!quoteResponse) {
+    throw new Error('DEX swap quote unavailable for SOL -> SKR. Please try again in a moment.');
+  }
   const oreShareLamports = (BigInt(priceLamports) * oreShareRaw) / totalRaw;
 
   // 1. SOL -> exactly burnRaw + treasuryRaw SKR (Jupiter setup creates the user's SKR ATA if needed)

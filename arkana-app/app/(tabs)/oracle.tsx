@@ -92,6 +92,11 @@ export default function OracleScreen() {
   const { account } = useAuth();
   const { connection, signAndSendTransactions } = useMobileWallet();
   const { t, language } = useLanguage();
+  // Prompt cards show their category by its translated name, never the internal key (LIFE, CRAFT...)
+  const categoryLabel = (key: string) => {
+    const cat = RITUAL_CATEGORIES.find((c) => c.key === key);
+    return cat ? t(cat.labelKey, cat.defaultLabel) : key;
+  };
   const walletAddress = account?.publicKey?.toString() || "";
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
@@ -562,6 +567,7 @@ export default function OracleScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                style={styles.categoryScrollView}
                 contentContainerStyle={styles.categoryScroll}
               >
                 {RITUAL_CATEGORIES.map((cat) => {
@@ -602,7 +608,7 @@ export default function OracleScreen() {
                     style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
                     onPress={() => handleInitiateSend(t(`prompt_${p.id}`, p.text))}
                   >
-                    <Text style={styles.presetCategoryTag}>{p.category}</Text>
+                    <Text style={styles.presetCategoryTag}>{categoryLabel(p.category)}</Text>
                     <Text style={styles.presetText}>{t(`prompt_${p.id}`, p.text)}</Text>
                   </Pressable>
                 ))}
@@ -702,8 +708,8 @@ export default function OracleScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={[styles.categoryScrollView, { marginBottom: 8 }]}
               contentContainerStyle={styles.categoryScroll}
-              style={{ maxHeight: 50, marginBottom: 8 }}
             >
               {RITUAL_CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat.key;
@@ -754,7 +760,7 @@ export default function OracleScreen() {
                   }}
                 >
                   <View style={styles.promptsModalItemTop}>
-                    <Text style={styles.presetCategoryTag}>{p.category}</Text>
+                    <Text style={styles.presetCategoryTag}>{categoryLabel(p.category)}</Text>
                     <Text style={styles.promptsModalItemArrow}>{'\u2192'}</Text>
                   </View>
                   <Text style={styles.presetText}>{t(`prompt_${p.id}`, p.text)}</Text>
@@ -1121,9 +1127,16 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     letterSpacing: 1,
   },
+  // Keep the chip row at its natural height: inside the flex column Android otherwise squeezes it and clips the labels
+  categoryScrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   categoryScroll: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 6,
+    paddingVertical: 2,
     paddingBottom: 8,
   },
   categoryTab: {
@@ -1133,6 +1146,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 13,
     paddingVertical: 7,
+    minHeight: 36,
+    justifyContent: "center",
   },
   categoryTabActive: {
     backgroundColor: ObsidianTokens.colors.gold.surface,

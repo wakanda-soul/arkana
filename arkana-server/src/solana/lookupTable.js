@@ -93,9 +93,15 @@ async function jupiterGet(url) {
 async function swapAccounts({ inputMint, outputMint, amount, swapMode, user }) {
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
   const extra = isSolLeg ? "&onlyDirectRoutes=true" : "&maxAccounts=24";
-  const quote = await jupiterGet(
-    `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amount}&swapMode=${swapMode}&slippageBps=300${extra}`
-  );
+  const base = `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amount}&swapMode=${swapMode}&slippageBps=300`;
+  // Same fallback as the app: direct pool first, then a short multi-hop route
+  let quote;
+  try {
+    quote = await jupiterGet(base + extra);
+  } catch (err) {
+    if (!isSolLeg) throw err;
+    quote = await jupiterGet(base + "&maxAccounts=24");
+  }
   let res;
   for (let attempt = 0; attempt < 4; attempt++) {
     await sleep(1500);
