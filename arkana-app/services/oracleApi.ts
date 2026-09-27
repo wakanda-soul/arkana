@@ -5,7 +5,7 @@ import { translateFor, LanguageCode } from './i18n';
 import { localizeCard } from './cardLocalization';
 
 // Public VPS IP for testing, or localhost for local dev
-export const API_BASE_URL = 'http://184.174.39.62';
+export const API_BASE_URL = 'https://arkana.icu';
 
 export interface ClockInResult {
   canClockIn: boolean;

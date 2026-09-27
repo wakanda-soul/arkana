@@ -18,7 +18,7 @@
       "package": "com.anonymous.arkana_app",
       "versionCode": 123,
       "softwareKeyboardLayoutMode": "resize",
-      "usesCleartextTraffic": true,
+      "usesCleartextTraffic": false,
       "launchMode": "singleTask",
       "permissions": [
         "android.permission.INTERNET",

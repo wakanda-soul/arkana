@@ -81,11 +81,21 @@ app.use("/api", (req, res, next) => {
   next();
 });
 
+/**
+ * Real client IP. Caddy sets X-Real-IP (Cloudflare's CF-Connecting-IP for the domain, the TCP peer
+ * for direct IP access); only trusted when the request comes from the local proxy.
+ */
+function clientIp(req) {
+  const peer = req.socket.remoteAddress || "";
+  const fromProxy = peer === "127.0.0.1" || peer === "::1" || peer === "::ffff:127.0.0.1";
+  return (fromProxy && req.get("x-real-ip")) || req.ip || peer || "unknown";
+}
+
 // Simple per-IP rate limit for endpoints that call the AI model or hit the chain
 const rateBuckets = new Map();
 function rateLimit(max, windowMs) {
   return (req, res, next) => {
-    const key = `${req.path}|${req.ip || req.socket.remoteAddress}`;
+    const key = `${req.path}|${clientIp(req)}`;
     const now = Date.now();
     const bucket = rateBuckets.get(key);
     if (!bucket || now - bucket.start > windowMs) {
@@ -103,9 +113,19 @@ app.use(["/api/chat", "/api/reading", "/api/clock-in"], rateLimit(20, 60 * 1000)
 app.use(["/api/auth", "/api/seeker/status", "/api/solana-rpc"], rateLimit(30, 60 * 1000));
 
 // Serve static files (card images, logos, APKs)
-app.use(express.static(path.join(__dirname, "..", "public")));
-app.use("/cards", express.static(path.join(__dirname, "..", "public", "cards")));
-app.use("/images", express.static(path.join(__dirname, "..", "public", "images")));
+// Only public assets are served. Card art, design files, admin pages and program binaries stay
+// on the server (the app ships its own card images).
+const PUBLIC_DIR = path.join(__dirname, "..", "public");
+app.use("/landing", express.static(path.join(PUBLIC_DIR, "landing")));
+app.use("/images", express.static(path.join(PUBLIC_DIR, "images")));
+app.get(/^\/(arkana(-v\d+\.\d+\.\d+)?\.apk|version\.json)$/, (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, req.path.slice(1)), (err) => err && res.status(404).end());
+});
+
+// Private files for the team (demo script, captions) behind an unguessable link
+if (process.env.ARKANA_SHARE_TOKEN) {
+  app.use(`/share/${process.env.ARKANA_SHARE_TOKEN}`, express.static(path.join(__dirname, "..", "private", "share")));
+}
 
 // Dynamic Build Metadata Reader
 function getBuildInfo() {
@@ -124,182 +144,60 @@ function getBuildInfo() {
 }
 
 // Mobile APK Download Landing Page
-app.get(["/", "/download"], (req, res) => {
-  const apkPath = path.join(__dirname, "..", "public", "arkana.apk");
-  const isReady = fs.existsSync(apkPath);
-  const apkSize = isReady ? (fs.statSync(apkPath).size / (1024 * 1024)).toFixed(1) + " MB" : null;
-  const build = getBuildInfo();
-
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      ${(!isReady || build.pendingBuild) ? '<meta http-equiv="refresh" content="15">' : ''}
-      <title>Arkana: Solana Mobile APK</title>
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-          background: #080711;
-          color: #f0f0f8;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          padding: 24px;
-        }
-        .card {
-          background: #121024;
-          border: 1px solid #2a2254;
-          border-radius: 20px;
-          max-width: 480px;
-          width: 100%;
-          padding: 32px 24px;
-          text-align: center;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 80px rgba(153,69,255,0.15);
-        }
-        .badge {
-          display: inline-block;
-          background: rgba(20, 241, 149, 0.15);
-          color: #14F195;
-          border: 1px solid rgba(20, 241, 149, 0.3);
-          padding: 6px 14px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 1px;
-          margin-bottom: 16px;
-        }
-        h1 {
-          font-size: 28px;
-          font-weight: 800;
-          margin-bottom: 8px;
-          background: linear-gradient(135deg, #fff, #b8a6ff);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        p.sub {
-          color: #8f8ba8;
-          font-size: 14px;
-          line-height: 1.5;
-          margin-bottom: 24px;
-        }
-        .btn {
-          display: block;
-          width: 100%;
-          background: linear-gradient(135deg, #9945FF, #14F195);
-          color: #000;
-          font-weight: 700;
-          font-size: 16px;
-          padding: 16px;
-          border-radius: 12px;
-          text-decoration: none;
-          margin-bottom: 12px;
-          transition: transform 0.1s ease;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn-sec {
-          background: #1c1836;
-          color: #b8a6ff;
-          border: 1px solid #362e66;
-        }
-        .building-box {
-          background: rgba(153,69,255,0.12);
-          border: 1px solid rgba(153,69,255,0.3);
-          border-radius: 12px;
-          padding: 20px 16px;
-          margin: 20px 0;
-          text-align: center;
-        }
-        .features {
-          text-align: left;
-          background: #0b0918;
-          border-radius: 12px;
-          padding: 16px;
-          margin: 20px 0;
-          font-size: 13px;
-          color: #a5a0c2;
-        }
-        .features li { margin-left: 20px; margin-bottom: 6px; }
-        .note {
-          font-size: 11px;
-          color: #6d688a;
-          line-height: 1.4;
-          margin-top: 16px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="card">
-        <div class="badge">SOLANA MOBILE HACKATHON 2026</div>
-        <h1>🔮 Arkana v${build.version}</h1>
-        <div style="margin: 8px 0 14px 0;">
-          <span style="display: inline-block; background: rgba(20, 241, 149, 0.12); border: 1px solid #14F195; border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #14F195; font-family: monospace; letter-spacing: 0.5px;">
-            BUILD #${build.buildNumber} · ${build.commitSha}
-          </span>
-        </div>
-        <p class="sub">Decentralized crypto-oracle for Solana Mobile & Seeker with MWA and Seed Vault support.</p>
-        
-        ${build.pendingBuild ? `
-          <div style="margin: 14px 0 18px 0; padding: 12px 16px; background: rgba(153, 69, 255, 0.12); border: 1px solid rgba(153, 69, 255, 0.4); border-radius: 12px; font-size: 12px; line-height: 1.5; color: #dcd7fe; text-align: left;">
-            <div style="font-weight: 700; color: #14F195; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              <span>⏳</span> <span>Build #${build.pendingBuild.buildNumber} (v${build.pendingBuild.version}) is compiling in GitHub Actions...</span>
-            </div>
-            <div style="color: #a5a0c2; font-size: 11px;">
-              Current file on mirror: Build #${build.buildNumber} (v${build.version}). As soon as Build #${build.pendingBuild.buildNumber} finishes, it will be automatically mirrored here (page auto-refreshes every 15s).
-            </div>
-          </div>
-        ` : ''}
-
-        ${isReady ? `
-          <a class="btn" style="background: linear-gradient(135deg, #14F195 0%, #00C853 100%); color: #000; font-weight: 700;" href="https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk">⚡ High-Speed CDN Download (${apkSize})</a>
-          <a class="btn btn-sec" href="/arkana.apk" download>🖥️ VPS Server Mirror (${apkSize})</a>
-          <a class="btn btn-sec" href="/pitch_deck.html" target="_blank">📊 Pitch Deck Presentation (Web)</a>
-          <a class="btn btn-sec" href="/pitch_deck.pptx" download>📥 Download Pitch Deck (.pptx)</a>
-          <a class="btn btn-sec" href="/video_script.html" target="_blank">🎬 Video Demo Script (Scenario)</a>
-          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/releases/tag/v1.0.0-beta" target="_blank">🌐 GitHub Release</a>
-
-          <div style="margin: 20px 0; padding: 16px; background: #fff; border-radius: 12px; display: inline-block;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://github.com/wakanda-soul/arkana/releases/download/v1.0.0-beta/arkana-latest.apk" alt="QR Code" width="180" height="180" style="display:block;" />
-            <p style="color: #333; font-size: 11px; margin-top: 8px; font-weight: 600;">Scan with phone camera (High Speed)</p>
-          </div>
-        ` : `
-          <div class="building-box">
-            <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
-            <p style="font-weight: 700; color: #fff; margin-bottom: 6px;">Compiling Standalone Release APK</p>
-            <p style="font-size: 12px; color: #a5a0c2; line-height: 1.5; margin-bottom: 12px;">
-              GitHub Actions is building the release APK (bundled offline Hermes bytecode, no dev-client).
-            </p>
-            <p style="font-size: 11px; color: #14F195;">🔄 Page refreshes automatically every 10 seconds...</p>
-          </div>
-          <a class="btn btn-sec" href="https://github.com/wakanda-soul/arkana/actions" target="_blank">🔍 View Status in GitHub Actions</a>
-        `}
-
-        <div class="features">
-          <p style="font-weight:600; color:#fff; margin-bottom:8px;">What's inside this build:</p>
-          <ul>
-            <li>💎 Solana Mobile Wallet Adapter (Phantom, Solflare) & Seed Vault</li>
-            <li>⌨️ Native Soft-Keyboard Avoidance for Android and Ask input field</li>
-            <li>✨ Obsidian Ritual Design & Interactive Core Loop (Tap &rarr; Shuffle &rarr; Pick &rarr; Reveal &rarr; Sign)</li>
-            <li>🛡️ Full System Edge States (AI Generating, Tx Failed, Wallet Declined, Limit Reached, Offline)</li>
-            <li>⏰ Daily Clock-In (daily free spread refill & streak tier multiplier)</li>
-            <li>🃏 78 Tarot Arcana cards with 3D flip animations</li>
-            <li>📖 Codex Archetype Collection & Card Zoom Inspection</li>
-            <li>📢 Transmit / Share to X with dynamic anti-bot templates & card art</li>
-            <li>⚡ Streak Repair Mechanism with dynamic SKR recovery</li>
-            <li>🧠 7-Beat Oracle Synthesis (AI Engine)</li>
-            <li>💬 Interactive Oracle Chat</li>
-          </ul>
-        </div>
-
-        <p class="note">⚠️ To install on Android: open downloaded .apk file and allow installation from this source (Settings &rarr; Install unknown apps).</p>
-      </div>
-    </body>
-    </html>
-  `);
+// Landing page (Obsidian Ritual design); the install page lives at /download
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "landing.html"));
 });
+
+app.get("/download", (req, res) => {
+  const apkPath = path.join(__dirname, "..", "public", "arkana.apk");
+  const apkSize = fs.existsSync(apkPath) ? (fs.statSync(apkPath).size / (1024 * 1024)).toFixed(0) + " MB" : "";
+  const build = getBuildInfo();
+  res.send(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Download Arkana</title>
+<meta name="theme-color" content="#08070B">
+<link rel="icon" href="/images/logo-512.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --void:#08070B; --surface:#120E1A; --gold:#C8A24A; --violet:#7C4DFF; --text:#EDE7DC; --body:rgba(237,231,220,.82); --secondary:rgba(237,231,220,.55); --label:rgba(237,231,220,.42); --hairline:rgba(237,231,220,.12); }
+  * { box-sizing: border-box; }
+  html { background:#08070B; }
+  body { margin:0; min-height:100vh; background:radial-gradient(circle at 50% 18%, rgba(124,77,255,.22), transparent 55%), var(--void); color:var(--text); font-family:"Cormorant Garamond", Georgia, serif; font-weight:300; font-size:19px; line-height:1.55; display:flex; align-items:center; justify-content:center; padding:32px 24px calc(32px + env(safe-area-inset-bottom, 0px)); }
+  main { width:100%; max-width:520px; text-align:center; }
+  img { width:112px; height:112px; border-radius:50%; border:1px solid rgba(200,162,74,.4); box-shadow:0 0 30px rgba(124,77,255,.45); }
+  .label { font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--label); }
+  h1 { font-weight:300; font-size:48px; line-height:1.1; margin:20px 0 8px; }
+  h1 i { color:var(--gold); }
+  p { color:var(--body); margin:0 0 28px; }
+  .btn { display:flex; align-items:center; justify-content:center; min-height:52px; border-radius:12px; font-family:"IBM Plex Mono", monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; text-decoration:none; background:var(--gold); color:var(--void); font-weight:500; }
+  .meta { font-family:"IBM Plex Mono", monospace; font-size:13px; color:var(--secondary); margin:14px 0 36px; }
+  ol { text-align:left; margin:0 0 32px; padding:24px 24px 24px 44px; border:1px solid rgba(237,231,220,.10); border-radius:14px; background:rgba(237,231,220,.04); color:var(--body); font-size:18px; }
+  li + li { margin-top:8px; }
+  a.link { color:var(--secondary); font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; text-decoration:none; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/images/logo-512.png" alt="Arkana">
+  <h1>Arkana <i>for Android</i></h1>
+  <p>The crypto tarot for Seeker. Best on Seeker, works on Android 10 and newer.</p>
+  <a class="btn" href="/arkana.apk">Download APK</a>
+  <div class="meta">v${build.version}${apkSize ? " · " + apkSize : ""}</div>
+  <ol>
+    <li>Open the downloaded file.</li>
+    <li>If Android asks, allow installs from this source.</li>
+    <li>Open Arkana, pick your language and connect your wallet.</li>
+  </ol>
+  <a class="link" href="/">Back to arkana.icu</a>
+</main>
+</body>
+</html>`);
+});
+
 
 // Health check
 // Wallet sign-in: the wallet signs a one-time message, the server issues a session token
@@ -829,8 +727,9 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   startLookupTableKeeper();
 });
 
-// Also bind standard HTTP port 80 for frictionless mobile downloads
-try {
+// Port 80 directly (for setups without a reverse proxy). In production Caddy owns 80/443
+// and proxies to PORT; set ARKANA_BIND_80=off there.
+if (process.env.ARKANA_BIND_80 !== "off") try {
   const http = require("http");
   http
     .createServer(app)

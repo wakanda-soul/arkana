@@ -2,7 +2,7 @@
 
 A crypto tarot app for Solana Mobile and the Seeker phone. Arkana is the reader: she draws from a 78-card deck built around blockchain archetypes, answers questions about the cards, and keeps a daily ritual with streaks. Payments in SKR burn part of the supply and lock part of the value as staked ORE for the user.
 
-[Download the Android APK](http://184.174.39.62/arkana.apk) · [Download page](http://184.174.39.62/download) · [Releases](https://github.com/wakanda-soul/arkana/releases)
+[arkana.icu](https://arkana.icu) · [Download the Android APK](https://arkana.icu/arkana.apk) · [Download page](https://arkana.icu/download) · [Releases](https://github.com/wakanda-soul/arkana/releases)
 
 ## What is in the app
 
@@ -90,7 +90,7 @@ npm install
 npm start
 ```
 
-The API listens on port 3001, and on port 80 for APK downloads. Without an AI model binary configured the server still works: readings and chat fall back to the built-in engine.
+The API listens on port 3001. In production Caddy serves https://arkana.icu in front of it (see `arkana-server/deploy/Caddyfile`). Without an AI model binary configured the server still works: readings and chat fall back to the built-in engine.
 
 The lookup table keeper starts with the server when a Solana keypair is present at `~/.config/solana/id.json` (or `ARKANA_ALT_KEYPAIR`). That key only pays rent for the table. Set `ARKANA_ALT_KEEPER=off` to disable it.
 

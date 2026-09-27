@@ -121,8 +121,8 @@ jobs:
           # Eliminating unused x86 and x86_64 cuts build time in half and keeps APK size sleek for fast downloads
           sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a,armeabi-v7a/' android/gradle.properties
           
-          # Cleartext traffic for local/dev RPC fallback if needed
-          grep -q 'android:usesCleartextTraffic' android/app/src/main/AndroidManifest.xml || sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml || true
+          # All traffic is HTTPS (arkana.icu); make sure cleartext stays off
+          sed -i 's/ android:usesCleartextTraffic="true"//' android/app/src/main/AndroidManifest.xml || true
           
           # MWA queries for Solana Wallets (Phantom, Solflare, Backpack)
           # Ensure launchMode is singleTask for reliable MWA deep-link intents on Xiaomi/Poco/MIUI
