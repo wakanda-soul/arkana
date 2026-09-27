@@ -9,7 +9,7 @@
       "Petualangan"
     ],
     "symbolism": "Seorang penjelajah muda melangkah ke jembatan dari blok-blok bercahaya, hardware wallet di satu tangan dan gulungan seed phrase di punggungnya. Di bawahnya menganga jurang rug pull, di depannya Bitcoin emas terbit. Dialah titik nol: potensi murni sebelum transaksi pertama ditandatangani. Segalanya masih mungkin justru karena belum ada yang dipertaruhkan.",
-    "advice": "Mulailah perjalanan Anda, tapi jaga seed phrase baik-baik dan lakukan riset sendiri sebelum melompat.",
+    "advice": "Mulailah perjalananmu, tapi jaga seed phrase baik-baik dan lakukan riset sendiri sebelum melompat.",
     "shadow": "Satu langkah ceroboh, entah kunci yang hilang atau aksi FOMO asal serbu, bisa mengubah petualangan jadi jurang.",
     "upright_full": "Inilah awal sebuah perjalanan: langkah pertama ke dunia baru, diambil karena keyakinan dan rasa penasaran, bukan karena bukti. Kartu ini membawa energi bersih dompet baru tanpa riwayat: terbuka, penuh harapan, dan berani menghadapi yang belum diketahui karena peluangnya terasa tak terbatas. Lompatan ini direstui, asalkan sang pengelana tetap memperhatikan jalannya.",
     "reversed_full": "Saat terbalik, kepolosan berubah jadi kecerobohan: seed phrase hilang, tanda tangan diberikan ke penipu, lompatan FOMO dari jembatan tanpa rencana. Keterbukaan yang sama yang memulai perjalanan kini mengundang pemangsa yang mengincar orang naif. Pelajarannya bukan berhenti melangkah, melainkan berhenti melangkah secara membabi buta."
@@ -23,7 +23,7 @@
       "Penciptaan"
     ],
     "symbolism": "Seorang developer legendaris berdiri di depan altar, dikelilingi kontrak Solidity, kristal Ethereum, bola oracle, dan hardware wallet yang melayang mengitarinya. Di atas kepalanya bersinar simbol tak hingga yang ditempa dari mata rantai blockchain. Dialah kehendak yang bisa dieksekusi: orang yang mengubah niat langsung menjadi kode yang ter-deploy. Semua alat yang ia butuhkan sudah dalam jangkauan.",
-    "advice": "Semua alat sudah ada di tangan Anda. Tulis kode yang bersih lalu rilis, jangan terus-terusan merencanakan.",
+    "advice": "Semua alat sudah ada di tanganmu. Tulis kode yang bersih lalu rilis, jangan terus-terusan merencanakan.",
     "shadow": "Keahlian yang sama, kalau dipakai untuk menipu, hanyalah kontrak scam dengan branding yang rapi.",
     "upright_full": "Inilah kekuatan untuk membangun: keterampilan mentah yang difokuskan jadi sesuatu yang nyata, proyek yang dirilis, tool yang ter-deploy, visi yang dikompilasi menjadi kode yang berjalan. The Smart Contract Architect punya keempat elemen di tangannya dan tinggal bertindak. Saat kartu ini muncul, sumber dayanya sudah tersedia; yang kurang hanyalah keputusan untuk mulai.",
     "reversed_full": "Saat terbalik, keahlian itu berbelok ke penipuan atau pembusukan: kode yang bisa dieksploitasi, vaporware, pitch yang mengilap tapi kosong isinya, kontrak scam yang didandani sebagai inovasi. Bakatnya ada, tapi salah arah, atau rasa percaya diri melampaui kemampuan. Anugerah itu berubah jadi senjata atau fatamorgana."
@@ -37,9 +37,9 @@
       "Validasi"
     ],
     "symbolism": "Seorang pendeta wanita bercadar duduk di antara dua pilar validator, jaringan blockchain tanpa ujung berpendar di bawah bulan Ethereum, dan naskah Konsensus terbuka di pangkuannya. Ia oracle dalam dua arti: penjaga pengetahuan tersembunyi sekaligus feed data yang melaporkan kebenaran on-chain. Apa yang ia ketahui itu nyata, hanya belum diucapkan.",
-    "advice": "Baca sinyal on-chain di balik keriuhan, dan percayai intuisi Anda sebelum bertanya ke orang banyak.",
+    "advice": "Baca sinyal on-chain di balik keriuhan, dan percayai intuisimu sebelum bertanya ke orang banyak.",
     "shadow": "Tidak semua sinyal itu benar; sebagian hanyalah manipulasi yang menyamar sebagai data.",
-    "upright_full": "Kartu ini mengajak Anda melihat ke bawah permukaan: sinyal on-chain di balik keriuhan, intuisi yang datang lebih dulu daripada bukti, data yang diam-diam menceritakan kisah sebenarnya. The Oracle menyarankan untuk mendengarkan dulu, bukan langsung bertindak. Jawabannya sudah ada dan tinggal dibaca. Percayai pola yang Anda rasakan, meski orang banyak belum menyadarinya.",
+    "upright_full": "Kartu ini mengajak kamu melihat ke bawah permukaan: sinyal on-chain di balik keriuhan, intuisi yang datang lebih dulu daripada bukti, data yang diam-diam menceritakan kisah sebenarnya. The Oracle menyarankan untuk mendengarkan dulu, bukan langsung bertindak. Jawabannya sudah ada dan tinggal dibaca. Percayai pola yang kamu rasakan, meski orang banyak belum menyadarinya.",
     "reversed_full": "Saat terbalik, feed-nya tercemar: sinyal palsu, data yang dimanipulasi, berita bohong, dan kebisingan yang menenggelamkan bacaan yang benar. Intuisi diabaikan, atau lebih buruk lagi, ditiru oleh manipulasi yang berpura-pura jadi wawasan. Bahayanya adalah mengira informasi yang paling nyaring pasti yang paling akurat."
   },
   "03": {
@@ -53,7 +53,7 @@
     "symbolism": "Seorang ratu bertakhta di atas singgasana token, sungai-sungai likuiditas mengalir di sekelilingnya, dan pohon-pohon Merkle sarat buah digital yang berpendar. Ia adalah kesuburan dalam wujud modal: kekuatan yang membuat nilai berlipat, berbunga majemuk, dan mekar. Kelimpahannya murah hati, tapi perlu dirawat, bukan cuma dipanen.",
     "advice": "Biarkan modal tumbuh di lahan yang subur; rawat yield-nya, jangan dikuras habis.",
     "shadow": "Yield tanpa likuiditas nyata di baliknya akan layu dan mandek.",
-    "upright_full": "Inilah musim pertumbuhan: modal yang berbunga majemuk, yield yang terus mengalir, proyek atau portofolio yang mekar di lahan subur. The Liquidity Queen menghargai yang merawat, bukan yang merampas. Tanam dengan baik, rawat dengan sabar, dan kebun akan membalas jauh lebih banyak dari yang Anda tabur. Kelimpahan itu ada, dan memang untuk dinikmati.",
+    "upright_full": "Inilah musim pertumbuhan: modal yang berbunga majemuk, yield yang terus mengalir, proyek atau portofolio yang mekar di lahan subur. The Liquidity Queen menghargai yang merawat, bukan yang merampas. Tanam dengan baik, rawat dengan sabar, dan kebun akan membalas jauh lebih banyak dari yang kamu tabur. Kelimpahan itu ada, dan memang untuk dinikmati.",
     "reversed_full": "Saat terbalik, sungainya menyusut: TVL terkuras, yield mengering, pertumbuhan mandek. Kadang ini tanda ekspansi berlebihan, kelimpahan yang direntangkan melebihi daya dukung likuiditasnya. Tanahnya sudah letih, atau buahnya memang tak pernah ditopang sesuatu yang nyata."
   },
   "04": {
@@ -65,9 +65,9 @@
       "Keamanan"
     ],
     "symbolism": "Seorang penguasa duduk di singgasana raksasa yang dipahat dari Bitcoin padat, gunung-gunung blok menjulang di belakangnya, jubahnya bersulam sigil kriptografi. Ia adalah sound money yang menjelma manusia: base layer yang tak tergoyahkan, aturan yang tak bisa ditawar, fondasi keamanan tempat orang lain membangun. Kekuasaannya adalah struktur itu sendiri.",
-    "advice": "Bangunlah di atas fondasi yang kokoh; disiplin dan struktur adalah otoritas Anda yang sesungguhnya.",
+    "advice": "Bangunlah di atas fondasi yang kokoh; disiplin dan struktur adalah otoritasmu yang sesungguhnya.",
     "shadow": "Otoritas yang menolak desentralisasi pada akhirnya berubah jadi sangkar kendali.",
-    "upright_full": "Kartu ini adalah fondasi: keteraturan, disiplin, dan aturan tegas yang melahirkan stabilitas. The Bitcoin King berpihak pada visi jangka panjang, dasar yang kuat, dan kerangka yang bisa dipercaya orang lain. Saat ia muncul, ambil kendali, tetapkan strukturnya, dan jadikan keandalan sebagai wibawa Anda.",
+    "upright_full": "Kartu ini adalah fondasi: keteraturan, disiplin, dan aturan tegas yang melahirkan stabilitas. The Bitcoin King berpihak pada visi jangka panjang, dasar yang kuat, dan kerangka yang bisa dipercaya orang lain. Saat ia muncul, ambil kendali, tetapkan strukturnya, dan jadikan keandalan sebagai wibawamu.",
     "reversed_full": "Saat terbalik, struktur mengeras jadi sangkar: kaku, dogmatis, tersentralisasi, menolak upgrade atau berbagi kendali. Protokol yang dulu melindungi kini memenjarakan. Otoritas berubah jadi soal menguasai, bukan menata, dan keengganan untuk berevolusi justru menjadi titik lemahnya."
   },
   "05": {
@@ -78,9 +78,9 @@
       "Tata Kelola"
     ],
     "symbolism": "Seorang validator bijak memberkati para pendatang baru di depan roda Proof-of-Stake raksasa yang memancarkan cahaya suci, di dalam sebuah katedral kriptografi. Ia penjaga konsensus: aturan yang sudah mapan, protokol yang teruji, keyakinan bersama yang menyatukan sebuah jaringan. Legitimasi mengalir melalui dirinya.",
-    "advice": "Percayai protokol yang sudah teruji dan aturan bersama, setidaknya sampai Anda paham kenapa aturan itu ada.",
+    "advice": "Percayai protokol yang sudah teruji dan aturan bersama, setidaknya sampai kamu paham kenapa aturan itu ada.",
     "shadow": "Konsensus yang mengamankan jaringan juga bisa diam-diam menyensornya.",
-    "upright_full": "Kartu ini menghormati apa yang sudah teruji: protokol yang terbukti, standar bersama, bimbingan mentor, dan rasa aman dari mengikuti cara yang sudah mapan. The Validator menyarankan Anda mempelajari aturannya dan memercayai konsensus sebelum berimprovisasi. Tradisi di sini bukan kemandekan, melainkan fondasi yang sudah dijamin banyak orang.",
+    "upright_full": "Kartu ini menghormati apa yang sudah teruji: protokol yang terbukti, standar bersama, bimbingan mentor, dan rasa aman dari mengikuti cara yang sudah mapan. The Validator menyarankan kamu mempelajari aturannya dan memercayai konsensus sebelum berimprovisasi. Tradisi di sini bukan kemandekan, melainkan fondasi yang sudah dijamin banyak orang.",
     "reversed_full": "Saat terbalik, konsensus berubah jadi alat kontrol: sensor, gatekeeping, aturan usang yang tak lagi berguna, sentralisasi yang menyamar sebagai keteraturan. Struktur yang dulu mengamankan jaringan kini menekannya. Mungkin sudah saatnya mempertanyakan doktrin itu, atau dengan sadar melangkah keluar darinya."
   },
   "06": {
@@ -91,10 +91,10 @@
       "Harmoni",
       "Integrasi"
     ],
-    "symbolism": "Dua rantai bercahaya menyatu menjadi satu aliran terang, sementara dua pengelana berdiri terikat benang emas konsensus di bawah langit blockchain yang bertabur cahaya. Inilah penyatuan sebagai upgrade: saat dua hal menjadi satu hal yang lebih besar, atau persimpangan tempat pilihan yang menentukan nilai-nilai Anda dibuat. Keselarasan adalah segalanya.",
-    "advice": "Pilih penyatuan yang sejalan dengan nilai-nilai Anda; sinergi sejati lebih kuat daripada jalan sendirian.",
+    "symbolism": "Dua rantai bercahaya menyatu menjadi satu aliran terang, sementara dua pengelana berdiri terikat benang emas konsensus di bawah langit blockchain yang bertabur cahaya. Inilah penyatuan sebagai upgrade: saat dua hal menjadi satu hal yang lebih besar, atau persimpangan tempat pilihan yang menentukan nilai-nilaimu dibuat. Keselarasan adalah segalanya.",
+    "advice": "Pilih penyatuan yang sejalan dengan nilai-nilaimu; sinergi sejati lebih kuat daripada jalan sendirian.",
     "shadow": "Ikatan yang dibangun sekadar karena praktis akan pecah begitu muncul ketidakcocokan yang nyata.",
-    "upright_full": "Kartu ini merestui kemitraan yang tulus dan integrasi yang berhasil: dua kekuatan melebur jadi sinergi, ikatan atau aliansi yang hasilnya lebih besar dari jumlah bagiannya. Kartu ini juga menandai pilihan berbasis nilai, keputusan yang menentukan siapa diri Anda, diambil karena keselarasan dan bukan karena takut. Pilihlah penyatuan yang cocok dengan nilai terdalam Anda.",
+    "upright_full": "Kartu ini merestui kemitraan yang tulus dan integrasi yang berhasil: dua kekuatan melebur jadi sinergi, ikatan atau aliansi yang hasilnya lebih besar dari jumlah bagiannya. Kartu ini juga menandai pilihan berbasis nilai, keputusan yang menentukan siapa dirimu, diambil karena keselarasan dan bukan karena takut. Pilihlah penyatuan yang cocok dengan nilai terdalammu.",
     "reversed_full": "Saat terbalik, penyatuan gagal: tidak cocok, penuh konflik, hard fork di tempat yang seharusnya harmonis, kolaborasi yang retak di ujian pertama. Sering kali perpecahan itu sudah tertanam sejak awal: dua hal yang memang tak pernah cocok tapi dipaksa bersatu. Ketidakselarasan itu terungkap saat tekanan datang."
   },
   "07": {
@@ -107,7 +107,7 @@
     "symbolism": "Seorang pahlawan memacu kereta perang megah yang ditarik dua banteng digital raksasa, melaju di atas blok-blok bercahaya menuju grafik yang menanjak di cakrawala. Inilah momentum yang dijinakkan: kekuatan pasar yang liar, diarahkan oleh tekad menuju kemenangan. Kedua banteng itu adalah energi yang saling berlawanan, dan sang pengemudi harus menjaga keduanya tetap searah.",
     "advice": "Tunggangi momentum dengan kendali yang tetap erat; bull run pun tetap perlu disetir.",
     "shadow": "Reli yang terlalu panas lepas dari kendali dan patah jadi koreksi.",
-    "upright_full": "Kartu ini adalah momentum yang melonjak dan kemenangan yang diraih dengan kerja keras: breakout yang digerakkan disiplin, pasar atau usaha yang bergerak kuat ke arah Anda. The Bull Run menghargai orang yang tetap memegang kendali: tenaga plus arah, bukan tenaga saja. Tunggangi gelombangnya dengan mantap selagi masih berlari.",
+    "upright_full": "Kartu ini adalah momentum yang melonjak dan kemenangan yang diraih dengan kerja keras: breakout yang digerakkan disiplin, pasar atau usaha yang bergerak kuat ke arahmu. The Bull Run menghargai orang yang tetap memegang kendali: tenaga plus arah, bukan tenaga saja. Tunggangi gelombangnya dengan mantap selagi masih berlari.",
     "reversed_full": "Saat terbalik, reli terlalu panas: kendali hilang, kenaikan parabolik patah jadi koreksi tajam, energi terbuang ke segala arah sekaligus. Banteng-banteng itu menarik ke arah berbeda karena tak ada yang menyetir. Momentum tanpa kendali berujung crash."
   },
   "08": {
@@ -132,8 +132,8 @@
     ],
     "symbolism": "Seorang bijak tua mendaki puncak-puncak blockchain yang membeku sambil membawa lentera berisi blok Ethereum yang berpendar, di bawah langit malam bertabur bintang validator. Ia sang peneliti yang menyendiri: orang yang menjauh dari keramaian untuk menemukan kebenaran dengan cahayanya sendiri. Kebijaksanaan di sini diraih sendirian, dalam sunyi.",
     "advice": "Lakukan riset sendiri dengan tenang, jauh dari hiruk-pikuk orang banyak.",
-    "shadow": "Menyendiri mempertajam riset; echo chamber hanya membuat Anda menutup mata dari fakta.",
-    "upright_full": "Kartu ini menyarankan Anda melakukan riset sendiri: mundur sejenak dari keriuhan untuk mempelajari, menganalisis, dan memahami dengan lentera Anda sendiri. The DYOR Sage mengutamakan kesabaran dan kedalaman di atas keyakinan massa. Jawabannya ditemukan lewat kesendirian dan ketekunan, bukan di grup chat.",
+    "shadow": "Menyendiri mempertajam riset; echo chamber hanya membuatmu menutup mata dari fakta.",
+    "upright_full": "Kartu ini menyarankan kamu melakukan riset sendiri: mundur sejenak dari keriuhan untuk mempelajari, menganalisis, dan memahami dengan lenteramu sendiri. The DYOR Sage mengutamakan kesabaran dan kedalaman di atas keyakinan massa. Jawabannya ditemukan lewat kesendirian dan ketekunan, bukan di grup chat.",
     "reversed_full": "Saat terbalik, menyendiri berubah jadi mengasingkan diri: echo chamber, gelembung informasi yang terus membenarkan dirinya sendiri, dan sikap keras kepala menolak fakta baru. Lentera itu hanya menerangi apa yang sudah ia yakini. Menarik diri tak lagi menjernihkan, malah jadi tempat bersembunyi."
   },
   "10": {
@@ -148,8 +148,8 @@
     "symbolism": "Sebuah roda kosmik raksasa dari blok-blok berputar di angkasa, pinggirannya terukir Bull, Bear, Halving, Altseason, ATH, dan Koreksi, dikelilingi rasi bintang geometri sakral. Inilah siklus pasar sebagai hukum semesta: putaran yang tak bisa dihentikan siapa pun, hanya bisa ditunggangi. Yang naik akan turun, yang turun akan naik.",
     "advice": "Ikuti fase siklus yang sedang berjalan, jangan terus berpegang pada fase yang sudah lewat.",
     "shadow": "Setiap puncak terasa abadi, begitu juga setiap dasar, tapi rodanya tetap berputar.",
-    "upright_full": "Kartu ini menandai pergantian siklus: fase baru dimulai, nasib berbalik, momentum berubah ke arah Anda. Market Cycle mengingatkan bahwa kondisi pasar itu musiman, jadi selaraskan diri dengan fase yang sedang Anda jalani, jangan berpegang pada yang sudah lewat. Perubahan sedang datang, dan arahnya cenderung naik.",
-    "reversed_full": "Saat terbalik, roda berputar turun: fase bear, penurunan berkepanjangan, timing yang buruk, atau pasar yang mandek sementara Anda menunggu titik balik. Melawan perubahan hanya memperpanjang rasa sakit. Dasar terasa permanen, padahal rodanya masih berputar."
+    "upright_full": "Kartu ini menandai pergantian siklus: fase baru dimulai, nasib berbalik, momentum berubah ke arahmu. Market Cycle mengingatkan bahwa kondisi pasar itu musiman, jadi selaraskan diri dengan fase yang sedang kamu jalani, jangan berpegang pada yang sudah lewat. Perubahan sedang datang, dan arahnya cenderung naik.",
+    "reversed_full": "Saat terbalik, roda berputar turun: fase bear, penurunan berkepanjangan, timing yang buruk, atau pasar yang mandek sementara kamu menunggu titik balik. Melawan perubahan hanya memperpanjang rasa sakit. Dasar terasa permanen, padahal rodanya masih berputar."
   },
   "11": {
     "crypto_name": "The Consensus",
@@ -162,7 +162,7 @@
     "symbolism": "Seorang hakim blockchain duduk di antara pilar-pilar validator, memegang Timbangan Konsensus yang berpendar untuk menimbang kejujuran melawan kecurangan, sementara tangan satunya menggenggam pedang dari mata rantai. Di belakangnya berputar sebuah blok dengan ribuan konfirmasi. Inilah kebenaran yang diselesaikan on-chain: keadilan yang ditegakkan seluruh jaringan, bukan oleh satu otoritas. Ledger tidak pernah lupa.",
     "advice": "Bertindaklah secara transparan; konsensus menimbang kejujuran dan kebohongan, dan semuanya tercatat.",
     "shadow": "Kecurangan yang cukup terkoordinasi bisa menguasai sistem yang paling adil sekalipun: itulah risiko serangan 51%.",
-    "upright_full": "Kartu ini tentang kejujuran dan konsekuensi: transaksi yang transparan, hasil yang adil sesuai perbuatan Anda, pengakuan yang diraih lewat integritas. The Consensus mengingatkan bahwa jaringan mencatat segalanya dan pada waktunya kebenaran akan terbukti. Bertindaklah seolah setiap blok itu permanen, karena memang begitu.",
+    "upright_full": "Kartu ini tentang kejujuran dan konsekuensi: transaksi yang transparan, hasil yang adil sesuai perbuatanmu, pengakuan yang diraih lewat integritas. The Consensus mengingatkan bahwa jaringan mencatat segalanya dan pada waktunya kebenaran akan terbukti. Bertindaklah seolah setiap blok itu permanen, karena memang begitu.",
     "reversed_full": "Saat terbalik, keadilan dibajak: manipulasi, korupsi, serangan 51% terhadap kebenaran, sensor, hasil tidak adil yang direkayasa pihak berkuasa. Timbangannya dicurangi, atau catatannya dipalsukan. Ada yang sedang lolos dari tanggung jawab, setidaknya untuk sementara."
   },
   "12": {
@@ -174,10 +174,10 @@
       "Validator"
     ],
     "symbolism": "Seorang validator tergantung terbalik dengan tenang di dalam cincin energi yang berpendar, token-tokennya tersegel dalam kristal staking, wajahnya damai dan tercerahkan. Inilah jeda yang disengaja: nilai dikunci dengan sadar, sebuah penyerahan yang justru menghasilkan, bukan merugikan. Imbalannya milik mereka yang sanggup menunggu.",
-    "advice": "Kunci posisi Anda dan percayai prosesnya; imbalannya baru datang setelah periode lockup selesai.",
+    "advice": "Kunci posisimu dan percayai prosesnya; imbalannya baru datang setelah periode lockup selesai.",
     "shadow": "Modal yang tak pernah bisa di-unstake hanyalah modal yang pelan-pelan hilang ditelan waktu.",
-    "upright_full": "Kartu ini adalah kesabaran yang produktif: men-stake posisi Anda dan memercayai prosesnya sepanjang periode lockup. Locked Staking mengajak Anda diam sejenak dan melihat dari sudut pandang lain. Imbalannya datang kepada mereka yang bisa menahan diri untuk tidak bertindak terlalu cepat. Lepaskan kebutuhan akan likuiditas instan dan biarkan waktu bekerja.",
-    "reversed_full": "Saat terbalik, lockup berubah jadi jebakan: modal terkunci justru saat Anda butuh, posisi yang tak bisa ditutup, waktu terbuang tanpa hasil. Kesabaran membusuk jadi kelumpuhan atau penyesalan. Jeda yang tadinya dipilih dengan sadar kini benar-benar membuat Anda nyangkut."
+    "upright_full": "Kartu ini adalah kesabaran yang produktif: men-stake posisimu dan memercayai prosesnya sepanjang periode lockup. Locked Staking mengajak kamu diam sejenak dan melihat dari sudut pandang lain. Imbalannya datang kepada mereka yang bisa menahan diri untuk tidak bertindak terlalu cepat. Lepaskan kebutuhan akan likuiditas instan dan biarkan waktu bekerja.",
+    "reversed_full": "Saat terbalik, lockup berubah jadi jebakan: modal terkunci justru saat kamu butuh, posisi yang tak bisa ditutup, waktu terbuang tanpa hasil. Kesabaran membusuk jadi kelumpuhan atau penyesalan. Jeda yang tadinya dipilih dengan sadar kini benar-benar membuatmu nyangkut."
   },
   "13": {
     "crypto_name": "The Hard Fork",
@@ -189,9 +189,9 @@
     ],
     "symbolism": "Seorang penunggang gelap berbaju zirah obsidian melintasi blockchain yang sedang terbelah. Di belakangnya rantai lama luruh menjadi debu bercahaya, di depannya lahir jaringan baru yang megah. Inilah transformasi sebagai upgrade: sebuah akhir yang sebenarnya hanyalah pergantian versi. Yang lama harus dipensiunkan agar yang baru bisa berjalan.",
     "advice": "Biarkan rantai lama terpisah; evolusi memang tak bisa diputar balik, dan justru itu intinya.",
-    "shadow": "Menolak fork berarti Anda terus menjalankan rantai usang yang sudah ditinggalkan semua orang.",
+    "shadow": "Menolak fork berarti kamu terus menjalankan rantai usang yang sudah ditinggalkan semua orang.",
     "upright_full": "Kartu ini adalah perubahan yang tak bisa dibatalkan tapi memang diperlukan: sebuah akhir yang membuka jalan bagi evolusi, hard fork yang menjauh dari hal yang sudah tak berguna. Babak lama ditutup bukan sebagai kehilangan, melainkan sebagai pembaruan. Biarkan versi lama mati agar versi yang sudah di-upgrade bisa diluncurkan.",
-    "reversed_full": "Saat terbalik, perubahan ditolak: berpegang pada proyek yang sudah mati, jadi bag holder rantai usang, melawan fork sampai semuanya mandek. Upgrade-nya sudah menunggu, tapi rasa takut membuat Anda tetap menjalankan versi lama. Penolakan itu sendiri yang menjadi pembusukan."
+    "reversed_full": "Saat terbalik, perubahan ditolak: berpegang pada proyek yang sudah mati, jadi bag holder rantai usang, melawan fork sampai semuanya mandek. Upgrade-nya sudah menunggu, tapi rasa takut membuatmu tetap menjalankan versi lama. Penolakan itu sendiri yang menjadi pembusukan."
   },
   "14": {
     "crypto_name": "Cross-Chain Bridge",
@@ -215,11 +215,11 @@
       "Keserakahan",
       "Manipulasi"
     ],
-    "symbolism": "Iblis bertopeng bersantai di singgasana dari likuiditas curian, sementara para investor duduk terantai pada token tak bernilai yang tak mau mereka lepaskan, dengan DEX yang terbakar menyala di belakang. Inilah perbudakan oleh keserakahan: jebakan yang menguasai Anda selagi Anda mengira Andalah yang menguasainya. Anehnya, rantai itu cukup longgar untuk dilepaskan.",
-    "advice": "Kenali apa yang membelenggu Anda; bag tak bernilai itu hanya mengikat selama Anda terus menggenggamnya.",
+    "symbolism": "Iblis bertopeng bersantai di singgasana dari likuiditas curian, sementara para investor duduk terantai pada token tak bernilai yang tak mau mereka lepaskan, dengan DEX yang terbakar menyala di belakang. Inilah perbudakan oleh keserakahan: jebakan yang menguasaimu selagi kamu mengira kamulah yang menguasainya. Anehnya, rantai itu cukup longgar untuk dilepaskan.",
+    "advice": "Kenali apa yang membelenggumu; bag tak bernilai itu hanya mengikat selama kamu terus menggenggamnya.",
     "shadow": "Rantai keserakahan terasa seperti kepemilikan, sampai likuiditasnya lenyap.",
-    "upright_full": "Kartu ini membongkar jebakan: keserakahan, kecanduan, manipulasi, proyek atau hubungan toksik yang sudah mencengkeram Anda. The Rug Pull menunjukkan di mana Anda terikat pada sesuatu yang tak bernilai karena takut atau karena ingin. Menyadari rantai itu adalah langkah pertama, sebab sebenarnya rantai itu tak pernah benar-benar terkunci.",
-    "reversed_full": "Saat terbalik, rantainya terlepas: Anda melihat tipuannya, cut loss, dan meninggalkan jebakan itu. Kebebasan datang begitu ilusi pecah. Apa yang dulu menguasai Anda kehilangan cengkeramannya begitu Anda berhenti memberinya makan."
+    "upright_full": "Kartu ini membongkar jebakan: keserakahan, kecanduan, manipulasi, proyek atau hubungan toksik yang sudah mencengkerammu. The Rug Pull menunjukkan di mana kamu terikat pada sesuatu yang tak bernilai karena takut atau karena ingin. Menyadari rantai itu adalah langkah pertama, sebab sebenarnya rantai itu tak pernah benar-benar terkunci.",
+    "reversed_full": "Saat terbalik, rantainya terlepas: kamu melihat tipuannya, cut loss, dan meninggalkan jebakan itu. Kebebasan datang begitu ilusi pecah. Apa yang dulu menguasaimu kehilangan cengkeramannya begitu kamu berhenti memberinya makan."
   },
   "16": {
     "crypto_name": "Liquidation",
@@ -233,7 +233,7 @@
     "advice": "Jangan pertahankan posisi yang kelebihan leverage; likuidasi adalah cara pasar membersihkan diri.",
     "shadow": "Leverage terasa seperti kekuatan, sampai margin call merenggut semuanya sekaligus.",
     "upright_full": "Kartu ini adalah keruntuhan mendadak: likuidasi, crash, peristiwa black swan yang menyapu bersih semua yang kelebihan leverage atau dibangun di atas ilusi. Liquidation memang brutal, tapi membersihkan: yang rapuh dihancurkan supaya sesuatu yang sejati bisa dibangun ulang. Jangan pertahankan menara yang sedang runtuh; biarkan saja ia jatuh.",
-    "reversed_full": "Saat terbalik, bencana nyaris terhindar atau hanya sebagian terasa: Anda sempat mengurangi risiko, menyadari bahaya agak terlambat tapi belum terlalu terlambat, atau keruntuhannya terjadi pelan-pelan, bukan meledak sekaligus. Pelajaran soal risiko datang setelah rasa kaget. Pemulihan dimulai dari dasar yang lebih rendah dan sikap yang lebih rendah hati."
+    "reversed_full": "Saat terbalik, bencana nyaris terhindar atau hanya sebagian terasa: kamu sempat mengurangi risiko, menyadari bahaya agak terlambat tapi belum terlalu terlambat, atau keruntuhannya terjadi pelan-pelan, bukan meledak sekaligus. Pelajaran soal risiko datang setelah rasa kaget. Pemulihan dimulai dari dasar yang lebih rendah dan sikap yang lebih rendah hati."
   },
   "17": {
     "crypto_name": "Bull Market",
@@ -244,10 +244,10 @@
       "Pertumbuhan"
     ],
     "symbolism": "Seorang gadis bercahaya menuangkan likuiditas emas ke sungai blockchain di bawah bintang Bitcoin bersudut delapan, seluruh lanskap hijau dan hidup kembali oleh kemakmuran yang pulih. Inilah harapan setelah musim dingin: pembaruan yang tenang, keyakinan yang kembali, tunas hijau pertama dari pemulihan. Bintangnya jauh, tapi nyata.",
-    "advice": "Tanggapi harapan yang kembali dengan tenang; pemulihan ini nyata asal tidak Anda tinggalkan.",
+    "advice": "Tanggapi harapan yang kembali dengan tenang; pemulihan ini nyata asal tidak kamu tinggalkan.",
     "shadow": "Harapan yang berubah jadi ragu menjual pemulihan tepat sebelum harga lari.",
-    "upright_full": "Kartu ini adalah harapan yang lembut dan pemulihan yang sungguhan: bull kembali setelah bear, fundamental yang sehat, luka yang mulai sembuh, dan keyakinan yang bangkit lagi. Bull Market menyarankan optimisme yang tenang. Arus mulai berbalik ke arah Anda, jadi bergeraklah dengan mantap, bukan panik. Masa terburuk sudah lewat dan langit mulai cerah.",
-    "reversed_full": "Saat terbalik, harapan memudar: ragu, jenuh, pemulihan yang begitu lambat sampai Anda berhenti percaya, mimpi yang melantur jadi tidak realistis. Bintang itu masih bersinar, tapi Anda sudah berpaling. Bahayanya adalah meninggalkan pemulihan tepat sebelum terkonfirmasi."
+    "upright_full": "Kartu ini adalah harapan yang lembut dan pemulihan yang sungguhan: bull kembali setelah bear, fundamental yang sehat, luka yang mulai sembuh, dan keyakinan yang bangkit lagi. Bull Market menyarankan optimisme yang tenang. Arus mulai berbalik ke arahmu, jadi bergeraklah dengan mantap, bukan panik. Masa terburuk sudah lewat dan langit mulai cerah.",
+    "reversed_full": "Saat terbalik, harapan memudar: ragu, jenuh, pemulihan yang begitu lambat sampai kamu berhenti percaya, mimpi yang melantur jadi tidak realistis. Bintang itu masih bersinar, tapi kamu sudah berpaling. Bahayanya adalah meninggalkan pemulihan tepat sebelum terkonfirmasi."
   },
   "18": {
     "crypto_name": "FUD",
@@ -260,7 +260,7 @@
     "symbolism": "Bulan digital raksasa memancarkan cahaya pucat ke lembah berkabut, tempat grafik-grafik hantu, gulungan berita palsu, dan sosok-sosok bayangan muncul dari balik kabut. Inilah ketakutan, ketidakpastian, dan keraguan yang menjelma jadi lanskap: malam suram saat tak ada yang bisa diverifikasi dan imajinasi mengisi kekosongannya. Tidak semua yang ada di dalam kabut itu nyata.",
     "advice": "Jangan ambil langkah besar di tengah kabut; tunggu FUD mereda dan kebenarannya muncul.",
     "shadow": "Rasa takut menciptakan grafik hantu yang jarang terbukti saat hari terang.",
-    "upright_full": "Kartu ini adalah kabut ketakutan: ketidakpastian, rumor, pasar yang emosional, ilusi yang tampak seperti ancaman. FUD menyarankan Anda tidak mengambil langkah besar dalam gelap, karena yang Anda takuti sering kali hanya bayangan yang tak terbukti di siang hari. Dengarkan intuisi, tapi verifikasi dulu sebelum bertindak karena rasa cemas.",
+    "upright_full": "Kartu ini adalah kabut ketakutan: ketidakpastian, rumor, pasar yang emosional, ilusi yang tampak seperti ancaman. FUD menyarankan kamu tidak mengambil langkah besar dalam gelap, karena yang kamu takuti sering kali hanya bayangan yang tak terbukti di siang hari. Dengarkan intuisi, tapi verifikasi dulu sebelum bertindak karena rasa cemas.",
     "reversed_full": "Saat terbalik, kabutnya terangkat: kejernihan kembali, FUD memudar, objektivitas menggantikan panik. Bayangan-bayangan itu ternyata hanya bentuk biasa, dan kebenaran pun muncul. Kebingungan berganti menjadi bacaan yang jelas."
   },
   "19": {
@@ -286,10 +286,10 @@
       "Tata Kelola"
     ],
     "symbolism": "Seorang malaikat meniup terompet kriptografi, dan ribuan alamat dompet terbangun dalam cahaya keemasan, bangkit untuk mengklaim hak tata kelola dan airdrop. Inilah hari perhitungan yang membawa imbalan: snapshot on-chain yang mencatat siapa yang hadir dan siapa yang membangun. Catatan sudah diambil, dan yang layak kini dipanggil.",
-    "advice": "Jawab panggilannya dan pastikan Anda terhitung; snapshot menghargai mereka yang hadir.",
-    "shadow": "Snapshot yang terlewat adalah babak yang tak bisa Anda klaim belakangan.",
-    "upright_full": "Kartu ini adalah perhitungan sekaligus imbalan: pengakuan atas posisi yang Anda ambil di masa lalu, airdrop bagi yang hadir, panggilan untuk bangkit ke babak baru. Snapshot menghargai mereka yang muncul dan benar-benar bekerja. Jawab panggilannya, tinjau masa lalu dengan jujur, dan melangkahlah ke apa yang sudah Anda perjuangkan.",
-    "reversed_full": "Saat terbalik, momennya terlewat: snapshot yang tidak mencatat Anda, peluang yang hilang, diskualifikasi, atau penyesalan dan menyalahkan diri atas masa lalu. Terompet sudah berbunyi, tapi Anda tidak sedang memegang. Kesempatan untuk terhitung sudah lewat, jadi jadikan pelajaran untuk siklus berikutnya."
+    "advice": "Jawab panggilannya dan pastikan kamu terhitung; snapshot menghargai mereka yang hadir.",
+    "shadow": "Snapshot yang terlewat adalah babak yang tak bisa kamu klaim belakangan.",
+    "upright_full": "Kartu ini adalah perhitungan sekaligus imbalan: pengakuan atas posisi yang kamu ambil di masa lalu, airdrop bagi yang hadir, panggilan untuk bangkit ke babak baru. Snapshot menghargai mereka yang muncul dan benar-benar bekerja. Jawab panggilannya, tinjau masa lalu dengan jujur, dan melangkahlah ke apa yang sudah kamu perjuangkan.",
+    "reversed_full": "Saat terbalik, momennya terlewat: snapshot yang tidak mencatatmu, peluang yang hilang, diskualifikasi, atau penyesalan dan menyalahkan diri atas masa lalu. Terompet sudah berbunyi, tapi kamu tidak sedang memegang. Kesempatan untuk terhitung sudah lewat, jadi jadikan pelajaran untuk siklus berikutnya."
   },
   "21": {
     "crypto_name": "Mass Adoption",
@@ -340,9 +340,9 @@
       "Ekspansi"
     ],
     "symbolism": "Tiga Tongkat Validator berdiri di pantai digital, sementara kapal-kapal blockchain muncul di cakrawala membawa gelombang pertama pengguna baru ke dalam ekosistem. Inilah hasil pertama dari rencana: mainnet sudah live dan dunia mulai merespons. Pandangan jauh ke depan terbayar dengan traksi awal.",
-    "advice": "Mainnet sudah live; perluas visi Anda sesuai traksi yang mulai berdatangan.",
+    "advice": "Mainnet sudah live; perluas visimu sesuai traksi yang mulai berdatangan.",
     "shadow": "Menunggu di pantai untuk kapal yang tak pernah diberi alasan untuk datang.",
-    "upright_full": "Kartu ini tentang ekspansi dan buah pertama dari kerja keras: peluncuran yang berhasil, audiens yang mulai datang, hasil awal yang membenarkan arah yang diambil. Mainnet Launch menghargai kesabaran dan pandangan jauh ke depan: kapal-kapal yang Anda kirim kini kembali dengan muatan penuh. Perluas cara pandang Anda agar sepadan dengan traksi yang ada.",
+    "upright_full": "Kartu ini tentang ekspansi dan buah pertama dari kerja keras: peluncuran yang berhasil, audiens yang mulai datang, hasil awal yang membenarkan arah yang diambil. Mainnet Launch menghargai kesabaran dan pandangan jauh ke depan: kapal-kapal yang kamu kirim kini kembali dengan muatan penuh. Perluas cara pandangmu agar sepadan dengan traksi yang ada.",
     "reversed_full": "Saat terbalik, peluncurannya tidak sesuai harapan: rilis tertunda, pengguna tak kunjung datang, cakrawala tetap kosong. Kapal-kapal sudah dikirim tapi tak ada yang kembali, atau timing-nya meleset. Visi yang sempit atau hambatan tak terduga menumpulkan ekspansi."
   },
   "25": {
@@ -355,7 +355,7 @@
     "symbolism": "Empat Tongkat Validator membentuk gapura seremonial di depan kuil DAO yang megah, sementara para builder dan pengguna merayakan peluncuran protokol yang sukses. Inilah tonggak yang stabil: fondasi kokoh pertama yang sudah tercapai dan layak dirayakan sejenak. Komunitas dan struktur bersatu dalam perayaan.",
     "advice": "Rayakan pencapaian ini; komunitas yang kuat adalah fondasi yang sesungguhnya.",
     "shadow": "Fondasi yang melupakan komunitas akan retak pada tekanan pertama.",
-    "upright_full": "Kartu ini adalah tonggak pencapaian yang patut dirayakan: proyek yang berhasil, komunitas kuat yang mulai terbentuk, fondasi stabil yang sudah tercapai. DAO Celebration mengajak Anda meluangkan waktu untuk menghargai kemenangan ini dan orang-orang yang membangunnya. Stabilitas dan rasa memiliki adalah pencapaian utamanya di sini.",
+    "upright_full": "Kartu ini adalah tonggak pencapaian yang patut dirayakan: proyek yang berhasil, komunitas kuat yang mulai terbentuk, fondasi stabil yang sudah tercapai. DAO Celebration mengajak kamu meluangkan waktu untuk menghargai kemenangan ini dan orang-orang yang membangunnya. Stabilitas dan rasa memiliki adalah pencapaian utamanya di sini.",
     "reversed_full": "Saat terbalik, perayaannya retak: komunitas terpecah, konflik internal, fondasi yang goyah, peluncuran yang tak pernah benar-benar solid. Gapuranya retak sebelum pesta dimulai. Rasa kebersamaan berganti perselisihan."
   },
   "26": {
@@ -379,9 +379,9 @@
       "Kepercayaan"
     ],
     "symbolism": "Seorang builder yang menang berkuda memasuki ibu kota di bawah tanda centang verifikasi raksasa yang bersinar, disambut sorak para validator. Kartu ini adalah kemenangan di depan publik: audit lolos, reputasi didapat, kepercayaan jaringan kini terlihat jelas. Pengakuan setelah perjuangan.",
-    "advice": "Karya Anda sudah terverifikasi; terima pengakuannya dan terus jaga kepercayaan itu.",
+    "advice": "Karyamu sudah terverifikasi; terima pengakuannya dan terus jaga kepercayaan itu.",
     "shadow": "Pengakuan yang terlalu dipercaya berubah menjadi ego yang justru membuangnya.",
-    "upright_full": "Kartu ini adalah pengakuan yang memang pantas: audit yang sukses, kepercayaan publik, memimpin barisan setelah kerja nyata. Verified menghargai pencapaian yang terlihat beserta kredibilitas yang menyertainya. Terimalah tepuk tangannya, lencana itu memang hasil kerja Anda.",
+    "upright_full": "Kartu ini adalah pengakuan yang memang pantas: audit yang sukses, kepercayaan publik, memimpin barisan setelah kerja nyata. Verified menghargai pencapaian yang terlihat beserta kredibilitas yang menyertainya. Terimalah tepuk tangannya, lencana itu memang hasil kerjamu.",
     "reversed_full": "Saat terbalik, reputasi mulai goyah: audit ditolak, kritik publik, jatuh dari puncak, usaha yang tak dihargai. Tanda centang ditahan atau dicabut. Ego, atau sekadar nasib sial, menodai kemenangan."
   },
   "28": {
@@ -392,9 +392,9 @@
       "Kegigihan"
     ],
     "symbolism": "Seorang penjaga seorang diri bertahan di puncak benteng blockchain, menangkis tujuh tongkat yang menyerang dari bawah. Kartu ini adalah upaya mempertahankan wilayah yang direbut dengan susah payah: posisi tinggi yang kini harus dijaga dari para penantang dan pengkritik. Keyakinan yang sedang dikepung.",
-    "advice": "Bertahanlah; posisi tinggi ini hasil jerih payah Anda, jadi jaga tanpa menguras diri.",
-    "shadow": "Mempertahankan semua bukit sekaligus justru membuat Anda kehilangan bukit yang paling penting.",
-    "upright_full": "Kartu ini tentang teguh pada pendirian: membela proyek, tesis, atau posisi Anda dari tekanan dan kritik. Network Defense menghargai ketangguhan dan keberanian menjaga tempat tinggi yang sudah Anda raih. Posisi Anda lebih unggul, jadi manfaatkan.",
+    "advice": "Bertahanlah; posisi tinggi ini hasil jerih payahmu, jadi jaga tanpa menguras diri.",
+    "shadow": "Mempertahankan semua bukit sekaligus justru membuatmu kehilangan bukit yang paling penting.",
+    "upright_full": "Kartu ini tentang teguh pada pendirian: membela proyek, tesis, atau posisimu dari tekanan dan kritik. Network Defense menghargai ketangguhan dan keberanian menjaga tempat tinggi yang sudah kamu raih. Posisimu lebih unggul, jadi manfaatkan.",
     "reversed_full": "Saat terbalik, pertahanan mulai jebol: kewalahan diserang, kehilangan kendali, terkuras oleh tekanan yang tak ada habisnya. Sang penjaga kelelahan atau mulai mundur. Pertarungan ini tak lagi bisa dipertahankan."
   },
   "29": {
@@ -406,7 +406,7 @@
     ],
     "symbolism": "Delapan tongkat Validator melesat di langit malam seperti komet blockchain, menghubungkan kota-kota terdesentralisasi yang berjauhan dengan aliran cahaya. Kartu ini adalah akselerasi: semuanya bergerak cepat sekaligus, transaksi langsung final, momentum memadatkan waktu. Gerak yang cepat dan mantap.",
     "advice": "Semuanya cepat final sekarang; bergeraklah dengan tegas selagi jaringan sedang ngebut.",
-    "shadow": "Cepat tanpa arah hanya membuat Anda lebih cepat sampai di tujuan yang salah.",
+    "shadow": "Cepat tanpa arah hanya membuatmu lebih cepat sampai di tujuan yang salah.",
     "upright_full": "Kartu ini adalah kecepatan dan kemajuan pesat: semuanya berakselerasi, kabar datang beruntun, transaksi final, dan jendela peluang terbuka dengan cepat. Instant Finality menghargai tindakan tegas selagi jaringan sedang lancar. Bergeraklah sekarang, ritme ini berpihak pada yang siap.",
     "reversed_full": "Saat terbalik, arusnya macet: tertunda, jaringan padat, gas mahal, momen yang terlewat, kekacauan di tempat yang seharusnya lancar. Komet-komet itu tertahan di udara. Kecepatan berubah jadi frustrasi."
   },
@@ -418,9 +418,9 @@
       "Daya Tahan"
     ],
     "symbolism": "Seorang builder yang terluka bersandar pada tongkat Validator di depan tembok benteng, delapan tongkat berdiri di belakangnya sebagai tanda ujian yang sudah ia lewati. Kartu ini adalah pertahanan terakhir: babak belur tapi tetap tangguh, menjaga apa yang telah dibangun dengan sisa tenaga untuk satu dorongan lagi. Bekas luka sebagai bukti kekuatan.",
-    "advice": "Anda sudah teruji; bertahanlah sekali lagi, jangan menyerah di dekat garis finis.",
-    "shadow": "Menjaga tembok terlalu curiga sampai Anda tak pernah lagi membuka gerbang.",
-    "upright_full": "Kartu ini adalah ketangguhan yang ditempa lewat perjuangan: pengalaman dari berbagai ujian, daya tahan untuk menjaga apa yang sudah Anda bangun, satu dorongan terakhir menjelang akhir. Battle Tested menghargai kegigihan saat Anda lelah tapi belum selesai. Anda pernah melewati yang lebih berat, jadi bertahanlah sedikit lagi.",
+    "advice": "Kamu sudah teruji; bertahanlah sekali lagi, jangan menyerah di dekat garis finis.",
+    "shadow": "Menjaga tembok terlalu curiga sampai kamu tak pernah lagi membuka gerbang.",
+    "upright_full": "Kartu ini adalah ketangguhan yang ditempa lewat perjuangan: pengalaman dari berbagai ujian, daya tahan untuk menjaga apa yang sudah kamu bangun, satu dorongan terakhir menjelang akhir. Battle Tested menghargai kegigihan saat kamu lelah tapi belum selesai. Kamu pernah melewati yang lebih berat, jadi bertahanlah sedikit lagi.",
     "reversed_full": "Saat terbalik, ketangguhan habis: burnout, paranoia, sikap serba defensif, menyerah tepat sebelum garis finis. Bekas luka berubah menjadi takut akan luka baru. Rasa lelah mengalahkan dorongan terakhir."
   },
   "31": {
@@ -430,11 +430,11 @@
       "Validator",
       "Infrastruktur"
     ],
-    "symbolism": "Seorang operator yang kelelahan memanggul sepuluh tongkat Validator raksasa penuh energi jaringan menuju pusat data yang luar biasa besar, tubuhnya nyaris ambruk oleh bebannya. Kartu ini adalah beban dari kesuksesan: terlalu banyak tanggung jawab dipikul satu orang, harga dari semua yang Anda ambil. Bebannya sendiri kini menjadi masalah.",
+    "symbolism": "Seorang operator yang kelelahan memanggul sepuluh tongkat Validator raksasa penuh energi jaringan menuju pusat data yang luar biasa besar, tubuhnya nyaris ambruk oleh bebannya. Kartu ini adalah beban dari kesuksesan: terlalu banyak tanggung jawab dipikul satu orang, harga dari semua yang kamu ambil. Bebannya sendiri kini menjadi masalah.",
     "advice": "Beban ini sudah terlalu berat; delegasikan sebelum infrastrukturnya tumbang.",
     "shadow": "Memikul semuanya sendirian adalah cara seluruh jaringan tumbang bersamaan.",
-    "upright_full": "Kartu ini adalah beban berlebih: terlalu banyak komitmen, tanggung jawab yang berat, tekanan menghimpit yang datang bersama kesuksesan. Validator Overload menandai selesainya tahap sulit yang Anda pikul di pundak sendiri. Anda bisa menuntaskannya, tapi beban seperti ini tak bisa terus dibawa.",
-    "reversed_full": "Saat terbalik, bebannya mematahkan Anda: burnout, infrastruktur gagal, ambruk di bawah komitmen. Atau justru lega karena akhirnya mendelegasikan dan meletakkan sebagian tongkat. Apa pun itu, pesannya sama: Anda tak bisa memikul semuanya sendirian."
+    "upright_full": "Kartu ini adalah beban berlebih: terlalu banyak komitmen, tanggung jawab yang berat, tekanan menghimpit yang datang bersama kesuksesan. Validator Overload menandai selesainya tahap sulit yang kamu pikul di pundak sendiri. Kamu bisa menuntaskannya, tapi beban seperti ini tak bisa terus dibawa.",
+    "reversed_full": "Saat terbalik, bebannya mematahkanmu: burnout, infrastruktur gagal, ambruk di bawah komitmen. Atau justru lega karena akhirnya mendelegasikan dan meletakkan sebagian tongkat. Apa pun itu, pesannya sama: kamu tak bisa memikul semuanya sendirian."
   },
   "32": {
     "crypto_name": "Testnet Apprentice",
@@ -460,7 +460,7 @@
     ],
     "symbolism": "Seorang ksatria memacu kuda siber mekanis di jalan tol blockchain yang berpendar, tongkat Validator menyala di tangannya membawa upgrade jaringan, blok-blok berjejak di belakangnya. Ia adalah gerak maju yang berani: ambisi yang berlari kencang, merilis dengan cepat dan menerjang misi. Momentum dalam wujud manusia.",
     "advice": "Rilis dengan berani, tapi uji dulu sebelum deploy dengan kecepatan penuh.",
-    "shadow": "Menerjang tanpa arah adalah cara Anda melaju penuh percaya diri tepat ke jurang.",
+    "shadow": "Menerjang tanpa arah adalah caramu melaju penuh percaya diri tepat ke jurang.",
     "upright_full": "Kartu ini adalah aksi yang tegas dan ambisius: pengembangan cepat, fitur demi fitur dirilis, menerjang target dengan berani. Protocol Runner menghargai keberanian untuk bergerak dan karisma untuk mengajak orang lain ikut mendorong. Rilis dengan semangat, asal bidik dulu sebelum menerjang.",
     "reversed_full": "Saat terbalik, laju berubah sembrono: rilis terburu-buru, deploy gagal, sistem tak stabil, banyak omong dan janji berlebihan. Kecepatan tanpa ketelitian merusak production. Terjangannya melampaui rencana."
   },
@@ -474,8 +474,8 @@
     ],
     "symbolism": "Seorang ratu bijak duduk di singgasana dari blok, tongkat Validator-nya menumbuhkan cabang-cabang emas, naga-naga blockchain kecil berputar di sekitarnya dengan wibawa yang tenang. Ia adalah kehangatan yang menjelma menjadi pengayoman: sosok memikat yang merawat seluruh ekosistem, bukan sekadar satu percikan. Kepemimpinan yang hidup dan percaya diri.",
     "advice": "Rawatlah ekosistem; jaga tanpa mencekik pertumbuhannya.",
-    "shadow": "Menjaga pertumbuhan terlalu ketat justru menjadikan Anda batas atasnya.",
-    "upright_full": "Kartu ini adalah kepemimpinan yang matang dan hangat: peduli pada komunitas, merawat ekosistem, menjaga stabilitas dengan yakin. Network Guardian menghargai pengayom yang memikat dan menumbuhkan apa pun di sekitarnya. Pimpin dengan kehangatan dan biarkan ekosistem tumbuh subur di bawah asuhan Anda.",
+    "shadow": "Menjaga pertumbuhan terlalu ketat justru menjadikanmu batas atasnya.",
+    "upright_full": "Kartu ini adalah kepemimpinan yang matang dan hangat: peduli pada komunitas, merawat ekosistem, menjaga stabilitas dengan yakin. Network Guardian menghargai pengayom yang memikat dan menumbuhkan apa pun di sekitarnya. Pimpin dengan kehangatan dan biarkan ekosistem tumbuh subur di bawah asuhanmu.",
     "reversed_full": "Saat terbalik, sang penjaga mencengkeram terlalu erat: mengontrol demi kontrol itu sendiri, mandek karena terlalu hati-hati, genggaman yang justru mencekik pertumbuhan yang ingin ia lindungi. Kehangatan berubah menjadi pengawasan yang posesif. Perlindungan berubah menjadi plafon."
   },
   "35": {
@@ -487,7 +487,7 @@
       "Konsensus"
     ],
     "symbolism": "Sang penjaga tertinggi duduk di singgasana Genesis Block di bawah Pohon Konsensus yang menjulang, mahkotanya ditempa dari blok-blok yang berputar. Ia adalah visi yang sudah matang menjadi komando: founder yang melihat seluruh peta dan membuat para builder percaya. Wibawa yang diraih karena ia sendiri yang membangun jaringannya.",
-    "advice": "Pimpin infrastruktur dengan visi; begitu kekuasaan Anda pusatkan, jaringan pun lepas.",
+    "advice": "Pimpin infrastruktur dengan visi; begitu kekuasaan kamu pusatkan, jaringan pun lepas.",
     "shadow": "Visioner yang memerintah alih-alih melayani akan memecah komunitas yang ia bangun sendiri.",
     "upright_full": "Kartu ini adalah kepemimpinan visioner di puncak kematangannya: memimpin proyek berskala besar, memegang kendali infrastruktur, menginspirasi satu ekosistem untuk mengikuti. Master Validator menghargai pemimpin yang menatap jauh sekaligus cukup banyak memberi bukti agar keyakinan tetap terjaga. Pimpin visi itu dengan berani.",
     "reversed_full": "Saat terbalik, kepemimpinan membusuk: otoriter, sentralisasi yang berbahaya, founder yang kehilangan kepercayaan komunitas karena memerintah alih-alih melayani. Sang visioner berubah menjadi tiran. Kendali menggantikan konsensus."
@@ -501,7 +501,7 @@
       "Peluang"
     ],
     "symbolism": "Sebuah tangan bercahaya muncul dari kabut, menggenggam piala kristal berisi likuiditas biru yang hidup, dan empat sungai mengalir dari bibirnya ke protokol DeFi yang baru lahir. Inilah sumber pertama: genesis block dari rasa dan modal, saat sebuah mata air mulai memancar. Potensi murni yang belum memilih bentuknya.",
-    "advice": "Arahkan aliran baru ini ke saluran yang Anda pilih sebelum ia mengering sia-sia.",
+    "advice": "Arahkan aliran baru ini ke saluran yang kamu pilih sebelum ia mengering sia-sia.",
     "shadow": "Membiarkan sumbernya meluap tanpa diurus sampai menguap menjadi potensi yang terbuang.",
     "upright_full": "Aliran baru sedang terbuka: pemasukan baru, modal baru, atau arus perasaan baru yang ingin diterima, bukan direbut. Kartu ini menandai awal yang terasa melimpah dan murah hati, sumber yang belum terkuras. Energinya lembut tapi nyata, dan ia berpihak pada mereka yang menadahkan tangan lalu membiarkannya terisi.",
     "reversed_full": "Pialanya miring dan sungai-sungai mengering: likuiditas seret, perasaan tersumbat, kolam yang mandek dan tak lagi mengalir. Peluang sebenarnya ada, tapi tak disadari atau tak dirawat, sehingga alirannya surut ke bawah tanah. Ini lebih mirip jeda daripada hukuman: mata airnya masih ada, menunggu untuk dibuka kembali."
@@ -542,10 +542,10 @@
       "Pasif"
     ],
     "symbolism": "Seorang investor bersandar di bawah pohon Merkle dengan tangan terlipat, mengabaikan piala yang disodorkan sebuah tangan dari langit. Kartu ini adalah arketipe apatis di tengah kelimpahan: modal yang menganggur tanpa di-stake, perasaan yang sudah mati rasa. Tiga piala sudah ada di dekat kakinya, tapi yang ia lihat hanya hal-hal yang membuatnya bosan.",
-    "advice": "Angkat kepala dari rasa jenuh Anda dan periksa tawaran yang selama ini Anda abaikan.",
+    "advice": "Angkat kepala dari rasa jenuhmu dan periksa tawaran yang selama ini kamu abaikan.",
     "shadow": "Mengira kemandekan yang nyaman sebagai ketenangan, sementara peluang diam-diam kedaluwarsa.",
-    "upright_full": "Perhatian sedang datar: modal menganggur, tawaran ditepis begitu saja, dan rasa tidak puas yang samar membuat Anda tak melihat apa yang sudah tersedia. Ini bukan kekurangan, melainkan kekenyangan: terlalu nyaman untuk meraih, terlalu jenuh untuk memperhatikan. Piala keempat masih melayang, sabar menunggu diambil.",
-    "reversed_full": "Kabut ketidakpedulian mulai terangkat dan motivasi kembali; piala yang disodorkan akhirnya dilihat dan diterima. Kesempatan baru membuat Anda kembali terlibat, atau Anda menemukan lagi nilai dari hal yang sempat diremehkan. Keterbukaan kembali online, dan modal yang menganggur menemukan salurannya."
+    "upright_full": "Perhatian sedang datar: modal menganggur, tawaran ditepis begitu saja, dan rasa tidak puas yang samar membuat kamu tak melihat apa yang sudah tersedia. Ini bukan kekurangan, melainkan kekenyangan: terlalu nyaman untuk meraih, terlalu jenuh untuk memperhatikan. Piala keempat masih melayang, sabar menunggu diambil.",
+    "reversed_full": "Kabut ketidakpedulian mulai terangkat dan motivasi kembali; piala yang disodorkan akhirnya dilihat dan diterima. Kesempatan baru membuatmu kembali terlibat, atau kamu menemukan lagi nilai dari hal yang sempat diremehkan. Keterbukaan kembali online, dan modal yang menganggur menemukan salurannya."
   },
   "40": {
     "crypto_name": "Impermanent Loss",
@@ -570,8 +570,8 @@
     ],
     "symbolism": "Di kota Genesis, seorang tetua menyerahkan piala kepada builder muda di antara mesin ASIC tua dan cold wallet generasi pertama. Kartu ini adalah kenangan sebagai hadiah: kisah asal-usul yang diwariskan dari mereka yang datang lebih awal kepada yang baru tiba. Nostalgia yang menghidupkan, api unggun cypherpunk tempat cerita lama diteruskan.",
     "advice": "Hormati akar sejarahnya dan bimbing para pendatang baru, tapi jangan membangun rumah di siklus yang sudah lewat.",
-    "shadow": "Terlalu mengagungkan masa genesis sampai Anda tertidur melewati masa kini.",
-    "upright_full": "Masa lalu menjadi bekal: pengalaman yang ditebus mahal, hormat pada cara semuanya dimulai, dan senangnya membimbing pendatang baru. Ada rasa manis saat kembali ke prinsip dasar dan membagikan pelajaran yang dulu Anda dapat dengan cara sulit. Asal-usul menjadi penopang masa kini, bukan penjaranya.",
+    "shadow": "Terlalu mengagungkan masa genesis sampai kamu tertidur melewati masa kini.",
+    "upright_full": "Masa lalu menjadi bekal: pengalaman yang ditebus mahal, hormat pada cara semuanya dimulai, dan senangnya membimbing pendatang baru. Ada rasa manis saat kembali ke prinsip dasar dan membagikan pelajaran yang dulu kamu dapat dengan cara sulit. Asal-usul menjadi penopang masa kini, bukan penjaranya.",
     "reversed_full": "Nostalgia mengeras menjadi penolakan: terpaku pada siklus lalu, meremehkan teknologi baru, mengira peta masa lalu sama dengan medan di depan. Sang tetua berhenti menyerahkan piala dan hanya menjaganya. Pengagungan terhadap genesis berubah menjadi kemandekan."
   },
   "42": {
@@ -585,8 +585,8 @@
     "symbolism": "Tujuh piala melayang di tengah kabut, masing-masing sebuah godaan: memecoin, NFT, token AI, DeFi, GameFi, RWA, dan satu piala gelap yang menyembunyikan Rug Pull. Kartu ini adalah arketipe pilihan yang terlalu banyak dan menyilaukan, mesin kabut di kepala tempat semua opsi tampak sama berkilaunya. Sebagian piala berisi harta; setidaknya satu menyimpan iblis.",
     "advice": "Analisis setiap opsi yang berkilau berdasarkan kualitasnya sebelum memilih, karena sebagian piala menyimpan iblis.",
     "shadow": "Meraih ilusi yang paling mengilap alih-alih melakukan kerja verifikasi yang membosankan.",
-    "upright_full": "Hamparan kemungkinan yang menggoda terbentang, kaya prospek tapi menuntut kepala yang jernih. Kartu ini meminta analisis, bukan nafsu, dan meminta imajinasi dibumikan dulu sebelum Anda berkomitmen. Peluang nyata memang ada, tapi fatamorgana juga ada.",
-    "reversed_full": "Kabutnya menang: ilusi, FOMO, dan angan-angan menarik Anda ke piala paling mengilap, yang terlalu sering menyembunyikan scam. Keputusan yang diambil karena hype, bukan riset, berakhir buruk. Kartu terbalik ini adalah rug yang tak Anda periksa di balik kilauannya."
+    "upright_full": "Hamparan kemungkinan yang menggoda terbentang, kaya prospek tapi menuntut kepala yang jernih. Kartu ini meminta analisis, bukan nafsu, dan meminta imajinasi dibumikan dulu sebelum kamu berkomitmen. Peluang nyata memang ada, tapi fatamorgana juga ada.",
+    "reversed_full": "Kabutnya menang: ilusi, FOMO, dan angan-angan menarikmu ke piala paling mengilap, yang terlalu sering menyembunyikan scam. Keputusan yang diambil karena hype, bukan riset, berakhir buruk. Kartu terbalik ini adalah rug yang tak kamu periksa di balik kilauannya."
   },
   "43": {
     "crypto_name": "Exit Position",
@@ -597,10 +597,10 @@
       "Peralihan"
     ],
     "symbolism": "Seorang pengelana meninggalkan delapan piala penuh dan berjalan menuju pegunungan bercahaya dari siklus baru. Kartu ini adalah arketipe exit yang disengaja: berpaling dari sesuatu yang sudah tuntas, meski masih tampak penuh, menuju apa yang memanggil dari kejauhan. Keberanian untuk unstake dan melanjutkan perjalanan.",
-    "advice": "Izinkan diri Anda keluar dari posisi yang sudah penuh dan melangkah ke jalan yang memanggil Anda.",
+    "advice": "Izinkan dirimu keluar dari posisi yang sudah penuh dan melangkah ke jalan yang memanggilmu.",
     "shadow": "Menggenggam piala basi karena takut, sementara perjalanan yang berarti menunggu di ambang pintu.",
     "upright_full": "Sesuatu sudah selesai masanya, dan langkah bijaknya adalah pergi: ambil profit, tutup satu bab, cari jalan yang lebih bermakna. Piala-piala di belakang bukan kegagalan; mereka memang sudah selesai. Kartu ini menghargai keberanian yang tenang untuk pergi selagi masih bisa.",
-    "reversed_full": "Sang pengelana ragu di ambang pintu, dicengkeram takut akan perubahan, dan tetap memeluk piala yang sudah basi. Aset mati dipertahankan karena keterikatan atau malas bergerak, bukan karena keyakinan. Perjalanan yang bisa memperbarui Anda terus ditunda, dan posisinya membusuk di tempat."
+    "reversed_full": "Sang pengelana ragu di ambang pintu, dicengkeram takut akan perubahan, dan tetap memeluk piala yang sudah basi. Aset mati dipertahankan karena keterikatan atau malas bergerak, bukan karena keyakinan. Perjalanan yang bisa memperbaruimu terus ditunda, dan posisinya membusuk di tempat."
   },
   "44": {
     "crypto_name": "Whale's Vault",
@@ -612,8 +612,8 @@
     ],
     "symbolism": "Seekor whale yang kaya duduk puas di depan sembilan piala bercahaya yang tertata di dalam treasury DeFi yang megah. Kartu ini adalah keinginan yang terkabul: arketipe kepuasan yang diraih dengan usaha, brankas terisi dan rasa lapar terpenuhi. Kenyamanan yang tampak nyata, senyum seseorang yang bag-nya sudah aman.",
     "advice": "Nikmati kepuasan ini sepenuhnya, sambil tetap menjaga disiplin yang dulu mengisi brankas itu.",
-    "shadow": "Membiarkan rasa puas berubah menjadi lengah, serakah, atau ilusi bahwa Anda akan selalu menang.",
-    "upright_full": "Kesejahteraan datang: investasi yang berhasil, keuangan yang stabil, dan kenikmatan sederhana dari rasa cukup. Kartu ini merestui rasa puas dan menikmati apa yang sudah Anda bangun. Inilah saatnya menikmati, bukan merebut lebih banyak.",
+    "shadow": "Membiarkan rasa puas berubah menjadi lengah, serakah, atau ilusi bahwa kamu akan selalu menang.",
+    "upright_full": "Kesejahteraan datang: investasi yang berhasil, keuangan yang stabil, dan kenikmatan sederhana dari rasa cukup. Kartu ini merestui rasa puas dan menikmati apa yang sudah kamu bangun. Inilah saatnya menikmati, bukan merebut lebih banyak.",
     "reversed_full": "Rasa puas tergelincir menjadi lengah, serakah, atau terlalu percaya diri: whale yang mengira satu siklus bagus berarti ia menguasai pasar selamanya. Sikap jemawa mengundang kecerobohan, dan brankas terasa lebih aman daripada kenyataannya. Diam-diam, kata cukup berubah maknanya menjadi tak pernah cukup."
   },
   "45": {
@@ -639,9 +639,9 @@
       "Rasa Ingin Tahu"
     ],
     "symbolism": "Seorang murid muda mengamati piala tempat seekor koi digital kecil yang bercahaya muncul, token LP melayang di sekitarnya seperti kelopak bunga. Ia adalah arketipe hati pemula yang terbuka: rasa ingin tahu yang masih murni, tuangan pertama yang ragu-ragu ke dunia DeFi. Rasa takjub adalah seluruh metodenya, sekaligus bakat dan titik lemahnya.",
-    "advice": "Jelajahi DeFi dengan rasa ingin tahu, dan verifikasi setiap kontrak serta klaim sebelum Anda ape in.",
+    "advice": "Jelajahi DeFi dengan rasa ingin tahu, dan verifikasi setiap kontrak serta klaim sebelum kamu ape in.",
     "shadow": "Mengira semangat polos sebagai pemahaman, lalu minum dari piala mengilap pertama yang ditawarkan.",
-    "upright_full": "Seorang pembelajar baru datang dengan keterbukaan yang tulus: investasi pertama, ide-ide baru, kesediaan untuk dibuat kagum dan terkejut. Kartu ini mendukung belajar sambil bermain dan keberanian untuk mulai sebelum Anda tahu segalanya. Pola pikir pemula justru jadi keunggulan selama tetap penasaran dan rendah hati.",
+    "upright_full": "Seorang pembelajar baru datang dengan keterbukaan yang tulus: investasi pertama, ide-ide baru, kesediaan untuk dibuat kagum dan terkejut. Kartu ini mendukung belajar sambil bermain dan keberanian untuk mulai sebelum kamu tahu segalanya. Pola pikir pemula justru jadi keunggulan selama tetap penasaran dan rendah hati.",
     "reversed_full": "Keterbukaan tergelincir menjadi naif: ape in tanpa mengecek, mengira koi yang cantik itu adalah seluruh samudra, terjebak scam pertama yang berkedok peluang. Kurang pengalaman menjadi beban saat semangat berlari lebih cepat daripada riset. Sang murid mengira rasa takjub adalah kebijaksanaan."
   },
   "47": {
@@ -654,7 +654,7 @@
     ],
     "symbolism": "Seorang ksatria menunggang kuda laut siber menyeberangi sungai likuiditas, dan pool LP baru terbentuk di jejak yang ia tinggalkan. Ia adalah arketipe pemburu yield: bergerak demi sebuah idealisme, romantisme yang diarahkan pada imbal hasil. Anggun dan bersemangat, ia selalu melaju ke pool berikutnya.",
     "advice": "Farming-lah secara aktif dengan rencana, karena mengejar APY tertinggi secara buta biasanya berakhir rugi.",
-    "shadow": "Mengira sibuk berpindah-pindah demi yield sebagai kemajuan, sampai keserakahan membawa Anda terjun ke jurang.",
+    "shadow": "Mengira sibuk berpindah-pindah demi yield sebagai kemajuan, sampai keserakahan membawamu terjun ke jurang.",
     "upright_full": "Ini energi yang aktif dan penuh pencarian: memutar modal, mengejar yield dengan keahlian, menumbuhkan posisi dengan bergerak, bukan menunggu. Sang ksatria membawa pesona dan momentum ke ladang farming. Dalam versi terbaiknya, ia pencari yang disiplin dan membiarkan hasilnya berbunga majemuk di belakangnya.",
     "reversed_full": "Pencariannya merosot menjadi keserakahan: mengejar APY tertinggi sampai jatuh ke jurang, mengambil risiko berlebihan, mengira gerak sama dengan kemajuan. Sang ksatria menerjang farm yang terlalu indah untuk jadi kenyataan. Berburu yield tanpa riset biasanya berakhir seperti semua fatamorgana."
   },
@@ -696,7 +696,7 @@
     "symbolism": "Sebuah Protocol Blade raksasa dari mata rantai blockchain turun dari awan, rune-rune Solidity mengitarinya, dengan segel 'Audit Passed' yang bersinar di puncaknya. Kartu ini adalah kejernihan pikiran yang murni: pedang yang menebas kebingungan hingga tersisa satu kebenaran yang terverifikasi. Terobosan pemikiran yang bersih dan tegas.",
     "advice": "Kejernihannya sudah terverifikasi; tebas dengan bersih dan naiklah ke level berikutnya.",
     "shadow": "Pedang setajam ini, bila diarahkan oleh logika yang keliru, menebas hal yang salah dengan penuh keyakinan.",
-    "upright_full": "Kartu ini adalah kejernihan dan kebenaran: kesadaran yang menjadi terobosan, audit yang lolos, tebasan tegas menembus kebisingan menuju apa yang nyata. Verified Contract menghargai pikiran yang tajam dan kesimpulan yang jujur. Sekarang Anda bisa melihat dengan jelas, jadi tebas dengan bersih dan bertindaklah.",
+    "upright_full": "Kartu ini adalah kejernihan dan kebenaran: kesadaran yang menjadi terobosan, audit yang lolos, tebasan tegas menembus kebisingan menuju apa yang nyata. Verified Contract menghargai pikiran yang tajam dan kesimpulan yang jujur. Sekarang kamu bisa melihat dengan jelas, jadi tebas dengan bersih dan bertindaklah.",
     "reversed_full": "Saat terbalik, pedangnya meleset: bug, exploit, kesimpulan keliru dari logika yang keruh, arsitektur yang berdiri di atas premis cacat. Kejernihan berubah menjadi kebingungan atau kecerdasan yang disalahgunakan. Penalarannya tampak benar, padahal diam-diam rusak."
   },
   "51": {
@@ -707,9 +707,9 @@
       "Voting"
     ],
     "symbolism": "Seorang penjaga DAO berdiri dengan dua Protocol Blade bersilang di depan portal governance yang megah, ribuan alamat wallet bercahaya menerangi ruangan. Kartu ini adalah keputusan yang tertahan dalam keseimbangan yang tegang: dua opsi ditimbang, satu suara harus diberikan. Persimpangan jalan di dalam pikiran.",
-    "advice": "Berikan suara Anda; keputusan yang diambil lebih baik daripada kebuntuan tanpa akhir.",
-    "shadow": "Terus menutup mata karena takut adalah cara membiarkan kebuntuan yang memutuskan untuk Anda.",
-    "upright_full": "Kartu ini adalah pilihan yang harus diambil: voting governance, menimbang dua jalan, kompromi di antara faksi-faksi. Governance Vote meminta Anda mengumpulkan informasi, membuka penutup mata, lalu memutuskan. Seimbang itu baik, tapi jalan buntu bukanlah strategi.",
+    "advice": "Berikan suaramu; keputusan yang diambil lebih baik daripada kebuntuan tanpa akhir.",
+    "shadow": "Terus menutup mata karena takut adalah cara membiarkan kebuntuan yang memutuskan untukmu.",
+    "upright_full": "Kartu ini adalah pilihan yang harus diambil: voting governance, menimbang dua jalan, kompromi di antara faksi-faksi. Governance Vote meminta kamu mengumpulkan informasi, membuka penutup mata, lalu memutuskan. Seimbang itu baik, tapi jalan buntu bukanlah strategi.",
     "reversed_full": "Saat terbalik, pilihannya macet: kebuntuan politik, konflik komunitas, keputusan yang terus dihindari hingga bernanah, informasi yang ditutup-tutupi. Kedua pedang yang bersilang saling mengunci, bukan menyeimbangkan. Keraguan menjadi kerugian tersendiri, atau justru kebuntuan itu akhirnya pecah."
   },
   "52": {
@@ -719,10 +719,10 @@
       "Exploit",
       "Keamanan"
     ],
-    "symbolism": "Jantung blockchain yang bercahaya ditembus tiga Protocol Blade, likuiditas merembes dari retakannya dan larut dalam hujan digital yang bergemuruh. Kartu ini adalah kebenaran yang pahit: exploit yang justru menghantam di tempat Anda paling percaya, sakitnya keamanan yang dikhianati. Luka yang membuka mata.",
+    "symbolism": "Jantung blockchain yang bercahaya ditembus tiga Protocol Blade, likuiditas merembes dari retakannya dan larut dalam hujan digital yang bergemuruh. Kartu ini adalah kebenaran yang pahit: exploit yang justru menghantam di tempatmu paling percaya, sakitnya keamanan yang dikhianati. Luka yang membuka mata.",
     "advice": "Exploit ini memang menyakitkan; biarkan ia menunjukkan di mana celah yang sebenarnya.",
     "shadow": "Luka yang tidak pernah diaudit hanya menunggu dieksploitasi dengan cara yang sama.",
-    "upright_full": "Kartu ini bicara tentang kehilangan dan kenyataan pahit: hack, pengkhianatan, kekecewaan yang menusuk tepat di titik paling rentan Anda. Smart Contract Hack tidak memperhalus pukulannya, tapi rasa sakit itu menunjukkan persis di mana kelemahannya. Wajar untuk berduka, dan pelajaran di baliknya sama nyatanya.",
+    "upright_full": "Kartu ini bicara tentang kehilangan dan kenyataan pahit: hack, pengkhianatan, kekecewaan yang menusuk tepat di titik paling rentanmu. Smart Contract Hack tidak memperhalus pukulannya, tapi rasa sakit itu menunjukkan persis di mana kelemahannya. Wajar untuk berduka, dan pelajaran di baliknya sama nyatanya.",
     "reversed_full": "Dalam posisi terbalik, luka mulai pulih: pemulihan, kompensasi, saling memaafkan, pelajaran keamanan yang benar-benar diterapkan. Pedang-pedang itu dicabut. Yang rusak sedang diperbaiki, dan rasa sakit berubah menjadi pertahanan yang lebih kokoh."
   },
   "53": {
@@ -746,8 +746,8 @@
       "Konflik"
     ],
     "symbolism": "Seorang pemenang memunguti pedang lawan-lawannya yang kalah, sementara puing-puing DAO masih berasap di belakangnya di bawah langit kelam. Inilah kemenangan yang lebih mahal daripada hasilnya: dominasi yang diraih lewat pertarungan yang menghanguskan segalanya. Kemenangan yang hampa.",
-    "advice": "Tanyakan pada diri Anda apakah penaklukan ini sepadan; ada kemenangan yang membakar kepercayaan yang Anda butuhkan.",
-    "shadow": "Kalau semua pertarungan harus dimenangkan, akhirnya Anda hanya menguasai jaringan yang hangus dan kosong.",
+    "advice": "Tanyakan pada dirimu apakah penaklukan ini sepadan; ada kemenangan yang membakar kepercayaan yang kamu butuhkan.",
+    "shadow": "Kalau semua pertarungan harus dimenangkan, akhirnya kamu hanya menguasai jaringan yang hangus dan kosong.",
     "upright_full": "Kartu ini tentang menang dengan harga mahal: pengambilalihan yang agresif, dominasi yang direbut, konflik di mana pemenangnya pun kehilangan sesuatu. Hostile Takeover bertanya apakah kemenangan itu sebanding dengan kepercayaan yang ikut terbakar. Kadang kemenangan hanyalah kekalahan yang kebetulan tercatat sebagai skor.",
     "reversed_full": "Dalam posisi terbalik, pedang kembali ke sarungnya: rekonsiliasi, mundur dari pertarungan yang tidak layak, membangun ulang kepercayaan setelah konflik yang menghanguskan. Sang pemenang memilih damai ketimbang satu lagi kemenangan kosong. Meredakan konflik justru tanda kekuatan."
   },
@@ -760,9 +760,9 @@
     ],
     "symbolism": "Para pengembara menyeberangi bridge lintas chain yang megah, dikawal Protocol Blade yang melayang, meninggalkan blockchain yang menua menuju chain yang lebih cerah. Inilah masa peralihan: kepindahan yang dipikirkan matang, menjauh dari masalah menuju perairan yang lebih tenang. Maju lewat migrasi.",
     "advice": "Pindahlah ke chain yang lebih cerah; terus bergerak sampai masa transisi ini selesai.",
-    "shadow": "Migrasi yang ditinggalkan di tengah jalan membuat Anda terdampar di antara dua chain, tanpa rasa aman di keduanya.",
+    "shadow": "Migrasi yang ditinggalkan di tengah jalan membuatmu terdampar di antara dua chain, tanpa rasa aman di keduanya.",
     "upright_full": "Kartu ini adalah peralihan menuju keadaan yang lebih baik: menjauh dari gejolak, melanjutkan hidup, pulih perlahan menuju babak baru. Bridge Migration menghargai keberanian meninggalkan yang sudah tidak berfungsi dan menyeberang dengan mantap ke chain berikutnya. Terus bergerak; di depan airnya lebih tenang.",
-    "reversed_full": "Dalam posisi terbalik, penyeberangan gagal: bridge bermasalah, penundaan, dana hilang di tengah transfer, tak sanggup melepaskan chain lama. Anda terjebak di antara dua dunia. Transisinya macet di tengah jalan."
+    "reversed_full": "Dalam posisi terbalik, penyeberangan gagal: bridge bermasalah, penundaan, dana hilang di tengah transfer, tak sanggup melepaskan chain lama. Kamu terjebak di antara dua dunia. Transisinya macet di tengah jalan."
   },
   "56": {
     "crypto_name": "White Hat",
@@ -772,10 +772,10 @@
       "Exploit"
     ],
     "symbolism": "Di bawah cahaya bulan, seorang peretas etis menyelinap keluar dari benteng membawa lima Protocol Blade dan meninggalkan dua lainnya, untuk menyelamatkan jaringan, bukan merampoknya. Inilah strategi yang cerdik: kelihaian dan cara berpikir tak biasa yang dipakai untuk tujuan jelas. Langkah pintar yang dilakukan tanpa suara.",
-    "advice": "Pakai kecerdikan Anda untuk melindungi jaringan, bukan untuk mengeksploitasinya.",
-    "shadow": "Keahlian yang bisa menambal celah juga bisa diam-diam membukanya; sadari mana yang sedang Anda lakukan.",
+    "advice": "Pakai kecerdikanmu untuk melindungi jaringan, bukan untuk mengeksploitasinya.",
+    "shadow": "Keahlian yang bisa menambal celah juga bisa diam-diam membukanya; sadari mana yang sedang kamu lakukan.",
     "upright_full": "Kartu ini tentang strategi dan cara berpikir yang tidak konvensional: langkah white hat, menemukan celah lebih dulu, bertindak cerdik dan senyap demi tujuan yang baik. White Hat menghargai akal panjang dan kemampuan melihat masalah dari sisi lain. Gunakan kecerdikan itu untuk melindungi, bukan untuk menjarah.",
-    "reversed_full": "Dalam posisi terbalik, kelihaian berubah jadi black hat: exploit sungguhan, tipu daya, penipuan, jalan pintas, seseorang yang lolos begitu saja. Kecerdikan yang sama kini diarahkan untuk merugikan. Waspadai langkah senyap yang ditujukan kepada Anda, atau godaan untuk melakukannya sendiri."
+    "reversed_full": "Dalam posisi terbalik, kelihaian berubah jadi black hat: exploit sungguhan, tipu daya, penipuan, jalan pintas, seseorang yang lolos begitu saja. Kecerdikan yang sama kini diarahkan untuk merugikan. Waspadai langkah senyap yang ditujukan kepadamu, atau godaan untuk melakukannya sendiri."
   },
   "57": {
     "crypto_name": "Frozen Wallet",
@@ -786,9 +786,9 @@
     ],
     "symbolism": "Seorang perempuan berdiri dikelilingi delapan Protocol Blade, dompetnya membeku di dalam kristal kriptografis yang bening, sementara jalan keluar terlihat jelas tapi tidak ia sadari. Inilah belenggu buatan sendiri: jebakan yang terasa total, padahal sebagian besar jerujinya ada di dalam pikiran. Lumpuh karena takut.",
     "advice": "Hambatan ini terasa mutlak, tapi sangkarnya jauh lebih tipis daripada rasa takut yang menyelimutinya.",
-    "shadow": "Penjara paling rapat adalah penjara yang pintunya tidak pernah berani Anda coba buka.",
-    "upright_full": "Kartu ini tentang perasaan terjebak: dana dibekukan, ruang gerak dibatasi, sangkar ketakutan yang menutupi pintu yang sebenarnya terbuka. Frozen Wallet menunjukkan batasan yang lebih banyak dirasakan daripada nyata. Pedang-pedangnya memang ada, tapi jalan di antaranya akan terlihat begitu Anda berhenti panik dan mulai melihat.",
-    "reversed_full": "Dalam posisi terbalik, dompet mulai mencair: akses kembali, hambatan lenyap, sudut pandang baru memperlihatkan bahwa jalan keluar selalu ada. Rasa takut melepaskan cengkeramannya. Anda membebaskan diri sendiri."
+    "shadow": "Penjara paling rapat adalah penjara yang pintunya tidak pernah berani kamu coba buka.",
+    "upright_full": "Kartu ini tentang perasaan terjebak: dana dibekukan, ruang gerak dibatasi, sangkar ketakutan yang menutupi pintu yang sebenarnya terbuka. Frozen Wallet menunjukkan batasan yang lebih banyak dirasakan daripada nyata. Pedang-pedangnya memang ada, tapi jalan di antaranya akan terlihat begitu kamu berhenti panik dan mulai melihat.",
+    "reversed_full": "Dalam posisi terbalik, dompet mulai mencair: akses kembali, hambatan lenyap, sudut pandang baru memperlihatkan bahwa jalan keluar selalu ada. Rasa takut melepaskan cengkeramannya. Kamu membebaskan diri sendiri."
   },
   "58": {
     "crypto_name": "Night Before Liquidation",
@@ -799,9 +799,9 @@
     ],
     "symbolism": "Seorang trader terbangun panik di tengah malam, sembilan Protocol Blade tergantung di dinding, grafik candlestick merah yang anjlok menyala merah darah dari balik jendela. Inilah pikiran pukul empat pagi: cemas dan was-was yang membesar dalam gelap, rasa takut yang lebih nyaring daripada bahaya sebenarnya. Siksaan batin.",
     "advice": "Kecemasan jam empat pagi selalu melebih-lebihkan; tarik napas, lalu hadapi grafiknya saat hari sudah terang.",
-    "shadow": "Memutar skenario terburuk sepanjang malam hanya menghabiskan tidur yang Anda perlukan untuk bertarung.",
-    "upright_full": "Kartu ini tentang cemas dan takut: tak bisa tidur memikirkan kerugian, membayangkan bencana dalam gelap, pikiran yang menyiksa diri jauh melampaui fakta. Night Before Liquidation memberi nama pada rasa takut itu agar Anda bisa melihatnya apa adanya, dan biasanya ia lebih besar daripada kenyataan. Pedang-pedang itu ada di dinding, bukan di tubuh Anda.",
-    "reversed_full": "Dalam posisi terbalik, fajar datang: kecemasan mereda, Anda mulai menerima keadaan, berani minta tolong, dan harapan kembali. Mimpi buruk melonggarkan cengkeramannya. Pijakan Anda kembali kokoh dan rasa takut menyusut ke ukuran aslinya."
+    "shadow": "Memutar skenario terburuk sepanjang malam hanya menghabiskan tidur yang kamu perlukan untuk bertarung.",
+    "upright_full": "Kartu ini tentang cemas dan takut: tak bisa tidur memikirkan kerugian, membayangkan bencana dalam gelap, pikiran yang menyiksa diri jauh melampaui fakta. Night Before Liquidation memberi nama pada rasa takut itu agar kamu bisa melihatnya apa adanya, dan biasanya ia lebih besar daripada kenyataan. Pedang-pedang itu ada di dinding, bukan di tubuhmu.",
+    "reversed_full": "Dalam posisi terbalik, fajar datang: kecemasan mereda, kamu mulai menerima keadaan, berani minta tolong, dan harapan kembali. Mimpi buruk melonggarkan cengkeramannya. Pijakanmu kembali kokoh dan rasa takut menyusut ke ukuran aslinya."
   },
   "59": {
     "crypto_name": "Protocol Collapse",
@@ -812,7 +812,7 @@
     ],
     "symbolism": "Raksasa blockchain yang tumbang tergeletak ditembus sepuluh Protocol Blade di bawah langit gelap, namun matahari digital yang terang sudah mulai terbit di cakrawala. Inilah titik terendah: akhir yang menyakitkan dan tuntas, sekaligus titik di mana satu-satunya arah adalah naik. Kehancuran yang menjanjikan kelahiran baru.",
     "advice": "Babak ini sudah benar-benar runtuh; matahari terbit di belakangnya adalah fork berikutnya.",
-    "shadow": "Kalau hanya menatap sepuluh pedang itu, Anda akan melewatkan fajar yang sudah menyingsing.",
+    "shadow": "Kalau hanya menatap sepuluh pedang itu, kamu akan melewatkan fajar yang sudah menyingsing.",
     "upright_full": "Kartu ini adalah akhir yang menyakitkan dan tegas: runtuh total, satu siklus selesai, proyek ditutup, dasar jurang sudah tersentuh. Protocol Collapse tidak berpura-pura semuanya baik-baik saja, tapi kartu ini menandai dasar yang sesungguhnya, dan matahari sudah tampak di balik pedang-pedang itu. Tidak ada yang lebih sakit dari ini; langkah berikutnya adalah naik.",
     "reversed_full": "Dalam posisi terbalik, pemulihan dimulai: bertahan melewati masa terburuk, fork baru tumbuh dari reruntuhan, menolak menjadikan akhir ini sebagai akhir segalanya. Sang raksasa mulai bergerak. Pembangunan ulang dimulai dari abu."
   },
@@ -828,7 +828,7 @@
     "symbolism": "Seorang peneliti muda berdiri di puncak menara data center dengan Protocol Blade pertamanya, kode Solidity dan diagram EVM melayang di sekelilingnya, gagak-gagak digital berputar memburu celah keamanan. Ia adalah pikiran pemula yang tajam dan penuh rasa ingin tahu: mengumpulkan informasi, selalu waspada, haus memahami bagaimana sesuatu bisa rusak. Kecerdasan muda yang siaga.",
     "advice": "Selidiki semuanya, tapi verifikasi dulu sebelum menuduh.",
     "shadow": "Firasat yang dianggap temuan bisa mengubah seorang peneliti menjadi penyebar FUD.",
-    "upright_full": "Kartu ini adalah pikiran yang penasaran dan waspada: meneliti, mengaudit, memburu masalah sebelum muncul ke permukaan, haus memahami cara kerja sistem. Security Researcher menghargai rasa ingin tahu yang tajam dan pengamatan yang teliti. Kumpulkan informasinya, lalu verifikasi sebelum Anda menyebarkannya.",
+    "upright_full": "Kartu ini adalah pikiran yang penasaran dan waspada: meneliti, mengaudit, memburu masalah sebelum muncul ke permukaan, haus memahami cara kerja sistem. Security Researcher menghargai rasa ingin tahu yang tajam dan pengamatan yang teliti. Kumpulkan informasinya, lalu verifikasi sebelum kamu menyebarkannya.",
     "reversed_full": "Dalam posisi terbalik, rasa ingin tahu melaju lebih cepat daripada kemampuan: audit dangkal, kesimpulan keliru, tuduhan terburu-buru, gosip, salah membaca arsitektur, banyak bicara tanpa isi. Sang peneliti menganggap firasat sebagai temuan. Kewaspadaan berubah jadi paranoia atau kebiasaan memata-matai."
   },
   "61": {
@@ -871,7 +871,7 @@
       "Penguasaan"
     ],
     "symbolism": "Sang arsitek agung duduk di singgasana Genesis Block di dalam katedral blockchain, mahkota dari blok-blok yang berputar di kepalanya, Protocol Blade legendaris di satu tangan dan bola Blockchain Core di tangan lainnya, sementara Roda Konsensus berputar di belakangnya. Ia adalah intelek yang telah matang menjadi kepemimpinan yang etis: logika, struktur, dan keamanan yang dijalankan dengan penuh tanggung jawab.",
-    "advice": "Rancang fondasinya dengan penuh keahlian; tolak sentralisasi, atau Anda sendiri yang menjadi risikonya.",
+    "advice": "Rancang fondasinya dengan penuh keahlian; tolak sentralisasi, atau kamu sendiri yang menjadi risikonya.",
     "shadow": "Logika tanpa etika bisa membuat sang arsitek berubah menjadi exploit yang dulu ingin ia cegah.",
     "upright_full": "Kartu ini adalah otoritas intelektual dan penguasaan: merancang sistem, memimpin dengan logika dan etika, bertanggung jawab atas seluruh ekosistem. Protocol Architect menghargai kepemimpinan yang strategis dan berprinsip. Pimpin dengan logika yang jernih dan etis, karena kuasa atas pikiran orang lain menuntut hal itu.",
     "reversed_full": "Dalam posisi terbalik, otoritas berubah jadi tirani: kontrol berlebihan, arogansi teknis, menolak gagasan baru, sentralisasi yang berbahaya, logika yang dipakai untuk menguasai. Sang arsitek menjadi diktator protokolnya sendiri. Etika terlepas dari kecerdasan."
@@ -885,9 +885,9 @@
       "Peluang"
     ],
     "symbolism": "Sebuah tangan dari cahaya menyodorkan Crypto Sigil emas raksasa berukir Genesis Block, di atas taman pohon Merkle dan bunga-bunga NFT yang bermekaran, dengan jalan setapak menuju istana DAO. Ia adalah benih kekayaan baru yang nyata: peluang yang sudah berwujud dan siap ditanam. Awal yang paling membumi.",
-    "advice": "Ada peluang nyata di depan Anda; susun rencana yang matang sebelum meraihnya.",
+    "advice": "Ada peluang nyata di depanmu; susun rencana yang matang sebelum meraihnya.",
     "shadow": "Benih emas di tangan yang ceroboh akan membusuk menjadi peluang yang terbuang.",
-    "upright_full": "Kartu ini adalah peluang baru yang konkret: modal segar, kesempatan nyata untuk menghasilkan, benih kekayaan yang bertahan lama. Genesis Treasury menghargai keberanian mengambil peluang yang solid lalu menanamnya dengan baik. Potensi untungnya nyata dan berwujud, jadi siapkan rencananya sebelum Anda meraihnya.",
+    "upright_full": "Kartu ini adalah peluang baru yang konkret: modal segar, kesempatan nyata untuk menghasilkan, benih kekayaan yang bertahan lama. Genesis Treasury menghargai keberanian mengambil peluang yang solid lalu menanamnya dengan baik. Potensi untungnya nyata dan berwujud, jadi siapkan rencananya sebelum kamu meraihnya.",
     "reversed_full": "Dalam posisi terbalik, benih itu disia-siakan: peluang terlewat, pengelolaan uang yang buruk, investasi yang salah, potensi yang tidak pernah berakar. Sigil emas itu lepas dari tangan yang ceroboh. Kesempatannya nyata, tapi salah ditangani."
   },
   "65": {
@@ -900,7 +900,7 @@
     "symbolism": "Seorang investor muda dengan luwes memainkan dua Crypto Sigil raksasa yang terikat pita emas tak berujung, berdiri di depan samudra bergolak berisi ombak bull dan bear. Inilah keseimbangan yang dinamis: menjaga beberapa aset dan prioritas tetap bergerak sekaligus, gesit di tengah volatilitas. Keseimbangan sebagai keterampilan aktif.",
     "advice": "Jaga kedua sisi portofolio tetap seimbang; lakukan rebalancing begitu salah satunya lebih berat.",
     "shadow": "Menambah satu aset lagi di luar kemampuan bisa membuat semuanya jatuh berantakan.",
-    "upright_full": "Kartu ini tentang keseimbangan dan kemampuan beradaptasi: mengelola portofolio yang terdiversifikasi, menyeimbangkan prioritas yang saling bersaing, tetap lincah saat kondisi berubah. Portfolio Balance menghargai fleksibilitas dan alokasi yang tepat. Jaga kedua bola tetap di udara, tapi jangan tambah bola ketiga yang tak sanggup Anda tangkap.",
+    "upright_full": "Kartu ini tentang keseimbangan dan kemampuan beradaptasi: mengelola portofolio yang terdiversifikasi, menyeimbangkan prioritas yang saling bersaing, tetap lincah saat kondisi berubah. Portfolio Balance menghargai fleksibilitas dan alokasi yang tepat. Jaga kedua bola tetap di udara, tapi jangan tambah bola ketiga yang tak sanggup kamu tangkap.",
     "reversed_full": "Dalam posisi terbalik, permainan itu buyar: portofolio kelebihan beban, alokasi yang buruk, bola terjatuh, perhatian terpecah terlalu tipis sampai tak ada yang terurus dengan baik. Pitanya kusut. Terlalu banyak hal menuntut perhatian dalam waktu bersamaan."
   },
   "66": {
@@ -911,9 +911,9 @@
       "Kerja Sama Tim"
     ],
     "symbolism": "Tiga builder legendaris membangun Katedral Blockchain bersama-sama: satu menggambar cetak biru, satu menulis smart contract yang berpendar, satu lagi memahat simbol-simbol kriptografis. Inilah keahlian yang berkolaborasi: keterampilan yang saling melengkapi menjadi sesuatu yang lebih besar daripada karya satu orang. Struktur yang lahir dari kerja sama.",
-    "advice": "Bangunlah bersama orang yang keahliannya melengkapi Anda; bagi peran dengan jelas.",
+    "advice": "Bangunlah bersama orang yang keahliannya melengkapimu; bagi peran dengan jelas.",
     "shadow": "Tiga builder tanpa cetak biru bersama hanya akan mendirikan tiga dinding yang miring.",
-    "upright_full": "Kartu ini tentang kerja sama tim dan kolaborasi yang terampil: bakat yang saling melengkapi membangun sesuatu yang kokoh, hasil nyata pertama dari usaha yang terkoordinasi. Builders DAO menghargai pembagian peran yang selaras dan sikap menghormati keahlian tiap spesialis. Bangunlah bersama orang yang keahliannya melengkapi Anda.",
+    "upright_full": "Kartu ini tentang kerja sama tim dan kolaborasi yang terampil: bakat yang saling melengkapi membangun sesuatu yang kokoh, hasil nyata pertama dari usaha yang terkoordinasi. Builders DAO menghargai pembagian peran yang selaras dan sikap menghormati keahlian tiap spesialis. Bangunlah bersama orang yang keahliannya melengkapimu.",
     "reversed_full": "Dalam posisi terbalik, kolaborasi goyah: salah komunikasi, peran yang tidak selaras, kepemimpinan lemah, katedral setengah jadi dan miring. Para builder bekerja dengan tujuan yang saling bertabrakan. Koordinasi pun runtuh."
   },
   "67": {
@@ -924,9 +924,9 @@
       "Keamanan"
     ],
     "symbolism": "Seorang penjaga brankas yang kaya mendekap erat Crypto Sigil besar di dadanya, dua lagi di bawah kakinya, satu di singgasananya, dengan Benteng Brankas menjulang di belakang. Inilah sikap menggenggam erat: rasa aman dan akumulasi yang bisa bergeser menjadi penimbunan. Kendali lewat kepemilikan.",
-    "advice": "Lindungi apa yang Anda miliki, tapi ingat brankas yang terkunci juga menghentikan aliran.",
-    "shadow": "Menggenggam sigil terlalu erat sampai tak ada lagi yang baru bisa masuk ke tangan Anda.",
-    "upright_full": "Kartu ini tentang HODL yang disiplin: melindungi modal, terus mengakumulasi, mengamankan apa yang sudah dibangun, menahan dorongan untuk membelanjakan atau menjual. Diamond Vault menghargai kehati-hatian dan keyakinan jangka panjang. Lindungi apa yang Anda miliki, tapi ingat brankas yang tersegel juga menghentikan aliran.",
+    "advice": "Lindungi apa yang kamu miliki, tapi ingat brankas yang terkunci juga menghentikan aliran.",
+    "shadow": "Menggenggam sigil terlalu erat sampai tak ada lagi yang baru bisa masuk ke tanganmu.",
+    "upright_full": "Kartu ini tentang HODL yang disiplin: melindungi modal, terus mengakumulasi, mengamankan apa yang sudah dibangun, menahan dorongan untuk membelanjakan atau menjual. Diamond Vault menghargai kehati-hatian dan keyakinan jangka panjang. Lindungi apa yang kamu miliki, tapi ingat brankas yang tersegel juga menghentikan aliran.",
     "reversed_full": "Dalam posisi terbalik, rasa aman berubah jadi sangkar: serakah, takut berinvestasi, modal yang mandek, menimbun mati-matian sampai pertumbuhan terhambat. Sang penjaga menggenggam begitu erat hingga tak ada yang bisa berputar. Menyimpan berubah jadi tak mau melepaskan."
   },
   "68": {
@@ -939,7 +939,7 @@
     "symbolism": "Dua pengembara yang kelelahan menyeberangi padang blockchain yang membeku di tengah crypto winter, sementara Katedral Blockchain yang bercahaya hangat berdiri tak jauh dari mereka, tempat berlindung yang tak mereka sadari. Inilah masa sulit: bear market dalam jiwa, kekurangan dan dingin, dengan pertolongan yang lebih dekat daripada yang terlihat. Ujian yang tetap punya pintu keluar.",
     "advice": "Musim dingin pasti berakhir; tempat berlindung lebih dekat daripada yang dibiarkan hawa dingin terlihat.",
     "shadow": "Melewati katedral yang terang begitu saja karena gengsi untuk meminta kehangatan.",
-    "upright_full": "Kartu ini tentang masa sulit dan kekurangan: bear market, ujian finansial, periode dingin yang menguji daya tahan. Crypto Winter memang nyata, tapi katedral yang hangat berdiri tepat di samping para pengembara; bantuan dan tempat berlindung ada kalau Anda mau mengangkat kepala. Musim dingin pasti berakhir.",
+    "upright_full": "Kartu ini tentang masa sulit dan kekurangan: bear market, ujian finansial, periode dingin yang menguji daya tahan. Crypto Winter memang nyata, tapi katedral yang hangat berdiri tepat di samping para pengembara; bantuan dan tempat berlindung ada kalau kamu mau mengangkat kepala. Musim dingin pasti berakhir.",
     "reversed_full": "Dalam posisi terbalik, es mulai mencair: pemulihan, krisis berakhir, bantuan komunitas berdatangan, kehangatan kembali. Para pengembara akhirnya sampai di depan pintu. Masa terdingin sudah mulai berlalu."
   },
   "69": {
@@ -962,10 +962,10 @@
       "Kesabaran",
       "Investasi"
     ],
-    "symbolism": "Seorang investor bijak dengan tenang mengamati pohon Merkle tua yang berbuah Crypto Sigil emas, panennya hampir matang di bawah langit yang cerah. Inilah evaluasi yang sabar: jeda panjang ketika Anda merawat apa yang sudah ditanam dan menunggunya matang. Percaya pada pertumbuhan yang pelan.",
-    "advice": "Anda sudah menanam dengan baik; jangan gali lagi benihnya hanya untuk mengecek.",
+    "symbolism": "Seorang investor bijak dengan tenang mengamati pohon Merkle tua yang berbuah Crypto Sigil emas, panennya hampir matang di bawah langit yang cerah. Inilah evaluasi yang sabar: jeda panjang ketika kamu merawat apa yang sudah ditanam dan menunggunya matang. Percaya pada pertumbuhan yang pelan.",
+    "advice": "Kamu sudah menanam dengan baik; jangan gali lagi benihnya hanya untuk mengecek.",
     "shadow": "Memanen pohon seminggu sebelum buahnya matang berarti kehilangan seluruh hasil panen.",
-    "upright_full": "Kartu ini tentang kesabaran dan cara pandang jangka panjang: investasi jangka panjang yang mulai matang, saat yang tepat untuk menilai kemajuan dan membiarkan panen masak. Long-Term HODL menghargai mereka yang mampu menahan diri untuk tidak memetik terlalu cepat. Anda sudah menanam dengan baik, jangan gali lagi benihnya hanya untuk mengecek.",
+    "upright_full": "Kartu ini tentang kesabaran dan cara pandang jangka panjang: investasi jangka panjang yang mulai matang, saat yang tepat untuk menilai kemajuan dan membiarkan panen masak. Long-Term HODL menghargai mereka yang mampu menahan diri untuk tidak memetik terlalu cepat. Kamu sudah menanam dengan baik, jangan gali lagi benihnya hanya untuk mengecek.",
     "reversed_full": "Dalam posisi terbalik, kesabaran putus: tidak sabaran, menjual terlalu cepat, kecewa karena hasilnya tidak instan. Sang investor mencabut tanamannya sebelum matang. Frustrasi jangka pendek merusak kerja keras jangka panjang."
   },
   "71": {
@@ -976,9 +976,9 @@
       "Keterampilan"
     ],
     "symbolism": "Seorang perajin ulung menempa Crypto Sigil dengan tangannya sendiri di bengkel yang berpendar, tiap sigil diukir tanda kriptografis yang unik, artefak NFT dan perkakas berserakan di sekitarnya. Inilah dedikasi pada keahlian: penguasaan yang diraih lewat pengulangan yang tekun. Keterampilan yang terus bertambah, satu tempaan demi satu tempaan.",
-    "advice": "Sempurnakan keahlian Anda; kualitas tumbuh berlipat seperti aset terbaik.",
+    "advice": "Sempurnakan keahlianmu; kualitas tumbuh berlipat seperti aset terbaik.",
     "shadow": "Ahli yang berhenti mengasah diri akan melihat karyanya perlahan merosot menjadi kasar.",
-    "upright_full": "Kartu ini tentang dedikasi pada keahlian: mengasah keterampilan, bekerja dengan tekun, membangun penguasaan lewat pengulangan. Master Builder menghargai usaha yang sabar dan berfokus pada kualitas. Sempurnakan keahlian Anda, karena kualitas tumbuh berlipat seperti aset terbaik.",
+    "upright_full": "Kartu ini tentang dedikasi pada keahlian: mengasah keterampilan, bekerja dengan tekun, membangun penguasaan lewat pengulangan. Master Builder menghargai usaha yang sabar dan berfokus pada kualitas. Sempurnakan keahlianmu, karena kualitas tumbuh berlipat seperti aset terbaik.",
     "reversed_full": "Dalam posisi terbalik, keahlian merosot: kerja asal-asalan, kualitas menurun, mengambil jalan pintas, tanpa disiplin, sekadar menjalankan rutinitas. Ukirannya jadi kasar. Penguasaan memudar tanpa ketekunan."
   },
   "72": {
@@ -990,9 +990,9 @@
       "Kemandirian"
     ],
     "symbolism": "Seorang bangsawan kripto yang anggun berjalan menyusuri estate blockchain yang mewah, penuh patung NFT dan taman keemasan, seekor elang mekanis bertengger di lengannya. Inilah keanggunan hasil jerih payah sendiri: kemakmuran mandiri yang dinikmati sendirian, buah dari disiplin pribadi. Kemewahan yang memang layak didapat.",
-    "advice": "Nikmati apa yang Anda bangun sendiri; pastikan kekayaan itu tidak dibayar dengan kehilangan kedekatan.",
+    "advice": "Nikmati apa yang kamu bangun sendiri; pastikan kekayaan itu tidak dibayar dengan kehilangan kedekatan.",
     "shadow": "Estate seindah ini, bila dijelajahi sendirian, hanyalah pengasingan berlapis emas.",
-    "upright_full": "Kartu ini tentang kesuksesan mandiri hasil usaha sendiri: kemakmuran yang elegan, kebebasan yang datang dari kekayaan yang Anda bangun sendiri. Whale Estate menghargai disiplin yang membuat estate itu bisa diraih. Nikmati apa yang Anda bangun sendiri, Anda pantas mendapatkan taman itu.",
+    "upright_full": "Kartu ini tentang kesuksesan mandiri hasil usaha sendiri: kemakmuran yang elegan, kebebasan yang datang dari kekayaan yang kamu bangun sendiri. Whale Estate menghargai disiplin yang membuat estate itu bisa diraih. Nikmati apa yang kamu bangun sendiri, kamu pantas mendapatkan taman itu.",
     "reversed_full": "Dalam posisi terbalik, estate itu mengasingkan: kesepian di balik kekayaan, arogansi, ketergantungan pada materi, kesuksesan yang dibayar dengan hilangnya kedekatan. Elang itu satu-satunya teman. Kemakmuran tanpa rasa memiliki terasa hampa."
   },
   "73": {
@@ -1004,9 +1004,9 @@
       "Kekayaan"
     ],
     "symbolism": "Tiga generasi sebuah dinasti kripto berdiri di depan Istana Blockchain, di bawah sepuluh Crypto Sigil bercahaya yang membentuk lingkaran suci mengelilingi Pohon Warisan yang akarnya tertanam di Genesis Block. Inilah kesempurnaan dan warisan: kekayaan yang bertahan melampaui satu masa hidup, dibangun untuk generasi berikutnya. Kelimpahan yang langgeng.",
-    "advice": "Bangunlah untuk generasi setelah Anda, bukan cuma untuk candle berikutnya.",
+    "advice": "Bangunlah untuk generasi setelah kamu, bukan cuma untuk candle berikutnya.",
     "shadow": "Dinasti yang berebut buah akan membiarkan seluruh pohonnya membusuk dari akar.",
-    "upright_full": "Kartu ini tentang warisan yang bertahan lama: kekayaan lintas generasi, stabilitas yang dalam, kesuksesan jangka panjang yang tetap berdiri setelah Anda tiada. Legacy Chain menghargai mereka yang membangun untuk generasi berikutnya, bukan untuk candle berikutnya. Inilah puncak perjalanan Assets: kekayaan yang akarnya cukup dalam untuk bertahan.",
+    "upright_full": "Kartu ini tentang warisan yang bertahan lama: kekayaan lintas generasi, stabilitas yang dalam, kesuksesan jangka panjang yang tetap berdiri setelah kamu tiada. Legacy Chain menghargai mereka yang membangun untuk generasi berikutnya, bukan untuk candle berikutnya. Inilah puncak perjalanan Assets: kekayaan yang akarnya cukup dalam untuk bertahan.",
     "reversed_full": "Dalam posisi terbalik, warisan itu retak: konflik keluarga, modal yang hancur, warisan yang dihambur-hamburkan, fondasi yang tidak kuat menahan. Akar pohonnya membusuk atau para ahli waris berebut buahnya. Yang dibangun untuk bertahan akhirnya tercerai-berai."
   },
   "74": {
@@ -1061,7 +1061,7 @@
       "Otoritas"
     ],
     "symbolism": "Sang taipan agung duduk di singgasana yang dipahat dari emas dan Genesis Block, mahkota dari Crypto Sigil yang berputar di kepalanya, banteng-banteng mekanis raksasa menjaga Ibu Kota Blockchain di belakangnya. Ia adalah penguasaan penuh atas dunia materi: kelimpahan, otoritas, dan tanggung jawab yang terwujud sepenuhnya. Kemakmuran yang dipimpin dengan tangan yang mantap.",
-    "advice": "Pimpinlah dengan kelimpahan yang sudah Anda kuasai; jangan sampai kelimpahan itu yang menguasai Anda.",
+    "advice": "Pimpinlah dengan kelimpahan yang sudah kamu kuasai; jangan sampai kelimpahan itu yang menguasaimu.",
     "shadow": "Mahkota sigil yang dipakai terlalu lama membuat kekayaan diam-diam mulai mengendalikan pemakainya.",
     "upright_full": "Kartu ini tentang penguasaan kekayaan dan kesuksesan duniawi: kepemimpinan yang matang, kemakmuran jangka panjang, rasa aman dan kemurahan hati dari seseorang yang benar-benar telah membangun. Blockchain Tycoon menghargai kepemimpinan yang bersandar pada kelimpahan yang sudah dikuasai. Cukupi, lindungi, dan kelola dalam skala besar.",
     "reversed_full": "Dalam posisi terbalik, penguasaan berubah jadi korup: tamak, kontrol berlebihan, korupsi, buta secara finansial, kekuasaan ditimbun alih-alih dibagi. Sang taipan justru dimiliki oleh emasnya sendiri. Kekayaan menjadi tuan, bukan lagi alat."

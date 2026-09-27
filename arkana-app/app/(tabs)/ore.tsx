@@ -189,9 +189,51 @@ export default function OreVaultScreen() {
     loadVaultData();
   }, [loadVaultData]);
 
+  /**
+   * Network fees are paid in SOL; tiny ORE yield can be worth less than the fee.
+   * Warn (never block) when the claimable ORE is worth less than an estimated fee.
+   */
+  const confirmClaimWorthIt = async (claimableUnits: number): Promise<boolean> => {
+    const ESTIMATED_FEE_LAMPORTS = 100_000; // base fee + typical wallet priority fee
+    let valueLamports: number | null = null;
+    try {
+      if (claimableUnits > 0) {
+        const res = await fetch(
+          `https://api.jup.ag/swap/v1/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`
+        );
+        if (res.ok) valueLamports = Number((await res.json()).outAmount) || 0;
+      } else {
+        valueLamports = 0;
+      }
+    } catch {}
+    if (valueLamports === null || valueLamports >= ESTIMATED_FEE_LAMPORTS) return true;
+
+    return new Promise((resolve) =>
+      Alert.alert(
+        t('ore_fee_warning_title', 'The fee is bigger than the yield'),
+        t(
+          'ore_fee_warning_msg',
+          'You would claim about {ore} ORE (~{yieldSol} SOL), while the network fee is about {feeSol} SOL. Claim anyway?',
+          {
+            ore: (claimableUnits / 1e11).toFixed(8),
+            yieldSol: (valueLamports / 1e9).toFixed(6),
+            feeSol: (ESTIMATED_FEE_LAMPORTS / 1e9).toFixed(4),
+          }
+        ),
+        [
+          { text: t('ore_fee_warning_cancel', 'Wait'), style: 'cancel', onPress: () => resolve(false) },
+          { text: t('ore_fee_warning_confirm', 'Claim anyway'), onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) }
+      )
+    );
+  };
+
   // Handle claiming rewards for a tranche
   const handleClaimTranche = async (trancheId: number) => {
     if (!walletAddress || !signAndSendTransactions) return;
+    const tranche = tranches.find((tr) => tr.trancheId === trancheId);
+    if (!(await confirmClaimWorthIt(tranche?.claimableRewards || 0))) return;
     try {
       setIsClaiming(true);
       soundService.triggerHapticHeavy();
@@ -231,11 +273,17 @@ export default function OreVaultScreen() {
       soundService.triggerHapticHeavy();
       const userPubkey = new PublicKey(walletAddress);
 
-      // Collect eligible (unmatured) tranches
-      const activeTranches = tranches.filter((t) => !t.isMatured);
+      // Only tranches with yield: a claim with zero yield fails and would revert the whole transaction
+      const activeTranches = tranches.filter((tr) => !tr.isMatured && tr.claimableRewards > 0);
       if (activeTranches.length === 0) {
+        Alert.alert(
+          t('ore_no_yield_title', 'Yield is accruing'),
+          t('ore_no_yield_msg', 'There is no unclaimed yield yet. Rewards arrive as the ORE protocol distributes them.')
+        );
         return;
       }
+      const totalClaimable = activeTranches.reduce((sum, tr) => sum + tr.claimableRewards, 0);
+      if (!(await confirmClaimWorthIt(totalClaimable))) return;
 
       // Build claim instructions for all active tranches into 1 transaction
       const claimIxs = await Promise.all(
