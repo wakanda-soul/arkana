@@ -113,6 +113,17 @@ cd programs/arkana-ore-vault
 cargo build-sbf
 ```
 
+### Vault tests
+
+The vault is tested in [LiteSVM](https://github.com/LiteSVM/litesvm) against a snapshot of mainnet: the real ORE Stake program binary, the ORE mint, the ORE Stake treasury and the Arkana vault accounts. The test deposits, tops up a daily tranche, pulls ORE Stake yield, claims it, moves the clock 366 days and harvests, checking every balance on the way.
+
+```bash
+cd programs/arkana-ore-vault && cargo build-sbf
+cd tests && npm install
+npm run fixtures   # snapshot the mainnet accounts (Solana CLI)
+npm test
+```
+
 ## Releases and versions
 
 Every push to `main` builds a signed APK in GitHub Actions and attaches it to the `v1.0.0-beta` release together with `version.json`. The download server picks up new builds on its own.
