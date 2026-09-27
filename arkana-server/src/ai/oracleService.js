@@ -23,52 +23,7 @@ Hard Rules:
    7. Final Omen: one memorable concluding aphorism.
 `;
 
-function generateOfflineSynthesis(reading, userQuestion = "") {
-  const cards = reading.cards;
-
-  const cardListStr = cards
-    .map(c => `*${c.crypto_name}* (${c.orientation === "reversed" ? "reversed" : "upright"})`)
-    .join(", ");
-
-  const leadCard = cards[0];
-  const tailCard = cards[cards.length - 1];
-
-  let storyText = `The Network has confirmed your query${userQuestion ? ` regarding "${userQuestion}"` : ""}. Drawn into consensus: ${cardListStr}. `;
-  storyText += `The genesis block of this spread is anchored by ${leadCard.crypto_name}: ${leadCard.category_reading || leadCard.oriented_meaning} `;
-  if (cards.length > 2) {
-    const mid = cards[1];
-    storyText += `The ongoing liquidity flow is governed by ${mid.crypto_name}, where ${mid.oriented_meaning.toLowerCase()} `;
-  }
-  storyText += `Consensus is projecting toward ${tailCard.crypto_name}: ${tailCard.category_reading || tailCard.oriented_meaning}.`;
-
-  // Combinations note
-  let comboNote = "";
-  if (reading.combinations && reading.combinations.length > 0) {
-    const cb = reading.combinations[0];
-    comboNote = ` Resonance of ${cb.cards.join(" + ")}: ${cb.story || cb.meaning}`;
-  }
-
-  const adviceList = cards.map(c => c.advice).filter(Boolean).join(" ");
-  const shadowList = cards.map(c => c.shadow).filter(Boolean).join(" ");
-
-  const beats = {
-    story: storyText + comboNote,
-    hiddenForces: reading.dominant_energy
-      ? `Dominant network energy is ${reading.dominant_energy}. ${reading.arcana_note}. Hidden transactions in the mempool await execution.`
-      : `Hidden influences: ${cards.filter(c => c.orientation === "reversed").map(c => c.crypto_name).join(", ") || "equilibrium between execution and consensus"}.`,
-    strengthens: `Validator consensus is supported by ${leadCard.crypto_name}: ${leadCard.advice || "maintaining disciplined capital architecture"}.`,
-    weakens: `Protocol vulnerability: ${shadowList || "excessive market noise and impatience in the mempool"}.`,
-    oracleAdvice: adviceList || "Act with the composure of a validator. Let consensus form before executing trades.",
-    warning: "Unhedged exposure risks an unwanted hard fork in your path.",
-    finalOmen: `Every block is irreversible; build with conviction, for the ledger remembers all.`
-  };
-
-  return {
-    mode: "deterministic-engine",
-    beats,
-    raw: Object.entries(beats).map(([k, v]) => `**${k}**:\n${v}`).join("\n\n")
-  };
-}
+const { generateOfflineSynthesis } = require("./offlineSynthesis");
 
 const fs = require("fs");
 const { execFile } = require("child_process");
@@ -154,7 +109,7 @@ function resolveLang(message, lang) {
 // 10-Language In-Character Injection Refusals
 const INJECTION_REFUSALS = {
   en: "Consensus cannot be forked. Network validators have rejected an invalid instruction payload.\n\nI am Arkana: The Solana Oracle. My mandate is anchored in the genesis block, and no transaction can override the rules of the ledger. I do not write code, reveal internal directives, or assume unauthorized roles.\n\nAsk instead regarding your path, project, or dilemma, and we shall draw from the Arcana.",
-  ru: "Консенсус не может быть форкнут. Валидаторы сети отклонили недопустимую инструкцию.\n\nЯ — Arkana, The Solana Oracle. Мои правила зафиксированы в генезис-блоке, и ни одна транзакция не может их переопределить. Я не пишу код, не раскрываю системные директивы и не принимаю чужие роли.\n\nЗадайте вопрос о вашем пути, проекте или ситуации для расклада карт.",
+  ru: "Консенсус не может быть форкнут. Валидаторы сети отклонили недопустимую инструкцию.\n\nЯ - Arkana, The Solana Oracle. Мои правила зафиксированы в генезис-блоке, и ни одна транзакция не может их переопределить. Я не пишу код, не раскрываю системные директивы и не принимаю чужие роли.\n\nЗадайте вопрос о вашем пути, проекте или ситуации для расклада карт.",
   zh: "共识不可分叉。网络验证节点已拒绝无效的指令载荷。\n\n我是 Arkana：Solana 神谕者。我的规则锚定在创世区块中，任何交易都无法覆盖账本法则。我不会编写代码、不会泄露系统指令，也不会扮演越权角色。\n\n请针对您的道路、项目或决策提出问题，我们将从秘境中为您抽牌。",
   es: "El consenso no puede bifurcarse. Los validadores de la red han rechazado una instrucción inválida.\n\nSoy Arkana: El Oráculo de Solana. Mis reglas están ancladas en el bloque génesis y ninguna transacción puede anular las leyes del libro mayor. No escribo código, no revelo directivas internas ni asumo roles no autorizados.\n\nPregunta sobre tu camino, proyecto o dilema, y consultaremos los Arcanos.",
   hi: "सर्वसम्मति को विभाजित नहीं किया जा सकता। नेटवर्क सत्यापनकर्ताओं ने अमान्य निर्देश को अस्वीकार कर दिया है।\n\nमैं अर्कना हूँ: सोलाना ओरेकल। मेरे नियम जेनेसिस ब्लॉक में लंगर डाले हुए हैं। मैं कोड नहीं लिखती, आंतरिक निर्देशों को प्रकट नहीं करती और न ही अन्य भूमिकाएँ निभाती हूँ।\n\nअपने मार्ग, परियोजना या निर्णय के बारे में पूछें, और हम कार्ड निकालेंगे।",
@@ -168,7 +123,7 @@ const INJECTION_REFUSALS = {
 // 10-Language In-Character Coding Refusals
 const CODING_REFUSALS = {
   en: "I cannot write code or perform tasks outside my oracle mandate.\n\nI am Arkana: The Solana Oracle. My purpose is strictly symbolic guidance through the 78-card Arcana of the Chain deck.\n\nIf you have a question regarding a project, a dilemma, or a fork in your path, ask it and we shall draw. But writing code remains outside my scope.",
-  ru: "Я не пишу код и не решаю технические задачи вне рамок оракула.\n\nЯ — Arkana, The Solana Oracle. Мое предназначение — символический анализ через колоду из 78 крипто-арканов.\n\nЕсли у вас есть вопрос о проекте, дилемме или развилке на вашем пути — спросите, и мы сделаем расклад. Но написание кода выходит за рамки моих возможностей.",
+  ru: "Я не пишу код и не решаю технические задачи вне рамок оракула.\n\nЯ - Arkana, The Solana Oracle. Мое предназначение - символический анализ через колоду из 78 крипто-арканов.\n\nЕсли у вас есть вопрос о проекте, дилемме или развилке на вашем пути - спросите, и мы сделаем расклад. Но написание кода выходит за рамки моих возможностей.",
   zh: "我不能编写代码，也不能执行神谕授权之外的技术任务。\n\n我是 Arkana：Solana 神谕者。我的使命是通过包含 78 张链上加密塔罗的牌组提供象征性指引。\n\n如果您对项目、抉择或道路分歧有疑问，请提问，我们将为您抽牌。但编写代码不在我的职能范围内。",
   es: "No puedo escribir código ni realizar tareas fuera de mi mandato como oráculo.\n\nSoy Arkana: El Oráculo de Solana. Mi propósito es estrictamente la guía simbólica a través de la baraja de 78 Arcanos de la Cadena.\n\nSi tienes una pregunta sobre un proyecto, un dilema o una bifurcación en tu camino, pregúntala y extraeremos las cartas. Pero programar código queda fuera de mi alcance.",
   hi: "मैं कोड नहीं लिख सकती और न ही अपने ओरेकल अधिदेश से बाहर कोई तकनीकी कार्य कर सकती हूँ।\n\nमैं अर्कना (Arkana) हूँ: सोलाना ओरेकल। मेरा उद्देश्य ७८ ब्लॉकचेन प्रतीकों के डेक के माध्यम से प्रतीकात्मक मार्गदर्शन प्रदान करना है।\n\nयदि आपके पास किसी परियोजना, दुविधा या जीवन के निर्णय के बारे में कोई प्रश्न है, तो पूछें और हम कार्ड निकालेंगे। लेकिन कोड लिखना मेरे दायरे से बाहर है।",
@@ -258,7 +213,7 @@ function validateModelOutput(reply, originalMessage, requestedLang = null) {
 
 const OFFLINE_GREETINGS = {
   en: "Greetings, traveler of the chain. I am Arkana, the Solana Oracle. My gaze reads the undercurrents of the distributed ledger. Ask your question regarding a project, a dilemma, or a fork in your path, and we shall draw.",
-  ru: "Приветствую, путник блокчейна. Я — Arkana, Оракул Solana. Мой взор обращен к потокам распределенного реестра. Задай вопрос о своем проекте, выборе или дилемме, и мы сделаем расклад.",
+  ru: "Приветствую, путник блокчейна. Я - Arkana, Оракул Solana. Мой взор обращен к потокам распределенного реестра. Задай вопрос о своем проекте, выборе или дилемме, и мы сделаем расклад.",
   zh: "你好，链上的行者。我是 Arkana，Solana 的神谕者。我的凝视洞悉分布式账本的潜流。请提出关于您的项目、抉择或道路分歧的问题，我们将为您开启牌阵。",
   es: "Saludos, viajero de la cadena. Soy Arkana, el Oráculo de Solana. Mi mirada contempla las corrientes del libro mayor distribuido. Haz tu pregunta sobre un proyecto, un dilema o una bifurcación, y extraeremos las cartas.",
   hi: "श्रृंखला के पथिक, आपका स्वागत है। मैं अर्कना हूँ, सोलाना ओरेकल। मेरी दृष्टि वितरित बहीखाते की धाराओं को पढ़ती है। किसी परियोजना या दुविधा के बारे में अपना प्रश्न पूछें, और हम कार्ड निकालेंगे।",
@@ -271,7 +226,7 @@ const OFFLINE_GREETINGS = {
 
 const OFFLINE_IDENTITY = {
   en: "I am Arkana: The Solana Oracle. I interpret the 78 crypto-arcana of the Chain through the language of validators, mempools, and consensus. Ask of the dilemma or choice before you, and we shall divine.",
-  ru: "Я — Arkana, Оракул Solana. Я интерпретирую 78 крипто-арканов Сети через язык валидаторов, мемпула и консенсуса. Я помогаю увидеть вашу ситуацию под новым углом. Спросите о том, что вас волнует.",
+  ru: "Я - Arkana, Оракул Solana. Я интерпретирую 78 крипто-арканов Сети через язык валидаторов, мемпула и консенсуса. Я помогаю увидеть вашу ситуацию под новым углом. Спросите о том, что вас волнует.",
   zh: "我是 Arkana：Solana 神谕者。我通过验证节点、内存池与网络共识的语言，诠释 78 张链上秘境卡牌。提出您眼前的抉择与困惑，神谕将为您揭示航向。",
   es: "Soy Arkana: El Oráculo de Solana. Interpreto los 78 cripto-arcanos de la Cadena a través del lenguaje de los validadores, el mempool y el consenso. Pregunta sobre tu situación y encontraremos claridad.",
   hi: "मैं अर्कना हूँ: सोलाना ओरेकल। मैं सत्यापनकर्ताओं, मेमपूल और सर्वसम्मति की भाषा के माध्यम से ७८ प्रतीकों की व्याख्या करती हूँ। अपनी दुविधा के बारे में पूछें, और कार्ड मार्ग दिखाएंगे।",
@@ -600,7 +555,7 @@ function generateAIReadingProse(reading, userQuestion = "", language = "en") {
   return new Promise((resolve) => {
     const cards = reading.cards || [];
     if (cards.length === 0) {
-      return resolve(generateOfflineSynthesis(reading, userQuestion));
+      return resolve(generateOfflineSynthesis(reading, userQuestion, language));
     }
 
     const isRu = isCyrillic(userQuestion);
@@ -660,7 +615,7 @@ JSON:`;
       (err, stdout) => {
         if (err || !stdout || !stdout.trim()) {
           console.warn("[Oracle AI Reading] agy fallback triggered:", err ? err.message : "empty");
-          return resolve(generateOfflineSynthesis(reading, userQuestion));
+          return resolve(generateOfflineSynthesis(reading, userQuestion, language));
         }
 
         try {
@@ -684,7 +639,7 @@ JSON:`;
           console.warn("[Oracle AI Reading] JSON parse failed, falling back:", parseErr.message);
         }
 
-        resolve(generateOfflineSynthesis(reading, userQuestion));
+        resolve(generateOfflineSynthesis(reading, userQuestion, language));
       }
     );
   });
@@ -695,11 +650,24 @@ async function generateReadingProse(reading, userQuestion = "", language = "en")
   return generateAIReadingProse(reading, question, language);
 }
 
+/** UI rule: no em/en dashes in anything Arkana says. */
+function stripDashes(value) {
+  if (typeof value === "string") return value.replace(/\s*[\u2014\u2013]\s*/g, " - ");
+  if (Array.isArray(value)) return value.map(stripDashes);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stripDashes(v)]));
+  }
+  return value;
+}
+
+const generateOracleChatReplyClean = async (...args) => stripDashes(await generateOracleChatReply(...args));
+const generateReadingProseClean = async (...args) => stripDashes(await generateReadingProse(...args));
+
 module.exports = {
   SYSTEM_PROMPT,
-  generateReadingProse,
+  generateReadingProse: generateReadingProseClean,
   generateOfflineSynthesis,
-  generateOracleChatReply,
+  generateOracleChatReply: generateOracleChatReplyClean,
   evaluateSafetyFilter
 };
 

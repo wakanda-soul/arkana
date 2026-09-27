@@ -2,8 +2,10 @@ import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { BaseButton } from '@/components/solana/base-button'
 import React, { useState } from 'react'
 import { showError } from '@/utils/show-error'
+import { useLanguage } from '@/services/i18n'
 
-export function WalletUiButtonConnect({ label = 'Connect' }: { label?: string }) {
+export function WalletUiButtonConnect({ label }: { label?: string }) {
+  const { t } = useLanguage()
   const { connect } = useMobileWallet()
   const [isConnecting, setIsConnecting] = useState(false)
 
@@ -17,7 +19,7 @@ export function WalletUiButtonConnect({ label = 'Connect' }: { label?: string })
     try {
       await connect()
     } catch (error) {
-      showError('Could not connect wallet', error)
+      showError('err_title_connect', error)
     } finally {
       setIsConnecting(false)
     }
@@ -26,7 +28,7 @@ export function WalletUiButtonConnect({ label = 'Connect' }: { label?: string })
   return (
     <BaseButton
       disabled={isConnecting}
-      label={isConnecting ? 'Connecting...' : label}
+      label={isConnecting ? t('connecting_label', 'Connecting...') : label ?? t('connect_label', 'Connect')}
       onPress={() => void handleConnect()}
     />
   )

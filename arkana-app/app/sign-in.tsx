@@ -8,9 +8,11 @@ import * as Haptics from 'expo-haptics'
 import { showError } from '@/utils/show-error'
 import { ObsidianTokens } from '@/constants/theme'
 import { SystemStateModal, SystemStateType } from '@/components/ui/SystemStateModal'
+import { useLanguage } from '@/services/i18n'
 
 export default function SignIn() {
   const { signIn } = useAuth()
+  const { t } = useLanguage()
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [systemState, setSystemState] = useState<SystemStateType>(null)
 
@@ -61,7 +63,7 @@ export default function SignIn() {
           <Text style={styles.kicker}>SOLANA MOBILE · SEED VAULT</Text>
           <Text style={styles.title}>ARKANA</Text>
           <Text style={styles.subtitle}>
-            Algorithmic oracle and decentralized tarot on Solana. Connect your Seeker wallet to consult the cards and seal your rites.
+            {t('signin_subtitle', 'Algorithmic oracle and decentralized tarot on Solana. Connect your Seeker wallet to consult the cards and seal your rites.')}
           </Text>
         </View>
 
@@ -77,12 +79,12 @@ export default function SignIn() {
             onPress={() => void handleSignIn()}
           >
             <Text style={styles.connectBtnText}>
-              {isSigningIn ? 'CONNECTING WALLET...' : 'CONNECT WALLET'}
+              {isSigningIn ? t('connecting_wallet', 'CONNECTING WALLET...') : t('connect_wallet', 'CONNECT WALLET')}
             </Text>
           </Pressable>
 
           <Text style={styles.securityNote}>
-            Secured by Solana Seed Vault & Hardware Keystore
+            {t('signin_security_note', 'Secured by Solana Seed Vault & Hardware Keystore')}
           </Text>
         </View>
       </SafeAreaView>

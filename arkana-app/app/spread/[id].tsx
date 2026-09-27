@@ -24,7 +24,7 @@ import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateMo
 import { ObsidianTokens } from "@/constants/theme";
 import { shareToTwitter, shareGeneral } from "@/utils/shareOmen";
 import { unlockCards } from "@/services/codexService";
-import { useLanguage } from "@/services/i18n";
+import { useLanguage, localizeErrorText } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { AltarOfferingCard } from "@/components/tarot/AltarOfferingCard";
@@ -112,7 +112,7 @@ export default function SpreadScreen() {
     let txSignature: string | null = null;
     if (!hasFree) {
       if (!signAndSendTransactions) {
-        setQuotaError("Wallet signing is unavailable. Please reconnect wallet.");
+        setQuotaError(t("err_wallet_signing_unavailable", "Wallet signing is unavailable. Please reconnect your wallet."));
         return;
       }
       try {
@@ -129,7 +129,7 @@ export default function SpreadScreen() {
       } catch (payErr: any) {
         console.warn("Payment error:", payErr);
         soundService.playTxError();
-        setQuotaError(payErr?.message || "Payment cancelled or dropped.");
+        setQuotaError(payErr?.message ? localizeErrorText(payErr.message) : t("err_payment_cancelled", "Payment cancelled or dropped."));
         return;
       }
     }
@@ -179,7 +179,7 @@ export default function SpreadScreen() {
       if (e.message && e.message.includes("5 SKR")) {
         setSystemState("limit_reached");
       } else {
-        setQuotaError(e.message || "Failed to cast spread");
+        setQuotaError(e.message ? localizeErrorText(e.message) : t("err_cast_spread_failed", "The spread could not be cast. Try again."));
       }
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

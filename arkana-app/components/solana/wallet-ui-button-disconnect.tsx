@@ -3,8 +3,10 @@ import { BaseButton } from '@/components/solana/base-button'
 import React, { useState } from 'react'
 import { showError } from '@/utils/show-error'
 import { soundService } from '@/services/soundService'
+import { useLanguage } from '@/services/i18n'
 
-export function WalletUiButtonDisconnect({ label = 'Disconnect' }: { label?: string }) {
+export function WalletUiButtonDisconnect({ label }: { label?: string }) {
+  const { t } = useLanguage()
   const { disconnect } = useMobileWallet()
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 
@@ -17,7 +19,7 @@ export function WalletUiButtonDisconnect({ label = 'Disconnect' }: { label?: str
       soundService.playWalletDisconnect()
       await disconnect()
     } catch (error) {
-      showError('Could not disconnect wallet', error)
+      showError('err_title_disconnect', error)
     } finally {
       setIsDisconnecting(false)
     }
@@ -26,7 +28,7 @@ export function WalletUiButtonDisconnect({ label = 'Disconnect' }: { label?: str
   return (
     <BaseButton
       disabled={isDisconnecting}
-      label={isDisconnecting ? 'Disconnecting...' : label}
+      label={isDisconnecting ? t('disconnecting_label', 'Disconnecting...') : label ?? t('disconnect_label', 'Disconnect')}
       onPress={() => void handleDisconnect()}
     />
   )

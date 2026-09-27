@@ -33,8 +33,8 @@ import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ShuffleCeremony } from "@/components/tarot/ShuffleCeremony";
 import { MarkdownText } from "@/components/ui/MarkdownText";
 import { unlockCards } from "@/services/codexService";
-import { useLanguage } from "@/services/i18n";
-import { localizeZoomCard } from "@/services/cardLocalization";
+import { useLanguage, localizeErrorText } from "@/services/i18n";
+import { localizeZoomCard, localizeCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
 import { executePaymentOrSwap, getVerifiedTreasury } from "@/services/treasuryService";
@@ -253,7 +253,7 @@ export default function OracleScreen() {
       soundService.playTxError();
       Alert.alert(
         t('offering_failed_title', 'Offering Incomplete'),
-        err?.message || t('offering_failed_desc', 'Transaction could not be confirmed. No funds were debited.')
+        (err?.message && localizeErrorText(err.message)) || t('offering_failed_desc', 'The transaction could not be confirmed. No funds were debited.')
       );
     } finally {
       setIsProcessingPayment(false);
@@ -320,7 +320,7 @@ export default function OracleScreen() {
       const oracleMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: "oracle",
-        text: data.reply || "Consensus has acknowledged your inquiry.",
+        text: data.reply || t("oracle_reply_fallback", "Consensus has acknowledged your inquiry."),
         card: cardPayload,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -336,7 +336,7 @@ export default function OracleScreen() {
       }
 
       console.warn("Chat error, engaging offline oracle synthesis:", e);
-      const fallbackCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+      const fallbackCard = localizeCard(ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)], language);
       const isReversed = Math.random() > 0.75;
       const cardPayload: ZoomCardData = {
         card_no: fallbackCard.card_no,
@@ -354,9 +354,15 @@ export default function OracleScreen() {
       const oracleMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: "oracle",
-        text: `Consensus has drawn **${fallbackCard.crypto_name}** (${fallbackCard.suit}) for your inquiry.\n\n${
-          isReversed ? fallbackCard.reversed_full : fallbackCard.upright_full || fallbackCard.advice
-        }\n\n*The ledger remembers all: build with conviction.*`,
+        text: t(
+          "oracle_offline_reply",
+          "Consensus has drawn **{card}** ({suit}) for your inquiry.\n\n{meaning}\n\n*The ledger remembers all: build with conviction.*",
+          {
+            card: fallbackCard.crypto_name,
+            suit: fallbackCard.suit,
+            meaning: (isReversed ? fallbackCard.reversed_full : fallbackCard.upright_full) || fallbackCard.advice,
+          }
+        ),
         card: cardPayload,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -489,7 +495,7 @@ export default function OracleScreen() {
 
                   <View style={styles.chatCardInfo}>
                     <View style={styles.chatCardTopLine}>
-                      <Text style={styles.chatCardNo}>NO. {msg.card.card_no}</Text>
+                      <Text style={styles.chatCardNo}>{t('card_no_short', 'NO. {num}', { num: msg.card.card_no })}</Text>
                       <View
                         style={[
                           styles.chatOrientationBadge,
@@ -594,10 +600,10 @@ export default function OracleScreen() {
                   <Pressable
                     key={p.id}
                     style={({ pressed }) => [styles.presetChip, pressed && styles.chipPressed]}
-                    onPress={() => handleInitiateSend(t("prompt_" + p.id, p.text))}
+                    onPress={() => handleInitiateSend(t(`prompt_${p.id}`, p.text))}
                   >
                     <Text style={styles.presetCategoryTag}>{p.category}</Text>
-                    <Text style={styles.presetText}>{t("prompt_" + p.id, p.text)}</Text>
+                    <Text style={styles.presetText}>{t(`prompt_${p.id}`, p.text)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -629,7 +635,7 @@ export default function OracleScreen() {
               } catch {}
               setPromptsModalVisible(true);
             }}
-            accessibilityLabel="Prompts"
+            accessibilityLabel={t("prompts_a11y", "Prompts")}
           >
             <Text style={styles.inspirationIcon}>{'\u2726'}</Text>
           </Pressable>
@@ -744,14 +750,14 @@ export default function OracleScreen() {
                   ]}
                   onPress={() => {
                     setPromptsModalVisible(false);
-                    handleInitiateSend(t("prompt_" + p.id, p.text));
+                    handleInitiateSend(t(`prompt_${p.id}`, p.text));
                   }}
                 >
                   <View style={styles.promptsModalItemTop}>
                     <Text style={styles.presetCategoryTag}>{p.category}</Text>
                     <Text style={styles.promptsModalItemArrow}>{'\u2192'}</Text>
                   </View>
-                  <Text style={styles.presetText}>{t("prompt_" + p.id, p.text)}</Text>
+                  <Text style={styles.presetText}>{t(`prompt_${p.id}`, p.text)}</Text>
                 </Pressable>
               ))}
             </ScrollView>

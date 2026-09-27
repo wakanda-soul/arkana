@@ -295,7 +295,7 @@ export default function AltarScreen() {
       if (!isAuthenticated || !account?.publicKey || !walletAddress) {
         return {
           success: false,
-          error: "Wallet connection required to seal ritual on-chain",
+          error: t("err_wallet_required_seal", "Connect your wallet to seal the ritual on-chain."),
         };
       }
 
@@ -323,7 +323,7 @@ export default function AltarScreen() {
         }
         return {
           success: false,
-          error: txErr?.message || "Transaction was canceled in wallet",
+          error: txErr?.message || t("err_user_rejected", "Transaction was canceled in wallet"),
         };
       }
 
@@ -378,7 +378,7 @@ export default function AltarScreen() {
     } catch (err: any) {
       return {
         success: false,
-        error: err?.message || "Transaction dropped before confirmation",
+        error: err?.message || t("err_tx_dropped", "The transaction was dropped before confirmation. Nothing was charged."),
       };
     }
   };
@@ -405,7 +405,7 @@ export default function AltarScreen() {
     const cost = clockInState.streakRepairCostSkr || 1;
     const currentSkr = displaySkr;
     if (!walletAddress || !signAndSendTransactions) {
-      showError("Streak Repair", "Connect your wallet first.");
+      showError("err_title_streak_repair", "Connect your wallet first.");
       return;
     }
     setIsRepairing(true);
@@ -433,10 +433,10 @@ export default function AltarScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
       } else {
-        showError("Streak Repair", res.error || "Failed to repair streak.");
+        showError("err_title_streak_repair", res.error || t("err_streak_repair_failed", "The streak could not be repaired."));
       }
     } catch (e) {
-      showError("Streak Repair", e);
+      showError("err_title_streak_repair", e);
     } finally {
       setIsRepairing(false);
     }

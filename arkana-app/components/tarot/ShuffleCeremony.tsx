@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { ObsidianTokens } from '@/constants/theme';
 import { CARD_BACK } from '@/assets/cards';
+import { useLanguage } from '@/services/i18n';
 
 interface ShuffleCeremonyProps {
   compact?: boolean;
@@ -22,11 +23,14 @@ interface ShuffleCeremonyProps {
 
 export function ShuffleCeremony({
   compact = false,
-  title = 'The network is shuffling',
+  title: titleProp,
   kicker,
-  subtitle = 'SAMPLING VALIDATOR ENTROPY_',
+  subtitle: subtitleProp,
   containerStyle,
 }: ShuffleCeremonyProps) {
+  const { t } = useLanguage();
+  const title = titleProp ?? t('network_is_shuffling', 'The network is shuffling');
+  const subtitle = subtitleProp ?? t('sampling_entropy', 'SAMPLING VALIDATOR ENTROPY_');
   const shuffleAnimA = useRef(new Animated.Value(0)).current;
   const shuffleAnimB = useRef(new Animated.Value(0)).current;
   const shuffleAnimC = useRef(new Animated.Value(0)).current;

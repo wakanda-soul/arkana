@@ -10,10 +10,12 @@ import * as Dropdown from '@rn-primitives/dropdown-menu'
 import { WalletUiButtonConnect } from './wallet-ui-button-connect'
 import { useWalletUiTheme } from '@/components/solana/use-wallet-ui-theme'
 import { showError } from '@/utils/show-error'
+import { useLanguage } from '@/services/i18n'
 
 function useDropdownItems() {
   const { getExplorerUrl } = useCluster()
   const { account, disconnect } = useMobileWallet()
+  const { t } = useLanguage()
   if (!account) {
     return []
   }
@@ -21,21 +23,21 @@ function useDropdownItems() {
   // instead of floating away as an unhandled rejection.
   return [
     {
-      label: 'Copy Address',
+      label: t('copy_address', 'Copy Address'),
       onPress: () => Clipboard.setString(account.address.toString()),
     },
     {
-      label: 'View in Explorer',
+      label: t('view_in_explorer', 'View in Explorer'),
       onPress: () => {
         Linking.openURL(getExplorerUrl(`account/${account.address.toString()}`)).catch((error: unknown) =>
-          showError('Could not open explorer', error),
+          showError('err_title_open_explorer', error),
         )
       },
     },
     {
-      label: 'Disconnect',
+      label: t('disconnect_label', 'Disconnect'),
       onPress: () => {
-        disconnect().catch((error: unknown) => showError('Could not disconnect wallet', error))
+        disconnect().catch((error: unknown) => showError('err_title_disconnect', error))
       },
     },
   ]

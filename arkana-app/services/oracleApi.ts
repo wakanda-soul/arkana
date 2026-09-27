@@ -1,6 +1,8 @@
 import { getExtraPaymentSignatures } from './treasuryService';
 import { apiHeaders } from './sessionService';
 import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
+import { translateFor, LanguageCode } from './i18n';
+import { localizeCard } from './cardLocalization';
 
 // Public VPS IP for testing, or localhost for local dev
 export const API_BASE_URL = 'http://184.174.39.62';
@@ -93,7 +95,10 @@ export interface ReadingResponse {
 }
 
 // Local fallback draw generator for 100% offline capability
-export function generateLocalReading(spreadKey: string, question: string = ''): ReadingResponse {
+export function generateLocalReading(spreadKey: string, question: string = '', language: string = 'en'): ReadingResponse {
+  const lang = language as LanguageCode;
+  const tr = (key: string, fallback: string, params?: Record<string, string | number>) =>
+    translateFor(lang, key, fallback, params);
   const spreadDef = (SPREADS as any)[spreadKey] || (SPREADS as any)['network-scan'];
   const positions: string[] = spreadDef.positions;
   const hints: Record<string, string> = spreadDef.hints;
@@ -105,7 +110,7 @@ export function generateLocalReading(spreadKey: string, question: string = ''): 
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  const drawn = pool.slice(0, positions.length);
+  const drawn = pool.slice(0, positions.length).map((card) => localizeCard(card, lang));
   let majorsCount = 0;
 
   const resolvedCards = drawn.map((card, idx) => {
@@ -144,19 +149,40 @@ export function generateLocalReading(spreadKey: string, question: string = ''): 
     engine_metrics: {
       majors_count: majorsCount,
       structural: majorsCount >= Math.ceil(positions.length / 2),
-      arcana_note: majorsCount === 0 ? 'Tactical decisions resting with the builder' : 'Network-scale macro archetypes in motion',
+      arcana_note: majorsCount === 0
+        ? tr('offline_arcana_note_minor', 'Tactical decisions resting with the builder')
+        : tr('offline_arcana_note_major', 'Network-scale macro archetypes in motion'),
       dominant_suit: lead.suit,
       dominant_energy: lead.energy,
     },
     cards: resolvedCards,
     prose: {
-      story: `The network has committed consensus for your inquiry. The cards ${resolvedCards.map(c => `${c.crypto_name} (${c.orientation === 'reversed' ? 'reversed' : 'upright'})`).join(', ')} establish a trajectory from ${lead.crypto_name} to ${last.crypto_name}.`,
-      hiddenForces: `The mempool channels the latent energy of ${lead.crypto_name}. Confirmations crystallize in the wake of your intent.`,
-      strengthens: `Your position is solidified by ${lead.crypto_name}: ${lead.advice || 'maintain validator composure amidst volatility'}.`,
-      weakens: `Protocol vulnerability vector: ${last.shadow || 'unhedged speculation lacking disciplined risk parameters'}.`,
-      oracleAdvice: lead.advice || 'Execute in alignment with the underlying network consensus.',
-      warning: 'Emotional transaction velocity and mispriced priority fees lead to preventable state forks.',
-      finalOmen: 'The immutability of the ledger anchors your future liquidity.',
+      story: tr(
+        'offline_story',
+        'The network has committed consensus for your inquiry. The cards {cards} establish a trajectory from {first} to {last}.',
+        {
+          cards: resolvedCards
+            .map((c) => `${c.crypto_name} (${c.orientation === 'reversed' ? tr('orient_reversed', 'reversed') : tr('orient_upright', 'upright')})`)
+            .join(', '),
+          first: lead.crypto_name,
+          last: last.crypto_name,
+        }
+      ),
+      hiddenForces: tr(
+        'offline_hidden_forces',
+        'The mempool channels the latent energy of {card}. Confirmations crystallize in the wake of your intent.',
+        { card: lead.crypto_name }
+      ),
+      strengthens: tr('offline_strengthens', 'Your position is solidified by {card}: {advice}', {
+        card: lead.crypto_name,
+        advice: lead.advice || tr('offline_strengthens_default', 'maintain validator composure amidst volatility.'),
+      }),
+      weakens: tr('offline_weakens', 'Protocol vulnerability vector: {shadow}', {
+        shadow: last.shadow || tr('offline_weakens_default', 'unhedged speculation lacking disciplined risk parameters.'),
+      }),
+      oracleAdvice: lead.advice || tr('offline_advice_default', 'Execute in alignment with the underlying network consensus.'),
+      warning: tr('offline_warning', 'Emotional transaction velocity and mispriced priority fees lead to preventable state forks.'),
+      finalOmen: tr('offline_final_omen', 'The immutability of the ledger anchors your future liquidity.'),
     },
   };
 }
@@ -252,7 +278,11 @@ export async function executeClockIn(
   }
 
   // Offline fallback
-  const local = generateLocalReading('daily-block', 'Daily Consensus Clock-In');
+  const local = generateLocalReading(
+    'daily-block',
+    translateFor(language as LanguageCode, 'offline_daily_question', 'Daily Consensus Clock-In'),
+    language
+  );
   return { success: true, streak: 1, streakBonusAwarded: 0, streakBonusSpreads: 0, reading: local };
 }
 
@@ -289,7 +319,7 @@ export async function fetchReading(
     console.warn('Backend reading fetch error, falling back to local engine:', e);
   }
 
-  return generateLocalReading(spread, question);
+  return generateLocalReading(spread, question, language);
 }
 
 export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): Promise<QuotaConsumeResult> {

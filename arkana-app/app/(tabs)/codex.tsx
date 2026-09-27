@@ -103,12 +103,12 @@ export default function CodexScreen() {
   };
 
   const filterTabs = [
-    { id: "all", label: "ALL (78)" },
-    { id: "major", label: "MAJORS (22)" },
-    { id: "Protocols", label: "PROTOCOLS (14)" },
-    { id: "Liquidity", label: "LIQUIDITY (14)" },
-    { id: "Nodes", label: "NODES (14)" },
-    { id: "Assets", label: "ASSETS (14)" },
+    { id: "all", label: t("filter_all", "ALL (78)") },
+    { id: "major", label: t("filter_major", "MAJORS (22)") },
+    { id: "Protocols", label: t("filter_protocols", "PROTOCOLS (14)") },
+    { id: "Liquidity", label: t("filter_liquidity", "LIQUIDITY (14)") },
+    { id: "Nodes", label: t("filter_nodes", "NODES (14)") },
+    { id: "Assets", label: t("filter_assets", "ASSETS (14)") },
   ];
 
   const renderHeader = () => (

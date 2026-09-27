@@ -63,7 +63,7 @@ export function LanguageSelectionModal() {
           {/* Header Row */}
           <View style={styles.topBar}>
             <View style={{ width: 36 }} />
-            <Text style={styles.topBarKicker}>CONSECRATE THE DIALECT</Text>
+            <Text style={styles.topBarKicker}>{t('consecrate_dialect_title', 'CONSECRATE THE DIALECT')}</Text>
             {hasChosenLanguage ? (
               <Pressable
                 style={({ pressed }) => [styles.closeBtn, pressed && styles.cardPressed]}
@@ -138,7 +138,7 @@ export function LanguageSelectionModal() {
             {/* Bottom Footer Note */}
             <View style={styles.footerNote}>
               <Text style={styles.footerText}>
-                Archetype card titles remain in canonical English.
+                {t('canonical_cards_note', 'Archetype card titles remain in canonical English.')}
               </Text>
             </View>
           </ScrollView>

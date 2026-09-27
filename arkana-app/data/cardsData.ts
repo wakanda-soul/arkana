@@ -89,7 +89,7 @@ export const ALL_CARDS: CardData[] = [
       "Opportunity"
     ],
     "energy": null,
-    "symbolism": "A hand of light presents a colossal golden Crypto Sigil engraved with the Genesis Block above a flourishing garden of Merkle trees and NFT blossoms, a path leading to a DAO palace. As the Ace of the earth suit, it is a tangible new seed of wealth - opportunity made solid, ready to be planted. The most grounded of beginnings.",
+    "symbolism": "A hand of light presents a colossal golden Crypto Sigil engraved with the Genesis Block above a flourishing garden of Merkle trees and NFT blossoms, a path leading to a DAO palace. As the first card of Assets, it is a tangible new seed of wealth - opportunity made solid, ready to be planted. The most grounded of beginnings.",
     "advice": "A real opportunity is on the table; ground it in a plan before you seize it.",
     "shadow": "A golden seed left in careless hands rots into a missed opportunity.",
     "upright_full": "This card is a concrete new opportunity: fresh capital, a real chance to earn, the seed of lasting wealth. Genesis Treasury rewards taking a solid, tangible opening and planting it well. The upside is real and material - ground it in a plan before you seize it.",
@@ -282,11 +282,11 @@ export const ALL_CARDS: CardData[] = [
       "Investment"
     ],
     "energy": null,
-    "symbolism": "A young collector studies a floating Crypto Sigil holding a legendary animated NFT, a grand blockchain gallery of digital masterpieces behind him. As the Page of earth, he is the diligent student of value - curious, careful, just beginning to accumulate. Grounded beginner ambition.",
+    "symbolism": "A young collector studies a floating Crypto Sigil holding a legendary animated NFT, a grand blockchain gallery of digital masterpieces behind him. He is the diligent student of value - curious, careful, just beginning to accumulate. Grounded beginner ambition.",
     "advice": "Study before you collect; curiosity is capital when it's disciplined.",
     "shadow": "Collecting hype you never researched is how a jpeg becomes a lesson.",
     "upright_full": "This card is the curious student of value: a first investment, careful study, the early accumulation of assets and knowledge. NFT Collector rewards learning-before-buying and grounded curiosity. Study before you collect; curiosity is capital when it's disciplined.",
-    "reversed_full": "Reversed, curiosity turns careless: impulsive buys, overvaluing hype, inexperience mistaking a jpeg for a fortune. The Page collects without understanding. Enthusiasm outruns due diligence."
+    "reversed_full": "Reversed, curiosity turns careless: impulsive buys, overvaluing hype, inexperience mistaking a jpeg for a fortune. The young collector gathers without understanding. Enthusiasm outruns due diligence."
   },
   {
     "crypto_name": "Long-Term Investor",
@@ -302,7 +302,7 @@ export const ALL_CARDS: CardData[] = [
       "Patience"
     ],
     "energy": null,
-    "symbolism": "A noble investor rides a mechanical bull slowly across golden blockchain valleys, a radiant Crypto Sigil in hand, embodying patience and discipline. As the Knight of earth, he is the steady, dependable accumulator - methodical, reliable, in no hurry. Slow, sure progress.",
+    "symbolism": "A noble investor rides a mechanical bull slowly across golden blockchain valleys, a radiant Crypto Sigil in hand, embodying patience and discipline. He is the steady, dependable accumulator - methodical, reliable, in no hurry. Slow, sure progress.",
     "advice": "Slow and methodical wins the long game; just don't stall entirely.",
     "shadow": "A bull ridden too cautiously never actually crosses the valley.",
     "upright_full": "This card is disciplined, methodical progress: reliable long-term accumulation, patience, dependability. Long-Term Investor rewards the steady hand that wins the marathon, not the sprint. Slow and methodical wins the long game.",
@@ -322,7 +322,7 @@ export const ALL_CARDS: CardData[] = [
       "Wealth"
     ],
     "energy": null,
-    "symbolism": "A majestic keeper sits enthroned on ancient gold and Genesis Blocks, a huge Crypto Sigil in hand, golden Merkle trees bearing tokens and NFT relics around her in serene abundance. As the Queen of earth, she is nurturing prosperity - practical, generous stewardship of wealth. Abundance tended like a garden.",
+    "symbolism": "A majestic keeper sits enthroned on ancient gold and Genesis Blocks, a huge Crypto Sigil in hand, golden Merkle trees bearing tokens and NFT relics around her in serene abundance. She is nurturing prosperity - practical, generous stewardship of wealth. Abundance tended like a garden.",
     "advice": "Tend capital like a garden - steward it, don't just guard it.",
     "shadow": "Measuring your worth in sigils is how the treasury keeper starves the soul.",
     "upright_full": "This card is wise, nurturing stewardship of resources: financial wisdom, care for capital, practical prosperity, stability that provides for others. Treasury Keeper rewards tending wealth rather than merely guarding it. Steward capital like a garden.",
@@ -343,7 +343,7 @@ export const ALL_CARDS: CardData[] = [
       "Authority"
     ],
     "energy": null,
-    "symbolism": "The supreme magnate sits on a throne carved from gold and Genesis Blocks, a crown of rotating Crypto Sigils on his head, colossal mechanical bulls guarding the Blockchain Capital behind him. As the King of earth, he is mastery of the material world - abundance, authority, and responsibility fully realized. Prosperity commanded with a steady hand.",
+    "symbolism": "The supreme magnate sits on a throne carved from gold and Genesis Blocks, a crown of rotating Crypto Sigils on his head, colossal mechanical bulls guarding the Blockchain Capital behind him. He is mastery of the material world - abundance, authority, and responsibility fully realized. Prosperity commanded with a steady hand.",
     "advice": "Lead with the abundance you've mastered; guard against it mastering you.",
     "shadow": "A crown of sigils worn too long is how wealth quietly starts wearing the man.",
     "upright_full": "This card is mastery of wealth and worldly success: mature leadership, long-term prosperity, the security and generosity of one who has truly built. Blockchain Tycoon rewards leading with the abundance you've mastered. Provide, protect, and steward at scale.",
@@ -363,7 +363,7 @@ export const ALL_CARDS: CardData[] = [
       "Opportunity"
     ],
     "energy": null,
-    "symbolism": "A radiant hand rises from the mist holding a crystal chalice of living blue liquidity, four rivers pouring from its lip into newborn DeFi protocols. This is the Ace as first cause - the genesis block of feeling and capital, the moment a fountain switches on. It is pure potential before it has chosen a shape.",
+    "symbolism": "A radiant hand rises from the mist holding a crystal chalice of living blue liquidity, four rivers pouring from its lip into newborn DeFi protocols. This is the first card of Liquidity, the first cause - the genesis block of feeling and capital, the moment a fountain switches on. It is pure potential before it has chosen a shape.",
     "advice": "Direct this new flow into a chosen channel before it drains away unused.",
     "shadow": "Letting the source overflow untended until it evaporates into missed potential.",
     "upright_full": "A fresh channel of flow is opening: new income, new capital, or a new emotional current that wants to be received rather than seized. The card marks a beginning that feels overflowing and generous, a source that has not yet been depleted. Its energy is soft but real, and it rewards those who cup their hands and let it fill.",
@@ -561,7 +561,7 @@ export const ALL_CARDS: CardData[] = [
       "Curiosity"
     ],
     "energy": null,
-    "symbolism": "A young apprentice studies a chalice from which a small glowing digital koi rises, LP tokens drifting like petals around them. The Page is the archetype of the beginner's open heart - curiosity unspoiled, the first tentative pour into DeFi. Wonder is their whole method, and it is both their gift and their exposure.",
+    "symbolism": "A young apprentice studies a chalice from which a small glowing digital koi rises, LP tokens drifting like petals around them. This is the archetype of the beginner's open heart - curiosity unspoiled, the first tentative pour into DeFi. Wonder is their whole method, and it is both their gift and their exposure.",
     "advice": "Explore DeFi with open curiosity, and verify every contract and claim before you ape in.",
     "shadow": "Mistaking naive enthusiasm for understanding and drinking from the first shiny cup offered.",
     "upright_full": "A fresh learner arrives with genuine openness: first investments, new ideas, the willingness to be delighted and surprised. The card favors playful study and the courage to start before you know everything. Beginner's mind is an edge when it stays curious and humble.",
@@ -581,11 +581,11 @@ export const ALL_CARDS: CardData[] = [
       "Action"
     ],
     "energy": null,
-    "symbolism": "A knight rides a cyber-seahorse across a river of liquidity, new LP pools forming in the wake behind him. The Knight is the archetype of the yield quester - motion in pursuit of an ideal, romance aimed at returns. He is graceful and driven, always riding toward the next pool.",
+    "symbolism": "A knight rides a cyber-seahorse across a river of liquidity, new LP pools forming in the wake behind him. This is the archetype of the yield quester - motion in pursuit of an ideal, romance aimed at returns. He is graceful and driven, always riding toward the next pool.",
     "advice": "Farm actively with a plan, because a blind chase for the highest APY usually ends in loss.",
     "shadow": "Confusing restless yield-chasing with progress until greed rides you off the cliff.",
-    "upright_full": "This is active, questing energy: putting capital to work, chasing yield with skill, growing a position through movement rather than waiting. The Knight brings charm and momentum to the farm. At his best he is a disciplined seeker who lets returns compound behind him.",
-    "reversed_full": "The quest degrades into greed - chasing the highest APY off a cliff, taking excessive risk, mistaking motion for progress. The Knight gallops into farms that are too good to be true. Yield-chasing without diligence typically ends where all mirages end."
+    "upright_full": "This is active, questing energy: putting capital to work, chasing yield with skill, growing a position through movement rather than waiting. The yield quester brings charm and momentum to the farm. At his best he is a disciplined seeker who lets returns compound behind him.",
+    "reversed_full": "The quest degrades into greed - chasing the highest APY off a cliff, taking excessive risk, mistaking motion for progress. The yield quester gallops into farms that are too good to be true. Yield-chasing without diligence typically ends where all mirages end."
   },
   {
     "crypto_name": "DeFi Matriarch",
@@ -601,10 +601,10 @@ export const ALL_CARDS: CardData[] = [
       "Nurture"
     ],
     "energy": null,
-    "symbolism": "A queen sits enthroned amid cascading liquidity waterfalls, holding a chalice from which newborn tokens rise. The Queen is the archetype of intuitive stewardship - the matriarch who feels the market's currents and tends capital like a garden. Her power is emotional intelligence made productive.",
+    "symbolism": "A queen sits enthroned amid cascading liquidity waterfalls, holding a chalice from which newborn tokens rise. This is the archetype of intuitive stewardship - the matriarch who feels the market's currents and tends capital like a garden. Her power is emotional intelligence made productive.",
     "advice": "Steward capital with intuition and wisdom while keeping emotion out of the driver's seat.",
     "shadow": "Letting feeling flood the banks until intuition becomes reactivity and control slips away.",
-    "upright_full": "Intuition and financial wisdom combine into graceful stewardship: caring for capital, reading sentiment, nurturing prosperity without force. The Queen holds resources the way one holds water - firmly enough to keep it, gently enough not to spill. She turns feeling into insight.",
+    "upright_full": "Intuition and financial wisdom combine into graceful stewardship: caring for capital, reading sentiment, nurturing prosperity without force. The keeper holds resources the way one holds water - firmly enough to keep it, gently enough not to spill. She turns feeling into insight.",
     "reversed_full": "The waters flood their banks: emotional decisions, reactivity, and a loss of financial control. Intuition untethered from discipline becomes moodiness driving the portfolio. The nurturing turns either into martyrdom or into being swept away by every sentiment."
   },
   {
@@ -621,10 +621,10 @@ export const ALL_CARDS: CardData[] = [
       "Capital"
     ],
     "energy": null,
-    "symbolism": "A ruler sits on a throne floating at the center of an infinite ocean of liquidity, colossal DeFi protocols orbiting like planets. The King is the archetype of masterful equanimity - the sovereign who commands vast flows while remaining perfectly still. He rules the water by not being ruled by it.",
+    "symbolism": "A ruler sits on a throne floating at the center of an infinite ocean of liquidity, colossal DeFi protocols orbiting like planets. This is the archetype of masterful equanimity - the sovereign who commands vast flows while remaining perfectly still. He rules the water by not being ruled by it.",
     "advice": "Master the flow with a calm mind: command the ocean without ever stirring it for your own gain.",
     "shadow": "A composed exterior hiding either manipulation for profit or a storm you have lost control of.",
-    "upright_full": "This is emotional and financial maturity in full: capital under calm control, long-term thinking, the composure of hard-won experience. The King neither suppresses feeling nor is governed by it - he holds the ocean steady. His mastery is measured, patient, and quietly immense.",
+    "upright_full": "This is emotional and financial maturity in full: capital under calm control, long-term thinking, the composure of hard-won experience. The sovereign neither suppresses feeling nor is governed by it - he holds the ocean steady. His mastery is measured, patient, and quietly immense.",
     "reversed_full": "The calm turns cold or corrupt: market manipulation, abuse of power, or the opposite - emotional instability behind a controlled mask. The sovereign either stirs the ocean for gain or loses his grip on the storm within. Power without integrity poisons the whole sea."
   },
   {
@@ -1079,7 +1079,7 @@ export const ALL_CARDS: CardData[] = [
       "Builder"
     ],
     "energy": null,
-    "symbolism": "A hand of light emerges from the clouds holding a Validator Staff that contains the spinning Genesis Block, a whole new blockchain world forming beneath it. As the Ace of the fire suit, it is the first spark of creation - the very block on which everything else will be built. Pure ignition, before a single line of code has run.",
+    "symbolism": "A hand of light emerges from the clouds holding a Validator Staff that contains the spinning Genesis Block, a whole new blockchain world forming beneath it. As the first card of Nodes, it is the first spark of creation - the very block on which everything else will be built. Pure ignition, before a single line of code has run.",
     "advice": "The genesis spark is here - launch while the inspiration still burns.",
     "shadow": "A spark left unfed burns out into another 'someday' idea.",
     "upright_full": "A new idea catches fire: the impulse to launch, build, or create something from nothing. This card carries raw creative energy and the confidence that the project is worth starting. It rewards striking while the inspiration is hot, before doubt or delay can smother the spark.",
@@ -1270,11 +1270,11 @@ export const ALL_CARDS: CardData[] = [
       "Beginner"
     ],
     "energy": null,
-    "symbolism": "A young dev holds his first glowing Validator Staff at the gate of a Mainnet Citadel, transparent testnet blocks floating around him. As the Page of fire, he is the eager beginner - all enthusiasm and experimentation, standing at the threshold of a long path. Raw potential learning by doing.",
+    "symbolism": "A young dev holds his first glowing Validator Staff at the gate of a Mainnet Citadel, transparent testnet blocks floating around him. He is the eager beginner - all enthusiasm and experimentation, standing at the threshold of a long path. Raw potential learning by doing.",
     "advice": "Experiment on the testnet; channel the enthusiasm into finishing something.",
     "shadow": "Endless new experiments are how nothing ever reaches mainnet.",
     "upright_full": "This card is the curious beginner: shipping first contracts on testnet, learning by experiment, full of untamed enthusiasm. Testnet Apprentice rewards playful exploration and the courage to try. Channel the excitement into actually finishing something.",
-    "reversed_full": "Reversed, enthusiasm scatters: rookie mistakes, an abandoned project, hype with no follow-through, no discipline to finish. The Page flits between ideas without shipping. Excitement without structure fizzles."
+    "reversed_full": "Reversed, enthusiasm scatters: rookie mistakes, an abandoned project, hype with no follow-through, no discipline to finish. The novice flits between ideas without shipping. Excitement without structure fizzles."
   },
   {
     "crypto_name": "Protocol Runner",
@@ -1290,7 +1290,7 @@ export const ALL_CARDS: CardData[] = [
       "Action"
     ],
     "energy": null,
-    "symbolism": "A knight races a mechanical cyber-horse down a glowing blockchain highway, a blazing Validator Staff in hand carrying a network upgrade, blocks trailing behind. As the Knight of fire, he is bold forward motion - ambition in full gallop, shipping fast and charging at the mission. Momentum personified.",
+    "symbolism": "A knight races a mechanical cyber-horse down a glowing blockchain highway, a blazing Validator Staff in hand carrying a network upgrade, blocks trailing behind. He is bold forward motion - ambition in full gallop, shipping fast and charging at the mission. Momentum personified.",
     "advice": "Ship boldly - but test before you deploy at full speed.",
     "shadow": "A charge with no aim is how you gallop confidently off a cliff.",
     "upright_full": "This card is decisive, ambitious action: fast development, shipping features, charging boldly at a goal. Protocol Runner rewards the courage to move and the charisma to rally others behind the push. Ship with drive - just aim before you charge.",
@@ -1310,7 +1310,7 @@ export const ALL_CARDS: CardData[] = [
       "Community"
     ],
     "energy": null,
-    "symbolism": "A wise queen sits on a throne of blocks, her Validator Staff blooming golden branches, tiny blockchain dragons circling in calm authority. As the Queen of fire, she is warmth turned to stewardship - the magnetic figure who nurtures a whole ecosystem rather than a single spark. Living, confident leadership.",
+    "symbolism": "A wise queen sits on a throne of blocks, her Validator Staff blooming golden branches, tiny blockchain dragons circling in calm authority. She is warmth turned to stewardship - the magnetic figure who nurtures a whole ecosystem rather than a single spark. Living, confident leadership.",
     "advice": "Nurture the ecosystem; guard it without smothering its growth.",
     "shadow": "Guarding growth too tightly is how you become its ceiling.",
     "upright_full": "This card is mature, warm leadership: caring for a community, nurturing an ecosystem, holding stability with confidence. Network Guardian rewards the magnetic steward who grows what surrounds her. Lead with warmth and let the ecosystem flourish under your care.",
@@ -1330,7 +1330,7 @@ export const ALL_CARDS: CardData[] = [
       "Consensus"
     ],
     "energy": null,
-    "symbolism": "The supreme guardian sits on a Genesis Block throne beneath the colossal Tree of Consensus, his crown forged of rotating blocks. As the King of fire, he is vision matured into command - the founder who sees the whole map and makes builders believe. Authority earned by building the network itself.",
+    "symbolism": "The supreme guardian sits on a Genesis Block throne beneath the colossal Tree of Consensus, his crown forged of rotating blocks. He is vision matured into command - the founder who sees the whole map and makes builders believe. Authority earned by building the network itself.",
     "advice": "Lead the infrastructure with vision; centralize the power and you lose the network.",
     "shadow": "A visionary who rules instead of serving forks the very community he built.",
     "upright_full": "This card is visionary leadership at full maturity: commanding a large-scale project, controlling the infrastructure, inspiring an ecosystem to follow. Master Validator rewards the leader who points far and delivers enough to keep the faith. Lead the vision boldly.",
@@ -1349,7 +1349,7 @@ export const ALL_CARDS: CardData[] = [
       "Smart Contract"
     ],
     "energy": null,
-    "symbolism": "A giant Protocol Blade of blockchain links descends from the clouds, Solidity runes orbiting, crowned with a radiant 'Audit Passed' seal. As the Ace of the air suit, it is pure mental clarity - the sword that cuts through confusion to a single, verified truth. A breakthrough insight, clean and decisive.",
+    "symbolism": "A giant Protocol Blade of blockchain links descends from the clouds, Solidity runes orbiting, crowned with a radiant 'Audit Passed' seal. As the first card of Protocols, it is pure mental clarity - the sword that cuts through confusion to a single, verified truth. A breakthrough insight, clean and decisive.",
     "advice": "The clarity is verified; cut cleanly and move to the next level.",
     "shadow": "A blade this sharp, aimed by faulty logic, cuts the wrong thing with total confidence.",
     "upright_full": "This card is clarity and truth: a breakthrough realization, a passed audit, a decisive cut through the noise to what is real. Verified Contract rewards sharp thinking and honest conclusions. You can see clearly now - cut cleanly and act.",
@@ -1540,11 +1540,11 @@ export const ALL_CARDS: CardData[] = [
       "Solidity"
     ],
     "energy": null,
-    "symbolism": "A young researcher stands atop a datacenter tower with his first Protocol Blade, Solidity code and EVM diagrams floating around him, digital ravens circling to hunt vulnerabilities. As the Page of air, he is the sharp, curious mind - gathering intel, watchful, hungry to understand how things break. Vigilant beginner intellect.",
+    "symbolism": "A young researcher stands atop a datacenter tower with his first Protocol Blade, Solidity code and EVM diagrams floating around him, digital ravens circling to hunt vulnerabilities. He is the sharp, curious mind - gathering intel, watchful, hungry to understand how things break. Vigilant beginner intellect.",
     "advice": "Investigate everything - then verify before you accuse.",
     "shadow": "A hunch mistaken for a finding is how the researcher becomes the FUD.",
     "upright_full": "This card is the curious, vigilant mind: researching, auditing, hunting for problems before they surface, hungry to learn how systems work. Security Researcher rewards sharp curiosity and careful observation. Gather the intel - then verify it before you repeat it.",
-    "reversed_full": "Reversed, curiosity outruns competence: shallow audits, false conclusions, hasty accusations, gossip, misreading the architecture, all talk. The Page mistakes a hunch for a finding. Watchfulness tips into paranoia or spying."
+    "reversed_full": "Reversed, curiosity outruns competence: shallow audits, false conclusions, hasty accusations, gossip, misreading the architecture, all talk. The novice mistakes a hunch for a finding. Watchfulness tips into paranoia or spying."
   },
   {
     "crypto_name": "White Hat Hunter",
@@ -1562,7 +1562,7 @@ export const ALL_CARDS: CardData[] = [
       "Defense"
     ],
     "energy": null,
-    "symbolism": "A legendary white hat charges a cyber-steed through a storm of malicious code, a blazing Protocol Blade slicing exploits into disintegrating particles, repaired blocks streaming overhead. As the Knight of air, he is thought weaponized into speed - decisive, aggressive, cutting straight to the fix. Fast, fearless defense.",
+    "symbolism": "A legendary white hat charges a cyber-steed through a storm of malicious code, a blazing Protocol Blade slicing exploits into disintegrating particles, repaired blocks streaming overhead. He is thought weaponized into speed - decisive, aggressive, cutting straight to the fix. Fast, fearless defense.",
     "advice": "Hunt the bugs before the hackers do - but a rushed patch breeds new ones.",
     "shadow": "A blade swung faster than the mind can aim cuts the defender, not the exploit.",
     "upright_full": "This card is fast, decisive defense: reacting instantly, cutting through the threat, preventing the attack, an aggressive professional audit. White Hat Hunter rewards speed and courage in a crisis. Charge - but aim the blade before you swing.",
@@ -1583,7 +1583,7 @@ export const ALL_CARDS: CardData[] = [
       "Integrity"
     ],
     "energy": null,
-    "symbolism": "The keeper sits on a throne of perfectly aligned blocks, a Protocol Blade in one hand and the Consensus Rules scroll in the other, a halo of synchronized validators turning above her. As the Queen of air, she is clear, independent judgement - seeing through the noise, fair but unfooled. Principled clarity.",
+    "symbolism": "The keeper sits on a throne of perfectly aligned blocks, a Protocol Blade in one hand and the Consensus Rules scroll in the other, a halo of synchronized validators turning above her. She is clear, independent judgement - seeing through the noise, fair but unfooled. Principled clarity.",
     "advice": "Guard the consensus fairly; enforce the rules without sliding into censorship.",
     "shadow": "A blade that only ever cuts turns fair judgement into cold cruelty.",
     "upright_full": "This card is clear-eyed wisdom and fair judgement: independence, objectivity, upholding the rules, seeing through the pitch. Consensus Keeper rewards honest perception and principled boundaries. Judge with clarity - keep the edge sharp, not cruel.",
@@ -1605,7 +1605,7 @@ export const ALL_CARDS: CardData[] = [
       "Mastery"
     ],
     "energy": null,
-    "symbolism": "The supreme architect sits on a Genesis Block throne in a blockchain cathedral, a crown of rotating blocks on his head, the legendary Protocol Blade in one hand and the Blockchain Core sphere in the other, the Wheel of Consensus turning behind. As the King of air, he is intellect matured into ethical command - logic, structure and security wielded with responsibility.",
+    "symbolism": "The supreme architect sits on a Genesis Block throne in a blockchain cathedral, a crown of rotating blocks on his head, the legendary Protocol Blade in one hand and the Blockchain Core sphere in the other, the Wheel of Consensus turning behind. He is intellect matured into ethical command - logic, structure and security wielded with responsibility.",
     "advice": "Architect the foundation with mastery; refuse to centralize or you become the risk.",
     "shadow": "Logic without ethics is how the architect becomes the exploit he was built to prevent.",
     "upright_full": "This card is intellectual authority and mastery: designing the system, leading with logic and ethics, taking responsibility for the whole ecosystem. Protocol Architect rewards principled, strategic command. Lead with clear, ethical logic - power over minds demands it.",

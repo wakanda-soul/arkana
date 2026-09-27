@@ -115,7 +115,7 @@ export function DailyRitualView({
   // Day name
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const todayIndex = new Date().getDay();
-  const todayName = dayNames[todayIndex];
+  const todayName = t(`day_${todayIndex}`, dayNames[todayIndex]);
 
   // Sync if isAlreadyClockedIn changes externally (e.g. wallet connected, switched, or disconnected)
   const prevClockedInRef = useRef(isAlreadyClockedIn);
@@ -174,7 +174,7 @@ export function DailyRitualView({
       const diffMs = Math.max(0, nextUtc.getTime() - now.getTime());
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      setCountdownText(`${hours}h ${mins}m`);
+      setCountdownText(t('countdown_hm', '{h}h {m}m', { h: hours, m: mins }));
     };
 
     updateCountdown();
@@ -379,13 +379,13 @@ export function DailyRitualView({
       cardNo: selectedCard.card_no,
       orientation: orientation.toLowerCase() as 'upright' | 'reversed',
       streak: streak,
-      advice: selectedCard.advice,
-      shadow: selectedCard.shadow,
+      advice: activeSelectedCard.advice,
+      shadow: activeSelectedCard.shadow,
       suit: selectedCard.suit,
       arcana: selectedCard.arcana,
-      keywords: selectedCard.keywords,
+      keywords: activeSelectedCard.keywords,
       classic: selectedCard.classic,
-      proseOmen: selectedCard.advice,
+      proseOmen: activeSelectedCard.advice,
       spreadName: 'Daily Consensus Block',
     });
   };
@@ -447,7 +447,7 @@ export function DailyRitualView({
         <View style={styles.stageContent}>
           <View style={styles.headerBlock}>
             <Text style={styles.heroTitle}>
-              {todayName} Rite{'\n'}
+              {t('today_rite_title', '{day} Rite', { day: todayName })}{'\n'}
               <Text style={styles.goldItalic}>{t('draw_consensus', 'draw consensus')}</Text>
             </Text>
             <Text style={styles.heroSub}>

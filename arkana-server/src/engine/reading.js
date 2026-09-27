@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Arcana of the Chain — one-shot reading packet (Node.js port of reading.py).
+ * Arcana of the Chain - one-shot reading packet (Node.js port of reading.py).
  *
  * Wraps draw.js: draws the cards AND assembles everything the Oracle needs into
- * one JSON dossier — each card's meaning filtered by orientation + category, the
+ * one JSON dossier - each card's meaning filtered by orientation + category, the
  * symbolism/advice/shadow, engine metrics (dominant suit, Major weight, structural
  * flag), and any seeded combination-bank hits. The Oracle then writes ONE story
  * from this packet; it does not open other files or re-draw.
@@ -27,7 +27,7 @@ const CATEGORY_ALIASES = { love: "relationships", work: "career", job: "career",
 const POSITION_HINTS = {
   "network-scan": {
     "Past": "the block that set the current chain in motion",
-    "Present": "the current state of the Network — the trend or barrier you stand in",
+    "Present": "the current state of the Network - the trend or barrier you stand in",
     "Next Block": "the most probable next step if nothing changes (a direction, not a verdict)",
   },
   "validator-cross": {
@@ -157,9 +157,9 @@ function main() {
   const n = resolved.length;
   const structural = majors >= 3 || (n <= 3 && majors >= 2);
   let arcanaNote;
-  if (majors === 0) arcanaNote = "no Major Arcana — everyday choices, largely in the querent's control";
-  else if (structural) arcanaNote = `${majors} Major Arcana — STRUCTURAL / life-changing forces beyond full control`;
-  else arcanaNote = `${majors} Major Arcana — a meaningful theme anchors the spread`;
+  if (majors === 0) arcanaNote = "no Major Arcana - everyday choices, largely in the querent's control";
+  else if (structural) arcanaNote = `${majors} Major Arcana - STRUCTURAL / life-changing forces beyond full control`;
+  else arcanaNote = `${majors} Major Arcana - a meaningful theme anchors the spread`;
 
   let dominantSuit = null;
   const vals = Object.values(suitTally);
@@ -191,12 +191,12 @@ function main() {
     dominant_suit: dominantSuit, suit_tally: suitTally,
     dominant_energy: dominantEnergy, energy_tally: energyTally, cards: resolved, combinations: hits,
     instructions: "Reveal the spread as an image at the TOP of the reply, in 3 steps: (1) run "
-      + "`python scripts/render_spread.py <spread_key> --cards <cards_arg>` — it self-installs Pillow if "
+      + "`python scripts/render_spread.py <spread_key> --cards <cards_arg>` - it self-installs Pillow if "
       + "the sandbox lacks it and prints the PNG path; (2) upload that PNG to the session's shared object "
       + "storage (OSS) to get a public https URL; (3) put that URL as a markdown image `![Spread](url)` on "
       + "the FIRST line, then the reading. The image leads (not just a bare link at the bottom). Embed the "
       + "REAL url; never hand-type a guessed/local image path. Fall back to a plain-text list "
-      + "(`• Position — Card (orientation)`) ONLY if render/upload truly fails; never a table, `<br>`, or "
+      + "(`• Position - Card (orientation)`) ONLY if render/upload truly fails; never a table, `<br>`, or "
       + "ASCII schematic. Then write the reading as chat TEXT: ONE story using category_reading + "
       + "combinations; apply arcana_note, dominant_suit, dominant_energy; then the 7 beats (The Story, "
       + "Hidden Forces, What Strengthens You, What Weakens You, Oracle Advice, Warning, Final Omen). Never "

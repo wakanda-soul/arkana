@@ -22,7 +22,7 @@ import { fetchClockInStatus, setRemoteSeekerStatus, ClockInResult } from "@/serv
 import { ellipsify } from "@/utils/ellipsify";
 import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
-import { useLanguage } from "@/services/i18n";
+import { useLanguage, localizeErrorText } from "@/services/i18n";
 import { soundService } from "@/services/soundService";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
@@ -187,7 +187,7 @@ export default function WalletScreen() {
     if (!userPubkey || !signAndSendTransactions) {
       Alert.alert(
         t('wallet_required', 'Wallet Required'),
-        t('connect_wallet_first', 'Please connect your Solana wallet first.')
+        t('connect_wallet_first', 'Please connect your Solana wallet to commune with Arkana.')
       );
       return;
     }
@@ -224,13 +224,13 @@ export default function WalletScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
       } else {
-        throw new Error(res.error || 'Failed to activate pass on server.');
+        throw new Error(res.error || t('err_pass_activation_server', 'The pass could not be activated on the server.'));
       }
     } catch (e: any) {
       console.warn('Subscription purchase error:', e);
       Alert.alert(
         t('subscription_failed_title', 'Pass Activation Incomplete'),
-        e?.message || t('subscription_failed_desc', 'Transaction could not be confirmed. No funds were debited.')
+        (e?.message && localizeErrorText(e.message)) || t('subscription_failed_desc', 'The transaction could not be confirmed. No funds were debited.')
       );
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -417,10 +417,10 @@ export default function WalletScreen() {
                 <View style={styles.subCardHeader}>
                   <View style={styles.subCardTitleCol}>
                     <View style={styles.subCardBadgeRow}>
-                      <Text style={styles.subCardKicker}>SACRED COVENANT</Text>
+                      <Text style={styles.subCardKicker}>{t('sacred_covenant', 'SACRED COVENANT')}</Text>
                       <View style={[styles.subStatusBadge, clockInState.isSubscribed && styles.subStatusBadgeActive]}>
                         <Text style={[styles.subStatusText, clockInState.isSubscribed && styles.subStatusTextActive]}>
-                          {clockInState.isSubscribed ? t('oracle_pass_active', 'ACTIVE PASS') : '333 SKR / MO'}
+                          {clockInState.isSubscribed ? t('oracle_pass_active', 'ACTIVE PASS') : t('sub_price_monthly', '{cost} SKR / MO', { cost: 333 })}
                         </Text>
                       </View>
                     </View>
@@ -439,7 +439,7 @@ export default function WalletScreen() {
                     </Text>
                     {subSolEstimate && !clockInState.isSubscribed ? (
                       <Text style={styles.subSolEstimateText}>
-                        Auto-swap: {subSolEstimate} via Jupiter DEX
+                        {t('sub_auto_swap_estimate', 'Auto-swap: {amount} via Jupiter DEX', { amount: subSolEstimate })}
                       </Text>
                     ) : null}
                   </View>
@@ -627,20 +627,24 @@ export default function WalletScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {}
             Alert.alert(
-              "Arkana Telemetry",
-              `Version: ${APP_VERSION}\nBuild Number: #${BUILD_NUMBER}\nCommit: ${COMMIT_SHA}\nEnvironment: Solana Mobile & Seeker (Mainnet)\n\nCopied to clipboard!`
+              t('telemetry_title', 'Arkana Telemetry'),
+              t(
+                'telemetry_body',
+                'Version: {version}\nBuild Number: #{build}\nCommit: {commit}\nEnvironment: Solana Mobile & Seeker (Mainnet)\n\nCopied to clipboard!',
+                { version: APP_VERSION, build: BUILD_NUMBER, commit: COMMIT_SHA }
+              )
             );
           }}
         >
           <View style={styles.buildStampBadge}>
             <Text style={styles.buildStampBadgeDot}>{'\u25C8'}</Text>
-            <Text style={styles.buildStampBadgeText}>SOLANA MOBILE BUILD</Text>
+            <Text style={styles.buildStampBadgeText}>{t('build_stamp_badge', 'SOLANA MOBILE BUILD')}</Text>
           </View>
           <Text style={styles.buildStampTitle}>
             ARKANA {BUILD_LABEL}
           </Text>
           <Text style={styles.buildStampSubtitle}>
-            Tap to view telemetry & copy build hash
+            {t('build_stamp_sub', 'Tap to view telemetry & copy build hash')}
           </Text>
         </Pressable>
       </ScrollView>
@@ -670,7 +674,7 @@ export default function WalletScreen() {
               {t('pass_consecrated_desc', 'Your covenant is sealed on Solana. 333 SKR accepted (50% burned, 50% to Treasury). You now have +5 sacred spreads every day.')}
             </Text>
             <View style={styles.subSuccessPill}>
-              <Text style={styles.subSuccessPillText}>{'\u2713'} 30 DAYS ACTIVE</Text>
+              <Text style={styles.subSuccessPillText}>{'\u2713'} {t('pass_days_active', '{n} DAYS ACTIVE', { n: 30 })}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.subSuccessCloseBtn, pressed && styles.btnPressed]}

@@ -205,8 +205,8 @@ export function AltarOfferingCard({
         <View style={styles.rateRow}>
           <Text style={styles.rateText} numberOfLines={1} adjustsFontSizeToFit>
             {isSolMode
-              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX Auto-Swap')} (${solEstimate}) \u2192 33% Burn + 33% Treasury + 34% ORE Yield`
-              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} \u2192 33% Burn + 33% Treasury + 34% ORE Yield`}
+              ? `${t('jupiter_auto_swap_active', 'Jupiter DEX Auto-Swap')} (${solEstimate}) ${t('offering_rate_split', '\u2192 33% Burn + 33% Treasury + 34% ORE Yield')}`
+              : `${t('direct_skr_payment_active', 'Direct SKR Payment')} ${t('offering_rate_split', '\u2192 33% Burn + 33% Treasury + 34% ORE Yield')}`}
           </Text>
         </View>
 

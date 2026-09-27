@@ -122,7 +122,7 @@ export function TarotCard({
             {name}
           </Text>
           <Text style={[styles.cardMeta, compact && styles.cardMetaCompact]}>
-            {isReversed ? '\u25BC Rev' : '\u25B2 Up'} {'\u00B7'} &#x2922; Zoom
+            {isReversed ? `\u25BC ${t('card_rev_short', 'Rev')}` : `\u25B2 ${t('card_up_short', 'Up')}`} {'\u00B7'} &#x2922; {t('zoom_short', 'Zoom')}
           </Text>
         </View>
       )}

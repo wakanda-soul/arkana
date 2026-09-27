@@ -13,7 +13,7 @@ import {
 import { ObsidianTokens } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { CARD_BACK } from '@/assets/cards';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizeErrorText } from '@/services/i18n';
 
 export type SystemStateType =
   | 'ai_generating'
@@ -141,7 +141,7 @@ export function SystemStateModal({
               </Text>
               <View style={styles.codePanel}>
                 <Text style={styles.codeText}>
-                  {customError || t('tx_dropped_desc', 'Transaction dropped or rejected by wallet. Try again.')}
+                  {(customError && localizeErrorText(customError)) || t('tx_dropped_desc', 'The transaction was dropped or rejected by the wallet. Try again.')}
                 </Text>
               </View>
 
@@ -187,7 +187,7 @@ export function SystemStateModal({
                 <View style={styles.walletSourceCard}>
                   <View style={styles.walletSourceInfo}>
                     <Text style={styles.walletSourceName}>Phantom</Text>
-                    <Text style={styles.walletSourceType}>Solana Mobile standard</Text>
+                    <Text style={styles.walletSourceType}>{t('wallet_src_phantom', 'Solana Mobile standard')}</Text>
                   </View>
                   <View style={styles.walletSourceButtons}>
                     <TouchableOpacity
@@ -209,7 +209,7 @@ export function SystemStateModal({
                 <View style={styles.walletSourceCard}>
                   <View style={styles.walletSourceInfo}>
                     <Text style={styles.walletSourceName}>Solflare</Text>
-                    <Text style={styles.walletSourceType}>Native Solana & Ledger</Text>
+                    <Text style={styles.walletSourceType}>{t('wallet_src_solflare', 'Native Solana & Ledger')}</Text>
                   </View>
                   <View style={styles.walletSourceButtons}>
                     <TouchableOpacity
@@ -231,7 +231,7 @@ export function SystemStateModal({
                 <View style={styles.walletSourceCard}>
                   <View style={styles.walletSourceInfo}>
                     <Text style={styles.walletSourceName}>Backpack</Text>
-                    <Text style={styles.walletSourceType}>xNFT & Seeker ready</Text>
+                    <Text style={styles.walletSourceType}>{t('wallet_src_backpack', 'xNFT & Seeker ready')}</Text>
                   </View>
                   <View style={styles.walletSourceButtons}>
                     <TouchableOpacity
@@ -280,7 +280,7 @@ export function SystemStateModal({
                 <View style={[styles.miniCardBack, styles.miniCardDashed]}>
                   <Image source={CARD_BACK} style={[styles.miniCardImage, { opacity: 0.28 }]} contentFit="cover" />
                   <View style={styles.miniCardOverlay}>
-                    <Text style={styles.miniLockText}>LOCK</Text>
+                    <Text style={styles.miniLockText}>{t('lock_label', 'LOCK')}</Text>
                   </View>
                 </View>
               </View>
@@ -319,7 +319,7 @@ export function SystemStateModal({
           {type === 'offline' && (
             <View style={styles.contentBox}>
               <View style={styles.statusPill}>
-                <Text style={styles.statusPillText}>OFFLINE · SHOWING YOUR RECORD</Text>
+                <Text style={styles.statusPillText}>{t('offline_status_pill', 'OFFLINE · SHOWING YOUR RECORD')}</Text>
               </View>
               <View style={[styles.symbolRing, styles.dashedRing]}>
                 <View style={styles.diamondSquare} />
