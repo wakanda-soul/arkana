@@ -1,4 +1,4 @@
-# Arkana: HTTPS for arkana.icu (behind Cloudflare, SSL mode Full), plain HTTP on the IP for older apps.
+# Arkana: HTTPS for arkana.icu (behind Cloudflare, SSL mode Full). Nothing is served on the bare IP.
 
 arkana.icu, www.arkana.icu {
 	encode gzip
@@ -9,10 +9,7 @@ arkana.icu, www.arkana.icu {
 	}
 }
 
-# Older app builds call http://184.174.39.62 directly
-http://184.174.39.62 {
-	encode gzip
-	reverse_proxy 127.0.0.1:3001 {
-		header_up X-Real-IP {remote_host}
-	}
+# Anything that is not arkana.icu (e.g. the bare IP): drop the connection
+http:// {
+	abort
 }

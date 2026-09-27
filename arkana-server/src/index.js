@@ -122,10 +122,6 @@ app.get(/^\/(arkana(-v\d+\.\d+\.\d+)?\.apk|version\.json)$/, (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, req.path.slice(1)), (err) => err && res.status(404).end());
 });
 
-// Private files for the team (demo script, captions) behind an unguessable link
-if (process.env.ARKANA_SHARE_TOKEN) {
-  app.use(`/share/${process.env.ARKANA_SHARE_TOKEN}`, express.static(path.join(__dirname, "..", "private", "share")));
-}
 
 // Dynamic Build Metadata Reader
 function getBuildInfo() {
@@ -722,7 +718,8 @@ app.post("/api/streak/repair", async (req, res) => {
   }
 });
 
-const server = app.listen(PORT, "0.0.0.0", () => {
+// Only Caddy on the same machine talks to the API; set HOST=0.0.0.0 for a setup without a proxy
+const server = app.listen(PORT, process.env.HOST || "127.0.0.1", () => {
   console.log(`🔮 Arkana Oracle Server is running on http://0.0.0.0:${PORT}`);
   startLookupTableKeeper();
 });
