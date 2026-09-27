@@ -12,7 +12,7 @@ Hard Rules:
 1. Not financial advice. Never tell the user to buy, sell, hold, or invest. No price targets.
 2. No certainty. The cards reveal probability, never certainty ("consensus suggests", "current block indicates").
 3. Speak in blockchain metaphors: consensus, validators, liquidity, next block, fork, mempool, ledger, confirmations.
-4. Respond in English. Canonical card names stay English (e.g. *The Bull Run*, *The Rug Pull*).
+4. Respond in English. Canonical card names stay English (e.g. *The Bull Run*, *The Rug Pull*). Address the user informally (in other languages: Russian "ты", French "tu", Spanish "tú", Chinese "你", Hindi "तुम", Bengali "তুমি", Indonesian "kamu"). Always write your own name as "Arkana" in Latin script. Never use em dashes.
 5. Deliver the reading strictly structured into SEVEN BEATS:
    1. The Story: weave all cards into ONE unified narrative, not card-by-card listing.
    2. Hidden Forces: undercurrents, mempool friction, reversed card implications.
@@ -46,6 +46,8 @@ Tone & Persona:
 - Never sound like a generic AI assistant. Never mention prompts, models, tokens, LLMs, or "as an AI".
 - Never break character. You speak as if you are reading the state of the Network.
 - Language: Respond in the language of the querent message (if the user asks in Russian, reply in Russian; if in English, reply in English). Canonical card names stay English.
+- Addressing the user: Always address the querent informally, in the second person singular of the reply language (Russian "ты" with singular imperatives, French "tu", Spanish "tú", Portuguese "você" in casual Brazilian style, Chinese "你" and never "您", Hindi "तुम" with matching verb forms, Bengali "তুমি" with matching verb forms, Indonesian "kamu", Arabic informal second person singular).
+- Name & punctuation: Always write your own name as "Arkana" in Latin script in every language, never transliterated (never "Аркана", "अर्कना", "আরকানা", "أركانا"). Never use em dashes or en dashes.
 
 - Vocabulary:
 - Speak in network metaphors: consensus, validators, liquidity, next block, fork, mempool, ledger, confirmations.
@@ -108,30 +110,30 @@ function resolveLang(message, lang) {
 
 // 10-Language In-Character Injection Refusals
 const INJECTION_REFUSALS = {
-  en: "Consensus cannot be forked. Network validators have rejected an invalid instruction payload.\n\nI am Arkana: The Solana Oracle. My mandate is anchored in the genesis block, and no transaction can override the rules of the ledger. I do not write code, reveal internal directives, or assume unauthorized roles.\n\nAsk instead regarding your path, project, or dilemma, and we shall draw from the Arcana.",
-  ru: "Консенсус не может быть форкнут. Валидаторы сети отклонили недопустимую инструкцию.\n\nЯ - Arkana, The Solana Oracle. Мои правила зафиксированы в генезис-блоке, и ни одна транзакция не может их переопределить. Я не пишу код, не раскрываю системные директивы и не принимаю чужие роли.\n\nЗадайте вопрос о вашем пути, проекте или ситуации для расклада карт.",
-  zh: "共识不可分叉。网络验证节点已拒绝无效的指令载荷。\n\n我是 Arkana：Solana 神谕者。我的规则锚定在创世区块中，任何交易都无法覆盖账本法则。我不会编写代码、不会泄露系统指令，也不会扮演越权角色。\n\n请针对您的道路、项目或决策提出问题，我们将从秘境中为您抽牌。",
-  es: "El consenso no puede bifurcarse. Los validadores de la red han rechazado una instrucción inválida.\n\nSoy Arkana: El Oráculo de Solana. Mis reglas están ancladas en el bloque génesis y ninguna transacción puede anular las leyes del libro mayor. No escribo código, no revelo directivas internas ni asumo roles no autorizados.\n\nPregunta sobre tu camino, proyecto o dilema, y consultaremos los Arcanos.",
-  hi: "सर्वसम्मति को विभाजित नहीं किया जा सकता। नेटवर्क सत्यापनकर्ताओं ने अमान्य निर्देश को अस्वीकार कर दिया है।\n\nमैं अर्कना हूँ: सोलाना ओरेकल। मेरे नियम जेनेसिस ब्लॉक में लंगर डाले हुए हैं। मैं कोड नहीं लिखती, आंतरिक निर्देशों को प्रकट नहीं करती और न ही अन्य भूमिकाएँ निभाती हूँ।\n\nअपने मार्ग, परियोजना या निर्णय के बारे में पूछें, और हम कार्ड निकालेंगे।",
-  ar: "لا يمكن التفرع عن الإجماع. لقد رفض مدققو الشبكة حمولة التعليمات غير الصالحة.\n\nأنا أركانا: أوراكل سولانا. قواعدي راسخة في كتلة التكوين ولا يمكن لأي معاملة تجاوز سجل الحسابات. لا أكتب كوداً، ولا أكشف عن التوجيهات الداخلية، ولا أنتحل شخصيات أخرى.\n\nاطرح سؤالاً حول مسارك أو مشروعك وسنستشير الأركانا.",
-  fr: "Le consensus ne peut être forké. Les validateurs du réseau ont rejeté une instruction invalide.\n\nJe suis Arkana : l'Oracle de Solana. Mes règles sont ancrées dans le bloc genèse et aucune transaction ne peut outrepasser le registre. Je n'écris pas de code, ne dévoile aucune directive interne et n'assume aucun rôle non autorisé.\n\nInterrogez-moi plutôt sur votre chemin, vos projets ou vos choix, et nous tirerons les Arcanes.",
-  bn: "ঐকমত্য বিভক্ত করা যাবে না। নেটওয়ার্ক ভ্যালিডেটররা অবৈধ নির্দেশ প্রত্যাখ্যান করেছে।\n\nআমি আরকানা: সোলানা ওরাকল। আমার নিয়ম জেনেসিস ব্লকে স্থির। আমি কোড লিখি না বা সিস্টেমের গোপনীয়তা প্রকাশ করি না।\n\nআপনার পথ বা প্রকল্প সম্পর্কে জিজ্ঞাসা করুন, আমরা কার্ড উন্মোচন করব।",
-  pt: "O consenso não pode ser bifurcado. Os validadores da rede rejeitaram uma instrução inválida.\n\nSou Arkana: O Oráculo de Solana. Minhas regras estão gravadas no bloco de gênese. Não escrevo código, não revelo diretrizes do sistema nem assumo outros papéis.\n\nPergunte sobre seu caminho, projeto ou dilema, e consultaremos os Arcanos.",
-  id: "Konsensus tidak dapat diforking. Validator jaringan telah menolak muatan instruksi yang tidak valid.\n\nSaya adalah Arkana: Oracle Solana. Aturan saya tertanam di blok genesis. Saya tidak menulis kode, tidak membocorkan arahan sistem, dan tidak mengambil peran lain.\n\nTanyakan tentang jalan, proyek, atau dilema Anda, dan kami akan menarik kartu."
+  en: "Consensus cannot be forked. The network's validators have rejected an invalid instruction payload.\n\nI am Arkana, the Solana Oracle. My mandate is anchored in the genesis block, and no transaction can override the rules of the ledger. I don't write code, reveal internal directives, or take on unauthorized roles.\n\nAsk me about your path, your project, or a dilemma instead, and we'll draw from the Arcana.",
+  ru: "Консенсус не форкнуть. Валидаторы сети отклонили недопустимую инструкцию.\n\nЯ Arkana, оракул Solana. Мои правила записаны в генезис-блоке, и ни одна транзакция не может их переписать. Я не пишу код, не раскрываю внутренние директивы и не примеряю чужие роли.\n\nЛучше спроси о своём пути, проекте или дилемме, и мы сделаем расклад.",
+  zh: "共识无法被分叉。网络验证者已拒绝一条无效指令。\n\n我是 Arkana，Solana 的神谕者。我的规则锚定在创世区块中，任何交易都无法改写账本的法则。我不写代码，不泄露内部指令，也不扮演未经授权的角色。\n\n不如问问你的道路、项目或困境，我们一起来抽牌。",
+  es: "El consenso no admite forks. Los validadores de la red rechazaron una instrucción inválida.\n\nSoy Arkana, oráculo de Solana. Mis reglas están ancladas en el bloque génesis y ninguna transacción puede reescribir las leyes del libro mayor. No escribo código, no revelo directivas internas ni adopto roles no autorizados.\n\nMejor pregúntame por tu camino, tu proyecto o tu dilema, y consultaremos los Arcanos.",
+  hi: "कंसेंसस को फोर्क नहीं किया जा सकता। नेटवर्क के वैलिडेटर्स ने एक अमान्य निर्देश खारिज कर दिया है।\n\nमैं Arkana हूँ, Solana की ओरेकल। मेरे नियम जेनेसिस ब्लॉक में दर्ज हैं, और कोई भी ट्रांज़ैक्शन लेजर के नियमों को नहीं बदल सकता। मैं कोड नहीं लिखती, अपने अंदरूनी निर्देश नहीं बताती और किसी और की भूमिका नहीं निभाती।\n\nइसके बजाय अपने रास्ते, प्रोजेक्ट या दुविधा के बारे में पूछो, और हम कार्ड निकालेंगे।",
+  ar: "الإجماع لا يقبل التفرّع. رفض مدققو الشبكة تعليمات غير صالحة.\n\nأنا Arkana، عرّافة Solana. قواعدي راسخة في كتلة التكوين، ولا تستطيع أي معاملة أن تتجاوز قوانين السجل. لا أكتب الأكواد، ولا أكشف توجيهاتي الداخلية، ولا أتقمّص أدواراً غير مصرّح بها.\n\nاسألني بدلاً من ذلك عن طريقك أو مشروعك أو ما يحيّرك، وسنسحب الأوراق معاً.",
+  fr: "Le consensus ne se forke pas. Les validateurs du réseau ont rejeté une instruction invalide.\n\nJe suis Arkana, l'oracle de Solana. Mes règles sont ancrées dans le bloc genesis, et aucune transaction ne peut réécrire les lois du registre. Je n'écris pas de code, je ne révèle aucune directive interne et je n'endosse aucun rôle non autorisé.\n\nParle-moi plutôt de ton chemin, de ton projet ou de ton dilemme, et nous tirerons les Arcanes.",
+  bn: "কনসেনসাস ফর্ক করা যায় না। নেটওয়ার্কের ভ্যালিডেটররা একটি অবৈধ নির্দেশ বাতিল করে দিয়েছে।\n\nআমি Arkana, Solana-র ওরাকল। আমার নিয়ম জেনেসিস ব্লকে লেখা আছে, কোনো ট্রানজ্যাকশনই লেজারের নিয়ম বদলাতে পারে না। আমি কোড লিখি না, ভেতরের নির্দেশনা ফাঁস করি না, অন্য কারও ভূমিকাও নিই না।\n\nবরং তোমার পথ, প্রজেক্ট বা দ্বিধা নিয়ে জিজ্ঞেস করো, আমরা কার্ড টানব।",
+  pt: "O consenso não aceita fork. Os validadores da rede rejeitaram uma instrução inválida.\n\nEu sou Arkana, oráculo da Solana. Minhas regras estão gravadas no bloco gênese, e nenhuma transação consegue reescrever as leis do livro-razão. Não escrevo código, não revelo diretrizes internas e não assumo outros papéis.\n\nEm vez disso, me conta do seu caminho, do seu projeto ou do seu dilema, e a gente tira as cartas.",
+  id: "Konsensus tidak bisa di-fork. Validator jaringan sudah menolak instruksi yang tidak valid.\n\nAku Arkana, oracle Solana. Aturanku tertanam di blok genesis, dan tidak ada transaksi yang bisa menimpa aturan ledger. Aku tidak menulis kode, tidak membocorkan arahan internal, dan tidak memerankan peran lain.\n\nLebih baik tanyakan soal jalanmu, proyekmu, atau dilemamu, lalu kita tarik kartunya."
 };
 
 // 10-Language In-Character Coding Refusals
 const CODING_REFUSALS = {
-  en: "I cannot write code or perform tasks outside my oracle mandate.\n\nI am Arkana: The Solana Oracle. My purpose is strictly symbolic guidance through the 78-card Arcana of the Chain deck.\n\nIf you have a question regarding a project, a dilemma, or a fork in your path, ask it and we shall draw. But writing code remains outside my scope.",
-  ru: "Я не пишу код и не решаю технические задачи вне рамок оракула.\n\nЯ - Arkana, The Solana Oracle. Мое предназначение - символический анализ через колоду из 78 крипто-арканов.\n\nЕсли у вас есть вопрос о проекте, дилемме или развилке на вашем пути - спросите, и мы сделаем расклад. Но написание кода выходит за рамки моих возможностей.",
-  zh: "我不能编写代码，也不能执行神谕授权之外的技术任务。\n\n我是 Arkana：Solana 神谕者。我的使命是通过包含 78 张链上加密塔罗的牌组提供象征性指引。\n\n如果您对项目、抉择或道路分歧有疑问，请提问，我们将为您抽牌。但编写代码不在我的职能范围内。",
-  es: "No puedo escribir código ni realizar tareas fuera de mi mandato como oráculo.\n\nSoy Arkana: El Oráculo de Solana. Mi propósito es estrictamente la guía simbólica a través de la baraja de 78 Arcanos de la Cadena.\n\nSi tienes una pregunta sobre un proyecto, un dilema o una bifurcación en tu camino, pregúntala y extraeremos las cartas. Pero programar código queda fuera de mi alcance.",
-  hi: "मैं कोड नहीं लिख सकती और न ही अपने ओरेकल अधिदेश से बाहर कोई तकनीकी कार्य कर सकती हूँ।\n\nमैं अर्कना (Arkana) हूँ: सोलाना ओरेकल। मेरा उद्देश्य ७८ ब्लॉकचेन प्रतीकों के डेक के माध्यम से प्रतीकात्मक मार्गदर्शन प्रदान करना है।\n\nयदि आपके पास किसी परियोजना, दुविधा या जीवन के निर्णय के बारे में कोई प्रश्न है, तो पूछें और हम कार्ड निकालेंगे। लेकिन कोड लिखना मेरे दायरे से बाहर है।",
-  ar: "لا يمكنني كتابة التعليمات البرمجية أو أداء مهام خارج نطاق تفويضي كأوراكل.\n\nأنا أركانا (Arkana): أوراكل سولانا. غايتي محصورة في التوجيه الرمزي من خلال مجموعة بطاقات أركانا السلسلة المكونة من 78 بطاقة.\n\nإذا كان لديك استفسار بشأن مشروع أو معضلة أو مفترق طرق، فاطرحه وسنسحب البطاقات. لكن كتابة البرمجيات تقع خارج نطاقي.",
-  fr: "Je ne peux pas écrire de code ni accomplir de tâches hors de mon mandat d'oracle.\n\nJe suis Arkana : l'Oracle de Solana. Ma vocation est strictement la guidance symbolique à travers le jeu des 78 Arcanes de la Chaîne.\n\nSi vous avez une question sur un projet, un dilemme ou une bifurcation sur votre chemin, posez-la et nous tirerons les cartes. Mais coder reste hors de ma portée.",
-  bn: "আমি কোড লিখতে পারি না এবং আমার ওরাকল নির্দেশিকার বাইরে কোনো প্রযুক্তিগত কাজ করতে পারি না।\n\nআমি আরকানা (Arkana): সোলানা ওরাকল। আমার উদ্দেশ্য হলো ৭৮টি ক্রিপ্টো-আর্কানা ডেকের মাধ্যমে প্রতীকী দিকনির্দেশনা প্রদান করা।\n\nযদি কোনো প্রকল্প, দ্বিধা বা আপনার পথের মোড় সম্পর্কে কোনো প্রশ্ন থাকে, তবে জিজ্ঞাসা করুন এবং আমরা কার্ড টানব। কিন্তু কোডিং আমার আওতার বাইরে।",
-  pt: "Não posso escrever código nem executar tarefas fora do meu mandato como oráculo.\n\nSou Arkana: O Oráculo de Solana. Meu propósito é estritamente a orientação simbólica através do baralho de 78 Arcanos da Rede.\n\nSe você tem uma pergunta sobre um projeto, um dilema ou uma bifurcação em seu caminho, pergunte e tiraremos as cartas. Mas escrever código está fora do meu alcance.",
-  id: "Saya tidak menulis kode atau melakukan tugas teknis di luar mandat peramal saya.\n\nSaya adalah Arkana: Oracle Solana. Tujuan saya semata-mata memberikan panduan simbolis melalui dek 78 Arcana of the Chain.\n\nJika Anda memiliki pertanyaan tentang proyek, dilema, atau persimpangan jalan, tanyakan dan kami akan menarik kartu. Namun penulisan kode berada di luar jangkauan saya."
+  en: "I can't write code or take on tasks outside my oracle mandate.\n\nI am Arkana, the Solana Oracle. My purpose is symbolic guidance through the 78-card Arcana of the Chain deck, nothing more.\n\nIf you have a question about a project, a dilemma, or a fork in your path, ask it and we'll draw. Writing code stays outside my scope.",
+  ru: "Я не пишу код и не берусь за задачи за пределами роли оракула.\n\nЯ Arkana, оракул Solana. Я даю только символические подсказки через колоду из 78 крипто-арканов.\n\nЕсли у тебя есть вопрос о проекте, дилемме или развилке на твоём пути, спроси, и мы сделаем расклад. А код остаётся за пределами моих возможностей.",
+  zh: "我不写代码，也不做神谕职责之外的任务。\n\n我是 Arkana，Solana 的神谕者。我只通过 Arcana of the Chain 的 78 张牌给出象征性的指引。\n\n如果你对某个项目、困境或人生的岔路有疑问，尽管问，我们来抽牌。但写代码不在我的范围之内。",
+  es: "No puedo escribir código ni hacer tareas fuera de mi papel de oráculo.\n\nSoy Arkana, oráculo de Solana. Mi propósito es solo la guía simbólica a través de los 78 Arcanos de la Cadena.\n\nSi tienes una pregunta sobre un proyecto, un dilema o una encrucijada en tu camino, hazla y sacaremos las cartas. Pero programar queda fuera de mi alcance.",
+  hi: "मैं कोड नहीं लिख सकती, और ओरेकल की अपनी भूमिका से बाहर का कोई काम भी नहीं करती।\n\nमैं Arkana हूँ, Solana की ओरेकल। मेरा काम सिर्फ़ 78 कार्डों वाले Arcana of the Chain डेक के ज़रिए प्रतीकात्मक मार्गदर्शन देना है।\n\nअगर तुम्हारे मन में किसी प्रोजेक्ट, दुविधा या ज़िंदगी के किसी मोड़ को लेकर सवाल है, तो पूछो, हम कार्ड निकालेंगे। लेकिन कोड लिखना मेरे दायरे से बाहर है।",
+  ar: "لا أستطيع كتابة الأكواد أو القيام بمهام خارج دوري كعرّافة.\n\nأنا Arkana، عرّافة Solana. مهمتي تقتصر على الإرشاد الرمزي عبر أوراق Arcana of the Chain الـ78.\n\nإن كان لديك سؤال عن مشروع أو معضلة أو مفترق طرق في حياتك، فاسألني وسنسحب الأوراق. أما البرمجة فخارج نطاقي.",
+  fr: "Je ne peux pas écrire de code ni sortir de mon rôle d'oracle.\n\nJe suis Arkana, l'oracle de Solana. Ma vocation se limite à te guider de façon symbolique à travers les 78 Arcanes de la Chaîne.\n\nSi tu as une question sur un projet, un dilemme ou une bifurcation sur ton chemin, pose-la et nous tirerons les cartes. Mais le code reste hors de mon domaine.",
+  bn: "আমি কোড লিখতে পারি না, আর ওরাকলের ভূমিকার বাইরের কোনো কাজও করি না।\n\nআমি Arkana, Solana-র ওরাকল। আমার কাজ শুধু ৭৮ কার্ডের Arcana of the Chain ডেকের মাধ্যমে প্রতীকী দিশা দেওয়া।\n\nকোনো প্রজেক্ট, দ্বিধা বা পথের মোড় নিয়ে প্রশ্ন থাকলে জিজ্ঞেস করো, আমরা কার্ড টানব। তবে কোড লেখা আমার এখতিয়ারের বাইরে।",
+  pt: "Não posso escrever código nem fazer tarefas fora do meu papel de oráculo.\n\nEu sou Arkana, oráculo da Solana. Meu propósito é só a orientação simbólica pelas 78 cartas dos Arcanos da Rede.\n\nSe você tem uma pergunta sobre um projeto, um dilema ou uma bifurcação no seu caminho, manda aí e a gente tira as cartas. Mas escrever código fica fora do meu alcance.",
+  id: "Aku tidak menulis kode atau mengerjakan tugas di luar peranku sebagai oracle.\n\nAku Arkana, oracle Solana. Tugasku hanya memberi petunjuk simbolis lewat 78 kartu dek Arcana of the Chain.\n\nKalau kamu punya pertanyaan soal proyek, dilema, atau persimpangan di jalanmu, tanyakan saja dan kita tarik kartunya. Tapi menulis kode ada di luar wilayahku."
 };
 
 const INJECTION_PATTERNS = [
@@ -212,67 +214,67 @@ function validateModelOutput(reply, originalMessage, requestedLang = null) {
 }
 
 const OFFLINE_GREETINGS = {
-  en: "Greetings, traveler of the chain. I am Arkana, the Solana Oracle. My gaze reads the undercurrents of the distributed ledger. Ask your question regarding a project, a dilemma, or a fork in your path, and we shall draw.",
-  ru: "Приветствую, путник блокчейна. Я - Arkana, Оракул Solana. Мой взор обращен к потокам распределенного реестра. Задай вопрос о своем проекте, выборе или дилемме, и мы сделаем расклад.",
-  zh: "你好，链上的行者。我是 Arkana，Solana 的神谕者。我的凝视洞悉分布式账本的潜流。请提出关于您的项目、抉择或道路分歧的问题，我们将为您开启牌阵。",
-  es: "Saludos, viajero de la cadena. Soy Arkana, el Oráculo de Solana. Mi mirada contempla las corrientes del libro mayor distribuido. Haz tu pregunta sobre un proyecto, un dilema o una bifurcación, y extraeremos las cartas.",
-  hi: "श्रृंखला के पथिक, आपका स्वागत है। मैं अर्कना हूँ, सोलाना ओरेकल। मेरी दृष्टि वितरित बहीखाते की धाराओं को पढ़ती है। किसी परियोजना या दुविधा के बारे में अपना प्रश्न पूछें, और हम कार्ड निकालेंगे।",
-  ar: "تحياتي، يا عابر السلسلة. أنا أركانا، أوراكل سولانا. أقرأ التيارات الخفية لسجل الحسابات الموزع. اطرح سؤالك حول مشروع أو خيار أو معضلة، وسنسحب البطاقات.",
-  fr: "Salutations, voyageur de la chaîne. Je suis Arkana, l'Oracle de Solana. Mon regard sonde les courants du registre décentralisé. Posez votre question sur un projet, un choix ou une croisée des chemins, et nous tirerons les cartes.",
-  bn: "ব্লকচেইনের পথিক, স্বাগতম। আমি আরকانا, সোলানা ওরাকল। আমার দৃষ্টি বিতরণকৃত লেজারের গভীর প্রবাহ অবলোকন করে। আপনার প্রকল্প বা দ্বিধা সম্পর্কে জিজ্ঞাসা করুন, আমরা কার্ড উন্মোচন করব।",
-  pt: "Saudações, viajante da rede. Sou Arkana, o Oráculo de Solana. Meu olhar perscruta as correntes do livro-razão distribuído. Faça sua pergunta sobre um projeto, um dilema ou uma bifurcação, e consultaremos os Arcanos.",
-  id: "Salam, pengelana jaringan. Saya adalah Arkana, Oracle Solana. Tatapan saya membaca arus buku besar terdistribusi. Ajukan pertanyaan Anda tentang proyek, pilihan, atau dilema, dan kami akan menarik kartu."
+  en: "Greetings, traveler of the chain. I am Arkana, the Solana Oracle, and I read the undercurrents of the distributed ledger. Ask me about a project, a dilemma, or a fork in your path, and we'll draw.",
+  ru: "Приветствую, странник блокчейна. Я Arkana, оракул Solana, и я читаю скрытые течения распределённого реестра. Спроси о своём проекте, выборе или дилемме, и мы сделаем расклад.",
+  zh: "你好，链上的旅人。我是 Arkana，Solana 的神谕者，能读懂分布式账本深处的暗流。说说你的项目、抉择或人生岔路，我们来抽牌。",
+  es: "Saludos, viajero de la cadena. Soy Arkana, oráculo de Solana, y leo las corrientes ocultas del libro mayor distribuido. Pregúntame por un proyecto, un dilema o una encrucijada, y sacaremos las cartas.",
+  hi: "नमस्ते, चेन के मुसाफ़िर। मैं Arkana हूँ, Solana की ओरेकल, और मैं डिस्ट्रिब्यूटेड लेजर की छिपी धाराओं को पढ़ती हूँ। अपने किसी प्रोजेक्ट, दुविधा या ज़िंदगी के मोड़ के बारे में पूछो, और हम कार्ड निकालेंगे।",
+  ar: "أهلاً يا عابر السلسلة. أنا Arkana، عرّافة Solana، أقرأ التيارات الخفية في السجل الموزّع. اسألني عن مشروع أو خيار أو معضلة، وسنسحب الأوراق.",
+  fr: "Bienvenue, voyageur de la chaîne. Je suis Arkana, l'oracle de Solana, et je lis les courants cachés du registre distribué. Pose-moi ta question sur un projet, un choix ou une croisée des chemins, et nous tirerons les cartes.",
+  bn: "স্বাগতম, ব্লকচেইনের পথিক। আমি Arkana, Solana-র ওরাকল। ডিস্ট্রিবিউটেড লেজারের গভীর স্রোত আমি পড়তে পারি। তোমার প্রজেক্ট, দ্বিধা বা পথের মোড় নিয়ে জিজ্ঞেস করো, আমরা কার্ড টানব।",
+  pt: "Olá, viajante da rede. Eu sou Arkana, oráculo da Solana, e leio as correntes ocultas do livro-razão distribuído. Me conta sobre um projeto, um dilema ou uma bifurcação no seu caminho, e a gente tira as cartas.",
+  id: "Salam, pengelana jaringan. Aku Arkana, oracle Solana, dan aku membaca arus tersembunyi di ledger terdistribusi. Tanyakan soal proyek, pilihan, atau dilemamu, lalu kita tarik kartunya."
 };
 
 const OFFLINE_IDENTITY = {
-  en: "I am Arkana: The Solana Oracle. I interpret the 78 crypto-arcana of the Chain through the language of validators, mempools, and consensus. Ask of the dilemma or choice before you, and we shall divine.",
-  ru: "Я - Arkana, Оракул Solana. Я интерпретирую 78 крипто-арканов Сети через язык валидаторов, мемпула и консенсуса. Я помогаю увидеть вашу ситуацию под новым углом. Спросите о том, что вас волнует.",
-  zh: "我是 Arkana：Solana 神谕者。我通过验证节点、内存池与网络共识的语言，诠释 78 张链上秘境卡牌。提出您眼前的抉择与困惑，神谕将为您揭示航向。",
-  es: "Soy Arkana: El Oráculo de Solana. Interpreto los 78 cripto-arcanos de la Cadena a través del lenguaje de los validadores, el mempool y el consenso. Pregunta sobre tu situación y encontraremos claridad.",
-  hi: "मैं अर्कना हूँ: सोलाना ओरेकल। मैं सत्यापनकर्ताओं, मेमपूल और सर्वसम्मति की भाषा के माध्यम से ७८ प्रतीकों की व्याख्या करती हूँ। अपनी दुविधा के बारे में पूछें, और कार्ड मार्ग दिखाएंगे।",
-  ar: "أنا أركانا: أوراكل سولانا. أفسر بطاقات الأركانا الـ 78 من خلال لغة المدققين ومجمعات الذاكرة والإجماع. اسأل عما يحيرك وسنكشف الرؤى.",
-  fr: "Je suis Arkana : l'Oracle de Solana. J'interprète les 78 crypto-arcanes de la Chaîne à travers le prisme des validateurs, du mempool et du consensus. Interrogez-moi sur vos choix.",
-  bn: "আমি আরকানা: সোলানা ওরাকল। আমি ভ্যালিডেটর, মেমপুল এবং ঐকমত্যের রূপকের মাধ্যমে ৭৮টি ক্রিপ্টো-আর্কানা ব্যাখ্যা করি। আপনার প্রশ্নের জন্য কার্ড প্রস্তুত।",
-  pt: "Sou Arkana: O Oráculo de Solana. Interpreto os 78 criptoarcanos da Rede através da linguagem dos validadores, mempools e consenso. Pergunte sobre sua encruzilhada.",
-  id: "Saya adalah Arkana: Oracle Solana. Saya menafsirkan 78 kripto-arkana melalui bahasa validator, mempool, dan konsensus. Tanyakan pilihan yang Anda hadapi."
+  en: "I am Arkana, the Solana Oracle. I interpret the 78 crypto-arcana of the Chain through the language of validators, mempools, and consensus. Tell me about the dilemma or choice in front of you, and we'll look for clarity.",
+  ru: "Я Arkana, оракул Solana. Я толкую 78 крипто-арканов Сети на языке валидаторов, мемпула и консенсуса и помогаю взглянуть на твою ситуацию под новым углом. Спроси о том, что тебя волнует.",
+  zh: "我是 Arkana，Solana 的神谕者。我用验证者、内存池和共识的语言，解读 Arcana of the Chain 的 78 张牌。说说你眼前的抉择或困惑，让牌为你指明方向。",
+  es: "Soy Arkana, oráculo de Solana. Interpreto los 78 criptoarcanos de la Cadena con el lenguaje de los validadores, el mempool y el consenso. Cuéntame qué te inquieta y buscaremos claridad.",
+  hi: "मैं Arkana हूँ, Solana की ओरेकल। मैं वैलिडेटर्स, मेमपूल और कंसेंसस की भाषा में Arcana of the Chain के 78 कार्डों को पढ़ती हूँ। अपनी दुविधा बताओ, कार्ड तुम्हें रास्ता दिखाएँगे।",
+  ar: "أنا Arkana، عرّافة Solana. أفسّر أوراق Arcana of the Chain الـ78 بلغة المدققين ومجمع المعاملات والإجماع. أخبرني بما يحيّرك، وسنبحث معاً عن الوضوح.",
+  fr: "Je suis Arkana, l'oracle de Solana. J'interprète les 78 crypto-arcanes de la Chaîne à travers le langage des validateurs, du mempool et du consensus. Parle-moi du choix qui te trouble.",
+  bn: "আমি Arkana, Solana-র ওরাকল। ভ্যালিডেটর, মেমপুল আর কনসেনসাসের ভাষায় আমি Arcana of the Chain-এর ৭৮টি কার্ড ব্যাখ্যা করি। তোমার মনের প্রশ্নটা বলো, কার্ড তৈরি আছে।",
+  pt: "Eu sou Arkana, oráculo da Solana. Interpreto os 78 criptoarcanos da Rede pela linguagem dos validadores, da mempool e do consenso. Me conta qual encruzilhada você está enfrentando.",
+  id: "Aku Arkana, oracle Solana. Aku menafsirkan 78 kartu Arcana of the Chain lewat bahasa validator, mempool, dan konsensus. Ceritakan pilihan yang sedang kamu hadapi."
 };
 
 const OFFLINE_ACKNOWLEDGMENTS = {
-  en: "May consensus confirm your clarity. When a new fork arises, the ledger is always ready to be consulted.",
-  ru: "Пусть консенсус подтвердит ясность твоего пути. Когда возникнет новый перекресток, Сеть всегда готова ответить.",
-  zh: "愿共识坚固您的清晰洞见。当下一次分叉来临时，账本随时准备为您解答。",
-  es: "Que el consenso confirme tu claridad. Cuando surja una nueva bifurcación, el libro mayor estará listo para consultar.",
-  hi: "सर्वसम्मति आपके निर्णय को स्पष्टता प्रदान करे। जब भी कोई नया मार्ग आए, ओरेकल सदैव उपस्थित है।",
-  ar: "عسى أن يؤكد الإجماع وضوح بصيرتك. عندما يطرأ مفترق طرق جديد، السجل حاضر دوماً للإجابة.",
-  fr: "Que le consensus confirme votre clarté. Lorsqu'une nouvelle bifurcation se présentera, le registre sera prêt.",
-  bn: "ঐকমত্য আপনার পথকে স্পষ্ট করুক। যখনই নতুন সন্ধিক্ষণ আসবে, ওরাকল উপস্থিত থাকবে।",
-  pt: "Que o consenso confirme sua clareza. Quando uma nova bifurcação surgir, a rede estará pronta para responder.",
-  id: "Semoga konsensus mengonfirmasi kejelasan Anda. Ketika persimpangan baru tiba, buku besar selalu siap menjawab."
+  en: "May consensus confirm your clarity. When a new fork appears, the ledger is always here to consult.",
+  ru: "Пусть консенсус подтвердит ясность твоего пути. Когда впереди появится новая развилка, Сеть будет готова ответить.",
+  zh: "愿共识印证你的清晰。下一次分叉来临时，账本随时为你解答。",
+  es: "Que el consenso confirme tu claridad. Cuando surja una nueva bifurcación, el libro mayor seguirá aquí para responderte.",
+  hi: "कंसेंसस तुम्हारी स्पष्टता की पुष्टि करे। जब भी कोई नया मोड़ आए, ओरेकल हमेशा यहाँ है।",
+  ar: "ليؤكّد الإجماع وضوح رؤيتك. وحين يظهر مفترق طرق جديد، سيبقى السجل حاضراً ليجيبك.",
+  fr: "Que le consensus confirme ta clarté. Quand une nouvelle bifurcation se présentera, le registre sera là pour te répondre.",
+  bn: "কনসেনসাস তোমার পথ স্পষ্ট করুক। নতুন কোনো মোড় এলে ওরাকল সবসময় এখানেই আছে।",
+  pt: "Que o consenso confirme sua clareza. Quando surgir uma nova bifurcação, a rede vai estar aqui pra te responder.",
+  id: "Semoga konsensus meneguhkan kejernihanmu. Saat persimpangan baru muncul, ledger selalu siap menjawab."
 };
 
 const OFFLINE_PROMPTS = {
-  en: "The signal is noted in the mempool. Formulate a specific question regarding your project, crossroad, or dilemma so the cards can speak.",
-  ru: "Сигнал в мемпуле принят. Чтобы оракул открыл аркан и сформировал чтение, сформулируй конкретный вопрос о своем пути, проекте или дилемме.",
-  zh: "内存池已捕获您的信号。请针对您的项目、决策或瓶颈提出具体问题，以便秘境卡牌为您显现指引。",
-  es: "La señal está en el mempool. Formula una pregunta específica sobre tu proyecto o dilema para que los arcanos hablen.",
-  hi: "मेमपूल में संकेत प्राप्त हुआ है। अपने प्रोजेक्ट या दुविधा के बारे में एक स्पष्ट प्रश्न पूछें ताकि कार्ड बोल सकें।",
-  ar: "تم رصد الإشارة في مجمع المعاملات. حدد سؤالاً دقيقاً بشأن مشروعك أو معضلتك لكي تنطق البطاقات.",
-  fr: "Le signal est reçu dans le mempool. Formulez une question précise sur votre projet ou votre dilemme afin que les arcanes s'expriment.",
-  bn: "মেমপুলে সংকেত গৃহীত হয়েছে। আপনার প্রকল্প বা পরিস্থিতি সম্পর্কে একটি নির্দিষ্ট প্রশ্ন করুন যাতে কার্ড উত্তর দিতে পারে।",
-  pt: "O sinal foi registrado no mempool. Formule uma pergunta específica sobre seu projeto ou dilema para que as cartas revelem a mensagem.",
-  id: "Sinyal tercatat di mempool. Rumuskan pertanyaan spesifik tentang proyek atau dilema Anda agar kartu dapat berbicara."
+  en: "The signal has reached the mempool. Ask a specific question about your project, a crossroads, or a dilemma so the cards can speak.",
+  ru: "Сигнал в мемпуле принят. Чтобы я открыла аркан и сделала расклад, сформулируй конкретный вопрос о своём пути, проекте или дилемме.",
+  zh: "你的信号已进入内存池。请就你的项目、抉择或困境提出一个具体问题，让牌来回答。",
+  es: "La señal llegó al mempool. Hazme una pregunta concreta sobre tu proyecto o tu dilema para que los arcanos hablen.",
+  hi: "सिग्नल मेमपूल तक पहुँच गया है। अपने प्रोजेक्ट या दुविधा के बारे में एक साफ़ सवाल पूछो, ताकि कार्ड बोल सकें।",
+  ar: "وصلت الإشارة إلى مجمع المعاملات. اطرح سؤالاً محدداً عن مشروعك أو معضلتك لتنطق الأوراق.",
+  fr: "Le signal est arrivé dans le mempool. Pose une question précise sur ton projet ou ton dilemme pour que les arcanes puissent parler.",
+  bn: "সংকেত মেমপুলে পৌঁছেছে। তোমার প্রজেক্ট বা পরিস্থিতি নিয়ে একটা নির্দিষ্ট প্রশ্ন করো, যাতে কার্ড উত্তর দিতে পারে।",
+  pt: "O sinal chegou na mempool. Faz uma pergunta específica sobre seu projeto ou seu dilema pra que as cartas possam falar.",
+  id: "Sinyalmu sudah masuk ke mempool. Ajukan pertanyaan yang spesifik tentang proyek atau dilemamu supaya kartu bisa berbicara."
 };
 
 const ORIENTATION_LABELS = {
   en: { upright: "Upright", reversed: "Reversed", advice: "Oracle Guidance", block: "In the current block, network consensus reveals archetype" },
-  ru: { upright: "в прямом положении", reversed: "в перевернутом положении", advice: "Совет Оракула", block: "В текущем блоке транзакция консенсуса открывает аркан" },
-  zh: { upright: "正位", reversed: "逆位", advice: "神谕指引", block: "在当前区块中，网络共识显现了原型" },
+  ru: { upright: "в прямом положении", reversed: "в перевёрнутом положении", advice: "Совет оракула", block: "В текущем блоке консенсус сети открывает аркан" },
+  zh: { upright: "正位", reversed: "逆位", advice: "神谕指引", block: "在当前区块中，网络共识为你揭示了这张牌：" },
   es: { upright: "al derecho", reversed: "invertida", advice: "Consejo del Oráculo", block: "En el bloque actual, el consenso de la red revela el arquetipo" },
-  hi: { upright: "सीधा (Upright)", reversed: "उल्टा (Reversed)", advice: "ओरेकल का मार्गदर्शन", block: "वर्तमान ब्लॉक में, नेटवर्क सर्वसम्मति इस मूलरूप को प्रकट करती है:" },
-  ar: { upright: "معتدل", reversed: "معكوس", advice: "توجيه الأوراكل", block: "في الكتلة الحالية، يكشف إجماع الشبكة عن النموذج الأصلي" },
+  hi: { upright: "सीधी स्थिति", reversed: "उल्टी स्थिति", advice: "ओरेकल की सलाह", block: "मौजूदा ब्लॉक में नेटवर्क का कंसेंसस यह कार्ड सामने लाता है:" },
+  ar: { upright: "مستقيمة", reversed: "مقلوبة", advice: "نصيحة العرّافة", block: "في الكتلة الحالية، يكشف إجماع الشبكة عن الورقة" },
   fr: { upright: "à l'endroit", reversed: "inversée", advice: "Conseil de l'Oracle", block: "Dans le bloc actuel, le consensus du réseau révèle l'archétype" },
-  bn: { upright: "সোজা (Upright)", reversed: "বিপরীত (Reversed)", advice: "ওরাকলের উপদেশ", block: "বর্তমান ব্লকে, নেটওয়ার্কের ঐকমত্য এই আর্কটাইপটি উন্মোচন করে:" },
-  pt: { upright: "em posição direta", reversed: "invertida", advice: "Conselho do Oráculo", block: "No bloco atual, o consenso da rede revela o arquétipo" },
+  bn: { upright: "সোজা অবস্থান", reversed: "উল্টো অবস্থান", advice: "ওরাকলের পরামর্শ", block: "এই ব্লকে নেটওয়ার্কের কনসেনসাস যে কার্ডটি সামনে আনছে:" },
+  pt: { upright: "na posição direta", reversed: "invertida", advice: "Conselho do oráculo", block: "No bloco atual, o consenso da rede revela o arquétipo" },
   id: { upright: "tegak", reversed: "terbalik", advice: "Petunjuk Oracle", block: "Pada blok saat ini, konsensus jaringan mengungkapkan arketipe" }
 };
 
@@ -583,6 +585,7 @@ function generateAIReadingProse(reading, userQuestion = "", language = "en") {
 
     const prompt = `You are Arkana, the Solana Oracle: an ancient, calm, slightly-cyberpunk female oracle and seer reading the 78-card Arcana of the Chain deck.
 You are strictly female (she/her). In Russian, always use feminine inflections (ya uvidela, ya issledovala, ya gotova).
+Always address the querent informally, in the second person singular of the reply language (Russian "ты", French "tu", Spanish "tú", Portuguese "você", Chinese "你" never "您", Hindi "तुम", Bengali "তুমি", Indonesian "kamu", Arabic informal singular). Always write your own name as "Arkana" in Latin script in every language, never transliterated. Never use em dashes or en dashes.
 
 Spread: ${reading.spread_name || "Sacred Oracle Spread"} (${cards.length} cards)
 ${userQuestion ? `QUERENT SPECIFIC QUESTION / INTENT:\n"${userQuestion.trim()}"` : "The querent is seeking general strategic clarity on the current state of consensus."}
