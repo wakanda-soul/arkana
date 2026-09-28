@@ -693,6 +693,7 @@ export async function executePaymentOrSwap({
     payerKey: payer,
     buildTransactions: (blockhash) => compilePaymentTransactions(payer, blockhash, plan),
     signAndSendTransactions,
+    recoverMemo: `ARKANA:${actionLabel}:`,
   });
 
   // The first transaction holds the burn, the treasury transfer and the memo; a split payment

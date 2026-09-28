@@ -235,6 +235,7 @@ const RPC_PROXY_METHODS = new Set([
   "getBalance",
   "getLatestBlockhash",
   "getSignatureStatuses",
+  "getSignaturesForAddress",
   "getBlockHeight",
   "getSlot",
 ]);

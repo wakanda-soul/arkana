@@ -9,6 +9,7 @@ import {
 import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { APP_IDENTITY } from '@/constants/app-config';
 import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
+import { API_BASE_URL } from '@/services/oracleApi';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
@@ -46,6 +47,52 @@ export interface ExecuteTransactionParams {
   /** Builds several transactions from the fresh blockhash; all are approved in ONE wallet prompt. */
   buildTransactions?: (blockhash: string) => VersionedTransaction[];
   signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
+  /** Memo prefix of the payment. If the wallet sends the transactions but its reply never reaches
+   *  the app (MWA session dropped while switching apps), the signatures are recovered from chain. */
+  recoverMemo?: string;
+}
+
+const RECOVERY_START_MS = 15_000;
+const RECOVERY_POLL_MS = 4_000;
+const RECOVERY_TIMEOUT_MS = 180_000;
+
+async function fetchRecentSignatures(wallet: string, limit: number): Promise<any[]> {
+  // Through the Arkana RPC proxy: public RPCs often refuse getSignaturesForAddress
+  const res = await fetch(`${API_BASE_URL}/api/solana-rpc`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [wallet, { limit, commitment: 'confirmed' }] }),
+  });
+  const data = await res.json();
+  return Array.isArray(data?.result) ? data.result : [];
+}
+
+/** Waits for the payment to show up on chain; resolves with its signatures, memo transaction first. */
+function watchForLandedPayment(
+  wallet: string,
+  memo: string,
+  count: number,
+  sinceSec: number,
+  isDone: () => boolean
+): Promise<string[]> {
+  return new Promise((resolve) => {
+    const deadline = Date.now() + RECOVERY_TIMEOUT_MS;
+    const tick = async () => {
+      if (isDone() || Date.now() > deadline) return;
+      try {
+        const fresh = (await fetchRecentSignatures(wallet, count + 4)).filter(
+          (s) => !s.err && (s.blockTime ?? 0) >= sinceSec
+        );
+        const memoTx = fresh.find((s) => typeof s.memo === 'string' && s.memo.includes(memo));
+        if (memoTx && !isDone()) {
+          const others = fresh.filter((s) => s.signature !== memoTx.signature).slice(0, count - 1);
+          return resolve([memoTx.signature, ...others.map((s) => s.signature)]);
+        }
+      } catch {}
+      setTimeout(tick, RECOVERY_POLL_MS);
+    };
+    setTimeout(tick, RECOVERY_START_MS);
+  });
 }
 
 /**
@@ -62,6 +109,7 @@ export async function executeSolanaTransaction({
   addressLookupTableAccounts,
   buildTransactions,
   signAndSendTransactions,
+  recoverMemo,
 }: ExecuteTransactionParams): Promise<{ signature: string; signatures: string[]; slot?: number }> {
   let blockhash: string;
   let minContextSlot: number;
@@ -97,8 +145,22 @@ export async function executeSolanaTransaction({
 
   if (signAndSendTransactions) {
     try {
-      const result = await signAndSendTransactions(transactions, minContextSlot);
-      signatures = toSignatureList(result);
+      const signing = signAndSendTransactions(transactions, minContextSlot);
+      if (recoverMemo) {
+        let settled = false;
+        signing.then(() => (settled = true), () => (settled = true));
+        const recovered = watchForLandedPayment(
+          payerKey.toBase58(),
+          recoverMemo,
+          transactions.length,
+          Math.floor(Date.now() / 1000) - 10,
+          () => settled
+        );
+        signatures = toSignatureList(await Promise.race([signing, recovered]));
+        settled = true;
+      } else {
+        signatures = toSignatureList(await signing);
+      }
     } catch (err: any) {
       const isUserCancellation =
         err?.code === -32003 ||
