@@ -132,8 +132,26 @@ app.use(["/api/auth", "/api/seeker/status", "/api/solana-rpc"], rateLimit(30, 60
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 app.use("/landing", express.static(path.join(PUBLIC_DIR, "landing")));
 app.use("/images", express.static(path.join(PUBLIC_DIR, "images")));
-app.get(/^\/(arkana(-v\d+\.\d+\.\d+)?\.apk|version\.json)$/, (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, req.path.slice(1)), (err) => err && res.status(404).end());
+// /arkana.apk always points at the current build: it redirects (never cached) to the versioned file,
+// and a versioned file never changes, so browsers and Cloudflare may keep it forever.
+const NO_STORE = "no-store, no-cache, must-revalidate, max-age=0";
+app.get("/arkana.apk", (req, res) => {
+  let version = null;
+  try {
+    version = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, "version.json"), "utf-8")).version;
+  } catch {}
+  res.set("Cache-Control", NO_STORE);
+  if (version && fs.existsSync(path.join(PUBLIC_DIR, `arkana-v${version}.apk`))) {
+    return res.redirect(302, `/arkana-v${version}.apk`);
+  }
+  res.sendFile(path.join(PUBLIC_DIR, "arkana.apk"), (err) => err && res.status(404).end());
+});
+app.get("/version.json", (req, res) => {
+  res.set("Cache-Control", NO_STORE);
+  res.sendFile(path.join(PUBLIC_DIR, "version.json"), (err) => err && res.status(404).end());
+});
+app.get(/^\/arkana-v\d+\.\d+\.\d+\.apk$/, (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, req.path.slice(1)), { maxAge: "365d", immutable: true }, (err) => err && res.status(404).end());
 });
 
 
