@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
-    # Server, program and docs changes do not need a new APK
+    # Server, program and docs changes do not need a new APK (use workflow_dispatch to rebuild)
     paths:
       - 'arkana-app/**'
       - '.github/workflows/build-apk.yml'
