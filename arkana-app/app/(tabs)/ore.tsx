@@ -35,6 +35,15 @@ import {
 } from '@/services/oreVaultService';
 import { executeSolanaTransaction } from '@/services/solanaService';
 
+/** ORE amount for display: 4 decimals for normal amounts, every significant digit for tiny yields. */
+function formatOre(raw: number): string {
+  const value = raw / 1e11;
+  if (value === 0) return '0.0000';
+  if (value >= 0.0001) return value.toFixed(4);
+  const decimals = Math.min(11, Math.ceil(-Math.log10(value)) + 2);
+  return value.toFixed(decimals);
+}
+
 export default function OreVaultScreen() {
   const { account, isAuthenticated } = useAuth();
   const { t } = useLanguage();
@@ -316,15 +325,15 @@ export default function OreVaultScreen() {
   };
 
   const totalOreStakedUi = userVault
-    ? (userVault.totalStakedOre / 1e11).toFixed(4)
+    ? formatOre(userVault.totalStakedOre)
     : '0.0000';
 
   const totalClaimableOreUi = userVault
-    ? (userVault.totalClaimableOre / 1e11).toFixed(4)
+    ? formatOre(userVault.totalClaimableOre)
     : '0.0000';
 
   const totalYieldClaimedUi = userVault
-    ? (userVault.totalYieldClaimed / 1e11).toFixed(4)
+    ? formatOre(userVault.totalYieldClaimed)
     : '0.0000';
 
   return (
@@ -492,9 +501,9 @@ export default function OreVaultScreen() {
           </View>
         ) : (
           tranches.map((tranche) => {
-            const amountUi = (tranche.depositedAmount / 1e11).toFixed(4);
-            const claimableUi = (tranche.claimableRewards / 1e11).toFixed(4);
-            const claimedUi = (tranche.claimedRewards / 1e11).toFixed(4);
+            const amountUi = formatOre(tranche.depositedAmount);
+            const claimableUi = formatOre(tranche.claimableRewards);
+            const claimedUi = formatOre(tranche.claimedRewards);
             const progressPct = Math.min(
               100,
               Math.max(0, ((365 - tranche.daysRemaining) / 365) * 100)

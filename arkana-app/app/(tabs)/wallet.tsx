@@ -246,7 +246,7 @@ export default function WalletScreen() {
         {/* Obsidian Header */}
         <View style={styles.header}>
           <Text style={styles.headerKicker}>{t('tab_me', 'ME')} {'\u00B7'} {t('identity_and_record', 'IDENTITY & RECORD')}</Text>
-          <Text style={styles.headerTitle}>seeker.sol</Text>
+          <Text style={styles.headerTitle}>{address ? ellipsify(address, 4) : 'Arkana'}</Text>
           <Text style={styles.headerSub}>
             {t('wallet_sub', 'On-chain proof of your rites, seed vault status, and oracle fuel.')}
           </Text>
@@ -274,13 +274,6 @@ export default function WalletScreen() {
                 <Text style={styles.copyText}>{copied ? t('copied', 'COPIED') : t('copy', 'COPY')}</Text>
               </Pressable>
 
-              {/* Seed Vault Notice */}
-              <View style={styles.seedVaultBox}>
-                <Text style={styles.seedVaultIcon}>{'\u2756'}</Text>
-                <Text style={styles.seedVaultText}>
-                  {t('seed_vault_notice', 'Protected by Solana Mobile Seed Vault. Your private keys never leave the hardware enclave.')}
-                </Text>
-              </View>
             </View>
 
             {/* Assets Row */}
@@ -810,19 +803,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     fontWeight: "600",
-  },
-  seedVaultBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: ObsidianTokens.colors.ink.fill,
-    borderColor: ObsidianTokens.colors.ink.hairline,
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 12,
-  },
-  seedVaultIcon: {
-    fontSize: 14,
   },
   seedVaultText: {
     flex: 1,
