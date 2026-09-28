@@ -532,10 +532,7 @@ export default function AltarScreen() {
                 style={styles.headerLogo}
                 contentFit="contain"
               />
-              <View>
-                <Text style={styles.headerKicker}>SOLANA MOBILE · SEEKER</Text>
-                <Text style={styles.headerTitle}>ARKANA</Text>
-              </View>
+              <Text style={styles.headerTitle}>ARKANA</Text>
             </View>
             {!isAuthenticated && (
               <Pressable
@@ -797,26 +794,23 @@ const styles = StyleSheet.create({
     gap: 10,
     flexShrink: 1,
   },
+  // Logo and title share one height: the capitals of ARKANA are as tall as the logo
   headerLogo: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: ObsidianTokens.colors.gold.subtle,
   },
-  headerKicker: {
-    fontFamily: Platform.select({ ios: "SpaceMono", android: "SpaceMono", default: "monospace" }),
-    color: ObsidianTokens.colors.gold.primary,
-    fontSize: 9.5,
-    letterSpacing: 1.5,
-  },
   headerTitle: {
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "serif" }),
     color: ObsidianTokens.colors.ink.text,
-    fontSize: 26,
+    fontSize: 46,
+    lineHeight: 46,
     fontWeight: "300",
     letterSpacing: 1.5,
-    marginTop: 2,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   walletBar: {
     flexDirection: "row",
