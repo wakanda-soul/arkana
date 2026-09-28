@@ -80,11 +80,32 @@ function checkSeekerStatus(user, walletAddress, clientHint) {
   return false;
 }
 
-function setSeekerHolderStatus(walletAddress, isHolder) {
+// Seeker Genesis Token is soulbound (it only moves together with the Seeker ID), so a verified
+// "holder" stays valid for a week; "not a holder" is rechecked soon so a new owner gets free spreads.
+const SEEKER_HOLDER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SEEKER_NON_HOLDER_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Seeker status with a stored, dated on-chain result. Calls checkOnChain(wallet) only when the stored
+ * answer is stale; checkOnChain returns true / false, or null when the RPC failed, in which case the
+ * stored answer is kept.
+ */
+async function refreshSeekerHolderStatus(walletAddress, checkOnChain) {
   if (!walletAddress) return false;
+  const stored = loadUsers()[walletAddress] || {};
+  const checkedAt = stored.seekerCheckedAt ? Date.parse(stored.seekerCheckedAt) : 0;
+  const ttl = stored.isSeekerHolder ? SEEKER_HOLDER_TTL_MS : SEEKER_NON_HOLDER_TTL_MS;
+  if (stored.isSeekerHolder !== undefined && Date.now() - checkedAt < ttl) {
+    return Boolean(stored.isSeekerHolder);
+  }
+
+  const onChain = await checkOnChain(walletAddress);
+  if (onChain === null || onChain === undefined) return Boolean(stored.isSeekerHolder);
+
   const users = loadUsers();
   const user = users[walletAddress] || { streak: 0 };
-  user.isSeekerHolder = Boolean(isHolder);
+  user.isSeekerHolder = Boolean(onChain);
+  user.seekerCheckedAt = new Date().toISOString();
   users[walletAddress] = user;
   saveUsers(users);
   return user.isSeekerHolder;
@@ -556,7 +577,7 @@ function recordSubscription(walletAddress, { txSignature, durationDays = 30 }) {
 
 module.exports = {
   getClockInStatus,
-  setSeekerHolderStatus,
+  refreshSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
   repairStreak,

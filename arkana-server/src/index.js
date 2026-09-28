@@ -18,7 +18,7 @@ const {
 } = require("./logging/dialogueLogger");
 const {
   getClockInStatus,
-  setSeekerHolderStatus,
+  refreshSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
   repairStreak,
@@ -340,7 +340,7 @@ app.post("/api/seeker/status", async (req, res) => {
     const { wallet } = req.body;
     if (!wallet) return res.status(400).json({ error: "Wallet address is required" });
     // Verified on-chain; the client's own claim is not trusted
-    const status = setSeekerHolderStatus(wallet, await isSeekerHolderOnChain(wallet));
+    const status = await refreshSeekerHolderStatus(wallet, isSeekerHolderOnChain);
     res.json({ success: true, wallet, isSeekerHolder: status });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -205,6 +205,7 @@ async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabe
 const seekerCache = new Map();
 
 /** Seeker Genesis Token check: a Token-2022 token whose mint authority is the SGT authority. */
+/** true / false from chain, or null when the RPC failed and nothing is cached. */
 async function isSeekerHolderOnChain(wallet) {
   const cached = seekerCache.get(wallet);
   if (cached && Date.now() - cached.at < SEEKER_CACHE_MS) return cached.value;
@@ -224,9 +225,10 @@ async function isSeekerHolderOnChain(wallet) {
       }
     }
   } catch (err) {
-    // RPC failure: keep the previous answer if we have one, never grant on error
+    // RPC failure: keep the previous answer if we have one; otherwise the answer is unknown (null),
+    // which the caller must never treat as "not a holder" or "holder"
     if (cached) return cached.value;
-    return false;
+    return null;
   }
   seekerCache.set(wallet, { value, at: Date.now() });
   return value;
