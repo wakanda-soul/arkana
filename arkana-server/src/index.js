@@ -58,6 +58,20 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
+
+// One line per API call (method, path, status, time, short wallet); chain proxy noise is skipped
+const QUIET_API = new Set(["/api/solana-rpc", "/api/lookup-table", "/api/health", "/api/version", "/api/treasury"]);
+app.use("/api", (req, res, next) => {
+  const started = Date.now();
+  res.on("finish", () => {
+    if (QUIET_API.has(req.originalUrl.split("?")[0]) && res.statusCode < 400) return;
+    const wallet = (req.body && req.body.wallet) || (req.query && req.query.wallet) || "";
+    const who = typeof wallet === "string" && wallet ? ` ${wallet.slice(0, 4)}…${wallet.slice(-4)}` : "";
+    console.log(`[api] ${req.method} ${req.originalUrl.split("?")[0]} ${res.statusCode} ${Date.now() - started}ms${who}`);
+  });
+  next();
+});
+
 app.use(express.json({ limit: "16kb" }));
 
 // Never let one bad request take the whole server down
@@ -271,13 +285,30 @@ app.get("/api/spreads", (req, res) => {
   res.json(SPREADS);
 });
 
+const clockInsInFlight = new Set();
+const { findTodayClockIn } = require("./solana/clockInRecovery");
+
 // Get Clock-In status for a wallet
-app.get("/api/clock-in/:wallet", (req, res) => {
+app.get("/api/clock-in/:wallet", async (req, res) => {
   try {
     const walletParam = req.params.wallet;
     const wallet = (walletParam === "status" && req.query.wallet) ? req.query.wallet : walletParam;
     if (!isValidWallet(wallet)) return res.status(400).json({ error: "Invalid wallet address" });
-    const status = getClockInStatus(wallet);
+    let status = getClockInStatus(wallet);
+    if (status.canClockIn && !clockInsInFlight.has(wallet)) {
+      // The wallet may have signed today's memo without the app ever posting it
+      try {
+        const found = await findTodayClockIn(wallet);
+        const card = found && getDeck().find((c) => c.card_no === found.cardNo);
+        if (card && getClockInStatus(wallet).canClockIn) {
+          recordClockIn(wallet, { ...card, orientation: found.orientation }, found.signature, found.slot);
+          console.log(`[clock-in] recovered from chain ${wallet.slice(0, 4)}…${wallet.slice(-4)} card ${found.cardNo}`);
+          status = getClockInStatus(wallet);
+        }
+      } catch (err) {
+        console.warn("[clock-in] chain recovery failed:", err.message);
+      }
+    }
     if (hasWalletSession(req, wallet)) return res.json(status);
     // Without the owner's session, hide payment signatures, offerings and today's card
     const { todayCard, subscription, totalOfferedSkr, lastOffering, txSignature, history, ...publicStatus } = status;
@@ -317,7 +348,6 @@ app.post("/api/seeker/status", async (req, res) => {
 });
 
 // Perform Daily Clock In (1 card draw)
-const clockInsInFlight = new Set();
 app.post("/api/clock-in", async (req, res) => {
   try {
     const { wallet, language = "en", cardNo, orientation = "upright", txSignature: clientTx, slot: clientSlot } = req.body;
