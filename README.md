@@ -2,7 +2,7 @@
 
 A crypto tarot app for Solana Mobile and the Seeker phone. Arkana is the reader: she draws from a 78-card deck built around blockchain archetypes, answers questions about the cards, and keeps a daily ritual with streaks. Payments in SKR burn part of the supply and lock part of the value as staked ORE for the user.
 
-[arkana.icu](https://arkana.icu) · [Download the Android APK](https://arkana.icu/arkana.apk) · [Download page](https://arkana.icu/download) · [Releases](https://github.com/wakanda-soul/arkana/releases)
+Website: [arkana.icu](https://arkana.icu)
 
 ## What is in the app
 

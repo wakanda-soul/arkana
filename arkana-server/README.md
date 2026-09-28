@@ -10,7 +10,7 @@ Node.js API behind the Arkana app: the deck engine, readings, the AI proxy for A
 - **Quotas and streaks.** Free spreads, the Seeker Oracle Pass, streak bonuses (+1/+2/+3/+5 on days 7/14/21/28, then +5 every 7 days) and streak repair.
 - **Treasury attestation.** `GET /api/treasury` returns the treasury address with its offline Ed25519 signature. The app verifies it before paying.
 - **Lookup table keeper.** `src/solana/lookupTable.js` keeps the Arkana Address Lookup Table filled with the vault, ORE Stake and pool accounts of current payment routes, so a payment fits into one transaction. It refreshes every 30 minutes.
-- **APK hosting.** `/download` is the install page, `/arkana.apk` the latest build.
+- **Website.** Serves the arkana.icu landing and install pages.
 
 ## API
 
