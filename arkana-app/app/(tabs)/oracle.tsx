@@ -206,7 +206,8 @@ export default function OracleScreen() {
     }
 
     const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
-    const hasFree = isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
+    // Banked streak bonus spreads are free too; the server spends them after the Seeker allowance
+    const hasFree = (isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0) || (quotaInfo?.streakBonusSpreads ?? 0) > 0;
 
     // If 3 free daily attempts are exhausted or user is not a Seeker SBT holder: ALWAYS prompt user with mystical warning popup!
     if (!hasFree) {
@@ -316,6 +317,7 @@ export default function OracleScreen() {
             ? {
                 ...prev,
                 freeSpreadsRemaining: data.quota!.remainingFree,
+                streakBonusSpreads: data.quota!.streakBonusSpreads ?? prev.streakBonusSpreads,
                 skrBalance: data.quota!.balance,
               }
             : null
@@ -405,8 +407,9 @@ export default function OracleScreen() {
   }, []);
 
   const isSeekerHolder = Boolean(quotaInfo?.isSeekerHolder);
-  const hasFreeRemaining = isSeekerHolder && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0;
-  const freeRemaining = isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0;
+  const bonusRemaining = quotaInfo?.streakBonusSpreads ?? 0;
+  const freeRemaining = (isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0) + bonusRemaining;
+  const hasFreeRemaining = freeRemaining > 0;
   const askCostSkr = quotaInfo?.askCostSkr || 1;
   const askCostSol = quotaInfo?.askCostSol || 0.0002;
   const skrBalance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
