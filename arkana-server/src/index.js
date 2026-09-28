@@ -694,6 +694,16 @@ app.post("/api/admin/config", (req, res) => {
 });
 
 // Admin Dialogue Audit Log Endpoints
+// ORE usage for the ORE prize progress reports: vault tranches, staked ORE, claimed yield, payments
+const { getOreStats } = require("./solana/oreStats");
+app.get("/api/admin/ore-stats", async (req, res) => {
+  try {
+    res.json({ success: true, ...(await getOreStats()) });
+  } catch (err) {
+    res.status(502).json({ success: false, error: err.message });
+  }
+});
+
 app.get("/api/admin/logs", (req, res) => {
   try {
     const result = queryLogs(req.query);
