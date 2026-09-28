@@ -248,6 +248,7 @@ export async function submitConsensusProofOnChain({
     payerKey: walletPublicKey,
     instructions: [instruction],
     signAndSendTransactions,
+    recoverMemo: `ARKANA::CONSENSUS::v1::CARD=${cardNo}::`,
   });
 }
 
