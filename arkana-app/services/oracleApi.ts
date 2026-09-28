@@ -1,5 +1,6 @@
 import { getExtraPaymentSignatures } from './treasuryService';
 import { apiHeaders } from './sessionService';
+import { netFetch } from './netFetch';
 import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
 import { translateFor, LanguageCode } from './i18n';
 import { localizeCard } from './cardLocalization';
@@ -192,7 +193,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
     const url = isSeeker !== undefined
       ? `${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=${isSeeker}`
       : `${API_BASE_URL}/api/clock-in/${wallet}`;
-    const res = await fetch(url);
+    const res = await netFetch(url);
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn('API error, using local state:', e);
@@ -212,7 +213,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
 
 export async function setRemoteSeekerStatus(wallet: string, isSeekerHolder: boolean): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/seeker/status`, {
+    const res = await netFetch(`${API_BASE_URL}/api/seeker/status`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify({ wallet, isSeekerHolder }),
@@ -242,7 +243,7 @@ export async function executeClockIn(
   streakBonusSpreads?: number;
 }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/clock-in`, {
+    const res = await netFetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify({ wallet, cardNo, orientation, language, txSignature, slot }),
@@ -300,7 +301,7 @@ export async function fetchReading(
     if (isSeeker !== undefined) {
       payload.isSeeker = isSeeker;
     }
-    const res = await fetch(`${API_BASE_URL}/api/reading`, {
+    const res = await netFetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify(payload),
@@ -331,7 +332,7 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
     if (isSeeker !== undefined) {
       payload.isSeeker = isSeeker;
     }
-    const res = await fetch(`${API_BASE_URL}/api/spread/consume`, {
+    const res = await netFetch(`${API_BASE_URL}/api/spread/consume`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify(payload),
@@ -346,7 +347,7 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
 
 export async function repairStreak(wallet: string, txSignature: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/streak/repair`, {
+    const res = await netFetch(`${API_BASE_URL}/api/streak/repair`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) }),
@@ -378,7 +379,7 @@ export async function sendOracleChatMessage({
   quota?: QuotaConsumeResult;
   timestamp: string;
 }> {
-  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+  const res = await netFetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: await apiHeaders(),
     body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), language }),
@@ -408,7 +409,7 @@ export async function submitAltarOfferingApi({
   message?: string;
 }): Promise<{ success: boolean; totalOfferedSkr: number; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/offering`, {
+    const res = await netFetch(`${API_BASE_URL}/api/offering`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), amountSkr, message }),
@@ -429,7 +430,7 @@ export async function activateSubscriptionApi({
   durationDays?: number;
 }): Promise<{ success: boolean; subscription?: any; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/subscription/activate`, {
+    const res = await netFetch(`${API_BASE_URL}/api/subscription/activate`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), durationDays }),

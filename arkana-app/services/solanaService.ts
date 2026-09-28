@@ -10,6 +10,7 @@ import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter
 import { APP_IDENTITY } from '@/constants/app-config';
 import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
 import { API_BASE_URL } from '@/services/oracleApi';
+import { netFetch } from '@/services/netFetch';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
@@ -58,7 +59,7 @@ const RECOVERY_TIMEOUT_MS = 180_000;
 
 async function fetchRecentSignatures(wallet: string, limit: number): Promise<any[]> {
   // Through the Arkana RPC proxy: public RPCs often refuse getSignaturesForAddress
-  const res = await fetch(`${API_BASE_URL}/api/solana-rpc`, {
+  const res = await netFetch(`${API_BASE_URL}/api/solana-rpc`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [wallet, { limit, commitment: 'confirmed' }] }),

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 import { API_BASE_URL } from './oracleApi';
+import { netFetch } from './netFetch';
 
 /**
  * Wallet session: the wallet signs a one-time server message (free, not a transaction)
@@ -45,7 +46,7 @@ export async function ensureWalletSession(
   if (pendingSignIn) return pendingSignIn;
 
   pendingSignIn = (async () => {
-    const nonceRes = await fetch(`${API_BASE_URL}/api/auth/nonce`, {
+    const nonceRes = await netFetch(`${API_BASE_URL}/api/auth/nonce`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wallet }),
@@ -54,7 +55,7 @@ export async function ensureWalletSession(
     if (!message) throw new Error('Sign-in is unavailable right now.');
 
     const signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
-    const verifyRes = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+    const verifyRes = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wallet, message, signature: Buffer.from(signed).toString('base64') }),

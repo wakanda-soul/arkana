@@ -27,6 +27,7 @@ import {
   executeSolanaTransaction,
 } from './solanaService';
 import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
+import { netFetch } from './netFetch';
 import {
   ORE_MINT_ADDRESS,
   createDepositTrancheInstruction,
@@ -76,7 +77,7 @@ export function verifyTreasuryAttestation(
  * Fetch and cryptographically authenticate the Treasury from the backend
  */
 export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey> {
-  const res = await fetch(`${apiBaseUrl}/api/treasury`);
+  const res = await netFetch(`${apiBaseUrl}/api/treasury`);
   if (!res.ok) {
     throw new Error('Failed to retrieve Treasury configuration from server.');
   }
@@ -136,10 +137,10 @@ export async function getLiveSolQuoteForSkr(
  * calls in a row, so retry a few times with a growing pause.
  */
 async function jupiterFetch(url: string, init?: RequestInit): Promise<Response> {
-  let res = await fetch(url, init);
+  let res = await netFetch(url, init);
   for (let attempt = 1; res.status === 429 && attempt <= 4; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 600 * 2 ** attempt));
-    res = await fetch(url, init);
+    res = await netFetch(url, init);
   }
   return res;
 }
