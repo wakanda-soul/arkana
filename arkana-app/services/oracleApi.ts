@@ -9,6 +9,8 @@ import { localizeCard } from './cardLocalization';
 export const API_BASE_URL = 'https://arkana.icu';
 
 export interface ClockInResult {
+  /** true when the server could not be reached and these are placeholder values */
+  offline?: boolean;
   canClockIn: boolean;
   streak: number;
   brokenStreak?: number | null;
@@ -199,6 +201,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
     console.warn('API error, using local state:', e);
   }
   return {
+    offline: true,
     canClockIn: true,
     streak: 1,
     lastClockIn: null,

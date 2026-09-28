@@ -188,7 +188,7 @@ export default function OracleScreen() {
     }, [walletAddress, account?.publicKey, connection])
   );
 
-  const handleInitiateSend = (textToSend?: string) => {
+  const handleInitiateSend = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
     if (!query) return;
 
@@ -205,9 +205,15 @@ export default function OracleScreen() {
       return;
     }
 
-    const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
+    // Never decide "paid" from a quota that has not loaded: ask the server again first
+    let quota = quotaInfo;
+    if (!quota || quota.offline) {
+      quota = await fetchClockInStatus(walletAddress);
+      setQuotaInfo(quota);
+    }
+    const isSeeker = Boolean(quota?.isSeekerHolder);
     // Banked streak bonus spreads are free too; the server spends them after the Seeker allowance
-    const hasFree = (isSeeker && (quotaInfo?.freeSpreadsRemaining ?? 0) > 0) || (quotaInfo?.streakBonusSpreads ?? 0) > 0;
+    const hasFree = (isSeeker && (quota?.freeSpreadsRemaining ?? 0) > 0) || (quota?.streakBonusSpreads ?? 0) > 0;
 
     // If 3 free daily attempts are exhausted or user is not a Seeker SBT holder: ALWAYS prompt user with mystical warning popup!
     if (!hasFree) {

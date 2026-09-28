@@ -59,20 +59,29 @@ export default function SpreadScreen() {
 
   useEffect(() => {
     if (!walletAddress) return;
+    let cancelled = false;
     const syncStatus = async () => {
-      let isHolder = false;
+      // The server status first: the Seeker Genesis check below can be slow and must not hold the quota
+      for (let attempt = 0; attempt < 3 && !cancelled; attempt++) {
+        const info = await fetchClockInStatus(walletAddress);
+        if (cancelled) return;
+        setQuotaInfo(info);
+        if (!info.offline) break;
+        await new Promise((r) => setTimeout(r, 3000));
+      }
       if (account?.publicKey) {
         try {
-          isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
+          const isHolder = await checkSeekerGenesisHolderOnChain(connection, account.publicKey);
           await setRemoteSeekerStatus(walletAddress, isHolder);
+          const info = await fetchClockInStatus(walletAddress, isHolder);
+          if (!cancelled && !info.offline) setQuotaInfo(info);
         } catch {}
       }
-      try {
-        const info = await fetchClockInStatus(walletAddress, account?.publicKey ? isHolder : undefined);
-        setQuotaInfo(info);
-      } catch {}
     };
     syncStatus();
+    return () => {
+      cancelled = true;
+    };
   }, [walletAddress, account?.publicKey, connection]);
 
   useEffect(() => {
@@ -101,12 +110,22 @@ export default function SpreadScreen() {
       return;
     }
 
-    const isSeeker = Boolean(quotaInfo?.isSeekerHolder);
-    const dailyFree = quotaInfo?.freeSpreadsRemaining ?? 0;
-    const streakBonus = quotaInfo?.streakBonusSpreads ?? 0;
+    // Never decide "paid" from a quota that has not loaded: ask the server again first
+    let quota = quotaInfo;
+    if (!quota || quota.offline) {
+      quota = await fetchClockInStatus(walletAddress);
+      setQuotaInfo(quota);
+      if (quota.offline) {
+        setQuotaError(t("err_cast_spread_failed", "The spread could not be cast. Try again."));
+        return;
+      }
+    }
+    const isSeeker = Boolean(quota.isSeekerHolder);
+    const dailyFree = quota.freeSpreadsRemaining ?? 0;
+    const streakBonus = quota.streakBonusSpreads ?? 0;
     const hasFree = (dailyFree + streakBonus) > 0;
     const balance = onChainSkr !== null ? onChainSkr : 0;
-    const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
+    const extraCost = quota.extraSpreadCostSkr || 5;
     const payWithSol = !hasFree && balance < extraCost;
 
     let txSignature: string | null = null;
@@ -317,6 +336,8 @@ export default function SpreadScreen() {
                   <Text style={styles.quotaTitle}>
                     {!walletAddress
                       ? t('connect_wallet_hint', 'Connect wallet to cast spread and seal consensus')
+                      : !quotaInfo || quotaInfo.offline
+                      ? t('awaiting_consensus', 'AWAITING SOLANA CONSENSUS_')
                       : dailyFree > 0
                       ? (streakBonus > 0
                           ? t('free_and_streak_spreads_avail', '{n} Free Spreads (+{bonus} Streak Bonus)', { n: dailyFree, bonus: streakBonus })
