@@ -401,7 +401,8 @@ function consumeSpread(walletAddress, options = {}) {
 
   // 2. Streak Milestone Bonus Spreads (Stored on account, consumed only after daily quota is used)
   const streakBonus = user.streakBonusSpreads || 0;
-  if (itemType === "spread" && streakBonus > 0) {
+  // Banked streak bonus spreads cover questions too, like the daily Seeker allowance they back up
+  if ((itemType === "spread" || itemType === "chat") && streakBonus > 0) {
     user.streakBonusSpreads = streakBonus - 1;
     user.totalReadings = (user.totalReadings || 0) + 1;
     users[walletAddress] = user;
