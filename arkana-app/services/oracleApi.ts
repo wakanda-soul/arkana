@@ -195,7 +195,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
     const url = isSeeker !== undefined
       ? `${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=${isSeeker}`
       : `${API_BASE_URL}/api/clock-in/${wallet}`;
-    const res = await netFetch(url);
+    const res = await netFetch(url, { headers: await apiHeaders() });
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn('API error, using local state:', e);
@@ -214,19 +214,36 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
   };
 }
 
-export async function setRemoteSeekerStatus(wallet: string, isSeekerHolder: boolean): Promise<boolean> {
-  try {
-    const res = await netFetch(`${API_BASE_URL}/api/seeker/status`, {
-      method: 'POST',
-      headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, isSeekerHolder }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return Boolean(data.isSeekerHolder);
-    }
-  } catch {}
-  return false;
+/**
+ * Seeker Genesis status, verified by the server on chain (it keeps the answer: a holder for 7 days,
+ * a non-holder for 10 minutes). Asked once per wallet per app launch; the client never checks the
+ * chain itself.
+ */
+const seekerStatusRequests = new Map<string, Promise<boolean>>();
+export function refreshSeekerStatus(wallet: string): Promise<boolean> {
+  let pending = seekerStatusRequests.get(wallet);
+  if (!pending) {
+    pending = (async () => {
+      try {
+        const res = await netFetch(`${API_BASE_URL}/api/seeker/status`, {
+          method: 'POST',
+          headers: await apiHeaders(),
+          body: JSON.stringify({ wallet }),
+        });
+        if (res.ok) return Boolean((await res.json()).isSeekerHolder);
+      } catch {}
+      // Not cached on failure, so the next screen asks again
+      seekerStatusRequests.delete(wallet);
+      return false;
+    })();
+    seekerStatusRequests.set(wallet, pending);
+  }
+  return pending;
+}
+
+/** Kept for existing callers: the claimed value is ignored, the server decides. */
+export async function setRemoteSeekerStatus(wallet: string, _isSeekerHolder?: boolean): Promise<boolean> {
+  return refreshSeekerStatus(wallet);
 }
 
 export async function executeClockIn(
