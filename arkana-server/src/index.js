@@ -328,8 +328,9 @@ app.get("/api/clock-in/:wallet", async (req, res) => {
       }
     }
     if (hasWalletSession(req, wallet)) return res.json(status);
-    // Without the owner's session, hide payment signatures, offerings and today's card
-    const { todayCard, subscription, totalOfferedSkr, lastOffering, txSignature, history, ...publicStatus } = status;
+    // Without the owner's session, hide payment signatures, offerings and history. Today's card stays:
+    // the app reads it without a session, and it is public on chain in the Clock-In memo anyway.
+    const { subscription, totalOfferedSkr, lastOffering, txSignature, history, ...publicStatus } = status;
     res.json({ ...publicStatus, isSubscribed: Boolean(subscription && subscription.active) });
   } catch (err) {
     res.status(500).json({ error: err.message });
