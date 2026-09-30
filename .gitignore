@@ -24,6 +24,7 @@ android/.idea/
 *.tar.gz
 unzipped/
 scripts/
+!programs/arkana-ore-vault/scripts/
 scratch/
 hackathon_raw_chunk.txt
 hackathon_info.txt
@@ -48,15 +49,19 @@ temp/
 *id_ecdsa*
 *.keystore
 *.jks
-*secret*
+*.secret
+*secret*.json
+*secrets*
 *credentials*
 *private_key*
 *privatekey*
-*seed*
 *.seed
+*seed*.json
+*seed*.txt
 *.env
 *.env.*
 *.env.local
+!.env.example
 *wallet*.json
 *keypair*.json
 

@@ -13,6 +13,12 @@ const {
   getAssociatedTokenAddressSync,
 } = require('@solana/spl-token');
 const fs = require('fs');
+const path = require('path');
+const os = require('os');
+// Devnet helper. Paths and URLs come from environment variables; see README.md in this folder.
+const DEVNET_URL = process.env.DEVNET_URL || 'https://api.devnet.solana.com';
+const KEYPAIR = process.env.KEYPAIR || path.join(os.homedir(), '.config', 'solana', 'id.json');
+const PROGRAM_KEYPAIR = process.env.PROGRAM_KEYPAIR || path.join(__dirname, '..', '..', 'target', 'deploy', 'arkana_ore_vault-keypair.json');
 
 async function main() {
   const toreMintStr = process.argv[2];
@@ -22,17 +28,17 @@ async function main() {
   }
 
   const toreMint = new PublicKey(toreMintStr);
-  const keypairData = JSON.parse(fs.readFileSync('/root/.config/solana/id.json', 'utf8'));
+  const keypairData = JSON.parse(fs.readFileSync(KEYPAIR, 'utf8'));
   const payer = Keypair.fromSecretKey(Uint8Array.from(keypairData));
 
   const programKeypairData = JSON.parse(
-    fs.readFileSync('/root/arkana/programs/arkana-ore-vault/target/deploy/arkana_ore_vault-keypair.json', 'utf8')
+    fs.readFileSync(PROGRAM_KEYPAIR, 'utf8')
   );
   const programId = Keypair.fromSecretKey(Uint8Array.from(programKeypairData)).publicKey;
 
   console.log(`Initializing Arkana ORE Vault: ${programId.toBase58()} with tORE Mint: ${toreMint.toBase58()}`);
 
-  const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+  const connection = new Connection(DEVNET_URL, "confirmed");
 
   // Derive PDAs
   const [configPda] = PublicKey.findProgramAddressSync(

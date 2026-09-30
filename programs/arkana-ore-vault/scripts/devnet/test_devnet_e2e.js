@@ -13,17 +13,22 @@ const {
   getAssociatedTokenAddressSync,
 } = require('@solana/spl-token');
 const fs = require('fs');
+const path = require('path');
+const os = require('os');
+// Devnet helper. Paths and URLs come from environment variables; see README.md in this folder.
+const DEVNET_URL = process.env.DEVNET_URL || 'https://api.devnet.solana.com';
+const KEYPAIR = process.env.KEYPAIR || path.join(os.homedir(), '.config', 'solana', 'id.json');
 
 async function main() {
   console.log("=== Testing Arkana ORE Vault End-to-End on Solana Devnet ===");
 
-  const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-  const keypairData = JSON.parse(fs.readFileSync('/root/.config/solana/id.json', 'utf8'));
+  const connection = new Connection(DEVNET_URL, "confirmed");
+  const keypairData = JSON.parse(fs.readFileSync(KEYPAIR, 'utf8'));
   const user = Keypair.fromSecretKey(Uint8Array.from(keypairData));
   console.log("Tester/User Pubkey:", user.publicKey.toBase58());
 
-  const programId = new PublicKey("B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C");
-  const toreMint = new PublicKey("8eAPs1imRaRzk89UzSbBDzfG6eta8e4HRv8sHJ44wu77");
+  const programId = new PublicKey(process.env.PROGRAM_ID || "B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C");
+  const toreMint = new PublicKey(process.env.TORE_MINT || "8eAPs1imRaRzk89UzSbBDzfG6eta8e4HRv8sHJ44wu77");
 
   // 1. Derive PDAs
   const [configPda] = PublicKey.findProgramAddressSync([Buffer.from("arkana_config", "utf8")], programId);

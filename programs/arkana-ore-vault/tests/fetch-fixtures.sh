@@ -2,7 +2,10 @@
 # Snapshots of mainnet state the vault test runs against: the real ORE Stake program,
 # the ORE mint, ORE Stake treasury/vesting, and the Arkana vault config and token account.
 set -euo pipefail
-cd "$(dirname "$0")/fixtures"
+DIR="$(cd "$(dirname "$0")" && pwd)/fixtures"
+mkdir -p "$DIR"
+cd "$DIR"
+command -v solana >/dev/null || { echo "error: solana CLI not found in PATH" >&2; exit 1; }
 RPC="${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}"
 solana program dump stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH ore_stake.so -u "$RPC"
 for a in \

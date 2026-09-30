@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEVNET_URL="https://api.devnet.solana.com"
-KEYPAIR="/root/.config/solana/id.json"
-PROGRAM_KEYPAIR="/root/arkana/programs/arkana-ore-vault/target/deploy/arkana_ore_vault-keypair.json"
-PROGRAM_SO="/root/arkana/programs/arkana-ore-vault/target/deploy/arkana_ore_vault.so"
-NETWORK_CONFIG="/root/arkana/arkana-app/constants/networkConfig.ts"
-export NODE_PATH="/root/arkana/arkana-app/node_modules"
+# Paths are relative to this script; override any of them with environment variables.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+PROGRAM_DIR="$REPO_ROOT/programs/arkana-ore-vault"
+
+DEVNET_URL="${DEVNET_URL:-https://api.devnet.solana.com}"
+KEYPAIR="${KEYPAIR:-$HOME/.config/solana/id.json}"
+PROGRAM_KEYPAIR="${PROGRAM_KEYPAIR:-$PROGRAM_DIR/target/deploy/arkana_ore_vault-keypair.json}"
+PROGRAM_SO="${PROGRAM_SO:-$PROGRAM_DIR/target/deploy/arkana_ore_vault.so}"
+NETWORK_CONFIG="${NETWORK_CONFIG:-$REPO_ROOT/arkana-app/constants/networkConfig.ts}"
+export NODE_PATH="${NODE_PATH:-$REPO_ROOT/arkana-app/node_modules}"
+export KEYPAIR PROGRAM_KEYPAIR DEVNET_URL
 
 echo "=== Arkana Devnet Deployment Script ==="
 
@@ -61,7 +67,7 @@ echo "Smart Contract deployed successfully!"
 
 # 5. Initialize Vault Config on-chain
 echo "--- Initializing Arkana ORE Vault Config on Devnet ---"
-node /root/arkana/init_vault.js "$TORE_MINT"
+node "$SCRIPT_DIR/init_vault.js" "$TORE_MINT"
 
 # 6. Update networkConfig.ts
 echo "--- Updating networkConfig.ts ---"
@@ -75,7 +81,7 @@ fs.writeFileSync('$NETWORK_CONFIG', content);
 "
 
 echo "Verifying TypeScript compilation..."
-(cd /root/arkana/arkana-app && npx tsc --noEmit)
+(cd "$REPO_ROOT/arkana-app" && npx tsc --noEmit)
 
 echo "=== Devnet Deployment Complete ==="
 echo "tSKR Mint: $TSKR_MINT"

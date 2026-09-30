@@ -2,8 +2,9 @@
   "name": "arkana-ore-vault-tests",
   "private": true,
   "scripts": {
-    "fixtures": "./fetch-fixtures.sh",
-    "test": "esbuild vault.test.ts --bundle --platform=node --outfile=vault.test.js --external:litesvm --alias:@=../../../arkana-app --log-level=error && node vault.test.js"
+    "build-program": "cd .. && cargo build-sbf",
+    "fixtures": "bash ./fetch-fixtures.sh",
+    "test": "NODE_PATH=\"$PWD/node_modules\" esbuild vault.test.ts --bundle --platform=node --outfile=vault.test.js --external:litesvm --alias:@=../../../arkana-app --log-level=error && node vault.test.js"
   },
   "devDependencies": {
     "@solana/spl-token": "0.4.14",

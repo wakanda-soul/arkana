@@ -15,6 +15,17 @@ import {
 const PROGRAM_SO = __dirname + '/../target/deploy/arkana_ore_vault.so';
 const STAKE_PROGRAM = new PublicKey('stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH');
 const DAY = 86400n;
+const TX_FEE = 5000n; // one signature, no priority fee
+
+for (const [what, path, hint] of [
+  ['vault program', PROGRAM_SO, 'run `npm run build-program` (cargo build-sbf)'],
+  ['ORE Stake fixture', __dirname + '/fixtures/ore_stake.so', 'run `npm run fixtures`'],
+]) {
+  if (!fs.existsSync(path)) {
+    console.error(`missing ${what}: ${path}\n${hint} first`);
+    process.exit(1);
+  }
+}
 
 const svm = new LiteSVM();
 svm.addProgramFromFile(ARKANA_VAULT_PROGRAM_ID, PROGRAM_SO);
@@ -117,6 +128,12 @@ svm.airdrop(user.publicKey, 2_000_000_000n);
 const userAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, user.publicKey);
 setTokenAccount(userAta, user.publicKey, 10_000_000_000n); // 0.1 ORE
 
+// --- Attacker with its own ORE account ---
+const attacker = Keypair.generate();
+svm.airdrop(attacker.publicKey, 1_000_000_000n);
+const attackerAta = getAssociatedTokenAddressSync(ORE_MINT_ADDRESS, attacker.publicKey);
+setTokenAccount(attackerAta, attacker.publicKey, 0n);
+
 (async () => {
   // 0. Migration: SyncStake stakes legacy principal that sat idle in the vault
   let r0 = send([createSyncStakeInstruction(user.publicKey)], [user]);
@@ -157,6 +174,16 @@ setTokenAccount(userAta, user.publicKey, 10_000_000_000n); // 0.1 ORE
   const expectedShare = (synced * 1_500_000_000n) / (1_500_000_000n + legacyPrincipal);
   check('user got pro-rata yield', claimed > 0n && claimed <= expectedShare + 1n && claimed >= expectedShare - 2n, `claimed=${claimed} expected~${expectedShare}`);
 
+  // 5b. Another wallet cannot claim the user's tranche by pointing at the user's tranche id / PDAs
+  setTime(T0 + 7200n);
+  {
+    const ix = await createClaimTrancheYieldInstruction(attacker.publicKey, 1);
+    ix.keys[3].pubkey = getUserVaultPda(user.publicKey)[0];
+    ix.keys[4].pubkey = getTranchePda(user.publicKey, 1)[0];
+    r = send([ix], [attacker]);
+    check("claim of another user's tranche rejected", !r.ok && tokenAmount(attackerAta) === 0n);
+  }
+
   // 6. Next day: new tranche #2
   setTime(T0 + DAY + 10n);
   r = send([await createDepositTrancheInstruction(user.publicKey, 2, 300_000_000n)], [user]);
@@ -175,7 +202,6 @@ setTokenAccount(userAta, user.publicKey, 10_000_000_000n); // 0.1 ORE
 
   const tranche1 = getTranchePda(user.publicKey, 1)[0];
   const trancheRent = lamports(tranche1);
-  const userLamportsBefore = lamports(user.publicKey);
   const userOreBefore = tokenAmount(userAta);
   const treasuryBefore = tokenAmount(treasuryOreAta);
   const stakeBefore = stakeBalance();
@@ -186,14 +212,26 @@ setTokenAccount(userAta, user.publicKey, 10_000_000_000n); // 0.1 ORE
   r = send([await createHarvestMaturedTrancheInstruction(stranger.publicKey, user.publicKey, 1)], [stranger]);
   check('stranger cannot harvest', !r.ok);
 
+  // Harvest that sends the principal to a token account other than the treasury ATA: rejected
+  {
+    const ix = await createHarvestMaturedTrancheInstruction(user.publicKey, user.publicKey, 1);
+    ix.keys[8].pubkey = attackerAta;
+    r = send([ix], [user]);
+    check('harvest with wrong treasury ATA rejected', !r.ok && tokenAmount(attackerAta) === 0n);
+  }
+  const treasuryAtaExisted = !!svm.getAccount(treasuryOreAta);
+  const userLamportsBeforeHarvest = lamports(user.publicKey);
+
   r = send([await createHarvestMaturedTrancheInstruction(user.publicKey, user.publicKey, 1)], [user]);
   check('harvest succeeds after 365 days', r.ok);
   check('principal 1.5e9 went to Arkana Treasury', tokenAmount(treasuryOreAta) - treasuryBefore === 1_500_000_000n, `treasury +${tokenAmount(treasuryOreAta) - treasuryBefore}`);
   const yieldToUser = tokenAmount(userAta) - userOreBefore;
   check('unclaimed yield went to owner', yieldToUser > 0n, `+${yieldToUser}`);
   check('tranche account closed', !svm.getAccount(tranche1) || svm.getAccount(tranche1)!.lamports === 0);
-  const rentBack = lamports(user.publicKey) - userLamportsBefore;
-  check('tranche rent refunded to owner (minus fees/ATA rent)', rentBack > trancheRent - 3_000_000n, `rent=${trancheRent} delta=${rentBack}`);
+  // Owner paid the tx fee (and the treasury ATA rent if harvest had to create it); everything else is the refunded rent
+  const ataRentPaid = treasuryAtaExisted ? 0n : lamports(treasuryOreAta);
+  const rentBack = lamports(user.publicKey) - userLamportsBeforeHarvest + TX_FEE + ataRentPaid;
+  check('tranche rent refunded to owner in full', trancheRent > 0n && rentBack === trancheRent, `rent=${trancheRent} refunded=${rentBack}`);
   check('principal unstaked from ORE Stake', stakeBefore - stakeBalance() === 1_500_000_000n, `stake ${stakeBefore} -> ${stakeBalance()}`);
   check('config totals', cfg().staked === legacyPrincipal + 300_000_000n && cfg().matured >= 1_500_000_000n, JSON.stringify(cfg(), (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
@@ -202,7 +240,7 @@ setTokenAccount(userAta, user.publicKey, 10_000_000_000n); // 0.1 ORE
   check('double harvest rejected', !r.ok);
 
   // 10. Vault stays solvent: staked principal covers every open tranche
-  check('stake balance == open principal', stakeBalance() + (tokenAmount(vaultAta) >= 0n ? 0n : 0n) === cfg().staked, `stake=${stakeBalance()} principal=${cfg().staked}`);
+  check('stake balance == open principal', stakeBalance() === cfg().staked, `stake=${stakeBalance()} principal=${cfg().staked}`);
 
   console.log(failures === 0 ? '\nALL PASSED' : `\n${failures} FAILED`);
   process.exit(failures ? 1 : 0);
