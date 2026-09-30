@@ -80,6 +80,46 @@ export async function clearWalletSession(): Promise<void> {
   } catch {}
 }
 
+/**
+ * The connected wallet's message signer, registered by the auth provider, so an expired or lost
+ * session can be renewed without the user having to reconnect.
+ */
+let sessionSigner: { wallet: string; sign: (message: Uint8Array) => Promise<Uint8Array> } | null = null;
+
+export function setSessionSigner(wallet: string | null, sign?: (message: Uint8Array) => Promise<Uint8Array>) {
+  sessionSigner = wallet && sign ? { wallet, sign } : null;
+}
+
+/** Signs in again with the connected wallet. Returns false when there is no wallet or the user declines. */
+export async function renewWalletSession(): Promise<boolean> {
+  if (!sessionSigner) return false;
+  const { wallet, sign } = sessionSigner;
+  await clearWalletSession();
+  try {
+    await ensureWalletSession(wallet, sign);
+    return true;
+  } catch (err: any) {
+    console.warn('[Auth] Session renewal declined:', err?.message || err);
+    return false;
+  }
+}
+
+/**
+ * fetch() with the session token. When the server answers that the session is missing or expired,
+ * the wallet signs in again once and the request is repeated with the new token.
+ */
+export async function authedFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const withSession = async (): Promise<RequestInit> => ({
+    ...init,
+    headers: { ...((init.headers as Record<string, string>) || {}), ...(await apiHeaders()) },
+  });
+  const res = await netFetch(input, await withSession());
+  if (res.status !== 401) return res;
+  const body = await res.clone().json().catch(() => ({}));
+  if (!body?.sessionRequired || !(await renewWalletSession())) return res;
+  return netFetch(input, await withSession());
+}
+
 /** JSON headers plus the session token when one is stored. */
 export async function apiHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

@@ -4,7 +4,7 @@ import { AppConfig } from '@/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { soundService } from '@/services/soundService'
-import { ensureWalletSession, clearWalletSession } from '@/services/sessionService'
+import { ensureWalletSession, clearWalletSession, setSessionSigner } from '@/services/sessionService'
 import { resubmitPendingPayments } from '@/services/oracleApi'
 
 export interface AuthState {
@@ -65,6 +65,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // One free message signature per wallet (renewed every ~30 days) proves to the server
   // that requests spending this wallet's quota come from its owner.
   useEffect(() => {
+    // Lets API calls renew a lost or expired session with the same wallet
+    setSessionSigner(walletAddress, (message) => signMessage(message))
     if (!walletAddress) return
     ensureWalletSession(walletAddress, (message) => signMessage(message))
       // Passes and offerings paid while the server was unreachable are sent again once signed in

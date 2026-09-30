@@ -338,7 +338,17 @@ export default function AltarScreen() {
       );
 
       if (!res.success || !res.reading) {
-        if (res.alreadyClockedIn) {
+        // The memo is already on chain, so the server can still find it (status recovery) even when
+        // this post failed: wait for it before calling the seal failed
+        let recovered = false;
+        if (!res.alreadyClockedIn && signature) {
+          for (let attempt = 0; attempt < 4 && !recovered; attempt++) {
+            await new Promise((r) => setTimeout(r, 4000));
+            const status = await fetchClockInStatus(walletAddress);
+            recovered = !status.offline && !status.canClockIn;
+          }
+        }
+        if (res.alreadyClockedIn || recovered) {
           // The server already has today's seal: show that one instead of a local copy
           const status = await fetchClockInStatus(walletAddress);
           if (!status.offline && !status.canClockIn) {

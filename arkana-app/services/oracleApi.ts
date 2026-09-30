@@ -1,5 +1,5 @@
 import { getExtraPaymentSignatures } from './treasuryService';
-import { apiHeaders } from './sessionService';
+import { authedFetch } from './sessionService';
 import { netFetch } from './netFetch';
 import { ALL_CARDS, SPREADS } from '@/data/cardsData';
 import { translateFor, LanguageCode } from './i18n';
@@ -47,9 +47,8 @@ async function postPaidRequest(
   await savePendingPayment(wallet, { kind, signature, body, createdAt: Date.now() });
   for (let attempt = 1; attempt <= PAID_REQUEST_ATTEMPTS; attempt++) {
     try {
-      const res = await netFetch(`${API_BASE_URL}${path}`, {
+      const res = await authedFetch(`${API_BASE_URL}${path}`, {
         method: 'POST',
-        headers: await apiHeaders(),
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
@@ -83,9 +82,8 @@ export async function resubmitPendingPayments(wallet: string): Promise<void> {
   const pending = (await getPendingPayments(wallet)).filter((p) => p.kind === 'subscription' || p.kind === 'offering');
   for (const payment of pending) {
     try {
-      const res = await netFetch(`${API_BASE_URL}${PAID_PATHS[payment.kind]}`, {
+      const res = await authedFetch(`${API_BASE_URL}${PAID_PATHS[payment.kind]}`, {
         method: 'POST',
-        headers: await apiHeaders(),
         body: JSON.stringify(payment.body),
       });
       const data = await res.json().catch(() => ({}));
@@ -285,7 +283,7 @@ export async function fetchClockInStatus(wallet: string, isSeeker?: boolean): Pr
     const url = isSeeker !== undefined
       ? `${API_BASE_URL}/api/clock-in/${wallet}?isSeeker=${isSeeker}`
       : `${API_BASE_URL}/api/clock-in/${wallet}`;
-    const res = await netFetch(url, { headers: await apiHeaders() });
+    const res = await authedFetch(url);
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn('API error, using local state:', e);
@@ -315,9 +313,8 @@ export function refreshSeekerStatus(wallet: string): Promise<boolean> {
   if (!pending) {
     pending = (async () => {
       try {
-        const res = await netFetch(`${API_BASE_URL}/api/seeker/status`, {
+        const res = await authedFetch(`${API_BASE_URL}/api/seeker/status`, {
           method: 'POST',
-          headers: await apiHeaders(),
           body: JSON.stringify({ wallet }),
         });
         if (res.ok) return Boolean((await res.json()).isSeekerHolder);
@@ -356,9 +353,8 @@ export async function executeClockIn(
   streakBonusSpreads?: number;
 }> {
   try {
-    const res = await netFetch(`${API_BASE_URL}/api/clock-in`, {
+    const res = await authedFetch(`${API_BASE_URL}/api/clock-in`, {
       method: 'POST',
-      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, cardNo, orientation, language, txSignature, slot }),
     });
     if (res.ok) {
@@ -421,9 +417,8 @@ export async function fetchReading(
   }
 
   try {
-    const res = await netFetch(`${API_BASE_URL}/api/reading`, {
+    const res = await authedFetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
-      headers: await apiHeaders(),
       body: JSON.stringify(payload),
     });
     if (res.status === 402) {
@@ -452,9 +447,8 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
     if (isSeeker !== undefined) {
       payload.isSeeker = isSeeker;
     }
-    const res = await netFetch(`${API_BASE_URL}/api/spread/consume`, {
+    const res = await authedFetch(`${API_BASE_URL}/api/spread/consume`, {
       method: 'POST',
-      headers: await apiHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -467,9 +461,8 @@ export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): P
 
 export async function repairStreak(wallet: string, txSignature: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
   try {
-    const res = await netFetch(`${API_BASE_URL}/api/streak/repair`, {
+    const res = await authedFetch(`${API_BASE_URL}/api/streak/repair`, {
       method: 'POST',
-      headers: await apiHeaders(),
       body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) }),
     });
     const data = await res.json();
@@ -508,9 +501,8 @@ export async function sendOracleChatMessage({
     throw apiError(data?.error || 'Failed to query Oracle', res.status === 402 ? ERR_PAYMENT_REJECTED : 'SERVER_ERROR');
   }
 
-  const res = await netFetch(`${API_BASE_URL}/api/chat`, {
+  const res = await authedFetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
-    headers: await apiHeaders(),
     body: JSON.stringify(body),
   });
 
