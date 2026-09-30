@@ -57,16 +57,14 @@ function syncStakeInstruction(payer) {
   return new TransactionInstruction({ programId: VAULT_PROGRAM, data: Buffer.from([SYNC_STAKE_IX]), keys });
 }
 
-async function runSyncStake() {
-  const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(KEYPAIR_PATH, "utf8"))));
-  const connection = new Connection(RPC_URL, "confirmed");
+async function sendOnce(connection, payer) {
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
   const message = new TransactionMessage({
     payerKey: payer.publicKey,
     recentBlockhash: blockhash,
     instructions: [
       ComputeBudgetProgram.setComputeUnitLimit({ units: 200000 }),
-      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }),
       syncStakeInstruction(payer.publicKey),
     ],
   }).compileToV0Message();
@@ -76,9 +74,34 @@ async function runSyncStake() {
   // Simulate first: a failing crank should cost nothing
   const sim = await connection.simulateTransaction(tx);
   if (sim.value.err) throw new Error(`simulation failed: ${JSON.stringify(sim.value.err)}`);
-  const signature = await connection.sendRawTransaction(tx.serialize());
-  await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-  return signature;
+
+  const raw = tx.serialize();
+  const signature = await connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 });
+  // Re-broadcast every 2 s until it lands or the blockhash expires
+  const resend = setInterval(() => connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 }).catch(() => {}), 2000);
+  try {
+    const result = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+    if (result.value.err) throw new Error(`transaction failed: ${JSON.stringify(result.value.err)}`);
+    return signature;
+  } finally {
+    clearInterval(resend);
+  }
+}
+
+async function runSyncStake() {
+  const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(KEYPAIR_PATH, "utf8"))));
+  const connection = new Connection(RPC_URL, "confirmed");
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await sendOnce(connection, payer);
+    } catch (err) {
+      lastErr = err;
+      // A failed simulation will fail again; an expired blockhash is worth another try
+      if (/simulation failed|transaction failed/.test(err.message)) break;
+    }
+  }
+  throw lastErr;
 }
 
 function startSyncKeeper() {

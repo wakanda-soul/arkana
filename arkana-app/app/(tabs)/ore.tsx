@@ -34,6 +34,7 @@ import {
 import { executeSolanaTransaction } from '@/services/solanaService';
 import { getArkanaLookupTable } from '@/services/treasuryService';
 import { netFetch } from '@/services/netFetch';
+import { formatTiny } from '@/utils/formatTiny';
 
 /** Claims per transaction: keeps every claim-all transaction well under the 1232-byte limit. */
 const CLAIMS_PER_TX = 6;
@@ -46,13 +47,9 @@ function isUserCancellation(e: any): boolean {
   return e?.code === -32003 || /reject|denied|declined|cancel/i.test(String(e?.message || ''));
 }
 
-/** ORE amount for display: 4 decimals for normal amounts, every significant digit for tiny yields. */
+/** ORE amount for display: 4 decimals, tiny yields in exchange notation (0.0₇5229). */
 function formatOre(raw: number): string {
-  const value = raw / 1e11;
-  if (value === 0) return '0.0000';
-  if (value >= 0.0001) return value.toFixed(4);
-  const decimals = Math.min(11, Math.ceil(-Math.log10(value)) + 2);
-  return value.toFixed(decimals);
+  return formatTiny(raw / 1e11);
 }
 
 export default function OreVaultScreen() {
@@ -239,8 +236,8 @@ export default function OreVaultScreen() {
           'ore_fee_warning_msg',
           'You would claim about {ore} ORE (~{yieldSol} SOL), while the network fee is about {feeSol} SOL. Claim anyway?',
           {
-            ore: (claimableUnits / 1e11).toFixed(8),
-            yieldSol: (valueLamports / 1e9).toFixed(6),
+            ore: formatTiny(claimableUnits / 1e11),
+            yieldSol: formatTiny(valueLamports / 1e9, { fixed: 6 }),
             feeSol: (ESTIMATED_FEE_LAMPORTS / 1e9).toFixed(4),
           }
         ),
