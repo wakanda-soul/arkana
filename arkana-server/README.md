@@ -48,6 +48,7 @@ Copy [.env.example](.env.example) to `.env` (never committed). All variables are
 | `STATS_RPC_URL` | public mainnet RPC | RPC for `/api/admin/ore-stats` (uses `getProgramAccounts`) |
 | `ARKANA_ADMIN_TOKEN` | unset | Token for `/api/admin/*` (header `x-admin-token` or `Authorization: Bearer`). Admin endpoints return 404 without it |
 | `ARKANA_ALT_KEEPER` | on | `off` disables the lookup table keeper |
+| `ARKANA_SYNC_KEEPER` | off | `on` sends a SyncStake every `ARKANA_SYNC_INTERVAL_HOURS` (default 24) so ORE Stake yield reaches the tranches; paid by the ALT keypair |
 | `ARKANA_ALT_KEYPAIR` | `~/.config/solana/id.json` | Keypair that pays rent for the lookup table. The keeper stays off if the file is missing |
 | `AGY_BIN` | `/usr/local/bin/arkana-agy` | Sandboxed LLM wrapper. Without it the built-in engine answers |
 | `ARKANA_REQUIRE_SESSION` | on | `off` accepts requests without a signed wallet session (local testing only) |
