@@ -7,7 +7,6 @@ import {
   Pressable,
   FlatList,
   Modal,
-  Dimensions,
   Platform,
   TextInput,
 } from "react-native";
@@ -20,7 +19,7 @@ import { CardImages, CARD_BACK } from "@/assets/cards";
 import { getUnlockedCards, STARTER_UNLOCKED_CARDS } from "@/services/codexService";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ObsidianTokens } from "@/constants/theme";
-import { useLanguage, localizeArcana, localizeSuit } from "@/services/i18n";
+import { useLanguage, localizeSuit } from "@/services/i18n";
 import { localizeCard } from "@/services/cardLocalization";
 import { soundService } from "@/services/soundService";
 
@@ -51,8 +50,8 @@ export default function CodexScreen() {
     return localizedCards.filter(card => {
       // Suit filter
       if (selectedFilter !== "all") {
-        if (selectedFilter === "major") {
-          if (card.arcana !== "major" && card.suit !== "Major Arcana") return false;
+        if (selectedFilter === "genesis") {
+          if (card.arcana !== "major") return false;
         } else if (card.suit !== selectedFilter) {
           return false;
         }
@@ -63,14 +62,13 @@ export default function CodexScreen() {
         return false;
       }
 
-      // Search query filter (matches crypto_name, classic, card_no, keywords)
+      // Search query filter (matches crypto_name, card_no, keywords)
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
         const matchesName = card.crypto_name?.toLowerCase().includes(q);
-        const matchesClassic = card.classic?.toLowerCase().includes(q);
         const matchesNo = card.card_no?.toLowerCase().includes(q);
         const matchesKeywords = card.keywords?.some(k => k.toLowerCase().includes(q));
-        if (!matchesName && !matchesClassic && !matchesNo && !matchesKeywords) {
+        if (!matchesName && !matchesNo && !matchesKeywords) {
           return false;
         }
       }
@@ -104,7 +102,7 @@ export default function CodexScreen() {
 
   const filterTabs = [
     { id: "all", label: t("filter_all", "ALL (78)") },
-    { id: "major", label: t("filter_major", "MAJORS (22)") },
+    { id: "genesis", label: t("filter_genesis", "GENESIS (22)") },
     { id: "Protocols", label: t("filter_protocols", "PROTOCOLS (14)") },
     { id: "Liquidity", label: t("filter_liquidity", "LIQUIDITY (14)") },
     { id: "Nodes", label: t("filter_nodes", "NODES (14)") },
@@ -133,7 +131,7 @@ export default function CodexScreen() {
         </View>
         <Text style={styles.progressSub}>
           {unlockedCount >= 78
-            ? t('full_arcana_mastered', 'Full Arcana Mastered: All 78 archetypes in consensus.')
+            ? t('full_arcana_mastered', 'Full deck mastered: all 78 archetypes in consensus.')
             : t('clock_in_remaining_sub', `Clock in daily on the Altar to unveil the remaining ${78 - unlockedCount} cards.`, { rem: 78 - unlockedCount })}
         </Text>
       </View>
@@ -327,10 +325,7 @@ export default function CodexScreen() {
             <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalSuit}>
-                  {t('arcana_suit_kicker', '{arcana} ARCANA \u00B7 {suit}', {
-                    arcana: localizeArcana(activeSelectedCard.arcana, t),
-                    suit: localizeSuit(activeSelectedCard.suit, t).toUpperCase(),
-                  })}
+                  {getRoman(activeSelectedCard.card_no)} {'\u00B7'} {localizeSuit(activeSelectedCard.suit, t).toUpperCase()}
                 </Text>
                 <Text style={styles.modalTitle}>{activeSelectedCard.crypto_name}</Text>
               </View>
@@ -341,7 +336,6 @@ export default function CodexScreen() {
                   setZoomedCard({
                     card_no: activeSelectedCard.card_no,
                     crypto_name: activeSelectedCard.crypto_name,
-                    classic: activeSelectedCard.classic,
                     keywords: activeSelectedCard.keywords,
                     advice: activeSelectedCard.advice,
                     symbolism: activeSelectedCard.symbolism,
@@ -406,7 +400,7 @@ export default function CodexScreen() {
 
               <Text style={styles.lockedModalKicker}>{t('unrevealed_archetype_title', 'UNREVEALED ARCHETYPE')}</Text>
               <Text style={styles.lockedModalTitle}>{t('card_num_label', `Card #${lockedPreviewCard.card_no}`, { num: lockedPreviewCard.card_no })}</Text>
-              <Text style={styles.lockedModalClassic}>{t('suit_label', `Suit: ${lockedPreviewCard.suit}`, { suit: localizeSuit(lockedPreviewCard.suit, t) })}</Text>
+              <Text style={styles.lockedModalClassic}>{t('suit_label', `Suit: ${localizeSuit(lockedPreviewCard.suit)}`, { suit: localizeSuit(lockedPreviewCard.suit, t) })}</Text>
 
               <View style={styles.lockedSilhouetteBox}>
                 <View style={styles.lockedSilhouetteShade}>

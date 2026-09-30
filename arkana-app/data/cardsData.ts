@@ -630,7 +630,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The New Wallet",
     "classic": "The Fool",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "00",
     "image": "/cards/00.webp",
@@ -651,7 +651,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Smart Contract Architect",
     "classic": "The Magician",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "01",
     "image": "/cards/01.webp",
@@ -671,7 +671,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Oracle",
     "classic": "The High Priestess",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "02",
     "image": "/cards/02.webp",
@@ -691,7 +691,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Liquidity Queen",
     "classic": "The Empress",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "03",
     "image": "/cards/03.webp",
@@ -711,7 +711,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Bitcoin King",
     "classic": "The Emperor",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "04",
     "image": "/cards/04.webp",
@@ -731,7 +731,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Validator",
     "classic": "The Hierophant",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "05",
     "image": "/cards/05.webp",
@@ -750,7 +750,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Merge",
     "classic": "The Lovers",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "06",
     "image": "/cards/06.webp",
@@ -770,7 +770,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Bull Run",
     "classic": "The Chariot",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "07",
     "image": "/cards/07.webp",
@@ -789,7 +789,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Diamond Hands",
     "classic": "Strength",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "08",
     "image": "/cards/08.webp",
@@ -808,7 +808,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The DYOR Sage",
     "classic": "The Hermit",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "09",
     "image": "/cards/09.webp",
@@ -827,7 +827,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Market Cycle",
     "classic": "Wheel of Fortune",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "10",
     "image": "/cards/10.webp",
@@ -848,7 +848,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Consensus",
     "classic": "Justice",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "11",
     "image": "/cards/11.webp",
@@ -868,7 +868,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Locked Staking",
     "classic": "The Hanged Man",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "12",
     "image": "/cards/12.webp",
@@ -888,7 +888,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Hard Fork",
     "classic": "Death",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "13",
     "image": "/cards/13.webp",
@@ -908,7 +908,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Cross-Chain Bridge",
     "classic": "Temperance",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "14",
     "image": "/cards/14.webp",
@@ -928,7 +928,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "The Rug Pull",
     "classic": "The Devil",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "15",
     "image": "/cards/15.webp",
@@ -948,7 +948,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Liquidation",
     "classic": "The Tower",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "16",
     "image": "/cards/16.webp",
@@ -968,7 +968,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Bull Market",
     "classic": "The Star",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "17",
     "image": "/cards/17.webp",
@@ -988,7 +988,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "FUD",
     "classic": "The Moon",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "18",
     "image": "/cards/18.webp",
@@ -1008,7 +1008,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "ATH",
     "classic": "The Sun",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "19",
     "image": "/cards/19.webp",
@@ -1028,7 +1028,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Snapshot",
     "classic": "Judgement",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "20",
     "image": "/cards/20.webp",
@@ -1048,7 +1048,7 @@ export const ALL_CARDS: CardData[] = [
   {
     "crypto_name": "Mass Adoption",
     "classic": "The World",
-    "suit": "Major Arcana",
+    "suit": "Genesis",
     "arcana": "major",
     "card_no": "21",
     "image": "/cards/21.webp",

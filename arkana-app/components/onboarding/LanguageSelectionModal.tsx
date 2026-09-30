@@ -88,7 +88,7 @@ export function LanguageSelectionModal() {
             <View style={styles.loreBox}>
               <Text style={styles.sealGlyphs}>&#10022; &#10070; &#10022;</Text>
               <Text style={styles.oracleAphorism}>
-                "{t('onboarding_title')}"
+                &quot;{t('onboarding_title')}&quot;
               </Text>
               <View style={styles.aphorismDivider} />
               <Text style={styles.aphorismSubtitle}>

@@ -117,9 +117,8 @@ jobs:
           sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError/' android/gradle.properties
           sed -i 's/org.gradle.parallel=true/org.gradle.parallel=false/' android/gradle.properties
           
-          # Target ARM architectures: arm64-v8a (Solana Mobile / Seeker / modern phones) and armeabi-v7a (legacy)
-          # Eliminating unused x86 and x86_64 cuts build time in half and keeps APK size sleek for fast downloads
-          sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a,armeabi-v7a/' android/gradle.properties
+          # Seeker and every current Android phone are arm64; 32-bit armeabi-v7a only added ~20 MB
+          sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
           
           # All traffic is HTTPS (arkana.icu); make sure cleartext stays off
           sed -i 's/ android:usesCleartextTraffic="true"//' android/app/src/main/AndroidManifest.xml || true
@@ -149,6 +148,28 @@ jobs:
           name: gradle-build-failure-log
           path: arkana-app/android/gradle_build.log
           if-no-files-found: ignore
+
+      - name: Sign APK with the release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ARKANA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ARKANA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ARKANA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ARKANA_KEY_PASSWORD }}
+        run: |
+          APK_FILE=$(find arkana-app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No release key secrets set: the APK stays debug-signed."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          # apksigner replaces the debug signature that Gradle applied
+          "$BUILD_TOOLS/apksigner" sign --ks "$RUNNER_TEMP/release.jks" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --ks-key-alias "$KEY_ALIAS" \
+            --out "$APK_FILE.signed" "$APK_FILE"
+          mv "$APK_FILE.signed" "$APK_FILE"
+          rm -f "$RUNNER_TEMP/release.jks"
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK_FILE" | head -n 2
 
       - name: Prepare APKs for Release
         run: |

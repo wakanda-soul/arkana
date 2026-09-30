@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { PublicKey, Connection } from '@solana/web3.js';
 import { ObsidianTokens } from '@/constants/theme';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizeErrorText } from '@/services/i18n';
 import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from '@/services/treasuryService';
 import { fetchRealSkrBalance } from '@/services/solanaService';
 import { soundService } from '@/services/soundService';
-import { submitAltarOfferingApi, API_BASE_URL } from '@/services/oracleApi';
+import { submitAltarOfferingApi, API_BASE_URL, ERR_PAYMENT_PENDING } from '@/services/oracleApi';
 
 interface AltarOfferingCardProps {
   walletAddress: string;
@@ -25,13 +24,15 @@ export function AltarOfferingCard({
 }: AltarOfferingCardProps) {
   const { t } = useLanguage();
   const [selectedAmount, setSelectedAmount] = useState<number>(5);
-  const [solEstimate, setSolEstimate] = useState<string>('~0.001 SOL');
+  // "…" until a quote arrives; a fallback-rate price is labelled as an estimate
+  const [solEstimate, setSolEstimate] = useState<string>('\u2026');
+  const [offeringError, setOfferingError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showBlessing, setShowBlessing] = useState<boolean>(false);
   const [confirmedTx, setConfirmedTx] = useState<string | null>(null);
   const [userSkrBalance, setUserSkrBalance] = useState<number | null>(null);
   const [forceSolMode, setForceSolMode] = useState<boolean>(false);
-  const [wasSwapped, setWasSwapped] = useState<boolean>(false);
+  const [, setWasSwapped] = useState<boolean>(false);
 
   // Exact 33 / 33 / 34 Protocol Split breakdown
   const burnSkr = Number((selectedAmount * 0.33).toFixed(2));
@@ -43,7 +44,8 @@ export function AltarOfferingCard({
     if (walletAddress) {
       fetchRealSkrBalance(connection, new PublicKey(walletAddress))
         .then((bal) => {
-          if (isMounted) setUserSkrBalance(bal);
+          // null = balance unknown (RPC unreachable): keep the last known value
+          if (isMounted && bal !== null) setUserSkrBalance(bal);
         })
         .catch(() => {});
     }
@@ -54,15 +56,20 @@ export function AltarOfferingCard({
 
   useEffect(() => {
     let isMounted = true;
+    setSolEstimate('\u2026');
     getLiveSolQuoteForSkr(selectedAmount).then((quote) => {
       if (isMounted) {
-        setSolEstimate(`~${quote.solAmount} SOL`);
+        setSolEstimate(
+          quote.quoteResponse
+            ? `~${quote.solAmount} SOL`
+            : t('price_estimate', '~{amount} SOL (estimate)', { amount: quote.solAmount })
+        );
       }
-    });
+    }).catch(() => {});
     return () => {
       isMounted = false;
     };
-  }, [selectedAmount]);
+  }, [selectedAmount, t]);
 
   const handleSelectAmount = (amount: number) => {
     soundService.playTap();
@@ -72,10 +79,12 @@ export function AltarOfferingCard({
   const isSolMode = forceSolMode || (userSkrBalance !== null && userSkrBalance < selectedAmount);
 
   const handleSendOffering = async () => {
-    if (!walletAddress || !signAndSendTransactions) {
+    if (!walletAddress || !signAndSendTransactions || isSubmitting) {
       return;
     }
     setIsSubmitting(true);
+    setOfferingError(null);
+    let paid = false;
     try {
       soundService.triggerHapticHeavy();
       const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
@@ -92,14 +101,18 @@ export function AltarOfferingCard({
       });
 
       setWasSwapped(result.paidWith === 'sol_swap');
+      paid = true;
 
-      // Report offering to backend
-      await submitAltarOfferingApi({
+      // Report offering to backend; a rejected or unanswered report is not a success
+      const report = await submitAltarOfferingApi({
         wallet: walletAddress,
         txSignature: result.signature,
         amountSkr: selectedAmount,
         message: `Offering of ${selectedAmount} SKR to Sacred Altar`,
       });
+      if (!report.success) {
+        throw Object.assign(new Error(report.error || 'Offering was not recorded.'), { code: report.code });
+      }
 
       setConfirmedTx(result.signature);
       setShowBlessing(true);
@@ -110,6 +123,13 @@ export function AltarOfferingCard({
     } catch (e: any) {
       console.warn('Altar offering error:', e);
       soundService.playTxError();
+      setOfferingError(
+        paid && (e?.code === ERR_PAYMENT_PENDING || !e?.message)
+          ? t('payment_pending_credit', 'Payment received. Arkana will record it as soon as the server answers. No need to pay again.')
+          : e?.message
+            ? localizeErrorText(e.message)
+            : t('offering_failed_desc', 'The transaction could not be confirmed. No funds were debited.')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -226,6 +246,7 @@ export function AltarOfferingCard({
             </Text>
           )}
         </Pressable>
+        {offeringError ? <Text style={styles.errorText}>{offeringError}</Text> : null}
       </LinearGradient>
 
       {/* Blessing Modal */}
@@ -387,6 +408,13 @@ const styles = StyleSheet.create({
   rateRow: {
     alignItems: 'center',
     marginVertical: 4,
+  },
+  errorText: {
+    marginTop: 10,
+    color: '#E57373',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
   },
   rateText: {
     color: '#888',

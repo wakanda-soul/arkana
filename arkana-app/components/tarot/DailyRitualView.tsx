@@ -7,7 +7,6 @@ import {
   Animated,
   Easing,
   Platform,
-  Dimensions,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -38,6 +37,10 @@ interface DailyRitualViewProps {
     success: boolean;
     signature?: string;
     slot?: number;
+    /** true only when the network confirmed the transaction; otherwise it is shown as submitted */
+    confirmed?: boolean;
+    /** the server already had today's seal; the parent refreshed it */
+    alreadyClockedIn?: boolean;
     error?: string;
   }>;
   onOpenRecord?: () => void;
@@ -111,6 +114,8 @@ export function DailyRitualView({
   const spinAnim = useRef(new Animated.Value(0)).current;
   const sealScaleAnim = useRef(new Animated.Value(1)).current;
   const [signStep, setSignStep] = useState<1 | 2>(1);
+  // A seal loaded from the server was recorded after the server checked it on chain
+  const [isConfirmed, setIsConfirmed] = useState(true);
 
   // Day name
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -159,7 +164,7 @@ export function DailyRitualView({
       setSignStep(1);
       flipAnim.setValue(0);
     }
-  }, [isAlreadyClockedIn, initialSealedCard, initialOrientation, initialTxSignature, initialSlot, stage]);
+  }, [isAlreadyClockedIn, initialSealedCard, initialOrientation, initialTxSignature, initialSlot, stage, flipAnim]);
 
   // Live countdown to next UTC midnight
   useEffect(() => {
@@ -180,7 +185,7 @@ export function DailyRitualView({
     updateCountdown();
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     // Ambient floating
@@ -277,7 +282,7 @@ export function DailyRitualView({
   const handlePickCard = (indexOffset: number) => {
     // Pick a card pseudo-randomly
     const randomCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
-    const isMajor = randomCard.arcana === 'major' || randomCard.suit === 'Major Arcana';
+    const isMajor = randomCard.arcana === 'major';
     if (isMajor) {
       soundService.playMajorArcanaReveal();
     } else {
@@ -331,6 +336,7 @@ export function DailyRitualView({
       if (res.success) {
         if (res.signature) setTxHash(res.signature);
         if (res.slot) setSlotNumber(res.slot);
+        setIsConfirmed(res.confirmed === true);
 
         setSignStep(2);
         try {
@@ -354,6 +360,11 @@ export function DailyRitualView({
           tension: 40,
           useNativeDriver: true,
         }).start();
+      } else if (res.alreadyClockedIn) {
+        // Today's seal already exists on the server: show it instead of an error
+        spinLoop.stop();
+        setIsConfirmed(true);
+        setStage('sealed');
       } else {
         spinLoop.stop();
         setStage('read');
@@ -689,17 +700,23 @@ export function DailyRitualView({
           <View style={styles.signingCenter}>
             <Animated.View style={[styles.spinRingBig, { transform: [{ rotate: spinInterpolate }] }]} />
             <Text style={styles.signingTitle}>
-              {signStep === 1 ? t('broadcasting_mempool', 'Broadcasting to Mempool') : t('consensus_confirmed', 'Consensus Confirmed!')}
+              {signStep === 1
+                ? t('broadcasting_mempool', 'Broadcasting to Mempool')
+                : isConfirmed
+                  ? t('consensus_confirmed', 'Consensus Confirmed!')
+                  : t('tx_submitted_title', 'Transaction Submitted')}
             </Text>
             <Text style={styles.signingSub}>
               {signStep === 1
-                ? t('submitting_tx_payload', 'Submitting transaction payload to Solana network. Gas fee 0.00021 SOL.')
-                : t('block_finalized_slot', 'Block finalized on-chain \u00B7 Slot #{slot} confirmed by network validators.', { slot: slotNumber ?? '' })}
+                ? t('submitting_tx_payload', 'Approve the transaction in your wallet. It is then sent to the Solana network.')
+                : isConfirmed
+                  ? t('block_finalized_slot', 'Transaction confirmed on Solana \u00B7 Slot #{slot}.', { slot: slotNumber ?? '' })
+                  : t('tx_submitted_body', 'Sent to Solana. Network confirmation is still pending.')}
             </Text>
             <View style={styles.signingBadge}>
-              <View style={[styles.signingDot, signStep === 2 && styles.dotGreen]} />
+              <View style={[styles.signingDot, signStep === 2 && isConfirmed && styles.dotGreen]} />
               <Text style={styles.awaitingMono}>
-                {signStep === 1 ? t('awaiting_consensus', 'AWAITING SOLANA CONSENSUS_') : t('ledger_engraved', 'LEDGER ENGRAVED_')}
+                {signStep === 1 ? t('awaiting_consensus', 'AWAITING SOLANA CONSENSUS_') : isConfirmed ? t('ledger_engraved', 'LEDGER ENGRAVED_') : t('tx_submitted_badge', 'SUBMITTED_')}
               </Text>
             </View>
           </View>
@@ -724,9 +741,13 @@ export function DailyRitualView({
           <View style={styles.celebrationBanner}>
             <Text style={styles.celebrationGlyph}>{'\u2713'}</Text>
             <View style={styles.celebrationTextWrap}>
-              <Text style={styles.celebrationTitle}>{t('block_finalized_solana', 'BLOCK FINALIZED ON SOLANA')}</Text>
+              <Text style={styles.celebrationTitle}>
+                {isConfirmed ? t('block_finalized_solana', 'CONFIRMED ON SOLANA') : t('tx_submitted_banner', 'SUBMITTED TO SOLANA')}
+              </Text>
               <Text style={styles.celebrationSub}>
-                {t('slot_confirmed', 'Slot #{slot} confirmed on-chain \u00B7 Consensus Sealed', { slot: slotNumber ?? '' })}
+                {isConfirmed
+                  ? t('slot_confirmed', 'Slot #{slot} confirmed on-chain \u00B7 Consensus Sealed', { slot: slotNumber ?? '' })
+                  : t('tx_submitted_body', 'Sent to Solana. Network confirmation is still pending.')}
               </Text>
             </View>
           </View>
@@ -753,7 +774,9 @@ export function DailyRitualView({
                 contentFit="cover"
               />
               <View style={styles.sealedStampBadge}>
-                <Text style={styles.sealedStampText}>{t('finalized_stamp', 'FINALIZED')}</Text>
+                <Text style={styles.sealedStampText}>
+                  {isConfirmed ? t('finalized_stamp', 'CONFIRMED') : t('submitted_stamp', 'SUBMITTED')}
+                </Text>
               </View>
             </Animated.View>
           </Pressable>
@@ -785,7 +808,7 @@ export function DailyRitualView({
           {/* Daily Guidance Quote */}
           <View style={styles.adviceQuoteBox}>
             <Text style={styles.adviceQuoteLabel}>{t('today_oracle_guidance', "TODAY'S ORACLE GUIDANCE")}</Text>
-            <Text style={styles.adviceQuoteText}>"{activeSelectedCard.advice}"</Text>
+            <Text style={styles.adviceQuoteText}>&quot;{activeSelectedCard.advice}&quot;</Text>
           </View>
 
           {/* Countdown Pill */}

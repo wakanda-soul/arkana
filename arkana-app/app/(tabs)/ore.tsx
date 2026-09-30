@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,10 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { useAuth } from '@/components/auth/auth-provider';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizeErrorText } from '@/services/i18n';
 import { soundService } from '@/services/soundService';
 import { UiIconSymbol } from '@/components/ui/ui-icon-symbol';
 import { OreLogo } from '@/components/ui/OreLogo';
@@ -24,16 +24,27 @@ import { getNetworkConfig } from '@/constants/networkConfig';
 import {
   ARKANA_VAULT_PROGRAM_ID,
   ORE_MINT_ADDRESS,
-  ARKANA_TREASURY_ADDRESS,
   getConfigPda,
   getUserVaultPda,
   getTranchePda,
   createClaimTrancheYieldInstruction,
-  fetchRealOreBalance,
   TrancheData,
   UserVaultData,
 } from '@/services/oreVaultService';
 import { executeSolanaTransaction } from '@/services/solanaService';
+import { getArkanaLookupTable } from '@/services/treasuryService';
+import { netFetch } from '@/services/netFetch';
+
+/** Claims per transaction: keeps every claim-all transaction well under the 1232-byte limit. */
+const CLAIMS_PER_TX = 6;
+
+function isNoRewardsError(msg: string): boolean {
+  return msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773');
+}
+
+function isUserCancellation(e: any): boolean {
+  return e?.code === -32003 || /reject|denied|declined|cancel/i.test(String(e?.message || ''));
+}
 
 /** ORE amount for display: 4 decimals for normal amounts, every significant digit for tiny yields. */
 function formatOre(raw: number): string {
@@ -45,14 +56,16 @@ function formatOre(raw: number): string {
 }
 
 export default function OreVaultScreen() {
-  const { account, isAuthenticated } = useAuth();
+  const { account } = useAuth();
   const { t } = useLanguage();
   const { connection, signAndSendTransactions } = useMobileWallet();
   const walletAddress = account?.publicKey?.toString() || '';
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  // Set before the price check, so a double tap cannot start two claims
+  const claimBusyRef = useRef(false);
+  const [, setClaimSuccess] = useState<string | null>(null);
   const [tranches, setTranches] = useState<TrancheData[]>([]);
   const [userVault, setUserVault] = useState<UserVaultData | null>(null);
 
@@ -207,8 +220,10 @@ export default function OreVaultScreen() {
     let valueLamports: number | null = null;
     try {
       if (claimableUnits > 0) {
-        const res = await fetch(
-          `https://api.jup.ag/swap/v1/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`
+        const res = await netFetch(
+          `https://api.jup.ag/swap/v1/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`,
+          undefined,
+          { timeoutMs: 8000 }
         );
         if (res.ok) valueLamports = Number((await res.json()).outAmount) || 0;
       } else {
@@ -240,11 +255,12 @@ export default function OreVaultScreen() {
 
   // Handle claiming rewards for a tranche
   const handleClaimTranche = async (trancheId: number) => {
-    if (!walletAddress || !signAndSendTransactions) return;
-    const tranche = tranches.find((tr) => tr.trancheId === trancheId);
-    if (!(await confirmClaimWorthIt(tranche?.claimableRewards || 0))) return;
+    if (!walletAddress || !signAndSendTransactions || claimBusyRef.current) return;
+    claimBusyRef.current = true;
+    setIsClaiming(true);
     try {
-      setIsClaiming(true);
+      const tranche = tranches.find((tr) => tr.trancheId === trancheId);
+      if (!(await confirmClaimWorthIt(tranche?.claimableRewards || 0))) return;
       soundService.triggerHapticHeavy();
       const userPubkey = new PublicKey(walletAddress);
       const claimIx = await createClaimTrancheYieldInstruction(userPubkey, trancheId);
@@ -263,22 +279,26 @@ export default function OreVaultScreen() {
       console.warn('Error claiming ORE yield:', e);
       soundService.playTxError();
       const msg = e?.message || String(e);
-      if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
+      if (isNoRewardsError(msg)) {
         Alert.alert(
           t('ore_no_yield_title', 'Yield is accruing'),
           t('ore_no_yield_msg', 'There is no unclaimed yield yet. Rewards arrive as the ORE protocol distributes them.')
         );
+      } else if (!isUserCancellation(e)) {
+        Alert.alert(t('ore_claim_failed_title', 'Claim not completed'), localizeErrorText(msg));
       }
     } finally {
+      claimBusyRef.current = false;
       setIsClaiming(false);
     }
   };
 
   // Handle claiming rewards for ALL tranches in a single transaction
   const handleClaimAllTranches = async () => {
-    if (!walletAddress || !signAndSendTransactions || tranches.length === 0) return;
+    if (!walletAddress || !signAndSendTransactions || tranches.length === 0 || claimBusyRef.current) return;
+    claimBusyRef.current = true;
+    setIsClaiming(true);
     try {
-      setIsClaiming(true);
       soundService.triggerHapticHeavy();
       const userPubkey = new PublicKey(walletAddress);
 
@@ -294,15 +314,29 @@ export default function OreVaultScreen() {
       const totalClaimable = activeTranches.reduce((sum, tr) => sum + tr.claimableRewards, 0);
       if (!(await confirmClaimWorthIt(totalClaimable))) return;
 
-      // Build claim instructions for all active tranches into 1 transaction
+      // Claims are split into several transactions (CLAIMS_PER_TX each, compressed with the Arkana
+      // lookup table) so none exceeds the size limit; the wallet approves them all in one prompt
       const claimIxs = await Promise.all(
-        activeTranches.map((t) => createClaimTrancheYieldInstruction(userPubkey, t.trancheId))
+        activeTranches.map((tr) => createClaimTrancheYieldInstruction(userPubkey, tr.trancheId))
       );
+      const lookupTables = await getArkanaLookupTable(connection);
+      const chunks: (typeof claimIxs)[] = [];
+      for (let i = 0; i < claimIxs.length; i += CLAIMS_PER_TX) {
+        chunks.push(claimIxs.slice(i, i + CLAIMS_PER_TX));
+      }
 
       const { signature } = await executeSolanaTransaction({
         connection,
         payerKey: userPubkey,
-        instructions: claimIxs,
+        buildTransactions: (blockhash) =>
+          chunks.map(
+            (instructions) =>
+              new VersionedTransaction(
+                new TransactionMessage({ payerKey: userPubkey, recentBlockhash: blockhash, instructions }).compileToV0Message(
+                  lookupTables
+                )
+              )
+          ),
         signAndSendTransactions,
       });
 
@@ -313,13 +347,16 @@ export default function OreVaultScreen() {
       console.warn('Error claiming all ORE yield:', e);
       soundService.playTxError();
       const msg = e?.message || String(e);
-      if (msg.includes('6003') || msg.includes('NoRewardsAvailable') || msg.includes('0x1773')) {
+      if (isNoRewardsError(msg)) {
         Alert.alert(
           t('ore_no_yield_title', 'Yield is accruing'),
           t('ore_no_yield_msg', 'There is no unclaimed yield yet. Rewards arrive as the ORE protocol distributes them.')
         );
+      } else if (!isUserCancellation(e)) {
+        Alert.alert(t('ore_claim_failed_title', 'Claim not completed'), localizeErrorText(msg));
       }
     } finally {
+      claimBusyRef.current = false;
       setIsClaiming(false);
     }
   };

@@ -337,7 +337,7 @@ export async function fetchRealOreBalance(
     const userTokensAta = await getAssociatedTokenAddress(ORE_MINT_ADDRESS, walletPublicKey);
     const balance = await connection.getTokenAccountBalance(userTokensAta, 'confirmed');
     return balance.value.uiAmount || 0;
-  } catch (err) {
+  } catch {
     return 0;
   }
 }

@@ -78,9 +78,9 @@ const TWEET_FALLBACKS: Record<string, string> = {
   tw_rev_1: "Arkana flagged an anomaly in my execution bias before I signed the next tx.\n\nDrawn: {card} ({o}).\n\nShadow warning: \"{quote}\"\n\nDay {streak} streak. Honoring the signal, sidestepping the trap.\n#Solana #ArkanaTarot #Seeker #DeFAI",
   tw_rev_2: "The market loves punishing overconfidence. Arkana revealed {card} ({o}) for today's consensus.\n\n\"{quote}\"\n\nPivoting stance before the next block. Day {streak}.\n#Solana #ArkanaTarot #Seeker",
   tw_rev_3: "Caught slipping by the oracle before the mempool caught me. Archetype: {card} ({o}).\n\nShadow insight: \"{quote}\"\n\nDay {streak} streak. Hedging downside, staying humble.\n#Solana #ArkanaTarot #ClockIn",
-  tw_major_1: "A Major Archetype hit the altar: #{no} {card} ({o}).\n\nConsensus transmission: \"{quote}\"\n\nMacro frequency over micro noise. Day {streak} consensus sealed on @SolanaMobile.\n#Solana #ArkanaTarot #Seeker #ClockIn",
-  tw_major_2: "The state machine speaks in archetypes. Drawn into today's consensus: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} on-chain ritual. Aligning intent with the ledger.\n#ArkanaTarot #Solana #DeFAI",
-  tw_major_3: "Tectonic market energy anchored on Seeker Altar: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} streak. Big cycles require calm hands.\n#Solana #ArkanaTarot #Seeker",
+  tw_genesis_1: "A Genesis archetype hit the altar: #{no} {card} ({o}).\n\nConsensus transmission: \"{quote}\"\n\nMacro frequency over micro noise. Day {streak} consensus sealed on @SolanaMobile.\n#Solana #ArkanaTarot #Seeker #ClockIn",
+  tw_genesis_2: "The state machine speaks in archetypes. Drawn into today's consensus: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} on-chain ritual. Aligning intent with the ledger.\n#ArkanaTarot #Solana #DeFAI",
+  tw_genesis_3: "Tectonic market energy anchored on Seeker Altar: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} streak. Big cycles require calm hands.\n#Solana #ArkanaTarot #Seeker",
   tw_liq_1: "Liquidity flows where discipline anchors. Today's market consensus: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} streak. Protecting capital, taking conviction bets.\n#Solana #ArkanaTarot #DeFAI",
   tw_liq_2: "Navigating liquidity depth on @SolanaMobile. Archetype #{no}: {card} ({o}).\n\nFocus: \"{quote}\"\n\nDay {streak} clock-in. Clarity over chaos.\n#Solana #ArkanaTarot #Seeker",
   tw_liq_3: "The tape never lies, but human emotions do. Consulted Arkana: {card} ({o}).\n\n\"{quote}\"\n\nDay {streak} streak. Riding the flow with zero FOMO.\n#Solana #ArkanaTarot #Seeker #DeFi",
@@ -318,11 +318,11 @@ const REVERSED_TEMPLATES: ((d: ShareOmenData) => string)[] = [
   tw('tw_rev_3'),
 ];
 
-// 3. Templates for Major Arcana
-const MAJOR_TEMPLATES: ((d: ShareOmenData) => string)[] = [
-  tw('tw_major_1'),
-  tw('tw_major_2'),
-  tw('tw_major_3'),
+// 3. Templates for Genesis cards
+const GENESIS_TEMPLATES: ((d: ShareOmenData) => string)[] = [
+  tw('tw_genesis_1'),
+  tw('tw_genesis_2'),
+  tw('tw_genesis_3'),
 ];
 
 // 4. Suit: Liquidity (Trading, Exits, Capital Flow)
@@ -364,7 +364,7 @@ const GENERAL_TEMPLATES: ((d: ShareOmenData) => string)[] = [
 /**
  * Intelligent context-aware tweet generator.
  * Blends card-specific hooks, suit themes, reversed shadow warnings,
- * and universal Arkana lore to prevent bot detection and maximize engagement.
+ * and universal Arkana lore, so shared posts stay varied.
  */
 export function generateTweetText(data: ShareOmenData): string {
   const rawNo = data.cardNo ? String(data.cardNo).trim() : '';
@@ -387,8 +387,8 @@ export function generateTweetText(data: ShareOmenData): string {
     pool.push(...REVERSED_TEMPLATES); // Double weight for shadow insights
   }
 
-  if (data.arcana === 'major' || data.suit === 'Major Arcana') {
-    pool.push(...MAJOR_TEMPLATES);
+  if (data.arcana === 'major') {
+    pool.push(...GENESIS_TEMPLATES);
   } else if (data.suit === 'Liquidity') {
     pool.push(...LIQUIDITY_TEMPLATES);
   } else if (data.suit === 'Protocols') {

@@ -8,7 +8,6 @@ import { ObsidianTokens } from './theme';
 const goldPrimary = ObsidianTokens.colors.gold.primary;
 const inkVoid = ObsidianTokens.colors.ink.void;
 const inkText = ObsidianTokens.colors.ink.text;
-const inkSurface = ObsidianTokens.colors.ink.surface;
 
 export const Colors = {
   light: {

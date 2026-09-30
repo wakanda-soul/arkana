@@ -29,12 +29,29 @@ function waitForForeground(): Promise<void> {
   });
 }
 
-export async function netFetch(input: string, init?: RequestInit): Promise<Response> {
+/** One fetch attempt, aborted after `timeoutMs` when given. */
+async function fetchOnce(input: string, init: RequestInit | undefined, timeoutMs?: number): Promise<Response> {
+  if (!timeoutMs) return fetch(input, init);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (controller.signal.aborted) throw new Error('Request timed out');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function netFetch(input: string, init?: RequestInit, options?: { timeoutMs?: number }): Promise<Response> {
   let lastErr: any;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await fetch(input, init);
-    } catch (err) {
+      return await fetchOnce(input, init, options?.timeoutMs);
+    } catch (err: any) {
+      // A request that timed out is not retried: the caller decides what to do next
+      if (err?.message === 'Request timed out') throw err;
       lastErr = err;
       if (!isNetworkError(err) || attempt === MAX_ATTEMPTS) break;
       await waitForForeground();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 import { ObsidianTokens } from '@/constants/theme';
-import { useLanguage } from '@/services/i18n';
+import { useLanguage, localizeSuit } from '@/services/i18n';
 
 interface SevenBeatsProps {
   beats?: {
@@ -38,7 +38,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
             <Text style={styles.intentLabel}>{t('inscribed_intent', 'INSCRIBED INTENT')}</Text>
             <View style={styles.intentHairline} />
           </View>
-          <Text style={styles.intentQuestion}>"{question!.trim()}"</Text>
+          <Text style={styles.intentQuestion}>&quot;{question!.trim()}&quot;</Text>
         </View>
       )}
 
@@ -46,13 +46,13 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
       {metrics && (
         <View style={styles.metricsContainer}>
           <View style={styles.metricPill}>
-            <Text style={styles.metricLabel}>{t('metric_majors', 'MAJORS')}</Text>
+            <Text style={styles.metricLabel}>{t('metric_genesis', 'GENESIS')}</Text>
             <Text style={styles.metricValue}>{metrics.majors_count ?? 0}</Text>
           </View>
           {metrics.dominant_suit && (
             <View style={styles.metricPill}>
               <Text style={styles.metricLabel}>{t('metric_dominant_suit', 'DOMINANT SUIT')}</Text>
-              <Text style={styles.metricValue}>{metrics.dominant_suit.toUpperCase()}</Text>
+              <Text style={styles.metricValue}>{localizeSuit(metrics.dominant_suit).toUpperCase()}</Text>
             </View>
           )}
           {metrics.dominant_energy && (
@@ -184,7 +184,7 @@ export function SevenBeatsView({ beats, metrics, question }: SevenBeatsProps) {
               <View style={styles.dividerLine} />
             </View>
             <Text style={styles.omenKicker}>{t('beat_omen_title', 'VI. FINAL IMMUTABLE OMEN')}</Text>
-            <Text style={styles.omenQuote}>"{beats.finalOmen}"</Text>
+            <Text style={styles.omenQuote}>&quot;{beats.finalOmen}&quot;</Text>
             <Text style={styles.omenBottomGlyph}>&#10022; &#10022; &#10022;</Text>
           </View>
         )}

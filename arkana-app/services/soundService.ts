@@ -79,20 +79,6 @@ async function resolveAndCacheAsset(key: string, source: any): Promise<string> {
   return '';
 }
 
-function getOrCreatePlayer(key: string, source: any): AudioPlayer | null {
-  try {
-    if (!players[key]) {
-      const uri = cachedUris[key];
-      const playerSource = uri ? { uri } : source;
-      players[key] = createAudioPlayer(playerSource);
-    }
-    return players[key];
-  } catch (err) {
-    console.warn(`[SoundService] Failed to create player for ${key}:`, err);
-    return null;
-  }
-}
-
 /**
  * Plays a sound effect with near 0ms latency.
  * Lazy player creation ensures Android AudioTrack limits are never exceeded.
@@ -264,7 +250,7 @@ export const soundService = {
   },
 
   /**
-   * Resonant Tibetan temple gong for Major Arcana card reveals
+   * Resonant Tibetan temple gong for Genesis card reveals
    */
   playMajorArcanaReveal(): void {
     triggerHaptic('heavy');

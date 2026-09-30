@@ -1,7 +1,5 @@
 import { CardData } from '@/data/cardsData';
 import { LanguageCode } from '@/services/i18n';
-
-export type SupportedLanguage = LanguageCode;
 import ruCards from '@/data/locales/cards/ru.json';
 import zhCards from '@/data/locales/cards/zh.json';
 import esCards from '@/data/locales/cards/es.json';
@@ -11,6 +9,8 @@ import idCards from '@/data/locales/cards/id.json';
 import hiCards from '@/data/locales/cards/hi.json';
 import arCards from '@/data/locales/cards/ar.json';
 import bnCards from '@/data/locales/cards/bn.json';
+
+export type SupportedLanguage = LanguageCode;
 
 export interface CardTranslation {
   crypto_name?: string;

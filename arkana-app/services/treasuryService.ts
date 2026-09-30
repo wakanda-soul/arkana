@@ -2,7 +2,6 @@ import {
   Connection,
   PublicKey,
   TransactionInstruction,
-  SystemProgram,
   AddressLookupTableAccount,
   ComputeBudgetProgram,
   TransactionMessage,
@@ -460,7 +459,7 @@ let cachedArkanaLookupTable: AddressLookupTableAccount | null = null;
  * Arkana's own Address Lookup Table (maintained by arkana-server): vault, ORE Stake and
  * frequently used pool accounts, so a whole payment fits into one transaction.
  */
-async function getArkanaLookupTable(connection: Connection): Promise<AddressLookupTableAccount[]> {
+export async function getArkanaLookupTable(connection: Connection): Promise<AddressLookupTableAccount[]> {
   const address = getNetworkConfig().arkanaLookupTable;
   if (!address) return [];
   try {
@@ -643,6 +642,11 @@ export function compilePaymentTransactions(
 
 const extraPaymentSignatures = new Map<string, string[]>();
 
+/** Restores the extra signatures of a stored payment, so a re-submit after an app restart sends them too. */
+export function rememberExtraPaymentSignatures(signature: string, extras: string[] | undefined): void {
+  if (signature && Array.isArray(extras) && extras.length > 0) extraPaymentSignatures.set(signature, extras);
+}
+
 /** Other transactions of a payment that was split in two (empty for single-transaction payments). */
 export function getExtraPaymentSignatures(signature?: string | null): string[] {
   return (signature && extraPaymentSignatures.get(signature)) || [];
@@ -677,7 +681,15 @@ export async function executePaymentOrSwap({
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
 
-  const currentSkr = await fetchRealSkrBalance(connection, payer);
+  // An unknown balance must never send the user down the SOL path: retry once, then stop
+  let currentSkr = await fetchRealSkrBalance(connection, payer);
+  if (currentSkr === null) {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    currentSkr = await fetchRealSkrBalance(connection, payer);
+  }
+  if (currentSkr === null) {
+    throw new Error('SKR balance could not be read. Check your connection and try again.');
+  }
   const paidWith: 'skr' | 'sol_swap' = !forceSolSwap && currentSkr >= amountSkr ? 'skr' : 'sol_swap';
 
   const buildPlan = paidWith === 'skr' ? buildSkrPaymentPlan : buildSolPaymentPlan;

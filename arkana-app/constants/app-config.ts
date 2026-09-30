@@ -3,14 +3,15 @@ import { Cluster } from '@/components/cluster/cluster'
 import { ClusterNetwork } from '@/components/cluster/cluster-network'
 
 export const APP_IDENTITY = {
-  name: 'Arkana: The Solana Oracle',
-  uri: 'https://github.com/wakanda-soul/arkana',
-  icon: 'favicon.ico',
+  name: 'Arkana',
+  uri: 'https://arkana.icu',
+  // Resolved against uri by the wallet: https://arkana.icu/images/logo-512.png
+  icon: 'images/logo-512.png',
 }
 
 export class AppConfig {
   static name = 'Arkana'
-  static uri = 'https://github.com/wakanda-soul/arkana'
+  static uri = 'https://arkana.icu'
   static identity = APP_IDENTITY
   static clusters: Cluster[] = [
     {

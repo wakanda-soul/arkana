@@ -25,7 +25,11 @@ import {
   ClockInResult,
   sendOracleChatMessage,
   API_BASE_URL,
+  ERR_QUOTA_REQUIRED,
+  ERR_PAYMENT_PENDING,
+  PAYMENT_PENDING_MESSAGE,
 } from "@/services/oracleApi";
+import { findPendingPayment } from "@/services/pendingPayments";
 import { ObsidianTokens } from "@/constants/theme";
 import { ALL_CARDS } from "@/data/cardsData";
 import { CardImages } from "@/assets/cards";
@@ -33,11 +37,11 @@ import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { ShuffleCeremony } from "@/components/tarot/ShuffleCeremony";
 import { MarkdownText } from "@/components/ui/MarkdownText";
 import { unlockCards } from "@/services/codexService";
-import { useLanguage, localizeErrorText } from "@/services/i18n";
+import { useLanguage, localizeErrorText, localizeSuit } from "@/services/i18n";
 import { localizeZoomCard, localizeCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
-import { executePaymentOrSwap, getVerifiedTreasury } from "@/services/treasuryService";
+import { executePaymentOrSwap, getVerifiedTreasury, rememberExtraPaymentSignatures } from "@/services/treasuryService";
 import { soundService } from "@/services/soundService";
 
 interface ChatMessage {
@@ -126,7 +130,7 @@ export default function OracleScreen() {
       }
       return prev;
     });
-  }, [language]);
+  }, [language, t]);
 
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -160,7 +164,7 @@ export default function OracleScreen() {
 
     if (account?.publicKey) {
       fetchRealSkrBalance(connection, account.publicKey).then(val => {
-        setOnChainSkr(val);
+        if (val !== null) setOnChainSkr(val);
       }).catch(() => {});
     }
   }, [walletAddress, account?.publicKey, connection]);
@@ -175,7 +179,7 @@ export default function OracleScreen() {
         const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
           .then((val) => {
-            if (isMounted) setOnChainSkr(val);
+            if (isMounted && val !== null) setOnChainSkr(val);
           })
           .catch(() => {});
         fetchClockInStatus(walletAddress).then((info) => {
@@ -205,11 +209,32 @@ export default function OracleScreen() {
       return;
     }
 
+    // A question that was paid for but not answered yet reuses its payment: never charge twice
+    const pendingPayment = await findPendingPayment(walletAddress, "chat");
+    if (pendingPayment) {
+      rememberExtraPaymentSignatures(pendingPayment.signature, pendingPayment.body?.txSignatures);
+      executeSendMessage(query, pendingPayment.signature);
+      return;
+    }
+
     // Never decide "paid" from a quota that has not loaded: ask the server again first
     let quota = quotaInfo;
     if (!quota || quota.offline) {
       quota = await fetchClockInStatus(walletAddress);
       setQuotaInfo(quota);
+      if (quota.offline) {
+        // Placeholder values while offline: never open the paid flow on them
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            sender: "oracle",
+            text: t("oracle_unreachable", "Arkana cannot reach the network right now. Try again in a moment."),
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+        return;
+      }
     }
     const isSeeker = Boolean(quota?.isSeekerHolder);
     // Banked streak bonus spreads are free too; the server spends them after the Seeker allowance
@@ -222,7 +247,7 @@ export default function OracleScreen() {
       return;
     }
 
-    executeSendMessage(query, false);
+    executeSendMessage(query);
   };
 
   const handleConfirmPaidCommune = async () => {
@@ -259,7 +284,7 @@ export default function OracleScreen() {
 
       setSolModalVisible(false);
       setPendingQuery("");
-      await executeSendMessage(query, false, paymentResult.signature);
+      await executeSendMessage(query, paymentResult.signature);
     } catch (err: any) {
       console.warn('Paid commune payment error:', err);
       soundService.playTxError();
@@ -277,7 +302,7 @@ export default function OracleScreen() {
     setSolModalVisible(false);
   };
 
-  const executeSendMessage = async (query: string, payWithSol: boolean = false, txSignature?: string | null) => {
+  const executeSendMessage = async (query: string, txSignature?: string | null) => {
     soundService.playOracleSend();
 
     const userMsg: ChatMessage = {
@@ -296,7 +321,6 @@ export default function OracleScreen() {
       const data = await sendOracleChatMessage({
         message: query,
         wallet: walletAddress,
-        payWithSol,
         txSignature: txSignature || null,
         language,
       });
@@ -341,10 +365,29 @@ export default function OracleScreen() {
       setMessages((prev) => [...prev, oracleMsg]);
       soundService.triggerHaptic('medium');
     } catch (e: any) {
-      if (e.quota && !e.quota.allowed) {
+      if (e?.code === ERR_QUOTA_REQUIRED || (e?.quota && !e.quota.allowed)) {
         setPendingQuery(query);
         setSolModalVisible(true);
         setIsTyping(false);
+        return;
+      }
+
+      // A paid question is never answered by a local draw: say where the payment stands instead
+      if (txSignature) {
+        console.warn("Paid chat request not answered:", e);
+        const text =
+          e?.code === ERR_PAYMENT_PENDING
+            ? t("payment_pending_answer", PAYMENT_PENDING_MESSAGE)
+            : (e?.message && localizeErrorText(e.message)) || t("payment_pending_answer", PAYMENT_PENDING_MESSAGE);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: "oracle",
+            text,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
         return;
       }
 
@@ -372,7 +415,7 @@ export default function OracleScreen() {
           "Consensus has drawn **{card}** ({suit}) for your inquiry.\n\n{meaning}\n\n*The ledger remembers all: build with conviction.*",
           {
             card: fallbackCard.crypto_name,
-            suit: fallbackCard.suit,
+            suit: localizeSuit(fallbackCard.suit),
             meaning: (isReversed ? fallbackCard.reversed_full : fallbackCard.upright_full) || fallbackCard.advice,
           }
         ),
@@ -382,15 +425,6 @@ export default function OracleScreen() {
       setMessages((prev) => [...prev, oracleMsg]);
     } finally {
       setIsTyping(false);
-    }
-  };
-
-  const handleConfirmSolPayment = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {}
-    if (pendingQuery) {
-      await executeSendMessage(pendingQuery, true);
     }
   };
 

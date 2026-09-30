@@ -68,7 +68,14 @@ async function fetchRecentSignatures(wallet: string, limit: number): Promise<any
   return Array.isArray(data?.result) ? data.result : [];
 }
 
-/** Waits for the payment to show up on chain; resolves with its signatures, memo transaction first. */
+/** Error text when the wallet never answered and the payment was not found on chain either. */
+export const WALLET_NO_RESPONSE_ERROR =
+  'Wallet did not respond and no transaction was found on chain. Check your wallet activity before trying again.';
+
+/**
+ * Waits for the payment to show up on chain; resolves with its signatures, memo transaction first.
+ * Rejects when the deadline passes, so the caller stops waiting.
+ */
 function watchForLandedPayment(
   wallet: string,
   memo: string,
@@ -76,10 +83,14 @@ function watchForLandedPayment(
   sinceSec: number,
   isDone: () => boolean
 ): Promise<string[]> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const deadline = Date.now() + RECOVERY_TIMEOUT_MS;
     const tick = async () => {
-      if (isDone() || Date.now() > deadline) return;
+      if (isDone()) return;
+      if (Date.now() > deadline) {
+        reject(new Error(WALLET_NO_RESPONSE_ERROR));
+        return;
+      }
       try {
         const fresh = (await fetchRecentSignatures(wallet, count + 4)).filter(
           (s) => !s.err && (s.blockTime ?? 0) >= sinceSec
@@ -94,6 +105,39 @@ function watchForLandedPayment(
     };
     setTimeout(tick, RECOVERY_START_MS);
   });
+}
+
+const CONFIRM_TIMEOUT_MS = 20_000;
+const CONFIRM_POLL_MS = 1_500;
+
+/**
+ * Polls the cluster until every signature is confirmed (or finalized), for at most ~20 s.
+ * Returns confirmed: false when the network has not confirmed them in time; throws when one failed.
+ */
+async function waitForConfirmation(
+  connection: Connection,
+  signatures: string[]
+): Promise<{ confirmed: boolean; slot?: number }> {
+  const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const { value } = await connection.getSignatureStatuses(signatures);
+      if (value.some((st) => st?.err)) {
+        throw new Error('Transaction failed on-chain.');
+      }
+      const done = value.every(
+        (st) => st?.confirmationStatus === 'confirmed' || st?.confirmationStatus === 'finalized'
+      );
+      if (done) {
+        const slot = value.reduce((max, st) => Math.max(max, st?.slot ?? 0), 0);
+        return { confirmed: true, slot: slot || undefined };
+      }
+    } catch (err: any) {
+      if (/failed on-chain/.test(String(err?.message))) throw err;
+    }
+    await new Promise((r) => setTimeout(r, CONFIRM_POLL_MS));
+  }
+  return { confirmed: false };
 }
 
 /**
@@ -111,7 +155,7 @@ export async function executeSolanaTransaction({
   buildTransactions,
   signAndSendTransactions,
   recoverMemo,
-}: ExecuteTransactionParams): Promise<{ signature: string; signatures: string[]; slot?: number }> {
+}: ExecuteTransactionParams): Promise<{ signature: string; signatures: string[]; slot?: number; confirmed: boolean }> {
   let blockhash: string;
   let minContextSlot: number;
   try {
@@ -171,10 +215,11 @@ export async function executeSolanaTransaction({
         throw err;
       }
 
-      // Only attempt re-authorization fallback if strictly an auth/session token invalidation
+      // Only attempt re-authorization when the wallet reported an authorization failure
       const isAuthError =
         err?.code === -32000 ||
-        /auth|session|unauthorized|token/i.test(String(err?.message || ''));
+        err?.code === -1 ||
+        /authoriz|session.*(expired|invalid)|unauthorized/i.test(String(err?.message || ''));
       if (isAuthError) {
         try {
           await AsyncStorage.removeItem('arkana_wallet_authorization');
@@ -210,13 +255,16 @@ export async function executeSolanaTransaction({
     );
   }
 
-  let slot: number | undefined = minContextSlot;
-  try {
-    slot = await connection.getSlot('confirmed');
-  } catch {}
+  if (signatures.length === 0 || signatures.some((s) => !s)) {
+    throw new Error(WALLET_NO_RESPONSE_ERROR);
+  }
+
+  // Only claim "confirmed" once the network says so; otherwise the caller shows "submitted"
+  const status = await waitForConfirmation(connection, signatures);
+  const slot: number | undefined = status.slot ?? minContextSlot;
 
   // The last transaction carries the proof memo
-  return { signature: signatures[signatures.length - 1], signatures, slot };
+  return { signature: signatures[signatures.length - 1], signatures, slot, confirmed: status.confirmed };
 }
 
 export interface SubmitProofParams {
@@ -233,7 +281,7 @@ export async function submitConsensusProofOnChain({
   signAndSendTransactions,
   cardNo,
   orientation,
-}: SubmitProofParams): Promise<{ signature: string; slot?: number }> {
+}: SubmitProofParams): Promise<{ signature: string; slot?: number; confirmed: boolean }> {
   const todayDate = new Date().toISOString().split('T')[0];
   const payload: ConsensusProofPayload = {
     cardNo,
@@ -255,10 +303,11 @@ export async function submitConsensusProofOnChain({
 
 export const SKR_MINT = getNetworkConfig().skrMint;
 
+/** SKR balance of the wallet, or null when the RPC could not be read (unknown, not zero). */
 export async function fetchRealSkrBalance(
   connection: Connection,
   walletPublicKey: PublicKey
-): Promise<number> {
+): Promise<number | null> {
   const decimals = isDevnet() ? 9 : 6;
   try {
     const userAta = getAssociatedTokenAddressSync(SKR_MINT, walletPublicKey, true);
@@ -288,20 +337,21 @@ export async function fetchRealSkrBalance(
     return total;
   } catch (err) {
     console.warn('Error fetching SKR balance:', err);
-    return 0;
+    return null;
   }
 }
 
+/** SOL balance of the wallet, or null when the RPC could not be read (unknown, not zero). */
 export async function fetchRealSolBalance(
   connection: Connection,
   walletPublicKey: PublicKey
-): Promise<number> {
+): Promise<number | null> {
   try {
     const lamports = await connection.getBalance(walletPublicKey, 'confirmed');
     return lamports / 1e9;
   } catch (err) {
     console.warn('Error fetching SOL balance:', err);
-    return 0;
+    return null;
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -14,8 +14,18 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchReading, fetchClockInStatus, setRemoteSeekerStatus, ClockInResult, ReadingResponse, API_BASE_URL } from "@/services/oracleApi";
-import { TarotCard } from "@/components/tarot/TarotCard";
+import {
+  fetchReading,
+  fetchClockInStatus,
+  setRemoteSeekerStatus,
+  ClockInResult,
+  ReadingResponse,
+  API_BASE_URL,
+  ERR_QUOTA_REQUIRED,
+  ERR_PAYMENT_PENDING,
+  PAYMENT_PENDING_MESSAGE,
+} from "@/services/oracleApi";
+import { findPendingPayment } from "@/services/pendingPayments";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
 import { SpreadTableView } from "@/components/tarot/SpreadTableView";
@@ -28,7 +38,7 @@ import { useLanguage, localizeErrorText } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { AltarOfferingCard } from "@/components/tarot/AltarOfferingCard";
-import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
+import { getVerifiedTreasury, executePaymentOrSwap, rememberExtraPaymentSignatures } from "@/services/treasuryService";
 import { soundService } from "@/services/soundService";
 
 export default function SpreadScreen() {
@@ -52,6 +62,9 @@ export default function SpreadScreen() {
   const [systemState, setSystemState] = useState<SystemStateType>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
   const { connection, signAndSendTransactions } = useMobileWallet();
+  // Set before any payment starts, so a second tap can never pay twice
+  const drawBusyRef = useRef(false);
+  const [isDrawBusy, setIsDrawBusy] = useState(false);
 
   useEffect(() => {
     soundService.playPortalEnter();
@@ -87,12 +100,24 @@ export default function SpreadScreen() {
   useEffect(() => {
     if (account?.publicKey) {
       fetchRealSkrBalance(connection, account.publicKey).then(val => {
-        setOnChainSkr(val);
+        if (val !== null) setOnChainSkr(val);
       });
     }
   }, [walletAddress, account?.publicKey, connection]);
 
   const handleDraw = async () => {
+    if (drawBusyRef.current) return;
+    drawBusyRef.current = true;
+    setIsDrawBusy(true);
+    try {
+      await runDraw();
+    } finally {
+      drawBusyRef.current = false;
+      setIsDrawBusy(false);
+    }
+  };
+
+  const runDraw = async () => {
     setQuotaError(null);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -124,12 +149,16 @@ export default function SpreadScreen() {
     const dailyFree = quota.freeSpreadsRemaining ?? 0;
     const streakBonus = quota.streakBonusSpreads ?? 0;
     const hasFree = (dailyFree + streakBonus) > 0;
-    const balance = onChainSkr !== null ? onChainSkr : 0;
     const extraCost = quota.extraSpreadCostSkr || 5;
-    const payWithSol = !hasFree && balance < extraCost;
+    let payWithSol = false;
 
+    // A reading that was paid for but not delivered reuses its payment: never charge twice
     let txSignature: string | null = null;
-    if (!hasFree) {
+    const pendingPayment = await findPendingPayment(walletAddress, "reading");
+    if (pendingPayment) {
+      txSignature = pendingPayment.signature;
+      rememberExtraPaymentSignatures(pendingPayment.signature, pendingPayment.body?.txSignatures);
+    } else if (!hasFree) {
       if (!signAndSendTransactions) {
         setQuotaError(t("err_wallet_signing_unavailable", "Wallet signing is unavailable. Please reconnect your wallet."));
         return;
@@ -145,6 +174,7 @@ export default function SpreadScreen() {
           signAndSendTransactions,
         });
         txSignature = paymentResult.signature;
+        payWithSol = paymentResult.paidWith === "sol_swap";
       } catch (payErr: any) {
         console.warn("Payment error:", payErr);
         soundService.playTxError();
@@ -195,8 +225,10 @@ export default function SpreadScreen() {
       soundService.playConsensusSeal();
     } catch (e: any) {
       console.warn("Draw error:", e);
-      if (e.message && e.message.includes("5 SKR")) {
+      if (e?.code === ERR_QUOTA_REQUIRED) {
         setSystemState("limit_reached");
+      } else if (e?.code === ERR_PAYMENT_PENDING) {
+        setQuotaError(t("payment_pending_answer", PAYMENT_PENDING_MESSAGE));
       } else {
         setQuotaError(e.message ? localizeErrorText(e.message) : t("err_cast_spread_failed", "The spread could not be cast. Try again."));
       }
@@ -286,8 +318,9 @@ export default function SpreadScreen() {
   const hasFreeRemaining = (dailyFree + streakBonus) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
   const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
-  const balance = onChainSkr !== null ? onChainSkr : 0;
-  const canAfford = true;
+  // Unknown balance (RPC unreachable) is shown as "…", never as 0
+  const knownBalance = onChainSkr !== null ? onChainSkr : quotaInfo && !quotaInfo.offline ? quotaInfo.skrBalance : null;
+  const balance = knownBalance ?? 0;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -350,7 +383,7 @@ export default function SpreadScreen() {
                   </Text>
                 </View>
                 {walletAddress ? (
-                  <Text style={styles.balanceText}>{balance} SKR</Text>
+                  <Text style={styles.balanceText}>{knownBalance ?? '\u2026'} SKR</Text>
                 ) : null}
               </View>
 
@@ -375,9 +408,9 @@ export default function SpreadScreen() {
                 pressed && styles.cardPressed,
               ]}
               onPress={handleDraw}
-              disabled={isLoading}
+              disabled={isLoading || isDrawBusy}
             >
-              {isLoading ? (
+              {isLoading || isDrawBusy ? (
                 <ActivityIndicator color="#100C06" />
               ) : (
                 <Text style={styles.drawButtonText}>
@@ -415,7 +448,7 @@ export default function SpreadScreen() {
                 onCardPress={(index: number) => {
                   if (!revealedMap[index]) {
                     const card = reading.cards[index];
-                    const isMajor = card?.arcana === 'major' || card?.suit === 'Major Arcana';
+                    const isMajor = card?.arcana === 'major';
                     if (isMajor) {
                       soundService.playMajorArcanaReveal();
                     } else {
@@ -440,7 +473,7 @@ export default function SpreadScreen() {
                   question={reading.question || question}
                 />
 
-                {/* Altar Offering Card: 50% Burn + 50% Treasury */}
+                {/* Altar Offering Card: 33% burn + 33% Treasury + 34% ORE tranche */}
                 <AltarOfferingCard
                   walletAddress={walletAddress}
                   connection={connection}

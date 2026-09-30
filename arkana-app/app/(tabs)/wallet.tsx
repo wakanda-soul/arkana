@@ -18,7 +18,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchClockInStatus, setRemoteSeekerStatus, ClockInResult } from "@/services/oracleApi";
 import { ellipsify } from "@/utils/ellipsify";
 import { ObsidianTokens } from "@/constants/theme";
 import { SystemStateModal, SystemStateType } from "@/components/ui/SystemStateModal";
@@ -28,7 +27,16 @@ import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { LinearGradient } from "expo-linear-gradient";
 import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from "@/services/treasuryService";
-import { activateSubscriptionApi, API_BASE_URL } from "@/services/oracleApi";
+import {
+  fetchClockInStatus,
+  setRemoteSeekerStatus,
+  ClockInResult,
+  activateSubscriptionApi,
+  resubmitSubscriptionPayment,
+  API_BASE_URL,
+  ERR_PAYMENT_PENDING,
+} from "@/services/oracleApi";
+import { findPendingPayment } from "@/services/pendingPayments";
 import { BUILD_LABEL, APP_VERSION, BUILD_NUMBER, COMMIT_SHA } from "@/constants/build-info";
 
 export default function WalletScreen() {
@@ -43,9 +51,12 @@ export default function WalletScreen() {
   const { connection, signAndSendTransactions } = useMobileWallet();
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [subSuccessModal, setSubSuccessModal] = useState(false);
-  const [subSolEstimate, setSubSolEstimate] = useState("~0.066 SOL");
+  // "…" until a quote arrives; a fallback-rate price is labelled as an estimate
+  const [subSolEstimate, setSubSolEstimate] = useState("\u2026");
 
+  // offline: true until the server answers, so placeholder values are never shown as real
   const [clockInState, setClockInState] = useState<ClockInResult>({
+    offline: true,
     canClockIn: true,
     streak: 1,
     lastClockIn: null,
@@ -76,18 +87,21 @@ export default function WalletScreen() {
         .then(async (isHolder) => {
           await setRemoteSeekerStatus(account.publicKey.toBase58(), isHolder);
           const status = await fetchClockInStatus(account.publicKey.toBase58(), isHolder);
-          setClockInState(status);
+          if (!status.offline) setClockInState(status);
         })
         .catch(() => {
-          fetchClockInStatus(address).then(setClockInState);
+          fetchClockInStatus(address).then((status) => {
+            if (!status.offline) setClockInState(status);
+          });
         });
 
       Promise.all([
         fetchRealSolBalance(connection, account.publicKey),
         fetchRealSkrBalance(connection, account.publicKey),
       ]).then(([sol, skr]) => {
-        setRealSolBalance(sol);
-        setRealSkrBalance(skr);
+        // null = RPC unreachable: keep the last known value instead of showing 0
+        if (sol !== null) setRealSolBalance(sol);
+        if (skr !== null) setRealSkrBalance(skr);
       }).catch(err => {
         console.warn("Failed to fetch on-chain balances in wallet tab:", err);
       });
@@ -111,9 +125,9 @@ export default function WalletScreen() {
           fetchClockInStatus(address),
         ]).then(([sol, skr, status]) => {
           if (isMounted) {
-            setRealSolBalance(sol);
-            setRealSkrBalance(skr);
-            if (status) setClockInState(status);
+            if (sol !== null) setRealSolBalance(sol);
+            if (skr !== null) setRealSkrBalance(skr);
+            if (status && !status.offline) setClockInState(status);
           }
         }).catch(err => {
           console.warn("Failed to refresh on-chain balances on focus in wallet tab:", err);
@@ -126,7 +140,8 @@ export default function WalletScreen() {
     }, [address, account?.publicKey, connection])
   );
 
-  const displaySkr = realSkrBalance !== null ? realSkrBalance : (clockInState.skrBalance ?? 0);
+  const statusKnown = !clockInState.offline;
+  const displaySkr = realSkrBalance !== null ? realSkrBalance : statusKnown ? (clockInState.skrBalance ?? 0) : "\u2026";
 
   const copyAddress = () => {
     if (!address) return;
@@ -176,9 +191,13 @@ export default function WalletScreen() {
 
   useEffect(() => {
     getLiveSolQuoteForSkr(333).then(q => {
-      setSubSolEstimate(`~${q.solAmount} SOL`);
+      setSubSolEstimate(
+        q.quoteResponse
+          ? `~${q.solAmount} SOL`
+          : t('price_estimate', '~{amount} SOL (estimate)', { amount: q.solAmount })
+      );
     }).catch(() => {});
-  }, []);
+  }, [t]);
 
   const handlePurchaseSubscription = async () => {
     const userPubkeyStr = address || (account?.publicKey ? account.publicKey.toString() : "");
@@ -192,24 +211,39 @@ export default function WalletScreen() {
       return;
     }
 
+    if (isSubscribing) return;
     setIsSubscribing(true);
+    let paid = false;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
-      const paymentResult = await executePaymentOrSwap({
-        connection,
-        userPublicKey: userPubkey,
-        treasuryPublicKey: treasuryPubkey,
-        amountSkr: 333,
-        actionLabel: 'SUBSCRIPTION_PASS',
-        signAndSendTransactions,
-      });
+      // A pass that was paid for but not activated yet is re-sent: never charge twice
+      const pending = await findPendingPayment(address, 'subscription');
+      let res;
+      if (pending) {
+        paid = true;
+        res = await resubmitSubscriptionPayment(address, pending.body);
+      } else {
+        const treasuryPubkey = await getVerifiedTreasury(API_BASE_URL);
+        const paymentResult = await executePaymentOrSwap({
+          connection,
+          userPublicKey: userPubkey,
+          treasuryPublicKey: treasuryPubkey,
+          amountSkr: 333,
+          actionLabel: 'SUBSCRIPTION_PASS',
+          signAndSendTransactions,
+        });
+        paid = true;
 
-      const res = await activateSubscriptionApi({
-        wallet: address,
-        txSignature: paymentResult.signature,
-        durationDays: 30,
-      });
+        res = await activateSubscriptionApi({
+          wallet: address,
+          txSignature: paymentResult.signature,
+          durationDays: 30,
+        });
+      }
+
+      if (!res.success && res.code === ERR_PAYMENT_PENDING) {
+        throw Object.assign(new Error(res.error || ERR_PAYMENT_PENDING), { code: ERR_PAYMENT_PENDING });
+      }
 
       if (res.success) {
         setClockInState(prev => ({
@@ -230,7 +264,9 @@ export default function WalletScreen() {
       console.warn('Subscription purchase error:', e);
       Alert.alert(
         t('subscription_failed_title', 'Pass Activation Incomplete'),
-        (e?.message && localizeErrorText(e.message)) || t('subscription_failed_desc', 'The transaction could not be confirmed. No funds were debited.')
+        paid && e?.code === ERR_PAYMENT_PENDING
+          ? t('payment_pending_credit', 'Payment received. Arkana will record it as soon as the server answers. No need to pay again.')
+          : (e?.message && localizeErrorText(e.message)) || t('subscription_failed_desc', 'The transaction could not be confirmed. No funds were debited.')
       );
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -259,7 +295,11 @@ export default function WalletScreen() {
               <View style={styles.walletCardHeader}>
                 <View style={[styles.seekerBadge, !clockInState.isSeekerHolder && styles.seekerBadgeStandard]}>
                   <Text style={[styles.seekerBadgeText, !clockInState.isSeekerHolder && styles.seekerBadgeTextStandard]}>
-                    {clockInState.isSeekerHolder ? t('seeker_genesis_holder', 'SEEKER GENESIS HOLDER') : t('standard_wallet', 'SOLANA WALLET')}
+                    {!statusKnown
+                      ? '\u2026'
+                      : clockInState.isSeekerHolder
+                        ? t('seeker_genesis_holder', 'SEEKER GENESIS HOLDER')
+                        : t('standard_wallet', 'SOLANA WALLET')}
                   </Text>
                 </View>
                 <View style={styles.statusDotRow}>
@@ -282,7 +322,7 @@ export default function WalletScreen() {
               <View style={styles.assetCard}>
                 <Text style={styles.assetLabel}>{t('sol_balance', 'SOL BALANCE')}</Text>
                 <Text style={styles.assetValue}>
-                  {realSolBalance !== null ? (realSolBalance === 0 ? '0 SOL' : `${Number(realSolBalance.toFixed(4))} SOL`) : '0 SOL'}
+                  {realSolBalance !== null ? (realSolBalance === 0 ? '0 SOL' : `${Number(realSolBalance.toFixed(4))} SOL`) : '\u2026 SOL'}
                 </Text>
                 <Text style={styles.assetSub}>{t('gas_and_minting', 'Gas & Minting')}</Text>
               </View>
@@ -303,12 +343,12 @@ export default function WalletScreen() {
 
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{'\u2726'} {clockInState.streak}</Text>
+                  <Text style={styles.statValue}>{'\u2726'} {statusKnown ? clockInState.streak : '\u2026'}</Text>
                   <Text style={styles.statLabel}>{t('day_streak_label', 'Day Streak')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{'\u25C8'} {clockInState.totalReadings}</Text>
+                  <Text style={styles.statValue}>{'\u25C8'} {statusKnown ? clockInState.totalReadings : '\u2026'}</Text>
                   <Text style={styles.statLabel}>{t('rites_sealed', 'Rites Sealed')}</Text>
                 </View>
                 <View style={styles.statDivider} />
@@ -506,7 +546,7 @@ export default function WalletScreen() {
 
               {/* Official Wallets Quick Links */}
               <View style={styles.walletsQuickSection}>
-                <Text style={styles.walletsQuickKicker}>{t('official_compatible_wallets', 'OFFICIAL COMPATIBLE WALLETS')}</Text>
+                <Text style={styles.walletsQuickKicker}>{t('compatible_wallets_kicker', 'COMPATIBLE WALLETS')}</Text>
                 <View style={styles.walletsQuickRow}>
                   <Pressable
                     style={styles.walletQuickBadge}
@@ -582,9 +622,9 @@ export default function WalletScreen() {
             <View style={styles.featureBox}>
               <Text style={styles.featureIcon}>&#x2756;</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{t('seed_vault_enclave', 'Seed Vault Enclave')}</Text>
+                <Text style={styles.featureTitle}>{t('seed_vault_enclave', 'Your Keys Stay in Your Wallet')}</Text>
                 <Text style={styles.featureDesc}>
-                  {t('seed_vault_enclave_desc', 'Hardware-isolated security for Solana Mobile Seeker. Seed phrases never touch Android memory.')}
+                  {t('seed_vault_enclave_desc', 'Arkana never sees your keys: every transaction is signed in your wallet app. On Seeker, keys stay in Seed Vault.')}
                 </Text>
               </View>
             </View>
@@ -604,14 +644,14 @@ export default function WalletScreen() {
               <View style={styles.featureContent}>
                 <Text style={styles.featureTitle}>{t('archetypes_title', '78 Solana Archetypes')}</Text>
                 <Text style={styles.featureDesc}>
-                  {t('archetypes_desc', 'Full collection of 78 crypto-tarot arcana reflecting decentralized market cycles.')}
+                  {t('archetypes_desc', 'Full collection of 78 crypto-tarot archetypes reflecting decentralized market cycles.')}
                 </Text>
               </View>
             </View>
           </>
         )}
 
-        {/* Sacred Build Telemetry Stamp */}
+        {/* Build info stamp */}
         <Pressable
           style={({ pressed }) => [styles.buildStampCard, pressed && styles.cardPressed]}
           onPress={() => {
@@ -620,9 +660,9 @@ export default function WalletScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {}
             Alert.alert(
-              t('telemetry_title', 'Arkana Telemetry'),
+              t('build_info_title', 'Arkana Build Info'),
               t(
-                'telemetry_body',
+                'build_info_body',
                 'Version: {version}\nBuild Number: #{build}\nCommit: {commit}\nEnvironment: Solana Mobile & Seeker (Mainnet)\n\nCopied to clipboard!',
                 { version: APP_VERSION, build: BUILD_NUMBER, commit: COMMIT_SHA }
               )
@@ -637,7 +677,7 @@ export default function WalletScreen() {
             ARKANA {BUILD_LABEL}
           </Text>
           <Text style={styles.buildStampSubtitle}>
-            {t('build_stamp_sub', 'Tap to view telemetry & copy build hash')}
+            {t('build_stamp_sub', 'Tap to view build info & copy build hash')}
           </Text>
         </Pressable>
       </ScrollView>
@@ -664,7 +704,7 @@ export default function WalletScreen() {
             </View>
             <Text style={styles.subSuccessTitle}>{t('pass_consecrated_title', 'ORACLE PASS CONSECRATED')}</Text>
             <Text style={styles.subSuccessDesc}>
-              {t('pass_consecrated_desc', 'Your covenant is sealed on Solana. 333 SKR accepted (50% burned, 50% to Treasury). You now have +5 sacred spreads every day.')}
+              {t('pass_consecrated_desc', 'Your covenant is sealed on Solana. 333 SKR accepted (33% burned, 33% to Treasury, 34% to ORE staking). You now have +5 sacred spreads every day.')}
             </Text>
             <View style={styles.subSuccessPill}>
               <Text style={styles.subSuccessPillText}>{'\u2713'} {t('pass_days_active', '{n} DAYS ACTIVE', { n: 30 })}</Text>

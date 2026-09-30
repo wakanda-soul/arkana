@@ -5,7 +5,6 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native'
 import { Image } from 'expo-image'
 import { useState } from 'react'
 import * as Haptics from 'expo-haptics'
-import { showError } from '@/utils/show-error'
 import { ObsidianTokens } from '@/constants/theme'
 import { SystemStateModal, SystemStateType } from '@/components/ui/SystemStateModal'
 import { useLanguage } from '@/services/i18n'
@@ -84,7 +83,7 @@ export default function SignIn() {
           </Pressable>
 
           <Text style={styles.securityNote}>
-            {t('signin_security_note', 'Secured by Solana Seed Vault & Hardware Keystore')}
+            {t('signin_security_note', 'Keys stay in your wallet app. Arkana never sees them.')}
           </Text>
         </View>
       </SafeAreaView>

@@ -1,12 +1,102 @@
 import { getExtraPaymentSignatures } from './treasuryService';
 import { apiHeaders } from './sessionService';
 import { netFetch } from './netFetch';
-import { ALL_CARDS, CardData, SPREADS } from '@/data/cardsData';
+import { ALL_CARDS, SPREADS } from '@/data/cardsData';
 import { translateFor, LanguageCode } from './i18n';
 import { localizeCard } from './cardLocalization';
+import { PendingPaymentKind, getPendingPayments, removePendingPayment, savePendingPayment } from './pendingPayments';
 
 // Public VPS IP for testing, or localhost for local dev
 export const API_BASE_URL = 'https://arkana.icu';
+
+/** Stable error codes, so screens never have to match English error text. */
+export const ERR_QUOTA_REQUIRED = 'QUOTA_REQUIRED';
+export const ERR_PAYMENT_PENDING = 'PAYMENT_PENDING';
+export const ERR_PAYMENT_REJECTED = 'PAYMENT_REJECTED';
+
+/** Shown (translated) when a payment landed but the server has not answered yet. */
+export const PAYMENT_PENDING_MESSAGE = 'Payment received. Arkana is still answering, try again in a moment.';
+
+function apiError(message: string, code: string, extra?: Record<string, any>): Error {
+  const err = new Error(message);
+  Object.assign(err, { code }, extra);
+  return err;
+}
+
+const PAID_REQUEST_ATTEMPTS = 3;
+
+/** A 402 that only means "not visible on chain yet" or "busy": the same payment may succeed later. */
+function isRetryablePaymentStatus(status: number, error: string): boolean {
+  if (status >= 500 || status === 401 || status === 408 || status === 429) return true;
+  return status === 402 && /not found on-chain yet|busy/i.test(error);
+}
+
+/**
+ * POST for a request that carries a payment signature. The signature is stored before the request,
+ * retried with backoff on server errors, and cleared once the server gives a final answer. When the
+ * server never answers, it stays stored and ERR_PAYMENT_PENDING is thrown: the payment is never
+ * replaced by a local result and never charged again.
+ */
+async function postPaidRequest(
+  kind: PendingPaymentKind,
+  path: string,
+  body: Record<string, any>,
+  wallet: string
+): Promise<{ res: Response; data: any }> {
+  const signature = String(body.txSignature);
+  await savePendingPayment(wallet, { kind, signature, body, createdAt: Date.now() });
+  for (let attempt = 1; attempt <= PAID_REQUEST_ATTEMPTS; attempt++) {
+    try {
+      const res = await netFetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
+        await removePendingPayment(wallet, signature);
+        return { res, data };
+      }
+      console.warn(`Paid request ${path} answered ${res.status}, attempt ${attempt}`);
+    } catch (e) {
+      console.warn(`Paid request ${path} failed, attempt ${attempt}:`, e);
+    }
+    if (attempt < PAID_REQUEST_ATTEMPTS) {
+      await new Promise((r) => setTimeout(r, 1500 * 2 ** (attempt - 1)));
+    }
+  }
+  throw apiError(PAYMENT_PENDING_MESSAGE, ERR_PAYMENT_PENDING, { signature });
+}
+
+const PAID_PATHS: Record<PendingPaymentKind, string> = {
+  reading: '/api/reading',
+  chat: '/api/chat',
+  subscription: '/api/subscription/activate',
+  offering: '/api/offering',
+};
+
+/**
+ * Sends stored passes and offerings again (called once a wallet session exists, e.g. on app start).
+ * Readings and questions are not re-sent here: the next reading or question reuses their payment.
+ */
+export async function resubmitPendingPayments(wallet: string): Promise<void> {
+  const pending = (await getPendingPayments(wallet)).filter((p) => p.kind === 'subscription' || p.kind === 'offering');
+  for (const payment of pending) {
+    try {
+      const res = await netFetch(`${API_BASE_URL}${PAID_PATHS[payment.kind]}`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify(payment.body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
+        await removePendingPayment(wallet, payment.signature);
+      }
+    } catch (e) {
+      console.warn('Pending payment re-submit failed:', e);
+    }
+  }
+}
 
 export interface ClockInResult {
   /** true when the server could not be reached and these are placeholder values */
@@ -62,7 +152,7 @@ export interface ReadingResponse {
   spread_key: string;
   category: string;
   quota?: QuotaConsumeResult;
-  cards: Array<{
+  cards: {
     position: string;
     position_hint: string;
     card_no: string;
@@ -78,7 +168,7 @@ export interface ReadingResponse {
     symbolism: string;
     advice: string;
     shadow: string;
-  }>;
+  }[];
   engine_metrics: {
     majors_count: number;
     structural: boolean;
@@ -256,7 +346,10 @@ export async function executeClockIn(
 ): Promise<{
   success: boolean;
   streak: number;
-  reading: ReadingResponse;
+  reading?: ReadingResponse;
+  /** The server already has today's clock-in (HTTP 409): refetch the status instead of sealing again. */
+  alreadyClockedIn?: boolean;
+  error?: string;
   txSignature?: string;
   slot?: number;
   streakBonusAwarded?: number;
@@ -294,17 +387,16 @@ export async function executeClockIn(
         },
       };
     }
-  } catch (e) {
-    console.warn('Backend clock-in error, using offline generator:', e);
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 409) {
+      return { success: false, alreadyClockedIn: true, streak: data.streak || 0, error: data.error || 'Already clocked in today.' };
+    }
+    return { success: false, streak: 0, error: data.error || `Clock-in failed (${res.status}).` };
+  } catch (e: any) {
+    // No local seal: a clock-in the server did not record must not look sealed
+    console.warn('Backend clock-in error:', e);
+    return { success: false, streak: 0, error: e?.message || 'Network request failed' };
   }
-
-  // Offline fallback
-  const local = generateLocalReading(
-    'daily-block',
-    translateFor(language as LanguageCode, 'offline_daily_question', 'Daily Consensus Clock-In'),
-    language
-  );
-  return { success: true, streak: 1, streakBonusAwarded: 0, streakBonusSpreads: 0, reading: local };
 }
 
 export async function fetchReading(
@@ -316,25 +408,33 @@ export async function fetchReading(
   isSeeker?: boolean,
   txSignature?: string | null
 ): Promise<ReadingResponse> {
+  const payload: any = { spread, question, wallet, payWithSol, language, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) };
+  if (isSeeker !== undefined) {
+    payload.isSeeker = isSeeker;
+  }
+
+  // A paid reading is never replaced by a local draw
+  if (txSignature && wallet) {
+    const { res, data } = await postPaidRequest('reading', '/api/reading', payload, wallet);
+    if (res.ok) return data;
+    throw apiError(data?.error || `Reading failed (${res.status}).`, res.status === 402 ? ERR_PAYMENT_REJECTED : 'SERVER_ERROR');
+  }
+
   try {
-    const payload: any = { spread, question, wallet, payWithSol, language, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) };
-    if (isSeeker !== undefined) {
-      payload.isSeeker = isSeeker;
-    }
     const res = await netFetch(`${API_BASE_URL}/api/reading`, {
       method: 'POST',
       headers: await apiHeaders(),
       body: JSON.stringify(payload),
     });
     if (res.status === 402) {
-      const errData = await res.json();
-      throw new Error(errData.error || 'Daily free spread allowance reached. 5 SKR or 0.001 SOL required to cast an additional spread.');
+      const errData = await res.json().catch(() => ({}));
+      throw apiError(errData.error || 'Daily free allowance reached.', ERR_QUOTA_REQUIRED, { quota: errData.quota });
     }
     if (res.ok) {
       return await res.json();
     }
   } catch (e: any) {
-    if (e.message && (e.message.includes('5 SKR') || e.message.includes('SOL required') || e.message.includes('Seeker Genesis'))) {
+    if (e?.code === ERR_QUOTA_REQUIRED) {
       throw e;
     }
     console.warn('Backend reading fetch error, falling back to local engine:', e);
@@ -399,17 +499,24 @@ export async function sendOracleChatMessage({
   quota?: QuotaConsumeResult;
   timestamp: string;
 }> {
+  const body = { message, wallet, history, payWithSol, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), language };
+
+  // A paid question keeps its payment until the server answers
+  if (txSignature && wallet) {
+    const { res, data } = await postPaidRequest('chat', '/api/chat', body, wallet);
+    if (res.ok) return data;
+    throw apiError(data?.error || 'Failed to query Oracle', res.status === 402 ? ERR_PAYMENT_REJECTED : 'SERVER_ERROR');
+  }
+
   const res = await netFetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: await apiHeaders(),
-    body: JSON.stringify({ message, wallet, history, payWithSol, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), language }),
+    body: JSON.stringify(body),
   });
 
   const data = await res.json();
   if (res.status === 402) {
-    const err = new Error(data.error || 'Daily free allowance reached.');
-    (err as any).quota = data.quota;
-    throw err;
+    throw apiError(data.error || 'Daily free allowance reached.', ERR_QUOTA_REQUIRED, { quota: data.quota });
   }
   if (!res.ok) {
     throw new Error(data.error || 'Failed to query Oracle');
@@ -427,16 +534,14 @@ export async function submitAltarOfferingApi({
   txSignature: string;
   amountSkr: number;
   message?: string;
-}): Promise<{ success: boolean; totalOfferedSkr: number; error?: string }> {
+}): Promise<{ success: boolean; totalOfferedSkr: number; error?: string; code?: string }> {
   try {
-    const res = await netFetch(`${API_BASE_URL}/api/offering`, {
-      method: 'POST',
-      headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), amountSkr, message }),
-    });
-    return await res.json();
+    const body = { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), amountSkr, message };
+    const { res, data } = await postPaidRequest('offering', '/api/offering', body, wallet);
+    if (res.ok) return data;
+    return { success: false, totalOfferedSkr: 0, error: data?.error || `Offering failed (${res.status}).` };
   } catch (e: any) {
-    return { success: false, totalOfferedSkr: 0, error: e.message || 'Network error submitting offering' };
+    return { success: false, totalOfferedSkr: 0, error: e.message || 'Network error submitting offering', code: e?.code };
   }
 }
 
@@ -448,16 +553,28 @@ export async function activateSubscriptionApi({
   wallet: string;
   txSignature: string;
   durationDays?: number;
-}): Promise<{ success: boolean; subscription?: any; error?: string }> {
+}): Promise<{ success: boolean; subscription?: any; error?: string; code?: string }> {
   try {
-    const res = await netFetch(`${API_BASE_URL}/api/subscription/activate`, {
-      method: 'POST',
-      headers: await apiHeaders(),
-      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), durationDays }),
-    });
-    return await res.json();
+    const body = { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), durationDays };
+    const { res, data } = await postPaidRequest('subscription', '/api/subscription/activate', body, wallet);
+    if (res.ok) return data;
+    return { success: false, error: data?.error || `Pass activation failed (${res.status}).` };
   } catch (e: any) {
-    return { success: false, error: e.message || 'Network error activating subscription' };
+    return { success: false, error: e.message || 'Network error activating subscription', code: e?.code };
+  }
+}
+
+/** Re-sends a stored pass payment (the user already paid; nothing is charged again). */
+export async function resubmitSubscriptionPayment(
+  wallet: string,
+  body: Record<string, any>
+): Promise<{ success: boolean; subscription?: any; error?: string; code?: string }> {
+  try {
+    const { res, data } = await postPaidRequest('subscription', '/api/subscription/activate', body, wallet);
+    if (res.ok) return data;
+    return { success: false, error: data?.error || `Pass activation failed (${res.status}).` };
+  } catch (e: any) {
+    return { success: false, error: e.message || 'Network error activating subscription', code: e?.code };
   }
 }
 

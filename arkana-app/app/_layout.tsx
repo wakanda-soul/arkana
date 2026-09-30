@@ -7,7 +7,6 @@ import { AppProviders } from '@/components/app-providers'
 import { useCallback, useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { View } from 'react-native'
-import { useTrackLocations } from '@/hooks/use-track-locations'
 import { AppSplashController } from '@/components/app-splash-controller'
 import { soundService } from '@/services/soundService'
 
@@ -19,19 +18,12 @@ export default function RootLayout() {
   useEffect(() => {
     soundService.init().catch(() => {});
   }, []);
-  // Use this hook to track the locations for analytics or debugging.
-  // Delete if you don't need it.
-  useTrackLocations((pathname, params) => {
-    console.log(`Track ${pathname}`, { params })
-  })
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   })
 
   const onLayoutRootView = useCallback(async () => {
-    console.log('onLayoutRootView')
     if (loaded) {
-      console.log('loaded')
       // This tells the splash screen to hide immediately! If we call this after
       // `setAppIsReady`, then we may see a blank screen while the app is
       // loading its initial state and rendering its first pixels. So instead,

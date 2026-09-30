@@ -176,12 +176,12 @@ export function SystemStateModal({
               <Text style={styles.bodySerif}>
                 {type === 'wallet_not_found'
                   ? t('wallet_not_found_desc', 'No compatible Solana Mobile wallet was detected on this device. Install Phantom or Solflare from the Play Store or official portal.')
-                  : t('wallet_declined_desc', 'Connection did not complete. If you do not have a wallet installed yet, get one from official verified sources below:')}
+                  : t('wallet_declined_desc', 'Connection did not complete. If you do not have a wallet installed yet, get one from its official store page below:')}
               </Text>
 
               {/* Official Wallets Section */}
               <View style={styles.walletSourcesContainer}>
-                <Text style={styles.walletSourcesHeader}>{t('official_verified_wallets', 'OFFICIAL VERIFIED WALLETS')}</Text>
+                <Text style={styles.walletSourcesHeader}>{t('official_verified_wallets', 'COMPATIBLE WALLETS')}</Text>
 
                 {/* Phantom */}
                 <View style={styles.walletSourceCard}>

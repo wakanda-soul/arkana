@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 import { soundService } from '@/services/soundService';
 import { CardImages } from '@/assets/cards';
 import { ObsidianTokens } from '@/constants/theme';

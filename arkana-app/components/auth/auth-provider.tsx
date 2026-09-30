@@ -2,6 +2,10 @@ import { createContext, type PropsWithChildren, use, useEffect, useMemo } from '
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { AppConfig } from '@/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { soundService } from '@/services/soundService'
+import { ensureWalletSession, clearWalletSession } from '@/services/sessionService'
+import { resubmitPendingPayments } from '@/services/oracleApi'
 
 export interface AuthState {
   isAuthenticated: boolean
@@ -21,8 +25,6 @@ export function useAuth() {
 
   return value
 }
-
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 function useConnectMutation() {
   const { connect, signIn } = useMobileWallet()
@@ -55,9 +57,6 @@ function useConnectMutation() {
   })
 }
 
-import { soundService } from '@/services/soundService'
-import { ensureWalletSession, clearWalletSession } from '@/services/sessionService'
-
 export function AuthProvider({ children }: PropsWithChildren) {
   const { accounts, disconnect, signMessage } = useMobileWallet()
   const connectMutation = useConnectMutation()
@@ -67,9 +66,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // that requests spending this wallet's quota come from its owner.
   useEffect(() => {
     if (!walletAddress) return
-    ensureWalletSession(walletAddress, (message) => signMessage(message)).catch((err) =>
-      console.warn('[Auth] Wallet session sign-in skipped:', err?.message || err),
-    )
+    ensureWalletSession(walletAddress, (message) => signMessage(message))
+      // Passes and offerings paid while the server was unreachable are sent again once signed in
+      .then(() => resubmitPendingPayments(walletAddress))
+      .catch((err) => console.warn('[Auth] Wallet session sign-in skipped:', err?.message || err))
   }, [walletAddress, signMessage])
 
   const value: AuthState = useMemo(

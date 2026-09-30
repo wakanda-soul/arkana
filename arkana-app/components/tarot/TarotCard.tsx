@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,7 +44,7 @@ export function TarotCard({
       damping: 14,
       stiffness: 90,
     });
-  }, [isRevealed]);
+  }, [isRevealed, flipAnim]);
 
   const handlePress = () => {
     soundService.playCardFlip();

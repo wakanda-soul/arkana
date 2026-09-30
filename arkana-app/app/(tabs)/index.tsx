@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchClockInStatus, executeClockIn, repairStreak, setRemoteSeekerStatus, ClockInResult, ReadingResponse } from "@/services/oracleApi";
+import { fetchClockInStatus, executeClockIn, repairStreak, setRemoteSeekerStatus, ClockInResult, ReadingResponse, API_BASE_URL } from "@/services/oracleApi";
 import { TarotCard } from "@/components/tarot/TarotCard";
 import { SevenBeatsView } from "@/components/tarot/SevenBeatsView";
 import { CardZoomModal, ZoomCardData } from "@/components/tarot/CardZoomModal";
@@ -32,7 +32,6 @@ import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { submitConsensusProofOnChain, fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { PublicKey } from "@solana/web3.js";
 import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
-import { API_BASE_URL } from "@/services/oracleApi";
 
 export default function AltarScreen() {
   const router = useRouter();
@@ -197,7 +196,7 @@ export default function AltarScreen() {
         const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
           .then((val) => {
-            if (isMounted) setOnChainSkr(val);
+            if (isMounted && val !== null) setOnChainSkr(val);
           })
           .catch(() => {});
       } catch {}
@@ -241,7 +240,7 @@ export default function AltarScreen() {
         const userPub = new PublicKey(pubkeyStr);
         fetchRealSkrBalance(connection, userPub)
           .then((val) => {
-            if (isMounted) setOnChainSkr(val);
+            if (isMounted && val !== null) setOnChainSkr(val);
           })
           .catch(() => {});
       } catch {}
@@ -301,6 +300,7 @@ export default function AltarScreen() {
 
       let signature: string | undefined;
       let slot: number | undefined;
+      let confirmed = false;
 
       // Real on-chain Solana SPL Memo transaction
       try {
@@ -313,6 +313,7 @@ export default function AltarScreen() {
         });
         signature = onChainRes.signature;
         slot = onChainRes.slot;
+        confirmed = onChainRes.confirmed;
       } catch (txErr: any) {
         console.warn('[Solana] On-chain signing rejected or failed:', txErr);
         const errStr = String(txErr?.message || txErr || '');
@@ -335,6 +336,31 @@ export default function AltarScreen() {
         signature,
         slot
       );
+
+      if (!res.success || !res.reading) {
+        if (res.alreadyClockedIn) {
+          // The server already has today's seal: show that one instead of a local copy
+          const status = await fetchClockInStatus(walletAddress);
+          if (!status.offline && !status.canClockIn) {
+            setClockInState(status);
+            if (status.todayCard) {
+              const sealed =
+                ALL_CARDS.find(
+                  (c) => c.card_no === status.todayCard?.card_no || c.crypto_name === status.todayCard?.card
+                ) || card;
+              setSavedSealedCard(sealed);
+              setSavedOrientation(status.todayCard.orientation?.toUpperCase() === 'REVERSED' ? 'REVERSED' : 'UPRIGHT');
+              setSavedTxSig(status.todayCard.txSignature || undefined);
+              setSavedSlot(status.todayCard.slot || undefined);
+            }
+            return { success: false, alreadyClockedIn: true, error: res.error };
+          }
+        }
+        return {
+          success: false,
+          error: res.error || t("err_clock_in_failed", "The seal was not recorded. Try again in a moment."),
+        };
+      }
 
       setDailyReading(res.reading);
       if (res.reading?.cards && res.reading.cards.length > 0) {
@@ -374,6 +400,7 @@ export default function AltarScreen() {
         success: true,
         signature: finalSignature,
         slot: finalSlot,
+        confirmed,
       };
     } catch (err: any) {
       return {
