@@ -7,9 +7,9 @@
  * Arkana treasury, that the memo names the action, that it is recent, and that the
  * signature was never used before.
  */
-const fs = require("fs");
 const path = require("path");
 const { Connection, PublicKey } = require("@solana/web3.js");
+const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
 
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://solana-rpc.publicnode.com";
 const USED_FILE = path.join(__dirname, "..", "..", "data", "used_payments.json");
@@ -28,6 +28,11 @@ const TOKEN_PROGRAMS = new Set([
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
 ]);
 const MAX_TX_AGE_SECONDS = 30 * 60;
+// Each verification may hold an RPC slot for several seconds; beyond this many the caller answers 503
+const MAX_CONCURRENT_VERIFICATIONS = 8;
+const FETCH_ATTEMPTS = 5;
+const FETCH_RETRY_MS = 2500;
+const SIGNATURE_RE = /^[1-9A-HJ-NP-Za-km-z]{86,90}$/;
 
 const SGT_MINT_AUTHORITY = "GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4";
 const TOKEN_2022_PROGRAM = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
@@ -35,25 +40,28 @@ const SEEKER_CACHE_MS = 60 * 60 * 1000;
 
 const connection = new Connection(RPC_URL, "confirmed");
 const inFlight = new Set();
+let activeVerifications = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** A base58 transaction signature (64 bytes); checked before any RPC call. */
+function isValidTxSignature(signature) {
+  return typeof signature === "string" && SIGNATURE_RE.test(signature);
+}
+
+// Throws on a corrupt file: treating it as {} would make every old payment reusable
 function loadUsed() {
-  try {
-    return JSON.parse(fs.readFileSync(USED_FILE, "utf8"));
-  } catch {
-    return {};
-  }
+  return readJson(USED_FILE);
 }
 
 function markUsed(signature, record) {
   const used = loadUsed();
   used[signature] = record;
-  fs.writeFileSync(USED_FILE, JSON.stringify(used, null, 2));
+  writeJsonAtomic(USED_FILE, used);
 }
 
-/** The app calls right after sending: give the transaction time to confirm. */
+/** The app calls right after sending: give the transaction time to confirm (about 10 s at most). */
 async function fetchTransaction(signature) {
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < FETCH_ATTEMPTS; attempt++) {
     try {
       const tx = await connection.getParsedTransaction(signature, {
         commitment: "confirmed",
@@ -61,7 +69,7 @@ async function fetchTransaction(signature) {
       });
       if (tx) return tx;
     } catch {}
-    await sleep(4000);
+    if (attempt < FETCH_ATTEMPTS - 1) await sleep(FETCH_RETRY_MS);
   }
   return null;
 }
@@ -88,19 +96,27 @@ async function verifyPayment({ wallet, signature, extraSignatures = [], amountSk
   if (!wallet || !signature || !amountSkr || !actionLabel) {
     return { ok: false, error: "Payment signature is required." };
   }
-  const extras = (Array.isArray(extraSignatures) ? extraSignatures : [])
-    .filter((s) => typeof s === "string" && s && s !== signature)
+  if (!isValidTxSignature(signature)) return { ok: false, error: "Invalid payment signature." };
+  // Unique extras only: a repeated tranche signature must not count its ORE deposit twice
+  const extras = [...new Set(Array.isArray(extraSignatures) ? extraSignatures : [])]
+    .filter((s) => s !== signature)
     .slice(0, 2);
+  if (!extras.every(isValidTxSignature)) return { ok: false, error: "Invalid payment signature." };
   const all = [signature, ...extras];
   // Reserve the signatures synchronously: parallel requests with one payment must not all pass
   const used = loadUsed();
   if (all.some((s) => used[s] || inFlight.has(s))) {
     return { ok: false, error: "This payment was already used." };
   }
+  if (activeVerifications >= MAX_CONCURRENT_VERIFICATIONS) {
+    return { ok: false, busy: true, error: "The server is busy verifying payments. Please retry in a moment." };
+  }
+  activeVerifications++;
   all.forEach((s) => inFlight.add(s));
   try {
     return await verifyReserved({ wallet, signature, extras, amountSkr, actionLabel });
   } finally {
+    activeVerifications--;
     all.forEach((s) => inFlight.delete(s));
   }
 }
@@ -136,7 +152,8 @@ async function oreForSkrShare(amountSkr) {
   try {
     const shareRaw = toRaw(amountSkr) - 2n * ((toRaw(amountSkr) * 33n) / 100n);
     const res = await fetch(
-      `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT}&outputMint=${ORE_MINT}&amount=${shareRaw}&slippageBps=300&maxAccounts=24`
+      `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT}&outputMint=${ORE_MINT}&amount=${shareRaw}&slippageBps=300&maxAccounts=24`,
+      { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return null;
     return BigInt((await res.json()).outAmount);
@@ -190,8 +207,12 @@ async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabe
   if (deposited === 0n) {
     return { ok: false, error: "Payment did not deposit the 34% ORE share." };
   }
+  // Without a market quote the deposit cannot be judged, so the payment is not accepted yet
   const expected = await oreForSkrShare(amountSkr);
-  if (expected && deposited * 100n < expected * ORE_SHARE_TOLERANCE_PCT) {
+  if (!expected) {
+    return { ok: false, error: "Could not verify the ORE share right now. Please retry in a minute." };
+  }
+  if (deposited * 100n < expected * ORE_SHARE_TOLERANCE_PCT) {
     return { ok: false, error: "Payment deposited too little ORE." };
   }
 
@@ -234,4 +255,4 @@ async function isSeekerHolderOnChain(wallet) {
   return value;
 }
 
-module.exports = { verifyPayment, isSeekerHolderOnChain };
+module.exports = { verifyPayment, isSeekerHolderOnChain, isValidTxSignature };

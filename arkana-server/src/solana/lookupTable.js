@@ -26,6 +26,7 @@ const {
   VersionedTransaction,
 } = require("@solana/web3.js");
 const { getAssociatedTokenAddressSync } = require("@solana/spl-token");
+const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
 
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://solana-rpc.publicnode.com";
 /** Second RPC for status checks: public RPC load balancers often lag on signature statuses. */
@@ -181,16 +182,13 @@ function loadKeypair() {
   return Keypair.fromSecretKey(Uint8Array.from(secret));
 }
 
+// Throws on a corrupt file: an empty state would make the keeper create (and pay for) a new table
 function loadState() {
-  try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
-  } catch {
-    return {};
-  }
+  return readJson(STATE_FILE);
 }
 
 function saveState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+  writeJsonAtomic(STATE_FILE, state);
 }
 
 async function sendInstructions(connection, authority, instructions) {
@@ -304,7 +302,11 @@ async function refreshLookupTable() {
 }
 
 function getLookupTableAddress() {
-  return loadState().address || null;
+  try {
+    return loadState().address || null;
+  } catch {
+    return null;
+  }
 }
 
 function startLookupTableKeeper() {

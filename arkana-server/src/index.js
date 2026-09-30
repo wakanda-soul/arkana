@@ -18,6 +18,7 @@ const {
 } = require("./logging/dialogueLogger");
 const {
   getClockInStatus,
+  isClockInSignatureUsed,
   refreshSeekerHolderStatus,
   recordClockIn,
   consumeSpread,
@@ -28,10 +29,36 @@ const {
   updateEconomyConfig
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
-const { verifyPayment, isSeekerHolderOnChain } = require("./solana/paymentVerifier");
-const { createNonce, verifySignIn, hasWalletSession } = require("./auth/session");
+const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature } = require("./solana/paymentVerifier");
+const { createNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
 const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please sign in with your wallet again." };
+const PAYMENT_BUSY = { success: false, busy: true, error: "The server is busy verifying payments. Please retry in a moment." };
+
+/** 500 without internals: the details go to the server log only. */
+function serverError(res, err, where) {
+  console.error(`[${where}]`, err && err.message ? err.message : err);
+  if (!res.headersSent) res.status(500).json({ success: false, error: "Internal server error. Please try again." });
+}
+
+/**
+ * Checks the payment signature shape before any RPC call. `required` demands txSignature;
+ * txSignatures (extra tranche transactions) is optional but must be an array of valid signatures.
+ * Returns an error message or null.
+ */
+function paymentSignatureError(body, required) {
+  const { txSignature, txSignatures } = body || {};
+  if (txSignature === undefined || txSignature === null || txSignature === "") {
+    return required ? "Payment signature is required." : null;
+  }
+  if (!isValidTxSignature(txSignature)) return "Invalid payment signature.";
+  if (txSignatures !== undefined && txSignatures !== null) {
+    if (!Array.isArray(txSignatures) || txSignatures.length > 4 || !txSignatures.every(isValidTxSignature)) {
+      return "Invalid payment signature.";
+    }
+  }
+  return null;
+}
 
 /**
  * Uses a free / streak spread when available. Otherwise charges only if the request carries a
@@ -50,14 +77,18 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
     amountSkr,
     actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
   });
-  if (!payment.ok) return { ...free, allowed: false, reason: payment.error };
+  if (!payment.ok) return { ...free, allowed: false, busy: Boolean(payment.busy), reason: payment.error };
   return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
 }
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || "127.0.0.1";
 
-app.use(cors());
+app.disable("x-powered-by");
+// The mobile app (React Native fetch) sends no Origin; browsers may call only from arkana.icu itself
+const CORS_ORIGINS = new Set(["https://arkana.icu"]);
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || CORS_ORIGINS.has(origin)) }));
 
 // One line per API call (method, path, status, time, short wallet); chain proxy noise is skipped
 const QUIET_API = new Set(["/api/solana-rpc", "/api/lookup-table", "/api/health", "/api/version", "/api/treasury"]);
@@ -105,16 +136,23 @@ function clientIp(req) {
   return (fromProxy && req.get("x-real-ip")) || req.ip || peer || "unknown";
 }
 
-// Simple per-IP rate limit for endpoints that call the AI model or hit the chain
+// Simple per-IP rate limit for endpoints that call the AI model or hit the chain.
+// Keyed by a fixed name per limiter (not req.path, which would give every /:wallet its own bucket).
 const rateBuckets = new Map();
-function rateLimit(max, windowMs) {
+let lastPrune = 0;
+function pruneRateBuckets(now) {
+  if (now - lastPrune < 60 * 1000) return;
+  lastPrune = now;
+  for (const [key, b] of rateBuckets) if (now - b.start > b.windowMs) rateBuckets.delete(key);
+}
+function rateLimit(name, max, windowMs) {
   return (req, res, next) => {
-    const key = `${req.path}|${clientIp(req)}`;
+    const key = `${name}|${clientIp(req)}`;
     const now = Date.now();
+    pruneRateBuckets(now);
     const bucket = rateBuckets.get(key);
     if (!bucket || now - bucket.start > windowMs) {
-      rateBuckets.set(key, { start: now, count: 1 });
-      if (rateBuckets.size > 100000) rateBuckets.clear();
+      rateBuckets.set(key, { start: now, count: 1, windowMs });
       return next();
     }
     if (++bucket.count > max) {
@@ -123,8 +161,19 @@ function rateLimit(max, windowMs) {
     next();
   };
 }
-app.use(["/api/chat", "/api/reading", "/api/clock-in"], rateLimit(20, 60 * 1000));
-app.use(["/api/auth", "/api/seeker/status", "/api/solana-rpc"], rateLimit(30, 60 * 1000));
+const MINUTE = 60 * 1000;
+app.use("/api/chat", rateLimit("chat", 20, MINUTE));
+app.use("/api/reading", rateLimit("reading", 20, MINUTE));
+app.post("/api/clock-in", rateLimit("clock-in", 10, MINUTE));
+app.get("/api/clock-in/:wallet", rateLimit("clock-in-status", 30, MINUTE));
+app.use("/api/auth/nonce", rateLimit("auth-nonce", 20, MINUTE));
+app.use("/api/auth/verify", rateLimit("auth-verify", 20, MINUTE));
+app.use("/api/auth/logout", rateLimit("auth-logout", 20, MINUTE));
+app.use("/api/seeker/status", rateLimit("seeker-status", 30, MINUTE));
+app.use("/api/solana-rpc", rateLimit("solana-rpc", 60, MINUTE));
+app.use("/api/offering", rateLimit("offering", 10, MINUTE));
+app.use("/api/subscription/activate", rateLimit("subscription", 10, MINUTE));
+app.use("/api/streak/repair", rateLimit("streak-repair", 10, MINUTE));
 
 // Serve static files (card images, logos, APKs)
 // Only public assets are served. Card art, design files, admin pages and program binaries stay
@@ -226,8 +275,6 @@ app.get("/download", (req, res) => {
 </html>`);
 });
 
-
-// Health check
 // Wallet sign-in: the wallet signs a one-time message, the server issues a session token
 app.post("/api/auth/nonce", (req, res) => {
   const message = createNonce(req.body && req.body.wallet);
@@ -242,6 +289,17 @@ app.post("/api/auth/verify", (req, res) => {
   res.json({ success: true, token: result.token, expiresAt: result.expiresAt });
 });
 
+// Ends the session sent as Authorization: Bearer <token>
+app.post("/api/auth/logout", (req, res) => {
+  try {
+    const ended = endSession(req);
+    res.json({ success: true, loggedOut: ended });
+  } catch (err) {
+    serverError(res, err, "auth/logout");
+  }
+});
+
+// Health check
 app.get("/api/health", (req, res) => {
   const build = getBuildInfo();
   res.json({
@@ -255,12 +313,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// App Version & Build info API
+// App version & build info
 app.get("/api/version", (req, res) => {
   res.json(getBuildInfo());
 });
 
-// Solana Mainnet RPC Proxy (Bypasses browser CORS / 403 restrictions)
 // Read-only RPC proxy for the vault admin pages. The upstream URL (with its API key) stays on the server.
 const RPC_PROXY_METHODS = new Set([
   "getAccountInfo",
@@ -276,11 +333,22 @@ app.post("/api/solana-rpc", async (req, res) => {
   if (!body || Array.isArray(body) || !RPC_PROXY_METHODS.has(body.method)) {
     return res.status(403).json({ jsonrpc: "2.0", error: { code: -32601, message: "Method not allowed" }, id: body?.id ?? null });
   }
+  if (body.params !== undefined && !Array.isArray(body.params)) {
+    return res.status(400).json({ jsonrpc: "2.0", error: { code: -32602, message: "Invalid params" }, id: body.id ?? null });
+  }
+  let params = body.params;
+  if (body.method === "getSignaturesForAddress") {
+    // The upstream default is 1000 signatures per call; the admin pages never need more than 20
+    const opts = params && params[1] && typeof params[1] === "object" && !Array.isArray(params[1]) ? params[1] : {};
+    const limit = Math.min(Math.max(1, Number(opts.limit) || 20), 20);
+    params = [params ? params[0] : undefined, { ...opts, limit }];
+  }
   try {
     const upstreamRes = await fetch(process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: body.id ?? 1, method: body.method, params: body.params }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: body.id ?? 1, method: body.method, params }),
+      signal: AbortSignal.timeout(10000),
     });
     res.json(await upstreamRes.json());
   } catch {
@@ -294,7 +362,7 @@ app.get("/api/deck", (req, res) => {
     const deck = getDeck();
     res.json({ count: deck.length, deck });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "deck");
   }
 });
 
@@ -304,7 +372,7 @@ app.get("/api/spreads", (req, res) => {
 });
 
 const clockInsInFlight = new Set();
-const { findTodayClockIn } = require("./solana/clockInRecovery");
+const { findTodayClockIn, verifyClockInTx } = require("./solana/clockInRecovery");
 
 // Get Clock-In status for a wallet
 app.get("/api/clock-in/:wallet", async (req, res) => {
@@ -318,7 +386,7 @@ app.get("/api/clock-in/:wallet", async (req, res) => {
       try {
         const found = await findTodayClockIn(wallet);
         const card = found && getDeck().find((c) => c.card_no === found.cardNo);
-        if (card && getClockInStatus(wallet).canClockIn) {
+        if (card && getClockInStatus(wallet).canClockIn && !clockInsInFlight.has(wallet) && !isClockInSignatureUsed(wallet, found.signature)) {
           recordClockIn(wallet, { ...card, orientation: found.orientation }, found.signature, found.slot);
           console.log(`[clock-in] recovered from chain ${wallet.slice(0, 4)}…${wallet.slice(-4)} card ${found.cardNo}`);
           status = getClockInStatus(wallet);
@@ -333,11 +401,11 @@ app.get("/api/clock-in/:wallet", async (req, res) => {
     const { subscription, totalOfferedSkr, lastOffering, txSignature, history, ...publicStatus } = status;
     res.json({ ...publicStatus, isSubscribed: Boolean(subscription && subscription.active) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "clock-in status");
   }
 });
 
-// Check and consume spread quota or deduct 5 SKR fee
+// Consume one free / streak spread (paid spreads go through /api/reading with a verified payment)
 app.post("/api/spread/consume", (req, res) => {
   try {
     const { wallet } = req.body;
@@ -349,7 +417,7 @@ app.post("/api/spread/consume", (req, res) => {
     }
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "spread/consume");
   }
 });
 
@@ -362,81 +430,86 @@ app.post("/api/seeker/status", async (req, res) => {
     const status = await refreshSeekerHolderStatus(wallet, isSeekerHolderOnChain);
     res.json({ success: true, wallet, isSeekerHolder: status });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "seeker/status");
   }
 });
 
-// Perform Daily Clock In (1 card draw)
+// Perform Daily Clock In (1 card draw). Counts only with an on-chain proof: today's Daily Consensus
+// memo signed by the wallet. The card comes from that memo, never from the request alone.
 app.post("/api/clock-in", async (req, res) => {
   try {
-    const { wallet, language = "en", cardNo, orientation = "upright", txSignature: clientTx, slot: clientSlot } = req.body;
+    const { wallet, language = "en", cardNo, orientation, txSignature } = req.body;
     if (!wallet) {
       return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
     if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    if (!isValidTxSignature(txSignature)) {
+      return res.status(400).json({ success: false, error: "A signed Clock-In transaction is required." });
+    }
     if (clockInsInFlight.has(wallet) || !getClockInStatus(wallet).canClockIn) {
       return res.status(409).json({ success: false, alreadyClockedIn: true, error: "Already clocked in today." });
     }
+    if (isClockInSignatureUsed(wallet, txSignature)) {
+      return res.status(409).json({ success: false, error: "This Clock-In transaction was already used." });
+    }
     clockInsInFlight.add(wallet);
     res.on("close", () => clockInsInFlight.delete(wallet));
-    let reading = null;
 
-    if (cardNo) {
-      const deck = getDeck();
-      const match = deck.find(c => c.card_no === cardNo);
-      if (match) {
-        const normOrientation = String(orientation).toLowerCase() === "reversed" ? "reversed" : "upright";
-        reading = {
-          spread_name: "Daily Consensus Clock-In",
-          spread_key: "daily-block",
-          category: "crypto",
-          cards: [{
-            position: "Consensus Block",
-            position_hint: "Primary archetype governing today's currents",
-            card_no: match.card_no,
-            crypto_name: match.crypto_name,
-            classic: match.classic,
-            suit: match.suit,
-            arcana: match.arcana,
-            orientation: normOrientation,
-            image: match.image,
-            keywords: match.keywords || [],
-            energy: match.energy || null,
-            oriented_meaning: normOrientation === "reversed" ? match.reversed_full : match.upright_full,
-            symbolism: match.symbolism,
-            advice: match.advice,
-            shadow: match.shadow
-          }],
-          majors_count: match.arcana === "major" ? 1 : 0,
-          structural: true,
-          arcana_note: match.arcana === "major" ? "Major Arcana dominance" : "Minor Arcana",
-          dominant_suit: match.suit,
-          dominant_energy: null
-        };
-      }
+    const proof = await verifyClockInTx(txSignature, wallet);
+    if (proof.error) return res.status(400).json({ success: false, error: proof.error });
+    // The request must describe the card the wallet actually signed
+    const bodyCard = cardNo !== undefined && cardNo !== null && cardNo !== "" ? String(cardNo).padStart(2, "0") : null;
+    const bodyOrientation = orientation ? String(orientation).toLowerCase() : null;
+    if ((bodyCard && bodyCard !== proof.cardNo) || (bodyOrientation && bodyOrientation !== proof.orientation)) {
+      return res.status(400).json({ success: false, error: "Card does not match the signed Clock-In memo." });
     }
+    const match = getDeck().find((c) => c.card_no === proof.cardNo);
+    if (!match) return res.status(400).json({ success: false, error: "Unknown card in the Clock-In memo." });
 
-    if (!reading) {
-      reading = getReading({ spread: "daily-block", category: "crypto" });
-    }
+    const normOrientation = proof.orientation;
+    const reading = {
+      spread_name: "Daily Consensus Clock-In",
+      spread_key: "daily-block",
+      category: "crypto",
+      cards: [{
+        position: "Consensus Block",
+        position_hint: "Primary archetype governing today's currents",
+        card_no: match.card_no,
+        crypto_name: match.crypto_name,
+        classic: match.classic,
+        suit: match.suit,
+        arcana: match.arcana,
+        orientation: normOrientation,
+        image: match.image,
+        keywords: match.keywords || [],
+        energy: match.energy || null,
+        oriented_meaning: normOrientation === "reversed" ? match.reversed_full : match.upright_full,
+        symbolism: match.symbolism,
+        advice: match.advice,
+        shadow: match.shadow
+      }],
+      majors_count: match.arcana === "major" ? 1 : 0,
+      structural: true,
+      arcana_note: match.arcana === "major" ? "Major Arcana dominance" : "Minor Arcana",
+      dominant_suit: match.suit,
+      dominant_energy: null
+    };
+
+    const slot = proof.slot || null;
+    // Record before generating prose, so a slow model never delays or loses the Clock-In
+    const clockInResult = recordClockIn(wallet, reading.cards[0], txSignature, slot);
+    if (!clockInResult.success) return res.status(409).json(clockInResult);
 
     const prose = await generateReadingProse(reading, "Daily Consensus Clock-In", language);
-    const txSignature = clientTx || null;
-    const slot = clientSlot || null;
-
-    let clockInResult = null;
-    if (wallet) {
-      clockInResult = recordClockIn(wallet, reading.cards[0], txSignature, slot);
-    }
 
     logDialogue({
       type: "clock-in",
-      wallet: wallet || "anonymous",
+      wallet,
       user_message: "Daily Consensus Clock-In",
-      oracle_reply: reading.cards && reading.cards[0] ? reading.cards[0].crypto_name : "Consensus",
+      oracle_reply: reading.cards[0].crypto_name,
       status: "success",
       latency_ms: 0,
-      client_ip: String(req.ip || req.headers["x-forwarded-for"] || "unknown")
+      client_ip: clientIp(req)
     });
 
     res.json({
@@ -448,7 +521,7 @@ app.post("/api/clock-in", async (req, res) => {
       prose: prose.beats
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "clock-in");
   }
 });
 
@@ -472,12 +545,35 @@ app.post("/api/reading", async (req, res) => {
       return res.status(401).json({ success: false, error: "Connect your wallet first." });
     }
     if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, false);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
+    if (typeof question !== "string") return res.status(400).json({ success: false, error: "Invalid question." });
+
+    // Same pre-generation safety check as chat, before any quota or payment is spent
+    const questionSafety = question ? evaluateSafetyFilter(question, language) : { blocked: false };
+    if (questionSafety.blocked) {
+      logDialogue({
+        type: "reading",
+        wallet,
+        user_message: question,
+        oracle_reply: questionSafety.reply,
+        is_injection_attempt: questionSafety.reason === "injection",
+        is_code_attempt: questionSafety.reason === "coding",
+        blocked_by_safety: true,
+        safety_reason: questionSafety.reason,
+        status: "blocked",
+        latency_ms: 0,
+        client_ip: clientIp(req)
+      });
+      return res.status(400).json({ success: false, blocked: true, reason: questionSafety.reason, error: questionSafety.reply });
+    }
     {
       quotaResult = await consumeWithVerifiedPayment(wallet, {
         type: "spread",
         txSignature: req.body.txSignature || null,
         txSignatures: req.body.txSignatures
       });
+      if (quotaResult.busy) return res.status(503).json(PAYMENT_BUSY);
       if (!quotaResult.allowed) {
         return res.status(402).json({
           success: false,
@@ -496,20 +592,18 @@ app.post("/api/reading", async (req, res) => {
 
     const prose = await generateReadingProse(reading, question, language);
 
-    // Audit log reading query and check for injection attempts in question
-    const questionSafety = question ? evaluateSafetyFilter(question) : { blocked: false };
     logDialogue({
       type: "reading",
-      wallet: wallet || "anonymous",
+      wallet,
       user_message: question || `spread:${spread}`,
       oracle_reply: prose.beats ? prose.beats.story : "",
-      is_injection_attempt: Boolean(questionSafety.blocked && questionSafety.reason === "injection"),
-      is_code_attempt: Boolean(questionSafety.blocked && questionSafety.reason === "coding"),
-      blocked_by_safety: Boolean(questionSafety.blocked),
-      safety_reason: questionSafety.reason || null,
+      is_injection_attempt: false,
+      is_code_attempt: false,
+      blocked_by_safety: false,
+      safety_reason: null,
       status: "success",
       latency_ms: 0,
-      client_ip: String(req.ip || req.headers["x-forwarded-for"] || "unknown")
+      client_ip: clientIp(req)
     });
 
     res.json({
@@ -531,14 +625,14 @@ app.post("/api/reading", async (req, res) => {
       prose: prose.beats
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "reading");
   }
 });
 
-// Interactive Oracle chat follow-up (proxied to live Oracle AI via agy)
+// Interactive Oracle chat follow-up (Oracle AI via agy)
 app.post("/api/chat", async (req, res) => {
   const startTime = Date.now();
-  const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const ip = clientIp(req);
   const { wallet = "anonymous", txSignature = null } = req.body;
   const message = typeof req.body.message === "string" ? req.body.message.slice(0, 1000) : "";
   const language = typeof req.body.language === "string" ? req.body.language.slice(0, 8) : "en";
@@ -553,15 +647,18 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Message is required" });
   }
 
-  // Enforce shared daily quota for chat queries (1 SKR or 0.0002 SOL beyond free 3)
+  // Shared daily quota; beyond it each question needs a verified SKR payment
   let quotaResult = null;
   // Every question needs a connected wallet
   if (!wallet || wallet === "anonymous") {
     return res.status(401).json({ success: false, error: "Connect your wallet first." });
   }
-  if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
-  {
+  try {
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, false);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
     quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature, txSignatures: req.body.txSignatures });
+    if (quotaResult.busy) return res.status(503).json(PAYMENT_BUSY);
 
     if (!quotaResult.allowed) {
       return res.status(402).json({
@@ -570,6 +667,8 @@ app.post("/api/chat", async (req, res) => {
         quota: quotaResult
       });
     }
+  } catch (err) {
+    return serverError(res, err, "chat quota");
   }
 
   try {
@@ -590,7 +689,7 @@ app.post("/api/chat", async (req, res) => {
       safety_reason: safety.reason || null,
       status: "success",
       latency_ms: Date.now() - startTime,
-      client_ip: String(clientIp)
+      client_ip: ip
     });
 
     res.json({
@@ -600,7 +699,6 @@ app.post("/api/chat", async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.error("Chat error:", err);
     logDialogue({
       type: "chat",
       wallet,
@@ -613,13 +711,12 @@ app.post("/api/chat", async (req, res) => {
       status: "error",
       error: err.message,
       latency_ms: Date.now() - startTime,
-      client_ip: String(clientIp)
+      client_ip: ip
     });
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "chat");
   }
 });
 
-// Public Cryptographic Treasury Attestation Endpoint
 // Arkana Address Lookup Table used by the app to fit payments into one transaction
 app.get("/api/lookup-table", (req, res) => {
   res.json({ success: true, address: getLookupTableAddress() });
@@ -633,25 +730,29 @@ app.get("/api/treasury", (req, res) => {
   });
 });
 
-// Record Altar Offering (Tips) with 50% Burn + 50% Treasury
+// Record Altar Offering (33% burn + 33% treasury + 34% ORE tranche), verified on-chain
 app.post("/api/offering", async (req, res) => {
   try {
     const { wallet, txSignature, amountSkr, message } = req.body;
     if (!wallet) {
       return res.status(400).json({ error: "Wallet address is required" });
     }
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, true);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
     const amount = Number(amountSkr);
     if (![1, 5, 15, 50].includes(amount)) {
       return res.status(400).json({ success: false, error: "Unknown offering amount" });
     }
     const payment = await verifyPayment({ wallet, signature: txSignature, extraSignatures: req.body.txSignatures, amountSkr: amount, actionLabel: "ALTAR_OFFERING" });
+    if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
       return res.status(402).json({ success: false, error: payment.error });
     }
-    const result = recordOffering(wallet, { txSignature, amountSkr: amount, message });
+    const result = recordOffering(wallet, { txSignature, amountSkr: amount, message: typeof message === "string" ? message : undefined });
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "offering");
   }
 });
 
@@ -662,6 +763,9 @@ app.post("/api/subscription/activate", async (req, res) => {
     if (!wallet) {
       return res.status(400).json({ error: "Wallet address is required" });
     }
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, true);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
     const payment = await verifyPayment({
       wallet,
       signature: txSignature,
@@ -669,6 +773,7 @@ app.post("/api/subscription/activate", async (req, res) => {
       amountSkr: 333,
       actionLabel: "SUBSCRIPTION_PASS",
     });
+    if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
       return res.status(402).json({ success: false, error: payment.error });
     }
@@ -676,7 +781,7 @@ app.post("/api/subscription/activate", async (req, res) => {
     const result = recordSubscription(wallet, { txSignature, durationDays: 30 });
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    serverError(res, err, "subscription/activate");
   }
 });
 
@@ -712,7 +817,6 @@ app.post("/api/admin/config", (req, res) => {
   }
 });
 
-// Admin Dialogue Audit Log Endpoints
 // ORE usage for the ORE prize progress reports: vault tranches, staked ORE, claimed yield, payments
 const { getOreStats } = require("./solana/oreStats");
 app.get("/api/admin/ore-stats", async (req, res) => {
@@ -728,7 +832,7 @@ app.get("/api/admin/logs", (req, res) => {
     const result = queryLogs(req.query);
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    serverError(res, err, "admin");
   }
 });
 
@@ -737,7 +841,7 @@ app.get("/api/admin/logs/stats", (req, res) => {
     const stats = getLogStats();
     res.json({ success: true, stats });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    serverError(res, err, "admin");
   }
 });
 
@@ -753,6 +857,9 @@ app.post("/api/streak/repair", async (req, res) => {
   try {
     const { wallet, txSignature } = req.body;
     if (!wallet) return res.status(400).json({ success: false, error: "Wallet address is required." });
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, true);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
     // Check before charging, so nobody pays for a streak that cannot be repaired
     if (!getClockInStatus(wallet).canRepairStreak) {
       return res.status(400).json({ success: false, error: "There is no broken streak to repair." });
@@ -765,6 +872,7 @@ app.post("/api/streak/repair", async (req, res) => {
       amountSkr: config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1,
       actionLabel: "STREAK_REPAIR",
     });
+    if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
       return res.status(402).json({ success: false, error: payment.error });
     }
@@ -774,13 +882,22 @@ app.post("/api/streak/repair", async (req, res) => {
     }
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    serverError(res, err, "streak/repair");
   }
 });
 
+// Last resort for errors Express catches itself (malformed JSON bodies, sync throws): no internals out
+app.use((err, req, res, next) => {
+  if (err && err.type === "entity.parse.failed") {
+    return res.status(400).json({ success: false, error: "Invalid JSON body." });
+  }
+  if (err && err.status === 413) return res.status(413).json({ success: false, error: "Request too large." });
+  serverError(res, err, `${req.method} ${req.path}`);
+});
+
 // Only Caddy on the same machine talks to the API; set HOST=0.0.0.0 for a setup without a proxy
-const server = app.listen(PORT, process.env.HOST || "127.0.0.1", () => {
-  console.log(`🔮 Arkana Oracle Server is running on http://0.0.0.0:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+  console.log(`🔮 Arkana Oracle Server is running on http://${HOST}:${PORT}`);
   startLookupTableKeeper();
 });
 

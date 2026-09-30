@@ -1,13 +1,14 @@
 /**
  * SKR Token & In-App Economy Manager
  * Implements sustainable daily retention, tiered streak bonuses, and fee mechanics:
- * - 3 Free Spreads per day for every user (up to 5/day for active streaks)
+ * - 3 free spreads per day for Seeker Genesis holders, +5 with the Oracle Pass
  * - Additional spreads cost 5 SKR
  * - Daily Clock-In refills spread allowance and tracks streaks (zero token payouts)
  */
 
 const fs = require("fs");
 const path = require("path");
+const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
 
 const DB_PATH = path.join(__dirname, "..", "..", "data");
 const USERS_FILE = path.join(DB_PATH, "users.json");
@@ -29,35 +30,33 @@ function loadEconomyConfig() {
   };
   if (!fs.existsSync(CONFIG_FILE)) {
     try {
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaults, null, 2), "utf-8");
+      writeJsonAtomic(CONFIG_FILE, defaults);
     } catch {}
     return defaults;
   }
+  // A corrupt config falls back to defaults for reads; updateEconomyConfig refuses to overwrite it
   try {
-    return { ...defaults, ...JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8")) };
+    return { ...defaults, ...readJson(CONFIG_FILE) };
   } catch {
     return defaults;
   }
 }
 
 function updateEconomyConfig(newSettings) {
+  readJson(CONFIG_FILE);
   const current = loadEconomyConfig();
   const updated = { ...current, ...newSettings };
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(updated, null, 2), "utf-8");
+  writeJsonAtomic(CONFIG_FILE, updated);
   return updated;
 }
 
+// Throws on a corrupt users.json instead of returning {}, which the next save would write back
 function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) return {};
-  try {
-    return JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
-  } catch {
-    return {};
-  }
+  return readJson(USERS_FILE);
 }
 
 function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+  writeJsonAtomic(USERS_FILE, users);
 }
 
 /** Seeker Genesis holders get 3 free spreads per day. Streaks give banked bonus spreads instead (see getStreakMilestoneReward). */
@@ -103,6 +102,8 @@ async function refreshSeekerHolderStatus(walletAddress, checkOnChain) {
   if (onChain === null || onChain === undefined) return Boolean(stored.isSeekerHolder);
 
   const users = loadUsers();
+  // Unknown wallets that are not holders are not stored: anyone could grow users.json with random keys
+  if (!users[walletAddress] && !onChain) return false;
   const user = users[walletAddress] || { streak: 0 };
   user.isSeekerHolder = Boolean(onChain);
   user.seekerCheckedAt = new Date().toISOString();
@@ -130,7 +131,7 @@ function getStreakMilestoneReward(streak = 0) {
 /**
  * Check wallet Clock-In, spread quota, and streak repair status.
  * Notice: Free daily spreads:
- * - Seeker Genesis SBT: 3 base (up to 5 with streak)
+ * - Seeker Genesis SBT: 3 base
  * - Seeker Oracle Pass (Subscription 333 SKR/mo): +5 spreads/day (total up to 8-10/day)
  * - Streak Milestone Bonus Spreads: Stored on user account, never expire daily
  * - Other wallets: 0 base (require SKR/SOL or Subscription)
@@ -207,7 +208,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   const repairStreakTarget = user.brokenStreak || user.previousStreak || (currentStreak > 0 ? currentStreak : 1);
 
   // Daily free quota calculation:
-  // Seeker Genesis holders get 3-5 base.
+  // Seeker Genesis holders get 3 base.
   // Active subscribers get an additional +5 spreads/day (Total 5 to 8-10 spreads/day!)
   const lastSpreadDate = user.lastSpreadDate || "";
   const dailySpreadsUsed = (lastSpreadDate === todayKey) ? (user.dailySpreadsUsed || 0) : 0;
@@ -254,6 +255,11 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
   const users = loadUsers();
   const now = new Date();
   const user = users[walletAddress] || { streak: 0, history: [], totalReadings: 0 };
+
+  // A Clock-In memo signature counts once
+  if (txSignature && (user.history || []).some((h) => h.txSignature === txSignature)) {
+    return { success: false, alreadyClockedIn: true, streak: user.streak || 0, error: "This Clock-In transaction was already used." };
+  }
 
   const lastDate = user.lastClockIn ? new Date(user.lastClockIn) : null;
   if (lastDate) {
@@ -334,9 +340,9 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
 
 /**
  * Consume a spread or ask quota:
- * - Free if within daily allowance (first 3-5 inquiries shared between spreads & ask)
+ * - Free if within daily allowance (shared between spreads & ask), then banked streak spreads
  * - Costs 1 SKR for chat or 5 SKR for spreads once daily allowance is exhausted
- * - Fallback to SOL payment if SKR balance is insufficient
+ * - Otherwise only with a payment verified on-chain by paymentVerifier
  */
 function consumeSpread(walletAddress, options = {}) {
   const config = loadEconomyConfig();
@@ -576,8 +582,15 @@ function recordSubscription(walletAddress, { txSignature, durationDays = 30 }) {
   };
 }
 
+/** True when `signature` already backs one of the wallet's recorded Clock-Ins. */
+function isClockInSignatureUsed(walletAddress, signature) {
+  const user = loadUsers()[walletAddress];
+  return Boolean(user && (user.history || []).some((h) => h.txSignature === signature));
+}
+
 module.exports = {
   getClockInStatus,
+  isClockInSignatureUsed,
   refreshSeekerHolderStatus,
   recordClockIn,
   consumeSpread,

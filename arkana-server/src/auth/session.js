@@ -5,11 +5,14 @@
  * 2. the app asks the wallet to sign `message` (free, no transaction)
  * 3. POST /api/auth/verify  { wallet, message, signature }    -> { token, expiresAt }
  * 4. requests that spend a wallet's quota send `Authorization: Bearer <token>`
+ * 5. POST /api/auth/logout  (Bearer)                       -> ends that session
+ *
+ * sessions.json keys are sha256(token), so a leaked file does not hand out live sessions.
  */
 const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
 const { PublicKey } = require("@solana/web3.js");
+const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
 
 const SESSIONS_FILE = path.join(__dirname, "..", "..", "data", "sessions.json");
 const NONCE_TTL_MS = 5 * 60 * 1000;
@@ -19,18 +22,30 @@ const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 const nonces = new Map();
 
+const HASH_RE = /^[0-9a-f]{64}$/;
+
+function hashToken(token) {
+  return crypto.createHash("sha256").update(String(token)).digest("hex");
+}
+
+/** Sessions keyed by token hash. Entries still keyed by the plain token (older files) are hashed once. */
 function loadSessions() {
-  try {
-    return JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8"));
-  } catch {
-    return {};
+  const sessions = readJson(SESSIONS_FILE);
+  const plain = Object.keys(sessions).filter((k) => !HASH_RE.test(k));
+  if (plain.length) {
+    for (const token of plain) {
+      sessions[hashToken(token)] = sessions[token];
+      delete sessions[token];
+    }
+    saveSessions(sessions);
   }
+  return sessions;
 }
 
 function saveSessions(sessions) {
   const now = Date.now();
-  for (const [token, s] of Object.entries(sessions)) if (s.expiresAt < now) delete sessions[token];
-  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
+  for (const [key, s] of Object.entries(sessions)) if (s.expiresAt < now) delete sessions[key];
+  writeJsonAtomic(SESSIONS_FILE, sessions);
 }
 
 function isWallet(wallet) {
@@ -95,16 +110,33 @@ function verifySignIn({ wallet, message, signature }) {
   const token = crypto.randomBytes(32).toString("base64url");
   const expiresAt = Date.now() + SESSION_TTL_MS;
   const sessions = loadSessions();
-  sessions[token] = { wallet, expiresAt };
+  sessions[hashToken(token)] = { wallet, expiresAt };
   saveSessions(sessions);
   return { ok: true, token, expiresAt };
 }
 
-function sessionWallet(req) {
+function bearerToken(req) {
   const header = req.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) return null;
-  const session = loadSessions()[header.slice(7)];
+  return header.startsWith("Bearer ") && header.length > 7 ? header.slice(7) : null;
+}
+
+function sessionWallet(req) {
+  const token = bearerToken(req);
+  if (!token) return null;
+  const session = loadSessions()[hashToken(token)];
   return session && session.expiresAt > Date.now() ? session.wallet : null;
+}
+
+/** Ends the session the request carries. Returns true when one was found. */
+function endSession(req) {
+  const token = bearerToken(req);
+  if (!token) return false;
+  const sessions = loadSessions();
+  const key = hashToken(token);
+  if (!sessions[key]) return false;
+  delete sessions[key];
+  saveSessions(sessions);
+  return true;
 }
 
 /**
@@ -116,4 +148,4 @@ function hasWalletSession(req, wallet) {
   return Boolean(wallet) && sessionWallet(req) === wallet;
 }
 
-module.exports = { createNonce, verifySignIn, hasWalletSession };
+module.exports = { createNonce, verifySignIn, hasWalletSession, endSession };
