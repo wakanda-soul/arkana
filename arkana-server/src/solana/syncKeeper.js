@@ -80,9 +80,15 @@ async function sendOnce(connection, payer) {
   // Re-broadcast every 2 s until it lands or the blockhash expires
   const resend = setInterval(() => connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 }).catch(() => {}), 2000);
   try {
-    const result = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-    if (result.value.err) throw new Error(`transaction failed: ${JSON.stringify(result.value.err)}`);
-    return signature;
+    // Poll instead of confirmTransaction: the RPC has no signatureSubscribe websocket
+    while ((await connection.getBlockHeight("confirmed")) <= lastValidBlockHeight) {
+      const { value } = await connection.getSignatureStatuses([signature]);
+      const status = value[0];
+      if (status?.err) throw new Error(`transaction failed: ${JSON.stringify(status.err)}`);
+      if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") return signature;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    throw new Error(`transaction ${signature} expired before confirmation`);
   } finally {
     clearInterval(resend);
   }
