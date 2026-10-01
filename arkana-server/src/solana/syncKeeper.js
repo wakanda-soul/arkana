@@ -110,17 +110,31 @@ async function runSyncStake() {
   throw lastErr;
 }
 
+// Last successful run, so a server restart does not send an extra SyncStake
+const STATE_FILE = path.join(__dirname, "..", "..", "data", "sync_keeper.json");
+const lastRunAt = () => {
+  try {
+    return Number(JSON.parse(fs.readFileSync(STATE_FILE, "utf8")).lastRunAt) || 0;
+  } catch {
+    return 0;
+  }
+};
+
 function startSyncKeeper() {
   if (process.env.ARKANA_SYNC_KEEPER !== "on") return;
+  const intervalMs = HOURS * 60 * 60 * 1000;
   const tick = async () => {
+    if (Date.now() - lastRunAt() < intervalMs - 60 * 1000) return;
     try {
       console.log(`[sync-keeper] SyncStake sent: ${await runSyncStake()}`);
+      fs.writeFileSync(STATE_FILE, JSON.stringify({ lastRunAt: Date.now() }));
     } catch (err) {
       console.warn("[sync-keeper] SyncStake failed:", err.message);
     }
   };
   setTimeout(tick, 60 * 1000);
-  setInterval(tick, HOURS * 60 * 60 * 1000);
+  // Checked hourly; sends only when the interval since the last run has passed
+  setInterval(tick, 60 * 60 * 1000);
 }
 
 module.exports = { startSyncKeeper, runSyncStake, syncStakeInstruction };
