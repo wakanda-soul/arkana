@@ -716,6 +716,7 @@ export interface ExecutePaymentOrSwapParams {
  * - Enough SKR (and !forceSolSwap): paid from the user's SKR.
  * - Otherwise: SOL is swapped to 66% SKR (burn + treasury) and 34% ORE (tranche) at market rate.
  * The user approves once: always one atomic transaction.
+ * Building the plan runs its independent network calls in parallel, so the wallet opens quickly.
  */
 export async function executePaymentOrSwap({
   connection,
