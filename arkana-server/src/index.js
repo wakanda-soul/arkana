@@ -700,6 +700,12 @@ app.post("/api/chat", async (req, res) => {
     const chatResult = await generateOracleChatReply(message.trim(), history, language);
     const reply = typeof chatResult === "string" ? chatResult : chatResult.reply;
     const safety = (chatResult && chatResult.safety) || {};
+    // A refusal never costs a question: the used free or paid question comes back as a banked one
+    let refunded = false;
+    if (safety.refused || safety.blocked) {
+      quotaResult = { ...quotaResult, streakBonusSpreads: creditBonusSpreads(wallet, 1) };
+      refunded = true;
+    }
 
     // Audit log dialogue interaction
     logDialogue({
@@ -709,16 +715,17 @@ app.post("/api/chat", async (req, res) => {
       oracle_reply: reply,
       is_injection_attempt: Boolean(safety.is_injection_attempt),
       is_code_attempt: Boolean(safety.is_code_attempt),
-      blocked_by_safety: Boolean(safety.blocked),
+      blocked_by_safety: Boolean(safety.blocked || safety.refused),
       safety_reason: safety.reason || null,
-      status: "success",
+      status: refunded ? "refunded" : "success",
       latency_ms: Date.now() - startTime,
       client_ip: ip
     });
 
     res.json({
       reply,
-      card: chatResult.card || null,
+      card: refunded ? null : chatResult.card || null,
+      refunded,
       quota: quotaResult,
       timestamp: new Date().toISOString()
     });
