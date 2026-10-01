@@ -6,6 +6,7 @@
  * - Daily Clock-In refills spread allowance and tracks streaks (zero token payouts)
  */
 
+const { getSkrToSolRate } = require("./skrPrice");
 const fs = require("fs");
 const path = require("path");
 const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
@@ -141,7 +142,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   const repairCost = config.streakRepairCostSkr || 1;
   const askCost = config.askCostSkr || 1;
   const extraSpreadCost = config.extraSpreadCostSkr || 5;
-  const skrToSolRate = config.skrToSolRate || 0.0002;
+  const skrToSolRate = getSkrToSolRate(config.skrToSolRate || 0.0002);
   const subscriptionCostSkr = config.subscriptionCostSkr || 333;
 
   if (!walletAddress) {
@@ -159,8 +160,8 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
-      askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
-      extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
+      askCostSol: Number((askCost * skrToSolRate).toFixed(6)),
+      extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(6)),
       subscriptionCostSkr,
       isSubscribed: false,
       subscription: null,
@@ -235,8 +236,8 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     extraSpreadCostSkr: extraSpreadCost,
     askCostSkr: askCost,
     skrToSolRate,
-    askCostSol: Number((askCost * skrToSolRate).toFixed(5)),
-    extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(5)),
+    askCostSol: Number((askCost * skrToSolRate).toFixed(6)),
+    extraSpreadCostSol: Number((extraSpreadCost * skrToSolRate).toFixed(6)),
     subscriptionCostSkr,
     isSubscribed,
     subscription: user.subscription || null,
@@ -348,8 +349,8 @@ function consumeSpread(walletAddress, options = {}) {
   const config = loadEconomyConfig();
   const itemType = options.type || "spread";
   const costSkr = options.cost !== undefined ? options.cost : (itemType === "chat" ? (config.askCostSkr || 1) : (config.extraSpreadCostSkr || 5));
-  const skrToSolRate = config.skrToSolRate || 0.0002;
-  const costSol = Number((costSkr * skrToSolRate).toFixed(5));
+  const skrToSolRate = getSkrToSolRate(config.skrToSolRate || 0.0002);
+  const costSol = Number((costSkr * skrToSolRate).toFixed(6));
   const payWithSol = Boolean(options.payWithSol);
   const txSignature = options.txSignature || null;
 

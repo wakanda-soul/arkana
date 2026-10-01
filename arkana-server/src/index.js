@@ -30,6 +30,7 @@ const {
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { startSyncKeeper } = require("./solana/syncKeeper");
+const { startSkrPriceRefresher } = require("./solana/skrPrice");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature } = require("./solana/paymentVerifier");
 const { createNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
@@ -901,6 +902,7 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`🔮 Arkana Oracle Server is running on http://${HOST}:${PORT}`);
   startLookupTableKeeper();
   startSyncKeeper();
+  startSkrPriceRefresher();
 });
 
 // Port 80 directly (for setups without a reverse proxy). In production Caddy owns 80/443
