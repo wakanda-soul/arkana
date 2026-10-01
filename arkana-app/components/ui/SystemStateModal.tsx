@@ -101,9 +101,9 @@ export function SystemStateModal({
           {/* Top ambient aura bloom */}
           <Animated.View style={[styles.auraBloom, { opacity: pulseAnim }]} />
 
-          {/* Status bar mock */}
+          {/* Header: brand and close */}
           <View style={styles.statusRow}>
-            <Text style={styles.monoDim}>SOLANA MOBILE</Text>
+            <Text style={styles.monoDim}>ARKANA</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text style={styles.closeGlyph}>{'\u2715'}</Text>
             </TouchableOpacity>

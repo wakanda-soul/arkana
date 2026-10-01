@@ -121,16 +121,27 @@ export async function fetchSiwsPayload(): Promise<SiwsPayload> {
   return data.siws as SiwsPayload;
 }
 
+/**
+ * Mobile Wallet Adapter returns the SIWS message and signature as base64 strings, which the wallet
+ * library hands over as the bytes of that text. Decode that layer when it is there.
+ */
+function decodeSignInResult(signedMessage: Uint8Array, signature: Uint8Array): { message: string; signature: string } {
+  let message = Buffer.from(signedMessage).toString('utf-8');
+  if (!message.includes('wants you to sign in') && /^[A-Za-z0-9+/]+={0,2}$/.test(message)) {
+    message = Buffer.from(message, 'base64').toString('utf-8');
+  }
+  let sig = Buffer.from(signature);
+  const asText = sig.toString('latin1');
+  if (sig.length !== 64 && /^[A-Za-z0-9+/]+={0,2}$/.test(asText)) sig = Buffer.from(asText, 'base64');
+  return { message, signature: sig.toString('base64') };
+}
+
 /** Turns the message the wallet signed while connecting into a stored session for `wallet`. */
 export async function completeSiwsSignIn(wallet: string, signedMessage: Uint8Array, signature: Uint8Array): Promise<void> {
   const res = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      wallet,
-      message: Buffer.from(signedMessage).toString('utf-8'),
-      signature: Buffer.from(signature).toString('base64'),
-    }),
+    body: JSON.stringify({ wallet, ...decodeSignInResult(signedMessage, signature) }),
   });
   const data = await res.json();
   if (!data.success || !data.token) throw new Error(data.error || 'Wallet sign-in failed.');

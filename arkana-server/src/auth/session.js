@@ -107,7 +107,30 @@ function verifyEd25519(wallet, message, signature) {
  * `signature` is base64. Wallets return either the 64-byte signature or the signed payload
  * (message with the signature attached), so both shapes are accepted.
  */
-function verifySignIn({ wallet, message, signature }) {
+const BASE64_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Mobile Wallet Adapter hands Sign In With Solana results to the app as base64 strings, and some
+ * app versions forward those strings as if they were the raw bytes. Undo that layer: a message that
+ * is base64 of a SIWS text, a signature that is the ASCII of a base64 signature.
+ */
+function normalizeSignIn(message, signature) {
+  let text = typeof message === "string" ? message : "";
+  if (!text.includes("\n") && BASE64_RE.test(text)) {
+    const decoded = Buffer.from(text, "base64").toString("utf8");
+    if (decoded.startsWith(`${SIWS_DOMAIN} wants you to sign in`)) text = decoded;
+  }
+  let sig = Buffer.from(String(signature || ""), "base64");
+  if (sig.length !== 64 && BASE64_RE.test(sig.toString("latin1"))) {
+    const inner = Buffer.from(sig.toString("latin1"), "base64");
+    if (inner.length === 64 || inner.length > 64) sig = inner;
+  }
+  return { message: text, signature: sig.toString("base64") };
+}
+
+function verifySignIn(input) {
+  const { wallet } = input;
+  const { message, signature } = normalizeSignIn(input.message, input.signature);
   const nonceMatch = typeof message === "string" && message.match(/Nonce: ([0-9a-f]{32})/);
   const pending = nonceMatch && nonces.get(nonceMatch[1]);
   // A SIWS message is built by the wallet: it must name our domain and this wallet
