@@ -15,7 +15,7 @@ pub enum ArkanaAccount {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
 pub struct VaultConfig {
-    /// Official Arkana Treasury (Immutable recipient of matured tranches)
+    /// Arkana Treasury, recipient of matured principal (hardcoded; changeable only by a program upgrade)
     pub treasury: Pubkey,
 
     /// Official ORE Mint Address

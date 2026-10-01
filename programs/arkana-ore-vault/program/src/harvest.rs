@@ -43,7 +43,7 @@ pub fn process_harvest_matured_tranche(
 
     ore_mint_info.has_address(&config.ore_mint)?.as_mint()?;
 
-    // Strict Treasury Address Validation: must match verified treasury in Config and ARKANA_TREASURY_ADDRESS
+    // Treasury address validation: must match the treasury stored in Config and the hardcoded ARKANA_TREASURY_ADDRESS
     treasury_info.has_address(&config.treasury)?;
     treasury_info.has_address(&ARKANA_TREASURY_ADDRESS)?;
 

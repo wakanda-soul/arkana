@@ -1,6 +1,6 @@
 use solana_program::{pubkey, pubkey::Pubkey};
 
-/// Hardcoded Immutable Arkana Treasury Address (Verified Founder Vault)
+/// Arkana Treasury address. Hardcoded; changeable only by a program upgrade (upgrade authority disclosed in README).
 pub const ARKANA_TREASURY_ADDRESS: Pubkey = pubkey!("4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny");
 
 /// Official Mainnet ORE Token Mint Address

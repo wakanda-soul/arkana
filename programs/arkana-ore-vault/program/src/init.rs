@@ -43,7 +43,7 @@ pub fn process_initialize(accounts: &[AccountInfo<'_>], _data: &[u8]) -> Program
     )?;
 
     let config = config_info.as_account_mut::<VaultConfig>(&arkana_ore_vault_api::ID)?;
-    config.treasury = ARKANA_TREASURY_ADDRESS; // Hardcoded, untamperable
+    config.treasury = ARKANA_TREASURY_ADDRESS; // Hardcoded; changeable only by a program upgrade (upgrade authority disclosed in README)
     config.ore_mint = ORE_MINT_ADDRESS;
     config.vault_authority_bump = auth_bump;
     config.is_initialized = 1;
