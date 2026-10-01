@@ -31,6 +31,8 @@ interface SystemStateModalProps {
   onActionPrimary?: () => void;
   onActionSecondary?: () => void;
   customError?: string;
+  /** Live extra-spread price; without it the price line shows "…" */
+  spreadPrice?: { skr: number; sol: number };
 }
 
 export function SystemStateModal({
@@ -40,6 +42,7 @@ export function SystemStateModal({
   onActionPrimary,
   onActionSecondary,
   customError,
+  spreadPrice,
 }: SystemStateModalProps) {
   const { t } = useLanguage();
   const pulseAnim = useRef(new Animated.Value(0.35)).current;
@@ -293,7 +296,7 @@ export function SystemStateModal({
               <View style={styles.orderPanel}>
                 <View>
                   <Text style={styles.orderTitle}>{t('unlimited_asks', 'Unlimited Inquiries')}</Text>
-                  <Text style={styles.orderSub}>{t('order_sub', 'ALLOWANCE \u00B7 0.001 SOL OR 5 SKR')}</Text>
+                  <Text style={styles.orderSub}>{t('order_sub', 'ALLOWANCE \u00B7 {sol} SOL OR {skr} SKR', { sol: spreadPrice?.sol ?? '…', skr: spreadPrice?.skr ?? 5 })}</Text>
                 </View>
                 <Text style={styles.orderArrow}>{'\u2192'}</Text>
               </View>

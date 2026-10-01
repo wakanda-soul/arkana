@@ -527,6 +527,7 @@ export default function SpreadScreen() {
 
       {/* System State Modal */}
       <SystemStateModal
+        spreadPrice={quotaInfo?.extraSpreadCostSol ? { skr: quotaInfo.extraSpreadCostSkr ?? 5, sol: quotaInfo.extraSpreadCostSol } : undefined}
         type={systemState}
         visible={!!systemState}
         onClose={() => setSystemState(null)}

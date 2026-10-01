@@ -683,6 +683,7 @@ export default function WalletScreen() {
       </ScrollView>
 
       <SystemStateModal
+        spreadPrice={clockInState?.extraSpreadCostSol ? { skr: clockInState.extraSpreadCostSkr ?? 5, sol: clockInState.extraSpreadCostSol } : undefined}
         type={systemState}
         visible={!!systemState}
         onClose={() => setSystemState(null)}

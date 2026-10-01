@@ -643,7 +643,7 @@ export default function AltarScreen() {
           <Text style={styles.quotaSub}>
             {clockInState.isSeekerHolder
               ? t('extra_spreads_skr', 'Extra spreads: 5 SKR')
-              : t('spreads_fee_note', 'Offer 5 SKR or 0.001 SOL per reading')}
+              : t('spreads_fee_note', 'Offer {skr} SKR or {sol} SOL per reading', { skr: clockInState.extraSpreadCostSkr ?? 5, sol: clockInState.extraSpreadCostSol ?? '…' })}
           </Text>
         </View>
 
@@ -782,6 +782,7 @@ export default function AltarScreen() {
 
       {/* Edge Case System States Modal */}
       <SystemStateModal
+        spreadPrice={clockInState?.extraSpreadCostSol ? { skr: clockInState.extraSpreadCostSkr ?? 5, sol: clockInState.extraSpreadCostSol } : undefined}
         type={systemState}
         visible={!!systemState}
         customError={customError}

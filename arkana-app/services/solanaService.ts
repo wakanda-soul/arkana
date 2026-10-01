@@ -73,6 +73,35 @@ export const WALLET_NO_RESPONSE_ERROR =
   'Wallet did not respond and no transaction was found on chain. Check your wallet activity before trying again.';
 
 /**
+ * Looks for the payment on chain for up to `waitMs`: used when the wallet reports an error, because
+ * it may have sent the transaction before the app lost the reply (for example when the user switches
+ * apps while it confirms). Returns the signatures, memo transaction first, or null.
+ */
+async function findLandedPayment(
+  wallet: string,
+  memo: string,
+  count: number,
+  sinceSec: number,
+  waitMs: number
+): Promise<string[] | null> {
+  const deadline = Date.now() + waitMs;
+  while (true) {
+    try {
+      const fresh = (await fetchRecentSignatures(wallet, count + 4)).filter(
+        (s) => !s.err && (s.blockTime ?? 0) >= sinceSec
+      );
+      const memoTx = fresh.find((s) => typeof s.memo === 'string' && s.memo.includes(memo));
+      if (memoTx) {
+        const others = fresh.filter((s) => s.signature !== memoTx.signature).slice(0, count - 1);
+        return [memoTx.signature, ...others.map((s) => s.signature)];
+      }
+    } catch {}
+    if (Date.now() >= deadline) return null;
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
+/**
  * Waits for the payment to show up on chain; resolves with its signatures, memo transaction first.
  * Rejects when the deadline passes, so the caller stops waiting.
  */
@@ -189,6 +218,7 @@ export async function executeSolanaTransaction({
     (Array.isArray(result) ? result : [result]).map((r: any) => (typeof r === 'string' ? r : String(r)));
 
   if (signAndSendTransactions) {
+    const signingStartedSec = Math.floor(Date.now() / 1000) - 10;
     try {
       const signing = signAndSendTransactions(transactions, minContextSlot);
       if (recoverMemo) {
@@ -207,37 +237,46 @@ export async function executeSolanaTransaction({
         signatures = toSignatureList(await signing);
       }
     } catch (err: any) {
-      const isUserCancellation =
-        err?.code === -32003 ||
-        /reject|denied|declined/i.test(String(err?.message || '')) ||
-        (err?.code === -1 && /reject|denied|cancel/i.test(String(err?.message || '')));
-      if (isUserCancellation) {
-        throw err;
-      }
-
-      // Only attempt re-authorization when the wallet reported an authorization failure
-      const isAuthError =
-        err?.code === -32000 ||
-        err?.code === -1 ||
-        /authoriz|session.*(expired|invalid)|unauthorized/i.test(String(err?.message || ''));
-      if (isAuthError) {
-        try {
-          await AsyncStorage.removeItem('arkana_wallet_authorization');
-        } catch {}
-
-        signatures = await transact(async (wallet: Web3MobileWallet) => {
-          await wallet.authorize({
-            chain: getNetworkConfig().clusterId,
-            identity: APP_IDENTITY,
-          });
-          return await wallet.signAndSendTransactions({
-            transactions,
-            minContextSlot,
-          });
-        });
-        signatures = toSignatureList(signatures);
+      // The wallet may have sent the payment and lost only its reply: never report a cancel or sign
+      // a second time before checking the chain
+      const landed = recoverMemo
+        ? await findLandedPayment(payerKey.toBase58(), recoverMemo, transactions.length, signingStartedSec, 20_000)
+        : null;
+      if (landed) {
+        signatures = landed;
       } else {
-        throw err;
+        const isUserCancellation =
+          err?.code === -32003 ||
+          /reject|denied|declined/i.test(String(err?.message || '')) ||
+          (err?.code === -1 && /reject|denied|cancel/i.test(String(err?.message || '')));
+        if (isUserCancellation) {
+          throw err;
+        }
+
+        // Only attempt re-authorization when the wallet reported an authorization failure
+        const isAuthError =
+          err?.code === -32000 ||
+          err?.code === -1 ||
+          /authoriz|session.*(expired|invalid)|unauthorized/i.test(String(err?.message || ''));
+        if (isAuthError) {
+          try {
+            await AsyncStorage.removeItem('arkana_wallet_authorization');
+          } catch {}
+
+          signatures = await transact(async (wallet: Web3MobileWallet) => {
+            await wallet.authorize({
+              chain: getNetworkConfig().clusterId,
+              identity: APP_IDENTITY,
+            });
+            return await wallet.signAndSendTransactions({
+              transactions,
+              minContextSlot,
+            });
+          });
+          signatures = toSignatureList(signatures);
+        } else {
+          throw err;
+        }
       }
     }
   } else {

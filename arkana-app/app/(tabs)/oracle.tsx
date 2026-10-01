@@ -95,6 +95,14 @@ const DIVERSE_PROMPTS: RitualPrompt[] = [
 export default function OracleScreen() {
   const { account } = useAuth();
   const { connection, signAndSendTransactions } = useMobileWallet();
+  // Rent of a new ORE vault tranche (112 bytes): the first payment of a UTC day opens one
+  const [trancheRentSol, setTrancheRentSol] = useState<number | null>(null);
+  useEffect(() => {
+    connection
+      .getMinimumBalanceForRentExemption(112)
+      .then((lamports) => setTrancheRentSol(lamports / 1e9))
+      .catch(() => {});
+  }, [connection]);
   const { t, language } = useLanguage();
   // Prompt cards show their category by its translated name, never the internal key (LIFE, CRAFT...)
   const categoryLabel = (key: string) => {
@@ -861,6 +869,11 @@ export default function OracleScreen() {
                   ? t('offering_skr_sub', 'Wallet balance: {balance} SKR \u00B7 Inscribed on-chain', { balance: skrBalance })
                   : t('offering_sol_sub', 'Zero SKR on wallet \u00B7 Paid in SOL via Solana consensus ({cost} SOL)', { cost: askCostSol })}
               </Text>
+              {trancheRentSol !== null && (
+                <Text style={styles.modalPriceSub}>
+                  {t('payment_rent_note', 'Plus the network fee. The first payment of each day also opens your ORE tranche: about {rent} SOL of rent, returned to you with the yield after 365 days.', { rent: trancheRentSol.toFixed(4) })}
+                </Text>
+              )}
             </View>
 
             {pendingQuery ? (
