@@ -428,8 +428,53 @@ function classifyUserIntent(message) {
  * silently when the model reached for a tool that print mode denies. Both tries share the
  * AGY_OPTIONS timeout budget (30 s in total).
  */
+// Each model CLI process takes about 400 MB and a full core while it runs; on a 4-core / 6 GB server
+// ten at once already fill the RAM. At most this many run together; the rest wait for a slot.
+const MAX_MODEL_CALLS = Number(process.env.ARKANA_MAX_MODEL_CALLS) || 6;
+let activeModelCalls = 0;
+const modelQueue = [];
+
+function acquireModelSlot(waitMs) {
+  if (activeModelCalls < MAX_MODEL_CALLS) {
+    activeModelCalls++;
+    return Promise.resolve(true);
+  }
+  return new Promise((resolve) => {
+    const entry = { resolve, timer: null };
+    entry.timer = setTimeout(() => {
+      const i = modelQueue.indexOf(entry);
+      if (i >= 0) modelQueue.splice(i, 1);
+      resolve(false);
+    }, waitMs);
+    modelQueue.push(entry);
+  });
+}
+
+function releaseModelSlot() {
+  const next = modelQueue.shift();
+  if (next) {
+    clearTimeout(next.timer);
+    next.resolve(true); // the slot passes straight to the next caller
+  } else {
+    activeModelCalls--;
+  }
+}
+
 function runModel(prompt, callback) {
   const started = Date.now();
+  acquireModelSlot(AGY_OPTIONS.timeout - 8000).then((gotSlot) => {
+    if (!gotSlot) {
+      console.warn(`[Oracle AI] all ${MAX_MODEL_CALLS} model slots busy, answering with the built-in engine`);
+      return callback(null, "", "busy: no model slot");
+    }
+    runModelInSlot(prompt, started, (err, stdout, stderr) => {
+      releaseModelSlot();
+      callback(err, stdout, stderr);
+    });
+  });
+}
+
+function runModelInSlot(prompt, started, callback) {
   const once = (timeout, done) =>
     execFile(
       AGY_BIN,
@@ -437,7 +482,8 @@ function runModel(prompt, callback) {
       { ...AGY_OPTIONS, timeout },
       done
     );
-  once(AGY_OPTIONS.timeout, (err, stdout, stderr) => {
+  // One 30 s budget from the start of the request, queue wait included (at least 8 s for the call)
+  once(Math.max(8000, AGY_OPTIONS.timeout - (Date.now() - started)), (err, stdout, stderr) => {
     const left = AGY_OPTIONS.timeout - (Date.now() - started);
     if (!err && !String(stdout || "").trim() && left > 8000) {
       console.warn("[Oracle AI] empty model answer, retrying once:", String(stderr || "").replace(/\s+/g, " ").slice(0, 300));
