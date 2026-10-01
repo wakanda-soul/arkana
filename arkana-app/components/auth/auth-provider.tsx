@@ -1,12 +1,10 @@
 import { createContext, type PropsWithChildren, use, useEffect, useMemo } from 'react'
-import { Alert } from 'react-native'
-import { useLanguage } from '@/services/i18n'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { AppConfig } from '@/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { soundService } from '@/services/soundService'
-import { ensureWalletSession, clearWalletSession, setSessionSigner, SignInDeclinedError } from '@/services/sessionService'
+import { clearWalletSession, completeSiwsSignIn, fetchSiwsPayload, hasValidSession, setSessionSigner } from '@/services/sessionService'
 import { resubmitPendingPayments } from '@/services/oracleApi'
 
 export interface AuthState {
@@ -28,32 +26,37 @@ export function useAuth() {
   return value
 }
 
+/** Set while a connect is in flight, so the launch check does not mistake it for a lost session. */
+let connectInFlight: Promise<unknown> | null = null
+
+/**
+ * Connect and sign in with one wallet visit (Sign In With Solana): the wallet shows the connection
+ * and the free sign-in message together, and the session it yields lasts 30 days per wallet.
+ */
 function useConnectMutation() {
-  const { connect, signIn } = useMobileWallet()
+  const { signIn, disconnect } = useMobileWallet()
 
   return useMutation({
     mutationFn: async () => {
-      try {
-        // Clear any stale cached authorization token first to guarantee a fresh MWA handshake
+      const run = (async () => {
+        // Fetched while the app is in the foreground: the network is blocked once the wallet opens
+        const payload = await fetchSiwsPayload()
         await AsyncStorage.removeItem('arkana_wallet_authorization')
-        return await connect()
-      } catch (err: any) {
-        console.warn('[Auth] Standard connect failed, evaluating fallback:', err)
-        const isCancellation =
-          err?.code === -32003 ||
-          /reject|denied|declined/i.test(String(err?.message || ''))
-        if (isCancellation) {
+        const result = await signIn({ ...payload, uri: AppConfig.uri })
+        const wallet = result.account.publicKey.toBase58()
+        try {
+          await completeSiwsSignIn(wallet, result.signedMessage, result.signature)
+        } catch (err) {
+          await disconnect().catch(() => {})
           throw err
         }
-        try {
-          await AsyncStorage.removeItem('arkana_wallet_authorization')
-          return await signIn({
-            uri: AppConfig.uri,
-          })
-        } catch (signInErr: any) {
-          console.error('[Auth] Both connect and signIn failed:', signInErr)
-          throw err || signInErr
-        }
+        return result.account
+      })()
+      connectInFlight = run
+      try {
+        return await run
+      } finally {
+        connectInFlight = null
       }
     },
   })
@@ -62,31 +65,29 @@ function useConnectMutation() {
 export function AuthProvider({ children }: PropsWithChildren) {
   const { accounts, disconnect, signMessage } = useMobileWallet()
   const connectMutation = useConnectMutation()
-  const { t } = useLanguage()
   const walletAddress = accounts?.[0]?.publicKey?.toBase58?.() ?? null
 
-  // One free message signature per wallet (renewed every ~30 days) proves to the server
-  // that requests spending this wallet's quota come from its owner.
   useEffect(() => {
-    // Lets API calls renew a lost or expired session with the same wallet
+    // Lets API calls renew a session the server no longer knows, after a user action
     setSessionSigner(walletAddress, (message) => signMessage(message))
     if (!walletAddress) return
-    ensureWalletSession(walletAddress, (message) => signMessage(message))
-      // Passes and offerings paid while the server was unreachable are sent again once signed in
-      .then(() => resubmitPendingPayments(walletAddress))
-      .catch((err) => {
-        console.warn('[Auth] Wallet session sign-in skipped:', err?.message || err)
-        // Without the signed sign-in the wallet only looks connected: every paid action would
-        // fail. Disconnect so the next tap on CONNECT asks for both again.
-        if (err instanceof SignInDeclinedError) {
-          disconnect().catch(() => {})
-          Alert.alert(
-            t('signin_declined_title', 'Wallet not connected'),
-            t('signin_declined_body', 'The sign-in message was not signed. Connect the wallet again and approve both requests: the connection and the free sign-in message.'),
-          )
-        }
-      })
-  }, [walletAddress, signMessage, disconnect, t])
+    let cancelled = false
+    ;(async () => {
+      await connectInFlight?.catch(() => {})
+      if (cancelled) return
+      if (await hasValidSession(walletAddress)) {
+        // Passes and offerings paid while the server was unreachable are sent again
+        resubmitPendingPayments(walletAddress).catch(() => {})
+      } else {
+        // The 30-day session ran out: show the wallet as disconnected instead of popping up a
+        // signature request nobody asked for. CONNECT signs in again in one wallet visit.
+        disconnect().catch(() => {})
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [walletAddress, signMessage, disconnect])
 
   const value: AuthState = useMemo(
     () => ({

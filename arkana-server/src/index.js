@@ -32,7 +32,7 @@ const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/look
 const { startSyncKeeper } = require("./solana/syncKeeper");
 const { startSkrPriceRefresher } = require("./solana/skrPrice");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature } = require("./solana/paymentVerifier");
-const { createNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
+const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
 const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please sign in with your wallet again." };
 const PAYMENT_BUSY = { success: false, busy: true, error: "The server is busy verifying payments. Please retry in a moment." };
@@ -279,7 +279,8 @@ app.get("/download", (req, res) => {
 
 // Wallet sign-in: the wallet signs a one-time message, the server issues a session token
 app.post("/api/auth/nonce", (req, res) => {
-  const message = createNonce(req.body && req.body.wallet);
+  if (!req.body || !req.body.wallet) return res.json({ success: true, siws: createSiwsNonce() });
+  const message = createNonce(req.body.wallet);
   if (!message) return res.status(400).json({ success: false, error: "Invalid wallet address" });
   res.json({ success: true, message });
 });

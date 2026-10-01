@@ -7,6 +7,10 @@
  * 4. requests that spend a wallet's quota send `Authorization: Bearer <token>`
  * 5. POST /api/auth/logout  (Bearer)                       -> ends that session
  *
+ * Connect-and-sign-in in one wallet visit (Sign In With Solana): the wallet is not known yet, so
+ * POST /api/auth/nonce {} returns `siws` (domain, statement, nonce) for the MWA authorize call, and
+ * /api/auth/verify gets the message text the wallet built and signed.
+ *
  * sessions.json keys are sha256(token), so a leaked file does not hand out live sessions.
  */
 const crypto = require("crypto");
@@ -56,6 +60,24 @@ function isWallet(wallet) {
   }
 }
 
+const SIWS_DOMAIN = "arkana.icu";
+const SIWS_STATEMENT = "Sign in to Arkana. This is not a transaction and costs nothing.";
+
+function rememberNonce(nonce, entry) {
+  nonces.set(nonce, { ...entry, expiresAt: Date.now() + NONCE_TTL_MS });
+  if (nonces.size > 10000) {
+    const now = Date.now();
+    for (const [k, v] of nonces) if (v.expiresAt < now) nonces.delete(k);
+  }
+}
+
+/** Sign In With Solana payload for a wallet that is not connected yet. */
+function createSiwsNonce() {
+  const nonce = crypto.randomBytes(16).toString("hex");
+  rememberNonce(nonce, { siws: true });
+  return { domain: SIWS_DOMAIN, statement: SIWS_STATEMENT, nonce, issuedAt: new Date().toISOString() };
+}
+
 function createNonce(wallet) {
   if (!isWallet(wallet)) return null;
   const nonce = crypto.randomBytes(16).toString("hex");
@@ -63,11 +85,7 @@ function createNonce(wallet) {
     `Arkana sign-in\n\n` +
     `Sign to prove this wallet is yours. This is not a transaction and costs nothing.\n\n` +
     `Wallet: ${wallet}\nNonce: ${nonce}\nIssued: ${new Date().toISOString()}`;
-  nonces.set(nonce, { wallet, message, expiresAt: Date.now() + NONCE_TTL_MS });
-  if (nonces.size > 10000) {
-    const now = Date.now();
-    for (const [k, v] of nonces) if (v.expiresAt < now) nonces.delete(k);
-  }
+  rememberNonce(nonce, { wallet, message });
   return message;
 }
 
@@ -87,7 +105,13 @@ function verifyEd25519(wallet, message, signature) {
 function verifySignIn({ wallet, message, signature }) {
   const nonceMatch = typeof message === "string" && message.match(/Nonce: ([0-9a-f]{32})/);
   const pending = nonceMatch && nonces.get(nonceMatch[1]);
-  if (!pending || pending.wallet !== wallet || pending.message !== message || pending.expiresAt < Date.now()) {
+  // A SIWS message is built by the wallet: it must name our domain and this wallet
+  const siwsOk =
+    pending?.siws &&
+    isWallet(wallet) &&
+    message.startsWith(`${SIWS_DOMAIN} wants you to sign in with your Solana account:\n${wallet}\n`);
+  const plainOk = pending && !pending.siws && pending.wallet === wallet && pending.message === message;
+  if (!pending || !(siwsOk || plainOk) || pending.expiresAt < Date.now()) {
     return { ok: false, error: "Sign-in request expired. Please try again." };
   }
 
@@ -160,4 +184,4 @@ function sessionMissReason(req, wallet) {
   return `token expired ${new Date(session.expiresAt).toISOString()}`;
 }
 
-module.exports = { createNonce, verifySignIn, hasWalletSession, endSession };
+module.exports = { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession };

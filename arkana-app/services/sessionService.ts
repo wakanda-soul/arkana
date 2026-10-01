@@ -51,9 +51,6 @@ export async function hasValidSession(wallet: string): Promise<boolean> {
   return Boolean(session && session.wallet === wallet && session.expiresAt - RENEW_BEFORE_MS > Date.now());
 }
 
-/** The wallet did not sign the sign-in message (closed, declined or failed to open). */
-export class SignInDeclinedError extends Error {}
-
 let pendingSignIn: Promise<void> | null = null;
 
 /**
@@ -76,12 +73,7 @@ export async function ensureWalletSession(
     const { message } = await nonceRes.json();
     if (!message) throw new Error('Sign-in is unavailable right now.');
 
-    let signed: Uint8Array;
-    try {
-      signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
-    } catch (err: any) {
-      throw new SignInDeclinedError(err?.message || String(err));
-    }
+    const signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
     const verifyRes = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -99,6 +91,41 @@ export async function ensureWalletSession(
   } finally {
     pendingSignIn = null;
   }
+}
+
+export interface SiwsPayload {
+  domain: string;
+  statement: string;
+  nonce: string;
+  issuedAt: string;
+}
+
+/** Sign In With Solana payload for the connect call, fetched before the wallet opens. */
+export async function fetchSiwsPayload(): Promise<SiwsPayload> {
+  const res = await netFetch(`${API_BASE_URL}/api/auth/nonce`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const data = await res.json();
+  if (!data?.siws?.nonce) throw new Error('Sign-in is unavailable right now.');
+  return data.siws as SiwsPayload;
+}
+
+/** Turns the message the wallet signed while connecting into a stored session for `wallet`. */
+export async function completeSiwsSignIn(wallet: string, signedMessage: Uint8Array, signature: Uint8Array): Promise<void> {
+  const res = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      wallet,
+      message: Buffer.from(signedMessage).toString('utf-8'),
+      signature: Buffer.from(signature).toString('base64'),
+    }),
+  });
+  const data = await res.json();
+  if (!data.success || !data.token) throw new Error(data.error || 'Wallet sign-in failed.');
+  await writeSessions({ ...(await readSessions()), [wallet]: { wallet, token: data.token, expiresAt: data.expiresAt } });
 }
 
 /** Forgets the session of `wallet` (the connected one by default). */
