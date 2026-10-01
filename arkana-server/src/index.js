@@ -9,7 +9,8 @@ const {
   generateReadingProse,
   generateOracleChatReply,
   evaluateSafetyFilter,
-  refundNote
+  refundNote,
+  fallbackRefundNote
 } = require("./ai/oracleService");
 const {
   logDialogue,
@@ -705,12 +706,16 @@ app.post("/api/chat", async (req, res) => {
     // hold: the payment was verified on chain for this request (and is now marked used, so one
     // payment can be given back at most once) AND the model or the output check refused.
     const paidQuestion = Boolean(quotaResult && quotaResult.allowed && quotaResult.isFree === false && quotaResult.txSignature);
+    // Also given back: a PAID question the model did not answer, read by the built-in engine instead
+    const refusal = Boolean(safety.refused || safety.blocked);
+    const engineAnswer = safety.reason === "fallback";
     let refunded = false;
-    if (paidQuestion && (safety.refused || safety.blocked)) {
+    if (paidQuestion && (refusal || engineAnswer)) {
       quotaResult = { ...quotaResult, streakBonusSpreads: creditBonusSpreads(wallet, 1) };
       refunded = true;
     }
-    const finalReply = refunded ? `${reply}\n\n${refundNote(message, language)}` : reply;
+    const note = !refunded ? "" : refusal ? refundNote(message, language) : fallbackRefundNote(message, language);
+    const finalReply = refunded ? `${reply}\n\n${note}` : reply;
 
     // Audit log dialogue interaction
     logDialogue({
