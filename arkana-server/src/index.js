@@ -729,7 +729,8 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({
       reply: finalReply,
-      card: refunded ? null : chatResult.card || null,
+      // A refusal is not a reading: no card, whether the question was paid or free
+      card: safety.refused || safety.blocked ? null : chatResult.card || null,
       refunded,
       quota: quotaResult,
       timestamp: new Date().toISOString()
