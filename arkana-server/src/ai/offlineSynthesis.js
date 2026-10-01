@@ -176,4 +176,4 @@ function generateOfflineSynthesis(reading, userQuestion = "", language = "en") {
   };
 }
 
-module.exports = { generateOfflineSynthesis };
+module.exports = { generateOfflineSynthesis, localizedCard };

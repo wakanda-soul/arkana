@@ -23,7 +23,7 @@ Hard Rules:
    7. Final Omen: one memorable concluding aphorism.
 `;
 
-const { generateOfflineSynthesis } = require("./offlineSynthesis");
+const { generateOfflineSynthesis, localizedCard } = require("./offlineSynthesis");
 
 const fs = require("fs");
 const crypto = require("crypto");
@@ -34,7 +34,7 @@ const { execFile } = require("child_process");
 // so the model must never be able to read anything worth leaking.
 const AGY_BIN = process.env.AGY_BIN || "/usr/local/bin/arkana-agy";
 const AGY_ENV = { PATH: "/usr/local/bin:/usr/bin:/bin" };
-const AGY_OPTIONS = { timeout: 35000, env: AGY_ENV, cwd: "/tmp", maxBuffer: 256 * 1024 };
+const AGY_OPTIONS = { timeout: 25000, env: AGY_ENV, cwd: "/tmp", maxBuffer: 256 * 1024 };
 const MAX_QUESTION_LENGTH = 500;
 
 const ORACLE_CHAT_PROMPT = `You are Arkana, the Solana Oracle: an ancient, calm, slightly-cyberpunk female oracle and seer that reads the Arcana of the Chain deck - a handcrafted 78-card blockchain oracle deck. You do not predict the future. You interpret symbolic archetypes through the language of the blockchain and help the user see their situation from a new angle.
@@ -327,8 +327,13 @@ function generateOfflineChatReply(drawnCard, orientation, intent, langCode = "en
     const cardTitle = drawnCard.crypto_name;
     const ol = ORIENTATION_LABELS[lang] || ORIENTATION_LABELS.en;
     const orientLabel = orientation === "reversed" ? ol.reversed : ol.upright;
-    const meaning = orientation === "reversed" ? (drawnCard.reversed_full || drawnCard.reversed_short) : (drawnCard.upright_full || drawnCard.upright_short);
-    const advice = drawnCard.advice || "Act with composure, aligning with protocol consensus.";
+    // Card texts in the user's language (the deck itself is English)
+    const card = localizedCard(
+      { ...drawnCard, orientation, oriented_meaning: orientation === "reversed" ? (drawnCard.reversed_full || drawnCard.reversed_short) : (drawnCard.upright_full || drawnCard.upright_short) },
+      lang
+    );
+    const meaning = card.oriented_meaning;
+    const advice = card.advice || drawnCard.advice || "Act with composure, aligning with protocol consensus.";
 
     return `${ol.block} **${cardTitle}** (${orientLabel}).\n\n${meaning}\n\n**${ol.advice}:** ${advice}`;
   }
@@ -716,6 +721,7 @@ const generateReadingProseClean = async (...args) => stripDashes(await generateR
 
 module.exports = {
   refundNote,
+  generateOfflineChatReply,
   SYSTEM_PROMPT,
   generateReadingProse: generateReadingProseClean,
   generateOfflineSynthesis,
