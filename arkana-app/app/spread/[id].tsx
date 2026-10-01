@@ -62,6 +62,14 @@ export default function SpreadScreen() {
   const [systemState, setSystemState] = useState<SystemStateType>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
   const { connection, signAndSendTransactions } = useMobileWallet();
+  // Rent of a new ORE vault tranche (112 bytes): the first payment of a UTC day opens one
+  const [trancheRentSol, setTrancheRentSol] = useState<number | null>(null);
+  useEffect(() => {
+    connection
+      .getMinimumBalanceForRentExemption(112)
+      .then((lamports) => setTrancheRentSol(lamports / 1e9))
+      .catch(() => {});
+  }, [connection]);
   // Set before any payment starts, so a second tap can never pay twice
   const drawBusyRef = useRef(false);
   const [isDrawBusy, setIsDrawBusy] = useState(false);
@@ -392,6 +400,11 @@ export default function SpreadScreen() {
                   {balance >= extraCost
                     ? t('exhausted_skr_desc', 'Your daily free allowance is exhausted. This casting will deduct {cost} SKR from your balance.', { cost: extraCost })
                     : t('exhausted_sol_desc', 'Your daily free allowance is exhausted and SKR balance is 0. Paying {cost} SOL.', { cost: extraCostSol })}
+                </Text>
+              )}
+              {walletAddress && !hasFreeRemaining && trancheRentSol !== null && (
+                <Text style={styles.warningText}>
+                  {t('payment_rent_note', 'Plus the network fee. 34% becomes ORE staked for you: the yield is yours, and after 365 days the ORE principal goes to the treasury while the yield and about {rent} SOL of tranche rent (paid on the first payment of the day) return to you.', { rent: trancheRentSol.toFixed(4) })}
                 </Text>
               )}
             </View>

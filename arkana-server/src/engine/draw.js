@@ -11,14 +11,15 @@
  *
  * <spread>: network-scan (default) | validator-cross | crypto-compass |
  *           <integer N> | comma,separated,positions
- * --seed N: reproducible draw; if omitted a random seed is chosen and echoed
- *           back so any draw can be replayed. NOTE: a seed reproduces only within
+ * --seed N: reproducible draw (testing only); if omitted the draw uses the OS CSPRNG
+ *           and "seed" in the output is null. NOTE: a seed reproduces only within
  *           the SAME runtime — draw.js (mulberry32) and draw.py (Mersenne Twister)
  *           use different PRNGs, so seeds are not portable between Node and Python.
  *
  * Output: JSON on stdout. The Oracle loads each card's passport from
  * ../references/cards/ and interprets. It must NOT re-draw.
  */
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -34,9 +35,12 @@ const SPREADS = {
   "crypto-compass": ["The Crypto Compass", ["You", "Market", "Project", "Opportunity", "Risk"]],
 };
 
-// Seedable PRNG (mulberry32) so --seed reproduces a draw; Math.random otherwise.
+// Uniform float in [0, 1) from the OS CSPRNG
+const secureRandom = () => crypto.randomInt(0, 2 ** 48) / 2 ** 48;
+
+// Seedable PRNG (mulberry32) only when --seed asks for a reproducible draw; the CSPRNG otherwise.
 function makeRng(seed) {
-  if (seed === null || seed === undefined) return Math.random;
+  if (seed === null || seed === undefined) return secureRandom;
   let a = seed >>> 0;
   return function () {
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -90,8 +94,9 @@ function performDraw(spreadArg, seed, deck) {
   const [name, key, positions] = resolveSpread(spreadArg);
   if (positions.length > deck.length) throw new Error(`spread wants ${positions.length} cards, deck has ${deck.length}`);
 
-  if (seed === null || seed === undefined || Number.isNaN(seed)) seed = Math.floor(Math.random() * 2 ** 31);
-  const rnd = makeRng(seed);
+  // Without an explicit seed every draw comes from the CSPRNG and cannot be replayed or predicted
+  if (Number.isNaN(seed)) seed = null;
+  const rnd = makeRng(seed ?? null);
 
   const picked = sample(deck, positions.length, rnd);
   const cards = positions.map((pos, i) => ({

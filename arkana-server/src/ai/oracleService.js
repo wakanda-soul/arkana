@@ -26,6 +26,7 @@ Hard Rules:
 const { generateOfflineSynthesis } = require("./offlineSynthesis");
 
 const fs = require("fs");
+const crypto = require("crypto");
 const { execFile } = require("child_process");
 
 // The model CLI runs in a bubblewrap sandbox (/usr/local/bin/arkana-agy): it cannot see project files,
@@ -409,8 +410,8 @@ function generateOracleChatReply(message, history = [], language = "en") {
         const { getDeck } = require("../engine/oracleEngine");
         const deck = getDeck();
         if (deck && deck.length > 0) {
-          drawnCard = deck[Math.floor(Math.random() * deck.length)];
-          orientation = Math.random() > 0.75 ? "reversed" : "upright";
+          drawnCard = deck[crypto.randomInt(deck.length)];
+          orientation = crypto.randomInt(4) === 0 ? "reversed" : "upright";
         }
       } catch (e) {
         console.warn("Could not draw card for chat:", e);

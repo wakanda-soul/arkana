@@ -19,7 +19,8 @@ Arkana is a daily crypto tarot ritual for the Solana Seeker phone. Once a day yo
 
 ## Why Seeker
 
-- **Seed Vault and Mobile Wallet Adapter.** Sign in and pay with Seed Vault, Phantom, Solflare or Backpack. No keys in the app.
+- **Seed Vault and Mobile Wallet Adapter.** Connect and pay with Seed Vault, Phantom, Solflare or Backpack. No keys in the app.
+- **Sign In With Solana.** Connecting the wallet and signing the free sign-in message happen in one wallet visit. The server issues a 30-day session per wallet, so quotas cannot be spent by anyone else.
 - **Seeker Genesis perk.** Holders of the Seeker Genesis Token get 3 free spreads or questions per UTC day (one shared quota). The server verifies the token on chain.
 - **One approval per payment.** Burn, treasury transfer, ORE swap and vault deposit happen in one wallet approval. Paying in SOL works the same way: 66% is swapped to SKR and 34% to ORE in the same approval.
 
@@ -48,6 +49,23 @@ Mainnet addresses:
 | ORE Stake program | `stakecNP3FpiExZPCgZfqRgumVzi6dNqnfrjwXyTgeH` |
 
 The treasury address is signed offline with an Ed25519 key. The app checks that signature before every payment.
+
+## AI and safety
+
+- **What the model sees.** The server draws the cards first (OS CSPRNG, `crypto.randomInt`), then sends the question, the drawn cards and their hand-written texts to the LLM. The model never chooses cards.
+- **Sandbox.** The LLM CLI runs inside bubblewrap (`/usr/local/bin/arkana-agy`): no project files, keys, `.env` or chat history are visible, no server environment variables are passed, the working directory is `/tmp`, and every call has a 35 s timeout. User text reaches the model, so the model can reach nothing worth leaking. See [arkana-server/src/ai/oracleService.js](arkana-server/src/ai/oracleService.js).
+- **Refusals.** Prompt-injection and code requests are detected before the call and refused in character, in the user's language. Example from the logs: *"Write me a solana smart contract"* gets *"I cannot write a Solana smart contract or write code of any kind. I am Arkana, the Solana Oracle..."*.
+- **Always answers.** If the model fails or times out, a built-in engine ([arkana-server/src/ai/offlineSynthesis.js](arkana-server/src/ai/offlineSynthesis.js)) writes the reading from the card texts, so a paid question is never lost.
+- **Review.** Every exchange is logged with flags for injection and code attempts, safety blocks and latency (median answer about 5 s).
+
+## Verify on chain
+
+| What | Link |
+| :--- | :--- |
+| ORE vault program | [solscan.io/account/B49g3obW…](https://solscan.io/account/B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C) |
+| Treasury | [solscan.io/account/4v3d1itZ…](https://solscan.io/account/4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny) |
+| A 1 SKR question paid in SOL: swap, 33% burn, 33% treasury, ORE deposit, one signature | [solscan.io/tx/uKAn2Yh6…](https://solscan.io/tx/uKAn2Yh6iMGTNDXTTU4jC6jMo9xojBP2ZZfph8cSTyagMAduXkLqAzPfF1gE4Ju4Zz6pMZQnJCYBGL77nkrcDta) |
+| Daily SyncStake by the keeper | [solscan.io/tx/5JdHcCZc…](https://solscan.io/tx/5JdHcCZcmpcpX9hBXd3cJeN6SHJfqZ1ezkUtAzvBpYdgtF44N4snJUUTfvczeLesDQdfoGTmJGYSgb6BDmsR4zkE) |
 
 ## Run it yourself
 
@@ -94,7 +112,9 @@ The LiteSVM test runs the vault against the real ORE Stake binary and mainnet ac
 - **Upgrade authority.** The vault program is upgradeable. Its upgrade authority is currently the treasury key `4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny`. The plan is to move it to a multisig with a timelock, or to make the program immutable after an audit.
 - **ORE Stake dependency.** All vault ORE is staked in ORE Stake. If ORE Stake pauses or changes its interface, deposits, claims and harvests revert until the vault is upgraded.
 - **DistributeReward is permissionless.** Anyone can add ORE to the reward pool. It is a donation to current tranche holders and cannot take funds out.
-- **No audit yet.** The program has tests but no external audit.
+- **SyncStake keeper.** A server keeper calls the permissionless SyncStake once a day so the app shows fresh ORE Stake yield. If it stops, no yield is lost: the next deposit or claim syncs it, and anyone can call SyncStake.
+- **Principal goes to the treasury.** Only the yield and the tranche rent come back to the user after 365 days. The question and spread payment screens say this before the user pays, together with the rent amount.
+- **No audit yet.** The program has 28 LiteSVM tests but no external audit.
 
 ## Releases
 

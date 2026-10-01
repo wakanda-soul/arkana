@@ -871,7 +871,7 @@ export default function OracleScreen() {
               </Text>
               {trancheRentSol !== null && (
                 <Text style={styles.modalPriceSub}>
-                  {t('payment_rent_note', 'Plus the network fee. The first payment of each day also opens your ORE tranche: about {rent} SOL of rent, returned to you with the yield after 365 days.', { rent: trancheRentSol.toFixed(4) })}
+                  {t('payment_rent_note', 'Plus the network fee. 34% becomes ORE staked for you: the yield is yours, and after 365 days the ORE principal goes to the treasury while the yield and about {rent} SOL of tranche rent (paid on the first payment of the day) return to you.', { rent: trancheRentSol.toFixed(4) })}
                 </Text>
               )}
             </View>
