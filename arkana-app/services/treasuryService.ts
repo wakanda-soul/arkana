@@ -77,7 +77,11 @@ export function verifyTreasuryAttestation(
 /**
  * Fetch and cryptographically authenticate the Treasury from the backend
  */
+let verifiedTreasury: PublicKey | null = null;
+
 export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey> {
+  // Verified once per app run: the attestation and the built-in address do not change
+  if (verifiedTreasury) return verifiedTreasury;
   const res = await netFetch(`${apiBaseUrl}/api/treasury`);
   if (!res.ok) {
     throw new Error('Failed to retrieve Treasury configuration from server.');
@@ -104,6 +108,7 @@ export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey
   if (!treasury.equals(getNetworkConfig().treasuryAddress)) {
     throw new Error('SECURITY ALERT: Treasury address does not match the one built into the app.');
   }
+  verifiedTreasury = treasury;
   return treasury;
 }
 
@@ -286,13 +291,14 @@ export async function fetchJupiterSwapInstructions({
 
   const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
   if (swapData.addressLookupTableAddresses && Array.isArray(swapData.addressLookupTableAddresses)) {
-    for (const addr of swapData.addressLookupTableAddresses) {
-      // A missing lookup table would silently bloat the transaction past the size limit
+    // Loaded in parallel; a missing table would silently bloat the transaction past the size limit
+    const load = async (addr: string) => {
       let alt = await connection.getAddressLookupTable(new PublicKey(addr)).catch(() => null);
       if (!alt?.value) alt = await connection.getAddressLookupTable(new PublicKey(addr)).catch(() => null);
       if (!alt?.value) throw new Error('DEX route data could not be loaded. Please try again in a moment.');
-      addressLookupTableAccounts.push(alt.value);
-    }
+      return alt.value;
+    };
+    addressLookupTableAccounts.push(...(await Promise.all(swapData.addressLookupTableAddresses.map(load))));
   }
 
   const outAmount = BigInt(quote.outAmount);
@@ -529,8 +535,12 @@ export async function buildSkrPaymentPlan({
   const totalRaw = BigInt(Math.round(amountSkr * decimalsMultiplier));
   const { burnRaw, treasuryRaw, oreShareRaw } = splitPrice(totalRaw);
 
-  const burnAndTreasury = await buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw });
-  const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw });
+  // Independent network work runs in parallel: the wallet opens sooner
+  const [burnAndTreasury, oreLeg, arkanaTable] = await Promise.all([
+    buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw }),
+    buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw }),
+    getArkanaLookupTable(connection),
+  ]);
 
   return {
     skrGroup: {
@@ -542,7 +552,7 @@ export async function buildSkrPaymentPlan({
       swaps: [],
     },
     oreGroup: { instructions: oreLeg.instructions, swaps: oreLeg.swaps },
-    addressLookupTableAccounts: [...(await getArkanaLookupTable(connection)), ...oreLeg.addressLookupTableAccounts],
+    addressLookupTableAccounts: [...arkanaTable, ...oreLeg.addressLookupTableAccounts],
   };
 }
 
@@ -584,20 +594,23 @@ export async function buildSolPaymentPlan({
   }
   const oreShareLamports = (BigInt(priceLamports) * oreShareRaw) / totalRaw;
 
-  // 1. SOL -> exactly burnRaw + treasuryRaw SKR (Jupiter setup creates the user's SKR ATA if needed)
-  const solToSkr = await fetchJupiterSwapInstructions({
-    connection,
-    userPublicKey: payer,
-    inputMint: WSOL_MINT,
-    outputMint: SKR_MINT,
-    amountRaw: burnRaw + treasuryRaw,
-    swapMode: 'ExactOut',
-    slippageBps: 100,
-  });
-  const burnAndTreasury = await buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw });
-
-  // 2. SOL -> ORE for the 34% share, deposited into today's tranche
-  const oreLeg = await buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports });
+  // Both swap legs, the treasury check and the lookup table load in parallel: the wallet opens sooner
+  const [solToSkr, burnAndTreasury, oreLeg, arkanaTable] = await Promise.all([
+    // 1. SOL -> exactly burnRaw + treasuryRaw SKR (Jupiter setup creates the user's SKR ATA if needed)
+    fetchJupiterSwapInstructions({
+      connection,
+      userPublicKey: payer,
+      inputMint: WSOL_MINT,
+      outputMint: SKR_MINT,
+      amountRaw: burnRaw + treasuryRaw,
+      swapMode: 'ExactOut',
+      slippageBps: 100,
+    }),
+    buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw }),
+    // 2. SOL -> ORE for the 34% share, deposited into today's tranche
+    buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports }),
+    getArkanaLookupTable(connection),
+  ]);
 
   return {
     skrGroup: {
@@ -610,7 +623,7 @@ export async function buildSolPaymentPlan({
     },
     oreGroup: { instructions: oreLeg.instructions, swaps: oreLeg.swaps },
     addressLookupTableAccounts: [
-      ...(await getArkanaLookupTable(connection)),
+      ...arkanaTable,
       ...solToSkr.addressLookupTableAccounts,
       ...oreLeg.addressLookupTableAccounts,
     ],
@@ -702,7 +715,7 @@ export interface ExecutePaymentOrSwapParams {
  * 33% SKR burned + 33% SKR to the Arkana Treasury + 34% ORE in the user's daily tranche (staked in ORE Stake).
  * - Enough SKR (and !forceSolSwap): paid from the user's SKR.
  * - Otherwise: SOL is swapped to 66% SKR (burn + treasury) and 34% ORE (tranche) at market rate.
- * The user always approves once: one transaction, or two transactions in the same wallet prompt.
+ * The user approves once: always one atomic transaction.
  */
 export async function executePaymentOrSwap({
   connection,
