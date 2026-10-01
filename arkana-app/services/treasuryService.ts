@@ -1,3 +1,5 @@
+import { savePendingPayment } from '@/services/pendingPayments';
+import { secureRandomHex } from '@/utils/secureRandom';
 import {
   Connection,
   PublicKey,
@@ -96,8 +98,17 @@ export async function getVerifiedTreasury(apiBaseUrl: string): Promise<PublicKey
     );
   }
 
-  return new PublicKey(address);
+  // The vault program only ever sends principal to this hardcoded treasury: payments must use the same
+  // one, so a validly signed but different address (e.g. an old attestation) is refused too
+  const treasury = new PublicKey(address);
+  if (!treasury.equals(getNetworkConfig().treasuryAddress)) {
+    throw new Error('SECURITY ALERT: Treasury address does not match the one built into the app.');
+  }
+  return treasury;
 }
+
+/** Highest price the app will ever sign for, whatever the server says (the Oracle Pass is 333). */
+export const MAX_PAYMENT_SKR = 333;
 
 /**
  * Query live Jupiter DEX rate for converting SOL to exact SKR
@@ -122,7 +133,7 @@ export async function getLiveSolQuoteForSkr(
     console.warn('Failed to fetch live Jupiter quote, using fallback rate:', e);
   }
 
-  // Canonical fallback rate: 1 SKR = 0.0002 SOL (1 SOL = 5,000 SKR)
+  // Display-only estimate while Jupiter is unreachable; a SOL payment always swaps at a live quote
   const rate = 0.0002;
   const fallbackSol = Number((amountSkr * rate).toFixed(5));
   return {
@@ -169,6 +180,19 @@ interface JupiterSwapResult {
  * Jupiter's compute budget instructions are NOT included: they are returned as numbers,
  * so several swaps can share one ComputeBudget pair in a single transaction.
  */
+/** Account cap for Jupiter routes; lowered while rebuilding a payment that did not fit one transaction. */
+let jupiterMaxAccounts = 24;
+
+// Programs a Jupiter swap may use. Anything else returned by the API is refused before signing.
+const ALLOWED_SWAP_PROGRAMS = new Set([
+  'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4', // Jupiter v6
+  'ComputeBudget111111111111111111111111111111',
+  '11111111111111111111111111111111', // System
+  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', // SPL Token
+  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb', // Token-2022
+  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL', // Associated Token Account
+]);
+
 export async function fetchJupiterSwapInstructions({
   connection,
   userPublicKey,
@@ -188,12 +212,12 @@ export async function fetchJupiterSwapInstructions({
 }): Promise<JupiterSwapResult> {
   // SOL legs use direct pools and other legs cap accounts, to keep the whole payment in one transaction
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
-  const extraParams = isSolLeg ? '&onlyDirectRoutes=true' : '&maxAccounts=24';
+  const extraParams = isSolLeg ? '&onlyDirectRoutes=true' : `&maxAccounts=${jupiterMaxAccounts}`;
   const baseQuoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}`;
   let quoteRes = await jupiterFetch(baseQuoteUrl + extraParams);
   // Liquidity moves between pools: when no direct pool can fill the swap, allow a short multi-hop route
   if (!quoteRes.ok && isSolLeg) {
-    quoteRes = await jupiterFetch(baseQuoteUrl + '&maxAccounts=24');
+    quoteRes = await jupiterFetch(baseQuoteUrl + `&maxAccounts=${jupiterMaxAccounts}`);
   }
   if (!quoteRes.ok) {
     throw new Error(`DEX swap quote unavailable for ${inputMint.toBase58()} -> ${outputMint.toBase58()} (${quoteRes.status})`);
@@ -221,16 +245,25 @@ export async function fetchJupiterSwapInstructions({
   const swapData = await swapRes.json();
   const instructions: TransactionInstruction[] = [];
 
-  const deserialize = (ix: any) =>
-    new TransactionInstruction({
-      programId: new PublicKey(ix.programId),
-      keys: ix.accounts.map((acc: any) => ({
-        pubkey: new PublicKey(acc.pubkey),
-        isSigner: acc.isSigner,
-        isWritable: acc.isWritable,
-      })),
-      data: Buffer.from(ix.data, 'base64'),
-    });
+  // The swap API's answer goes into the user's transaction, so it is checked first: only known
+  // programs, and no signer other than the user
+  const deserialize = (ix: any) => {
+    if (!ALLOWED_SWAP_PROGRAMS.has(String(ix?.programId))) {
+      throw new Error(`DEX route uses an unexpected program (${ix?.programId}). Payment cancelled before signing.`);
+    }
+    const keys = (ix.accounts || []).map((acc: any) => ({
+      pubkey: new PublicKey(acc.pubkey),
+      isSigner: Boolean(acc.isSigner),
+      isWritable: Boolean(acc.isWritable),
+    }));
+    if (keys.some((k: { pubkey: PublicKey; isSigner: boolean }) => k.isSigner && !k.pubkey.equals(userPublicKey))) {
+      throw new Error('DEX route asks for an unexpected signer. Payment cancelled before signing.');
+    }
+    return new TransactionInstruction({ programId: new PublicKey(ix.programId), keys, data: Buffer.from(ix.data, 'base64') });
+  };
+  if (!swapData.swapInstruction) {
+    throw new Error('DEX returned no swap instruction.');
+  }
 
   // ComputeBudget: [2, u32 LE] = SetComputeUnitLimit, [3, u64 LE] = SetComputeUnitPrice
   let computeUnitLimit = 0;
@@ -246,9 +279,7 @@ export async function fetchJupiterSwapInstructions({
       instructions.push(deserialize(ix));
     }
   }
-  if (swapData.swapInstruction) {
-    instructions.push(deserialize(swapData.swapInstruction));
-  }
+  instructions.push(deserialize(swapData.swapInstruction));
   if (swapData.cleanupInstruction) {
     instructions.push(deserialize(swapData.cleanupInstruction));
   }
@@ -256,14 +287,11 @@ export async function fetchJupiterSwapInstructions({
   const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
   if (swapData.addressLookupTableAddresses && Array.isArray(swapData.addressLookupTableAddresses)) {
     for (const addr of swapData.addressLookupTableAddresses) {
-      try {
-        const alt = await connection.getAddressLookupTable(new PublicKey(addr));
-        if (alt.value) {
-          addressLookupTableAccounts.push(alt.value);
-        }
-      } catch (e) {
-        console.warn('Failed to load ALT address:', addr, e);
-      }
+      // A missing lookup table would silently bloat the transaction past the size limit
+      let alt = await connection.getAddressLookupTable(new PublicKey(addr)).catch(() => null);
+      if (!alt?.value) alt = await connection.getAddressLookupTable(new PublicKey(addr)).catch(() => null);
+      if (!alt?.value) throw new Error('DEX route data could not be loaded. Please try again in a moment.');
+      addressLookupTableAccounts.push(alt.value);
     }
   }
 
@@ -399,7 +427,7 @@ async function buildOreTrancheInstructions({
   const { targetTrancheId } = await getTargetTrancheInfo(connection, payer);
 
   if (isDevnet()) {
-    // Devnet fallback simulation
+    // Devnet builds only (test mints, no DEX): deposits a test amount. Mainnet builds never reach this
     const estimatedOre = BigInt(Math.max(1, Math.round(Number(amountInRaw) / 1000)));
     instructions.push(await createDepositTrancheInstruction(payer, targetTrancheId, estimatedOre));
     return { instructions, addressLookupTableAccounts: [], swaps: [], targetTrancheId };
@@ -484,12 +512,15 @@ export async function buildSkrPaymentPlan({
   treasuryPublicKey,
   amountSkr,
   actionLabel = 'PAYMENT',
+  memoNonce,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
+  /** Random per payment: lets the app find exactly this payment on chain if the wallet reply is lost */
+  memoNonce: string;
 }): Promise<PaymentPlan> {
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
@@ -506,7 +537,7 @@ export async function buildSkrPaymentPlan({
       instructions: [
         ...burnAndTreasury,
         // Compact proof memo; the server verifies the burn + treasury transfer in this transaction
-        buildMemoInstruction(payer, `ARKANA:${actionLabel}:${oreLeg.targetTrancheId}`),
+        buildMemoInstruction(payer, `ARKANA:${actionLabel}:${oreLeg.targetTrancheId}:N=${memoNonce}`),
       ],
       swaps: [],
     },
@@ -526,12 +557,15 @@ export async function buildSolPaymentPlan({
   treasuryPublicKey,
   amountSkr,
   actionLabel = 'PAYMENT',
+  memoNonce,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
   treasuryPublicKey: PublicKey;
   amountSkr: number;
   actionLabel?: string;
+  /** Random per payment: lets the app find exactly this payment on chain if the wallet reply is lost */
+  memoNonce: string;
 }): Promise<PaymentPlan> {
   if (isDevnet()) {
     throw new Error('SOL payments need a live Jupiter route and are available on mainnet only. Use tSKR on devnet.');
@@ -570,7 +604,7 @@ export async function buildSolPaymentPlan({
       instructions: [
         ...solToSkr.instructions,
         ...burnAndTreasury,
-        buildMemoInstruction(payer, `ARKANA:${actionLabel}:SOL:${oreLeg.targetTrancheId}`),
+        buildMemoInstruction(payer, `ARKANA:${actionLabel}:SOL:${oreLeg.targetTrancheId}:N=${memoNonce}`),
       ],
       swaps: [solToSkr],
     },
@@ -604,8 +638,8 @@ function compileTransaction(
 }
 
 /**
- * Turns a payment plan into transactions: one atomic transaction when it fits,
- * otherwise the two independent groups as two transactions (still one wallet approval).
+ * Turns a payment plan into ONE atomic transaction. A payment is never split: if only part of a
+ * split payment landed, the user would lose the burn and treasury share with nothing credited.
  */
 export function compilePaymentTransactions(
   payer: PublicKey,
@@ -624,20 +658,21 @@ export function compilePaymentTransactions(
     ],
     addressLookupTableAccounts
   );
-  if (single) return [single];
+  if (!single) throw new Error(ROUTE_TOO_LARGE);
+  return [single];
+}
 
-  const split = [skrGroup, oreGroup].map((group) =>
-    compileTransaction(
-      payer,
-      blockhash,
-      [...buildComputeBudgetInstructions(group.swaps), ...group.instructions],
-      addressLookupTableAccounts
-    )
-  );
-  if (split.some((tx) => !tx)) {
-    throw new Error('DEX route is too large for a Solana transaction. Please try again in a moment.');
+const ROUTE_TOO_LARGE = 'DEX route is too large for a Solana transaction. Please try again in a moment.';
+// Any valid blockhash gives the same size: used to check a plan fits before asking the wallet
+const SIZE_CHECK_BLOCKHASH = PublicKey.default.toBase58();
+
+function planFits(payer: PublicKey, plan: PaymentPlan): boolean {
+  try {
+    compilePaymentTransactions(payer, SIZE_CHECK_BLOCKHASH, plan);
+    return true;
+  } catch {
+    return false;
   }
-  return split as VersionedTransaction[];
 }
 
 const extraPaymentSignatures = new Map<string, string[]>();
@@ -690,23 +725,42 @@ export async function executePaymentOrSwap({
   if (currentSkr === null) {
     throw new Error('SKR balance could not be read. Check your connection and try again.');
   }
+  if (!(amountSkr > 0) || amountSkr > MAX_PAYMENT_SKR) {
+    throw new Error(`Refusing an unexpected price of ${amountSkr} SKR.`);
+  }
   const paidWith: 'skr' | 'sol_swap' = !forceSolSwap && currentSkr >= amountSkr ? 'skr' : 'sol_swap';
 
   const buildPlan = paidWith === 'skr' ? buildSkrPaymentPlan : buildSolPaymentPlan;
-  const plan = await buildPlan({
-    connection,
-    userPublicKey: payer,
-    treasuryPublicKey: treasury,
-    amountSkr,
-    actionLabel,
-  });
+  const memoNonce = secureRandomHex(8);
+  const planArgs = { connection, userPublicKey: payer, treasuryPublicKey: treasury, amountSkr, actionLabel, memoNonce };
+  let plan = await buildPlan(planArgs);
+  if (!planFits(payer, plan)) {
+    // Ask Jupiter for shorter routes once; if it still does not fit, stop before anything is signed
+    jupiterMaxAccounts = 14;
+    try {
+      plan = await buildPlan(planArgs);
+    } finally {
+      jupiterMaxAccounts = 24;
+    }
+    if (!planFits(payer, plan)) throw new Error(ROUTE_TOO_LARGE);
+  }
 
   const { signatures } = await executeSolanaTransaction({
     connection,
     payerKey: payer,
     buildTransactions: (blockhash) => compilePaymentTransactions(payer, blockhash, plan),
     signAndSendTransactions,
-    recoverMemo: `ARKANA:${actionLabel}:`,
+    // Only this payment's own random nonce: a memo someone else sends to the wallet never matches
+    recoverMemo: `:N=${memoNonce}`,
+    // Stored the moment the wallet answers: if the request never reaches the server, the next app
+    // start sends the signature to /api/payment/credit and the payment is credited anyway
+    onSigned: async (sigs) =>
+      savePendingPayment(payer.toBase58(), {
+        kind: 'unsubmitted',
+        signature: sigs[0],
+        body: { wallet: payer.toBase58(), txSignature: sigs[0], actionLabel },
+        createdAt: Date.now(),
+      }),
   });
 
   // The first transaction holds the burn, the treasury transfer and the memo; a split payment

@@ -1,3 +1,4 @@
+import { secureRandomInt } from '@/utils/secureRandom';
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -400,8 +401,8 @@ export default function OracleScreen() {
       }
 
       console.warn("Chat error, engaging offline oracle synthesis:", e);
-      const fallbackCard = localizeCard(ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)], language);
-      const isReversed = Math.random() > 0.75;
+      const fallbackCard = localizeCard(ALL_CARDS[secureRandomInt(ALL_CARDS.length)], language);
+      const isReversed = secureRandomInt(4) === 0;
       const cardPayload: ZoomCardData = {
         card_no: fallbackCard.card_no,
         crypto_name: fallbackCard.crypto_name,

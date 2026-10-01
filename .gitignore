@@ -107,4 +107,7 @@ arkana-server/data/lookup_table.json
 arkana-server/public/version.json
 arkana-server/data/used_payments.json
 arkana-server/data/sessions.json
+# Key for hashing client IPs in logs
+arkana-server/data/.log_ip_key
+arkana-server/data/*.tmp
 arkana-server/private/

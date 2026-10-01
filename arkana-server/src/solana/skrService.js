@@ -612,7 +612,18 @@ function isClockInSignatureUsed(walletAddress, signature) {
   return Boolean(user && (user.history || []).some((h) => h.txSignature === signature));
 }
 
+/** Banked bonus spreads or questions, e.g. for a verified payment whose request never reached the server. */
+function creditBonusSpreads(walletAddress, count = 1) {
+  const users = loadUsers();
+  const user = users[walletAddress] || {};
+  user.streakBonusSpreads = (user.streakBonusSpreads || 0) + count;
+  users[walletAddress] = user;
+  saveUsers(users);
+  return user.streakBonusSpreads;
+}
+
 module.exports = {
+  creditBonusSpreads,
   getClockInStatus,
   isClockInSignatureUsed,
   refreshSeekerHolderStatus,

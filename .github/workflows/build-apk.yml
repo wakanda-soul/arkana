@@ -13,8 +13,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only by default: dependency install scripts never see a token that can write to the repo.
+# Only the separate release job below gets contents: write.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -23,26 +25,26 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        continue-on-error: true
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
 
       - name: Install App Dependencies
         working-directory: ./arkana-app
-        run: npm ci || npm install --legacy-peer-deps
+        # Exactly the lockfile, nothing else
+        run: npm ci
 
       - name: Dynamic Versioning & Build Info Injection
         working-directory: ./arkana-app
@@ -121,11 +123,11 @@ jobs:
           sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
           
           # All traffic is HTTPS (arkana.icu); make sure cleartext stays off
-          sed -i 's/ android:usesCleartextTraffic="true"//' android/app/src/main/AndroidManifest.xml || true
+          sed -i 's/ android:usesCleartextTraffic="true"//' android/app/src/main/AndroidManifest.xml
           
           # MWA queries for Solana Wallets (Phantom, Solflare, Backpack)
           # Ensure launchMode is singleTask for reliable MWA deep-link intents on Xiaomi/Poco/MIUI
-          sed -i 's/android:launchMode="singleTop"/android:launchMode="singleTask"/' android/app/src/main/AndroidManifest.xml || true
+          sed -i 's/android:launchMode="singleTop"/android:launchMode="singleTask"/' android/app/src/main/AndroidManifest.xml
 
       - name: Build Android APK (Release Standalone)
         working-directory: ./arkana-app/android
@@ -143,7 +145,7 @@ jobs:
 
       - name: Upload Build Log on Failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: gradle-build-failure-log
           path: arkana-app/android/gradle_build.log
@@ -157,9 +159,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ARKANA_KEY_PASSWORD }}
         run: |
           APK_FILE=$(find arkana-app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          # Never publish a debug-signed APK: anyone could sign an "update" with the public debug key
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "No release key secrets set: the APK stays debug-signed."
-            exit 0
+            echo "::error::ARKANA_KEYSTORE_* secrets are not set; refusing to publish a debug-signed APK."
+            exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
@@ -179,38 +182,48 @@ jobs:
             echo "Found APK at: $APK_FILE"
             cp "$APK_FILE" "arkana-v${VERSION_NAME}.apk"
             # Release metadata for the download server (scripts/sync_release.sh)
-            printf '{\n  "version": "%s",\n  "buildNumber": %s,\n  "commitSha": "%s",\n  "updatedAt": "%s"\n}\n' \
-              "$VERSION_NAME" "$BUILD_NUM" "$SHORT_SHA" "$(date -u '+%Y-%m-%d %H:%M UTC')" > version.json
+            SHA256=$(sha256sum "arkana-v${VERSION_NAME}.apk" | cut -d' ' -f1)
+            echo "$SHA256  arkana-v${VERSION_NAME}.apk" > "arkana-v${VERSION_NAME}.apk.sha256"
+            printf '{\n  "version": "%s",\n  "buildNumber": %s,\n  "commitSha": "%s",\n  "sha256": "%s",\n  "updatedAt": "%s"\n}\n' \
+              "$VERSION_NAME" "$BUILD_NUM" "$SHORT_SHA" "$SHA256" "$(date -u '+%Y-%m-%d %H:%M UTC')" > version.json
             cp "$APK_FILE" arkana-latest.apk
             cp "$APK_FILE" arkana-v1.0.0-beta.apk
             ls -lh arkana-*.apk
           else
             echo "No APK found in release output directory!"
-            find arkana-app/android/app/build/outputs -name "*.apk" || true
+            find arkana-app/android/app/build/outputs -name "*.apk"
             exit 1
           fi
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: arkana-solana-mobile-apk
           path: |
             arkana-v${{ env.VERSION_NAME }}.apk
+            arkana-v${{ env.VERSION_NAME }}.apk.sha256
             version.json
             arkana-latest.apk
             arkana-v1.0.0-beta.apk
           retention-days: 30
 
-      - name: Publish GitHub Release
-        continue-on-error: true
-        run: |
-          echo "Publishing APKs via gh release tool..."
-          gh release upload v1.0.0-beta arkana-latest.apk --clobber || true
-          gh release upload v1.0.0-beta arkana-v1.0.0-beta.apk --clobber || true
-          if [ -f "arkana-v${VERSION_NAME}.apk" ]; then
-            gh release upload v1.0.0-beta "arkana-v${VERSION_NAME}.apk" --clobber || true
-          fi
-          gh release upload v1.0.0-beta version.json --clobber || true
-          echo "Release upload completed."
+  release:
+    name: Publish to the GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    # The only job that can write to the repository; it runs no project code
+    permissions:
+      contents: write
+    steps:
+      - name: Download build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: arkana-solana-mobile-apk
+
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          ls -l
+          gh release upload v1.0.0-beta -R "$REPO" --clobber arkana-v*.apk arkana-v*.apk.sha256 arkana-latest.apk version.json

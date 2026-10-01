@@ -3,9 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * Payments that landed on chain but were not credited by the server yet (it did not answer).
  * They are kept per wallet so the app can submit the same signature again instead of charging twice:
- * readings and questions reuse it on the next attempt, passes and offerings are re-sent on app start.
+ * readings and questions reuse it on the next attempt, passes, offerings and repairs are re-sent on
+ * app start. 'unsubmitted' is stored the moment the wallet signs, before the request exists; on the
+ * next start it (and any reading or question left unused) goes to /api/payment/credit.
  */
-export type PendingPaymentKind = 'reading' | 'chat' | 'subscription' | 'offering';
+export type PendingPaymentKind = 'reading' | 'chat' | 'subscription' | 'offering' | 'streak_repair' | 'unsubmitted';
 
 export interface PendingPayment {
   kind: PendingPaymentKind;
@@ -16,7 +18,7 @@ export interface PendingPayment {
 }
 
 /** The server refuses payments older than this, so older entries are dropped. */
-const MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const storageKey = (wallet: string) => `arkana_pending_payments_${wallet}`;
 

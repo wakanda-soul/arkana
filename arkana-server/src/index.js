@@ -25,13 +25,14 @@ const {
   repairStreak,
   recordOffering,
   recordSubscription,
+  creditBonusSpreads,
   loadEconomyConfig,
   updateEconomyConfig
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { startSyncKeeper } = require("./solana/syncKeeper");
 const { startSkrPriceRefresher } = require("./solana/skrPrice");
-const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature } = require("./solana/paymentVerifier");
+const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel } = require("./solana/paymentVerifier");
 const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
 const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please sign in with your wallet again." };
@@ -186,6 +187,7 @@ app.use("/api/solana-rpc", rateLimit("solana-rpc", 60, MINUTE));
 app.use("/api/offering", rateLimit("offering", 10, MINUTE));
 app.use("/api/subscription/activate", rateLimit("subscription", 10, MINUTE));
 app.use("/api/streak/repair", rateLimit("streak-repair", 10, MINUTE));
+app.use("/api/payment/credit", rateLimit("payment-credit", 10, MINUTE));
 
 // Serve static files (card images, logos, APKs)
 // Only public assets are served. Card art, design files, admin pages and program binaries stay
@@ -929,6 +931,59 @@ app.post("/api/streak/repair", async (req, res) => {
     res.json(result);
   } catch (err) {
     serverError(res, err, "streak/repair");
+  }
+});
+
+/**
+ * A payment the app signed but whose request never reached the server (the app was killed or lost
+ * the network in between). The app sends the signature again on its next start; the server reads
+ * the action from the on-chain memo, verifies the payment like any other and credits it:
+ * questions and spreads as banked bonus uses, passes, repairs and offerings as themselves.
+ */
+app.post("/api/payment/credit", async (req, res) => {
+  try {
+    const { wallet, txSignature } = req.body || {};
+    if (!wallet || !txSignature) return res.status(400).json({ success: false, error: "Wallet and payment signature are required." });
+    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
+    const signatureError = paymentSignatureError(req.body, true);
+    if (signatureError) return res.status(400).json({ success: false, error: signatureError });
+
+    const found = await paymentActionLabel(txSignature);
+    if (found.pending) return res.status(402).json({ success: false, error: "Payment transaction not found on-chain yet. Try again in a minute." });
+    if (found.error) return res.status(400).json({ success: false, error: found.error });
+
+    const config = loadEconomyConfig();
+    const amounts = {
+      ORACLE_ASK: [config.askCostSkr || 1],
+      EXTRA_SPREAD: [config.extraSpreadCostSkr || 5],
+      STREAK_REPAIR: [config.streakRepairCostSkr !== undefined ? config.streakRepairCostSkr : 1],
+      SUBSCRIPTION_PASS: [333],
+      // Largest first: a payment is credited at the highest amount it actually covers
+      ALTAR_OFFERING: [50, 15, 5, 1],
+    }[found.label];
+    if (!amounts) return res.status(400).json({ success: false, error: "Unknown payment action." });
+
+    let payment = null;
+    let amountSkr = 0;
+    for (const amount of amounts) {
+      payment = await verifyPayment({ wallet, signature: txSignature, amountSkr: amount, actionLabel: found.label });
+      amountSkr = amount;
+      if (payment.ok || payment.busy) break;
+    }
+    if (!payment.ok) {
+      return res.status(payment.busy ? 503 : 402).json({ success: false, busy: Boolean(payment.busy), error: payment.error });
+    }
+
+    if (found.label === "SUBSCRIPTION_PASS") return res.json({ credited: "pass", ...recordSubscription(wallet, { txSignature, durationDays: 30 }) });
+    if (found.label === "ALTAR_OFFERING") return res.json({ credited: "offering", ...recordOffering(wallet, { txSignature, amountSkr }) });
+    if (found.label === "STREAK_REPAIR" && getClockInStatus(wallet).canRepairStreak) {
+      const repaired = repairStreak(wallet, txSignature);
+      if (repaired.success) return res.json({ credited: "streak_repair", ...repaired });
+    }
+    // Questions, spreads, and a repair whose streak can no longer be repaired: a banked bonus use
+    res.json({ success: true, credited: "bonus", streakBonusSpreads: creditBonusSpreads(wallet, 1) });
+  } catch (err) {
+    serverError(res, err, "payment/credit");
   }
 });
 

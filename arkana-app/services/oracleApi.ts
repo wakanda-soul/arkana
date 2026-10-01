@@ -1,3 +1,4 @@
+import { secureRandomInt } from '@/utils/secureRandom';
 import { getExtraPaymentSignatures } from './treasuryService';
 import { authedFetch } from './sessionService';
 import { netFetch } from './netFetch';
@@ -6,7 +7,7 @@ import { translateFor, LanguageCode } from './i18n';
 import { localizeCard } from './cardLocalization';
 import { PendingPaymentKind, getPendingPayments, removePendingPayment, savePendingPayment } from './pendingPayments';
 
-// Public VPS IP for testing, or localhost for local dev
+// Arkana API. For a local server, point this at it (see README: Run it yourself).
 export const API_BASE_URL = 'https://arkana.icu';
 
 /** Stable error codes, so screens never have to match English error text. */
@@ -72,20 +73,38 @@ const PAID_PATHS: Record<PendingPaymentKind, string> = {
   chat: '/api/chat',
   subscription: '/api/subscription/activate',
   offering: '/api/offering',
+  streak_repair: '/api/streak/repair',
+  unsubmitted: '/api/payment/credit',
 };
+
+/** A reading or question left pending this long is no longer waiting for a retry by the user. */
+const STALE_PENDING_MS = 10 * 60 * 1000;
+/** An 'unsubmitted' payment younger than this may still be on its way to the server. */
+const UNSUBMITTED_GRACE_MS = 2 * 60 * 1000;
 
 /**
  * Sends stored passes and offerings again (called once a wallet session exists, e.g. on app start).
  * Readings and questions are not re-sent here: the next reading or question reuses their payment.
  */
 export async function resubmitPendingPayments(wallet: string): Promise<void> {
-  const pending = (await getPendingPayments(wallet)).filter((p) => p.kind === 'subscription' || p.kind === 'offering');
-  for (const payment of pending) {
+  const now = Date.now();
+  for (const payment of await getPendingPayments(wallet)) {
+    const age = now - payment.createdAt;
+    let path: string | null = null;
+    let body: Record<string, any> = payment.body;
+    if (payment.kind === 'subscription' || payment.kind === 'offering' || payment.kind === 'streak_repair') {
+      path = PAID_PATHS[payment.kind];
+    } else if (
+      (payment.kind === 'unsubmitted' && age > UNSUBMITTED_GRACE_MS) ||
+      ((payment.kind === 'reading' || payment.kind === 'chat') && age > STALE_PENDING_MS)
+    ) {
+      // Never answered: the server reads the action from the memo and credits it
+      path = PAID_PATHS.unsubmitted;
+      body = { wallet, txSignature: payment.signature };
+    }
+    if (!path) continue;
     try {
-      const res = await authedFetch(`${API_BASE_URL}${PAID_PATHS[payment.kind]}`, {
-        method: 'POST',
-        body: JSON.stringify(payment.body),
-      });
+      const res = await authedFetch(`${API_BASE_URL}${path}`, { method: 'POST', body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
       if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
         await removePendingPayment(wallet, payment.signature);
@@ -197,7 +216,7 @@ export function generateLocalReading(spreadKey: string, question: string = '', l
   // Shuffle copy of deck
   const pool = [...ALL_CARDS];
   for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandomInt(i + 1);
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
@@ -205,7 +224,7 @@ export function generateLocalReading(spreadKey: string, question: string = '', l
   let majorsCount = 0;
 
   const resolvedCards = drawn.map((card, idx) => {
-    const isReversed = Math.random() < 0.3;
+    const isReversed = secureRandomInt(10) < 3;
     const pos = positions[idx];
     if (card.arcana === 'major') majorsCount++;
 
@@ -438,37 +457,19 @@ export async function fetchReading(
   return generateLocalReading(spread, question, language);
 }
 
-export async function consumeSpreadQuota(wallet?: string, isSeeker?: boolean): Promise<QuotaConsumeResult> {
-  if (!wallet) {
-    return { allowed: true, isFree: true, cost: 0, remainingFree: 0, balance: 0, isSeekerHolder: false };
-  }
+export async function repairStreak(wallet: string, txSignature: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string; pending?: boolean }> {
   try {
-    const payload: any = { wallet };
-    if (isSeeker !== undefined) {
-      payload.isSeeker = isSeeker;
-    }
-    const res = await authedFetch(`${API_BASE_URL}/api/spread/consume`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    return data;
-  } catch (e) {
-    console.warn('API error consuming spread quota:', e);
-    return { allowed: true, isFree: true, cost: 0, remainingFree: 0, balance: 0, isSeekerHolder: false };
-  }
-}
-
-export async function repairStreak(wallet: string, txSignature: string): Promise<{ success: boolean; streak: number; skrBalance: number; cost?: number; error?: string }> {
-  try {
-    const res = await authedFetch(`${API_BASE_URL}/api/streak/repair`, {
-      method: 'POST',
-      body: JSON.stringify({ wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) }),
-    });
-    const data = await res.json();
+    // Same safety net as the other paid requests: the payment stays stored until the server answers
+    const { data } = await postPaidRequest(
+      'streak_repair',
+      '/api/streak/repair',
+      { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) },
+      wallet
+    );
     return data;
   } catch (e: any) {
-    return { success: false, streak: 1, skrBalance: 0, error: e.message || 'Streak repair network error' };
+    const pending = e?.code === ERR_PAYMENT_PENDING;
+    return { success: false, streak: 1, skrBalance: 0, pending, error: e.message || 'Streak repair network error' };
   }
 }
 

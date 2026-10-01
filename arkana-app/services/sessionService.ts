@@ -51,7 +51,8 @@ export async function hasValidSession(wallet: string): Promise<boolean> {
   return Boolean(session && session.wallet === wallet && session.expiresAt - RENEW_BEFORE_MS > Date.now());
 }
 
-let pendingSignIn: Promise<void> | null = null;
+/** One sign-in per wallet at a time; callers for the same wallet share its wallet prompt. */
+const pendingSignIns = new Map<string, Promise<void>>();
 
 /**
  * Makes sure `wallet` has a server session, asking the wallet to sign a message if needed.
@@ -62,9 +63,10 @@ export async function ensureWalletSession(
   signMessage: (message: Uint8Array) => Promise<Uint8Array>
 ): Promise<void> {
   if (await hasValidSession(wallet)) return;
-  if (pendingSignIn) return pendingSignIn;
+  const inFlight = pendingSignIns.get(wallet);
+  if (inFlight) return inFlight;
 
-  pendingSignIn = (async () => {
+  const signIn = (async () => {
     const nonceRes = await netFetch(`${API_BASE_URL}/api/auth/nonce`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,6 +74,10 @@ export async function ensureWalletSession(
     });
     const { message } = await nonceRes.json();
     if (!message) throw new Error('Sign-in is unavailable right now.');
+    // Sign only Arkana's own sign-in text for this wallet, never an arbitrary server-provided message
+    if (typeof message !== 'string' || !message.startsWith('Arkana sign-in\n') || !message.includes(`Wallet: ${wallet}\n`)) {
+      throw new Error('Unexpected sign-in message.');
+    }
 
     const signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
     const verifyRes = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
@@ -86,10 +92,11 @@ export async function ensureWalletSession(
     await writeSessions({ ...(await readSessions()), [wallet]: session });
   })();
 
+  pendingSignIns.set(wallet, signIn);
   try {
-    await pendingSignIn;
+    await signIn;
   } finally {
-    pendingSignIn = null;
+    pendingSignIns.delete(wallet);
   }
 }
 
@@ -109,6 +116,8 @@ export async function fetchSiwsPayload(): Promise<SiwsPayload> {
   });
   const data = await res.json();
   if (!data?.siws?.nonce) throw new Error('Sign-in is unavailable right now.');
+  // The wallet shows this domain to the user: it must be ours, whatever the server answered
+  if (data.siws.domain !== 'arkana.icu') throw new Error('Unexpected sign-in domain.');
   return data.siws as SiwsPayload;
 }
 

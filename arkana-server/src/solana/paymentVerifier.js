@@ -293,4 +293,17 @@ async function isSeekerHolderOnChain(wallet) {
   return value;
 }
 
-module.exports = { verifyPayment, isSeekerHolderOnChain, isValidTxSignature };
+/**
+ * Action label from an Arkana payment memo ("ARKANA:<LABEL>:..."), for a payment the app signed
+ * but never submitted. Returns { label }, { pending: true } when the chain does not show it yet,
+ * or { error }.
+ */
+async function paymentActionLabel(signature) {
+  if (!isValidTxSignature(signature)) return { error: "Invalid payment signature." };
+  const tx = await fetchTransaction(signature);
+  if (!tx) return { pending: true };
+  const match = (tx.meta?.logMessages || []).join("\n").match(/ARKANA:([A-Z_]+):/);
+  return match ? { label: match[1] } : { error: "Not an Arkana payment." };
+}
+
+module.exports = { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel };

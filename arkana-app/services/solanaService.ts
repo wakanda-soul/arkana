@@ -51,6 +51,9 @@ export interface ExecuteTransactionParams {
   /** Memo prefix of the payment. If the wallet sends the transactions but its reply never reaches
    *  the app (MWA session dropped while switching apps), the signatures are recovered from chain. */
   recoverMemo?: string;
+  /** Called as soon as the wallet returned the signatures, before waiting for confirmation, so a
+   *  payment is stored even if the app is killed during the wait. */
+  onSigned?: (signatures: string[]) => Promise<void>;
 }
 
 const RECOVERY_START_MS = 15_000;
@@ -170,8 +173,7 @@ async function waitForConfirmation(
 }
 
 /**
- * Universal Solana Mobile transaction executor adhering strictly to
- * official Solana Mobile Hackathon / MWA 2.0 standards:
+ * Signs and sends through Mobile Wallet Adapter:
  * 1. Fetches blockhash & slot with getLatestBlockhashAndContext.
  * 2. Compiles modern VersionedTransaction (compileToV0Message).
  * 3. Signs & sends via signAndSendTransactions or direct MWA transact fallback.
@@ -184,6 +186,7 @@ export async function executeSolanaTransaction({
   buildTransactions,
   signAndSendTransactions,
   recoverMemo,
+  onSigned,
 }: ExecuteTransactionParams): Promise<{ signature: string; signatures: string[]; slot?: number; confirmed: boolean }> {
   let blockhash: string;
   let minContextSlot: number;
@@ -298,6 +301,8 @@ export async function executeSolanaTransaction({
     throw new Error(WALLET_NO_RESPONSE_ERROR);
   }
 
+  if (onSigned) await onSigned(signatures).catch(() => {});
+
   // Only claim "confirmed" once the network says so; otherwise the caller shows "submitted"
   const status = await waitForConfirmation(connection, signatures);
   const slot: number | undefined = status.slot ?? minContextSlot;
@@ -336,7 +341,8 @@ export async function submitConsensusProofOnChain({
     payerKey: walletPublicKey,
     instructions: [instruction],
     signAndSendTransactions,
-    recoverMemo: `ARKANA::CONSENSUS::v1::CARD=${cardNo}::`,
+    // The millisecond timestamp makes this seal's memo unique to this attempt
+    recoverMemo: `ARKANA::CONSENSUS::v1::CARD=${cardNo}::ORIENTATION=${orientation}::DATE=${todayDate}::TS=${payload.timestamp}`,
   });
 }
 
@@ -394,9 +400,6 @@ export async function fetchRealSolBalance(
   }
 }
 
-export const SGT_MINT_AUTHORITY = 'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
-export const SGT_GROUP_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
-export const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
 
 /**
  * Seeker Genesis status. The server verifies the token on chain and caches the answer; the public

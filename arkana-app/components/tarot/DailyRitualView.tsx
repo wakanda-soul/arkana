@@ -1,3 +1,4 @@
+import { secureRandomInt } from '@/utils/secureRandom';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
@@ -280,8 +281,8 @@ export function DailyRitualView({
   };
 
   const handlePickCard = (indexOffset: number) => {
-    // Pick a card pseudo-randomly
-    const randomCard = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+    // The face-down card the user touches is drawn with the CSPRNG, then sealed in the memo
+    const randomCard = ALL_CARDS[secureRandomInt(ALL_CARDS.length)];
     const isMajor = randomCard.arcana === 'major';
     if (isMajor) {
       soundService.playMajorArcanaReveal();
@@ -289,7 +290,7 @@ export function DailyRitualView({
       soundService.playCardDeal();
     }
 
-    const isReversed = Math.random() > 0.8;
+    const isReversed = secureRandomInt(5) === 0;
     const chosenOrientation = isReversed ? 'REVERSED' : 'UPRIGHT';
 
     setSelectedCard(randomCard);

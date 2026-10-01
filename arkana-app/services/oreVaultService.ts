@@ -25,7 +25,7 @@ export const ORE_MINT_ADDRESS = getNetworkConfig().oreMint;
 /** Official ORE Staking Program */
 export const ORE_STAKE_PROGRAM_ID = getNetworkConfig().oreStakeProgramId;
 
-/** Verified Immutable Arkana Treasury Address */
+/** Arkana treasury: the only harvest destination the vault program accepts (changeable only by a program upgrade) */
 export const ARKANA_TREASURY_ADDRESS = getNetworkConfig().treasuryAddress;
 
 /** 365 Standard Days in seconds */
