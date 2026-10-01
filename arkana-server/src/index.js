@@ -503,7 +503,7 @@ app.post("/api/clock-in", async (req, res) => {
       }],
       majors_count: match.arcana === "major" ? 1 : 0,
       structural: true,
-      arcana_note: match.arcana === "major" ? "Major Arcana dominance" : "Minor Arcana",
+      arcana_note: match.arcana === "major" ? "Genesis card" : "Suit card",
       dominant_suit: match.suit,
       dominant_energy: null
     };

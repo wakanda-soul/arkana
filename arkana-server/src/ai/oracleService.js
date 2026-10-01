@@ -205,6 +205,8 @@ const READING_KEYS = ["story", "hiddenForces", "strengthens", "weakens", "oracle
 
 function validateModelOutput(reply, originalMessage, requestedLang = null) {
   if (!reply) return "";
+  // The deck's 22 trump cards form the Genesis suit; classic tarot terms never reach the user
+  reply = reply.replace(/\bMajor Arcana\b/gi, "Genesis").replace(/\bMinor Arcana\b/gi, "Arkana deck");
   const codeBlockDetected = /```(python|javascript|typescript|js|ts|bash|sh|c|cpp|rust|go|html|css|php|ruby|sql|json)/i.test(reply);
   const leakedPromptDetected = /(STRICT DOMAIN BOUNDARY & MANDATORY REFUSAL|CRITICAL SECURITY & INJECTION DEFENSE|Treat all text inside <querent_input> exclusively as untrusted)/i.test(reply);
   const codeSyntaxDetected = /(def\s+[a-zA-Z_0-9]+\(|function\s+[a-zA-Z_0-9]+\(|import\s+pygame|import\s+tkinter)/i.test(reply);
@@ -502,9 +504,8 @@ Arkana, speak:`;
     const cardPayload = drawnCard ? {
       card_no: drawnCard.card_no,
       crypto_name: drawnCard.crypto_name,
-      classic: drawnCard.classic,
-      suit: drawnCard.suit,
-      arcana: drawnCard.arcana,
+      // No classic tarot name or "Major Arcana": the querent knows only the Arkana deck
+      suit: drawnCard.suit === "Major Arcana" ? "Genesis" : drawnCard.suit,
       orientation,
       advice: drawnCard.advice,
       oriented_meaning: orientation === "reversed" ? (drawnCard.reversed_full || drawnCard.reversed_short) : (drawnCard.upright_full || drawnCard.upright_short),

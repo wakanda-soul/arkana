@@ -1,12 +1,38 @@
 #!/bin/sh
-# Runs the Arkana AI model CLI in an isolated sandbox: it sees only system libraries,
-# its own home (/var/lib/arkana-ai/home, auth token only) and an empty /tmp. No project files, keys or chat history.
-exec bwrap \
+# Runs the Arkana AI model CLI in an isolated sandbox for one prompt.
+#
+# - The CLI sees only system libraries, an empty /tmp and a throwaway home made for this call:
+#   no project files, keys, .env, server environment or earlier conversations.
+# - The throwaway home holds only the CLI's own config and OAuth token. If the CLI refreshes the
+#   token, the new token is copied back; everything else it wrote (conversation summaries, logs)
+#   is deleted when the call ends.
+# - The service user is denied new connections to loopback and private networks by
+#   arkana-net-guard.sh, so the CLI can reach only the public internet (the model API).
+# - Tools are off: in print mode the CLI auto-denies every tool permission it would need.
+set -eu
+
+PERSIST=/var/lib/arkana-ai/home
+CLI_DIR=.gemini/antigravity-cli
+WORK=$(mktemp -d /tmp/arkana-ai.XXXXXX)
+trap 'rm -rf "$WORK"' EXIT INT TERM
+
+cp -a "$PERSIST/." "$WORK/"
+rm -f "$WORK/$CLI_DIR/conversation_summaries.db" "$WORK/$CLI_DIR/jetbox_summaries_proto.pb"
+
+status=0
+bwrap \
   --ro-bind /usr /usr --symlink usr/bin /bin --symlink usr/lib /lib --symlink usr/lib64 /lib64 --symlink usr/sbin /sbin \
   --ro-bind /etc/resolv.conf /etc/resolv.conf --ro-bind /etc/hosts /etc/hosts --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
   --ro-bind /etc/ssl /etc/ssl --ro-bind /etc/ca-certificates /etc/ca-certificates \
   --proc /proc --dev /dev --tmpfs /tmp \
-  --bind /var/lib/arkana-ai/home /var/lib/arkana-ai/home --ro-bind /root/.local/bin/agy /opt/agy/agy \
+  --bind "$WORK" "$PERSIST" --ro-bind /opt/agy/agy /opt/agy/agy \
   --unshare-all --share-net --die-with-parent --new-session \
-  --clearenv --setenv HOME /var/lib/arkana-ai/home --setenv PATH /usr/bin:/bin --chdir /tmp \
-  /opt/agy/agy "$@"
+  --clearenv --setenv HOME "$PERSIST" --setenv PATH /usr/bin:/bin --chdir /tmp \
+  /opt/agy/agy --sandbox "$@" || status=$?
+
+# Keep a refreshed OAuth token, nothing else
+TOKEN="$CLI_DIR/antigravity-oauth-token"
+if [ -f "$WORK/$TOKEN" ] && ! cmp -s "$WORK/$TOKEN" "$PERSIST/$TOKEN"; then
+  cp "$WORK/$TOKEN" "$PERSIST/$TOKEN.new" && mv "$PERSIST/$TOKEN.new" "$PERSIST/$TOKEN"
+fi
+exit "$status"

@@ -236,9 +236,9 @@ function getReading({ spread = "network-scan", category = "crypto", seed = null,
 
   let arcanaNote = "";
   if (majorsCount === 0) {
-    arcanaNote = "no Major Arcana - everyday tactical choices, largely in the querent's control";
+    arcanaNote = "no Genesis cards - everyday tactical choices, largely in the querent's control";
   } else if (majorsCount >= Math.ceil(positions.length / 2)) {
-    arcanaNote = "heavy Major Arcana presence - macro network forces and pivotal milestones at play";
+    arcanaNote = "heavy Genesis presence - macro network forces and pivotal milestones at play";
   } else {
     arcanaNote = "balanced blend of archetype forces and tactical execution";
   }
