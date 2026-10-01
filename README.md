@@ -80,7 +80,7 @@ cp .env.example .env
 npm start
 ```
 
-No variable is required for a local run. The example file already sets `ARKANA_BIND_80=off` (no port 80), `ARKANA_ALT_KEEPER=off` (no lookup table keeper) and `ARKANA_REQUIRE_SESSION=off` (no wallet sign-in). The API listens on `http://127.0.0.1:3001`. Check it with `curl localhost:3001/api/health` and `curl localhost:3001/api/deck`. Readings need a Seeker Genesis Token, a streak bonus or a verified payment, so a random wallet gets a "payment required" answer. Without `AGY_BIN` pointing to a working LLM wrapper, the built-in engine writes the text.
+No variable is required for a local run. The example file keeps the lookup table keeper and the SyncStake keeper off. Wallet sign-in stays required; for local testing without a wallet, uncomment `ARKANA_REQUIRE_SESSION=off` (the server then logs a warning). The API listens on `http://127.0.0.1:3001`. Check it with `curl localhost:3001/api/health` and `curl localhost:3001/api/deck`. Readings need a Seeker Genesis Token, a streak bonus or a verified payment, so a random wallet gets a "payment required" answer. Without `AGY_BIN` pointing to a working LLM wrapper, the built-in engine writes the text.
 
 ### App
 

@@ -27,7 +27,9 @@ const TOKEN_PROGRAMS = new Set([
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
 ]);
-const MAX_TX_AGE_SECONDS = 30 * 60;
+// A payment stored by the app while offline is sent again on the next launch. Replays are blocked
+// by used_payments.json, and only the signing wallet can use its own payment, so a day is safe.
+const MAX_TX_AGE_SECONDS = 24 * 60 * 60;
 // Each verification may hold an RPC slot for several seconds; beyond this many the caller answers 503
 const MAX_CONCURRENT_VERIFICATIONS = 8;
 const FETCH_ATTEMPTS = 5;
@@ -40,6 +42,10 @@ const SEEKER_CACHE_MS = 60 * 60 * 1000;
 
 const connection = new Connection(RPC_URL, "confirmed");
 const inFlight = new Set();
+const walletsInFlight = new Set();
+// Signatures the chain did not know a moment ago: refused without another RPC round for a minute
+const unknownSignatures = new Map();
+const UNKNOWN_SIGNATURE_MS = 60 * 1000;
 let activeVerifications = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -57,6 +63,28 @@ function markUsed(signature, record) {
   const used = loadUsed();
   used[signature] = record;
   writeJsonAtomic(USED_FILE, used);
+}
+
+/**
+ * Cheap existence check before the expensive fetch loop. The app only submits a payment after the
+ * wallet reported it confirmed, so a signature the cluster does not know after a short wait is
+ * refused at once instead of holding a verification slot for the whole retry loop.
+ */
+async function signatureExists(signature) {
+  const seen = unknownSignatures.get(signature);
+  if (seen && Date.now() - seen < UNKNOWN_SIGNATURE_MS) return false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { value } = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true });
+      if (value[0]) return true;
+    } catch {
+      return true; // RPC trouble: let the normal fetch loop decide
+    }
+    if (attempt === 0) await sleep(FETCH_RETRY_MS);
+  }
+  if (unknownSignatures.size > 10000) unknownSignatures.clear();
+  unknownSignatures.set(signature, Date.now());
+  return false;
 }
 
 /** The app calls right after sending: give the transaction time to confirm (about 10 s at most). */
@@ -108,15 +136,24 @@ async function verifyPayment({ wallet, signature, extraSignatures = [], amountSk
   if (all.some((s) => used[s] || inFlight.has(s))) {
     return { ok: false, error: "This payment was already used." };
   }
+  // One verification per wallet at a time, so one wallet cannot hold every slot
+  if (walletsInFlight.has(wallet)) {
+    return { ok: false, busy: true, error: "A payment from this wallet is already being verified. Please retry in a moment." };
+  }
   if (activeVerifications >= MAX_CONCURRENT_VERIFICATIONS) {
     return { ok: false, busy: true, error: "The server is busy verifying payments. Please retry in a moment." };
   }
   activeVerifications++;
+  walletsInFlight.add(wallet);
   all.forEach((s) => inFlight.add(s));
   try {
+    for (const s of all) {
+      if (!(await signatureExists(s))) return { ok: false, error: "Payment not found on-chain yet. Please retry in a minute." };
+    }
     return await verifyReserved({ wallet, signature, extras, amountSkr, actionLabel });
   } finally {
     activeVerifications--;
+    walletsInFlight.delete(wallet);
     all.forEach((s) => inFlight.delete(s));
   }
 }
@@ -210,7 +247,8 @@ async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabe
   // Without a market quote the deposit cannot be judged, so the payment is not accepted yet
   const expected = await oreForSkrShare(amountSkr);
   if (!expected) {
-    return { ok: false, error: "Could not verify the ORE share right now. Please retry in a minute." };
+    // Temporary (Jupiter unreachable): "busy" makes the app keep the payment and send it again later
+    return { ok: false, busy: true, error: "Could not verify the ORE share right now. Please retry in a minute." };
   }
   if (deposited * 100n < expected * ORE_SHARE_TOLERANCE_PCT) {
     return { ok: false, error: "Payment deposited too little ORE." };

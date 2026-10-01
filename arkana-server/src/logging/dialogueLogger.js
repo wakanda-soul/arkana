@@ -7,6 +7,8 @@ const DATA_DIR = path.join(__dirname, "..", "..", "data");
 const LOG_FILE = path.join(DATA_DIR, "dialogues.jsonl");
 const MAX_LOG_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB per file before gzip rotation
 const MAX_ARCHIVES = 50; // Keep up to 50 compressed archives (~500 MB raw, ~50 MB compressed)
+const RETENTION_DAYS = 90; // Archives older than this are deleted
+const IP_KEY_FILE = path.join(DATA_DIR, ".log_ip_key");
 
 if (!fs.existsSync(DATA_DIR)) {
   try {
@@ -14,6 +16,26 @@ if (!fs.existsSync(DATA_DIR)) {
   } catch (err) {
     console.error("[Logger] Failed to create data directory:", err.message);
   }
+}
+
+/**
+ * Client IPs are never stored: a keyed hash (HMAC with a server-only key) still lets abuse from
+ * one address be grouped, but cannot be reversed or matched against outside lists.
+ */
+let ipKey = null;
+function hashIp(ip) {
+  if (!ip || ip === "unknown") return "unknown";
+  if (!ipKey) {
+    try {
+      ipKey = fs.readFileSync(IP_KEY_FILE);
+    } catch {
+      ipKey = crypto.randomBytes(32);
+      try {
+        fs.writeFileSync(IP_KEY_FILE, ipKey, { mode: 0o600 });
+      } catch {}
+    }
+  }
+  return crypto.createHmac("sha256", ipKey).update(String(ip)).digest("hex").slice(0, 16);
 }
 
 /**
@@ -67,8 +89,9 @@ function cleanOldArchives() {
       }))
       .sort((a, b) => b.time - a.time);
 
-    if (archives.length > MAX_ARCHIVES) {
-      const toDelete = archives.slice(MAX_ARCHIVES);
+    const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    {
+      const toDelete = archives.filter((item, i) => i >= MAX_ARCHIVES || item.time < cutoff);
       for (const item of toDelete) {
         try {
           fs.unlinkSync(item.path);
@@ -97,7 +120,7 @@ function logDialogue(entry) {
       safety_reason: entry.safety_reason || null,
       status: entry.status || "success",
       latency_ms: entry.latency_ms || 0,
-      client_ip: entry.client_ip || "unknown",
+      client_ip_hash: hashIp(entry.client_ip),
       error: entry.error || null
     };
 
@@ -241,6 +264,7 @@ function getLogStats() {
 }
 
 module.exports = {
+  hashIp,
   logDialogue,
   queryLogs,
   getLogStats,

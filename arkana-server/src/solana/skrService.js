@@ -43,10 +43,33 @@ function loadEconomyConfig() {
   }
 }
 
+// Admin-editable numbers and their allowed ranges. Anything else (the treasury attestation included)
+// is changed only by editing the file on the server.
+const EDITABLE_CONFIG = {
+  streakRepairCostSkr: [0.01, 1000],
+  extraSpreadCostSkr: [0.01, 1000],
+  askCostSkr: [0.01, 1000],
+  subscriptionCostSkr: [1, 100000],
+  skrToSolRate: [1e-9, 1],
+  freeDailyAllowanceBase: [0, 100],
+  streakTier2Threshold: [1, 365],
+  streakTier3Threshold: [1, 365],
+};
+
 function updateEconomyConfig(newSettings) {
   readJson(CONFIG_FILE);
+  if (!newSettings || typeof newSettings !== "object" || Array.isArray(newSettings)) throw new Error("Settings must be an object.");
+  const changes = {};
+  for (const [key, value] of Object.entries(newSettings)) {
+    const range = Object.hasOwn(EDITABLE_CONFIG, key) ? EDITABLE_CONFIG[key] : null;
+    if (!range) throw new Error(`Setting "${key}" cannot be changed here.`);
+    if (typeof value !== "number" || !Number.isFinite(value) || value < range[0] || value > range[1]) {
+      throw new Error(`Setting "${key}" must be a number between ${range[0]} and ${range[1]}.`);
+    }
+    changes[key] = value;
+  }
   const current = loadEconomyConfig();
-  const updated = { ...current, ...newSettings };
+  const updated = { ...current, ...changes };
   writeJsonAtomic(CONFIG_FILE, updated);
   return updated;
 }

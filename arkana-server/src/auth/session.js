@@ -63,12 +63,17 @@ function isWallet(wallet) {
 const SIWS_DOMAIN = "arkana.icu";
 const SIWS_STATEMENT = "Sign in to Arkana. This is not a transaction and costs nothing.";
 
+const MAX_NONCES = 10000;
+const MAX_SESSIONS_PER_WALLET = 5;
+
 function rememberNonce(nonce, entry) {
-  nonces.set(nonce, { ...entry, expiresAt: Date.now() + NONCE_TTL_MS });
-  if (nonces.size > 10000) {
+  if (nonces.size >= MAX_NONCES) {
     const now = Date.now();
     for (const [k, v] of nonces) if (v.expiresAt < now) nonces.delete(k);
+    // Still full of live nonces: drop the oldest (Map keeps insertion order)
+    while (nonces.size >= MAX_NONCES) nonces.delete(nonces.keys().next().value);
   }
+  nonces.set(nonce, { ...entry, expiresAt: Date.now() + NONCE_TTL_MS });
 }
 
 /** Sign In With Solana payload for a wallet that is not connected yet. */
@@ -135,6 +140,11 @@ function verifySignIn({ wallet, message, signature }) {
   const expiresAt = Date.now() + SESSION_TTL_MS;
   const sessions = loadSessions();
   sessions[hashToken(token)] = { wallet, expiresAt };
+  // At most a few live sessions per wallet: repeated sign-ins replace the oldest instead of growing the file
+  const own = Object.entries(sessions)
+    .filter(([, v]) => v.wallet === wallet)
+    .sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+  for (const [key] of own.slice(0, Math.max(0, own.length - MAX_SESSIONS_PER_WALLET))) delete sessions[key];
   saveSessions(sessions);
   return { ok: true, token, expiresAt };
 }

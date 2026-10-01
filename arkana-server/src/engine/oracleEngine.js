@@ -145,7 +145,8 @@ function normCategory(cat) {
 function getReading({ spread = "network-scan", category = "crypto", seed = null, cardsArg = null, allowReversed = true }) {
   loadData();
   const cat = normCategory(category);
-  const spreadDef = SPREADS[spread] || SPREADS["network-scan"];
+  // Own keys only: "constructor" or "__proto__" must not resolve to Object.prototype members
+  const spreadDef = Object.hasOwn(SPREADS, spread) ? SPREADS[spread] : SPREADS["network-scan"];
   const positions = spreadDef.positions;
   const hints = spreadDef.hints;
 

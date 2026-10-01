@@ -79,7 +79,9 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
     amountSkr,
     actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
   });
-  if (!payment.ok) return { ...free, allowed: false, busy: Boolean(payment.busy), reason: payment.error };
+  // The payment's own error is what the client sees: "not found on-chain yet" tells the app to keep
+  // the payment and retry, a quota message would make it drop a real payment
+  if (!payment.ok) return { ...free, allowed: false, busy: Boolean(payment.busy), reason: payment.error, error: payment.error };
   return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
 }
 
@@ -147,9 +149,17 @@ function pruneRateBuckets(now) {
   lastPrune = now;
   for (const [key, b] of rateBuckets) if (now - b.start > b.windowMs) rateBuckets.delete(key);
 }
+// IPv6 clients get a whole /64 from their provider: count them per /64, not per address
+function rateKeyIp(ip) {
+  const v6 = String(ip).replace(/^::ffff:/, "");
+  if (!v6.includes(":")) return v6;
+  const [head] = v6.split("::");
+  const groups = v6.includes("::") ? head.split(":") : v6.split(":");
+  return `${groups.slice(0, 4).join(":")}::/64`;
+}
 function rateLimit(name, max, windowMs) {
   return (req, res, next) => {
-    const key = `${name}|${clientIp(req)}`;
+    const key = `${name}|${rateKeyIp(clientIp(req))}`;
     const now = Date.now();
     pruneRateBuckets(now);
     const bucket = rateBuckets.get(key);
@@ -551,6 +561,7 @@ app.post("/api/reading", async (req, res) => {
     const signatureError = paymentSignatureError(req.body, false);
     if (signatureError) return res.status(400).json({ success: false, error: signatureError });
     if (typeof question !== "string") return res.status(400).json({ success: false, error: "Invalid question." });
+    if (typeof spread !== "string" || !Object.hasOwn(SPREADS, spread)) return res.status(400).json({ success: false, error: "Unknown spread." });
 
     // Same pre-generation safety check as chat, before any quota or payment is spent
     const questionSafety = question ? evaluateSafetyFilter(question, language) : { blocked: false };
@@ -660,6 +671,29 @@ app.post("/api/chat", async (req, res) => {
     if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
     const signatureError = paymentSignatureError(req.body, false);
     if (signatureError) return res.status(400).json({ success: false, error: signatureError });
+
+    // Safety check of the question AND every history turn before any quota or payment is spent:
+    // history text is client-controlled and reaches the model prompt too
+    const blockedBy = [message, ...history.map((h) => h.text)]
+      .map((text) => evaluateSafetyFilter(text, language))
+      .find((check) => check.blocked);
+    if (blockedBy) {
+      logDialogue({
+        type: "chat",
+        wallet,
+        user_message: message.trim(),
+        oracle_reply: blockedBy.reply,
+        is_injection_attempt: blockedBy.reason === "injection",
+        is_code_attempt: blockedBy.reason === "coding",
+        blocked_by_safety: true,
+        safety_reason: blockedBy.reason,
+        status: "blocked",
+        latency_ms: 0,
+        client_ip: ip
+      });
+      return res.json({ reply: blockedBy.reply, card: null, blocked: true, reason: blockedBy.reason, quota: null, timestamp: new Date().toISOString() });
+    }
+
     quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature, txSignatures: req.body.txSignatures });
     if (quotaResult.busy) return res.status(503).json(PAYMENT_BUSY);
 
@@ -750,7 +784,8 @@ app.post("/api/offering", async (req, res) => {
     const payment = await verifyPayment({ wallet, signature: txSignature, extraSignatures: req.body.txSignatures, amountSkr: amount, actionLabel: "ALTAR_OFFERING" });
     if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
-      return res.status(402).json({ success: false, error: payment.error });
+      // busy: temporary (verification slots, quote unavailable); the app keeps the payment and retries
+      return res.status(payment.busy ? 503 : 402).json({ success: false, busy: Boolean(payment.busy), error: payment.error });
     }
     const result = recordOffering(wallet, { txSignature, amountSkr: amount, message: typeof message === "string" ? message : undefined });
     res.json(result);
@@ -778,7 +813,8 @@ app.post("/api/subscription/activate", async (req, res) => {
     });
     if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
-      return res.status(402).json({ success: false, error: payment.error });
+      // busy: temporary (verification slots, quote unavailable); the app keeps the payment and retries
+      return res.status(payment.busy ? 503 : 402).json({ success: false, busy: Boolean(payment.busy), error: payment.error });
     }
     // Duration is fixed by the server: one paid pass = 30 days
     const result = recordSubscription(wallet, { txSignature, durationDays: 30 });
@@ -791,16 +827,22 @@ app.post("/api/subscription/activate", async (req, res) => {
 // Admin Economy Config Endpoints
 // Admin endpoints (economy config, dialogue logs) require ARKANA_ADMIN_TOKEN.
 // Without the token configured they are disabled entirely.
+// A short or placeholder token disables the admin API instead of protecting it weakly.
+const ADMIN_TOKEN = (() => {
+  const token = process.env.ARKANA_ADMIN_TOKEN || "";
+  if (!token) return null;
+  if (token.length < 32 || token.startsWith("change-me")) {
+    console.warn("[admin] ARKANA_ADMIN_TOKEN is shorter than 32 characters or a placeholder: admin API disabled");
+    return null;
+  }
+  return token;
+})();
+const sha256 = (value) => require("crypto").createHash("sha256").update(String(value)).digest();
 function requireAdmin(req, res, next) {
-  const expected = process.env.ARKANA_ADMIN_TOKEN;
   const header = req.get("authorization") || "";
   const provided = req.get("x-admin-token") || (header.startsWith("Bearer ") ? header.slice(7) : "");
-  const crypto = require("crypto");
-  const ok =
-    expected &&
-    provided &&
-    provided.length === expected.length &&
-    crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  // Equal-length digests: the comparison reveals neither the token nor its length
+  const ok = Boolean(ADMIN_TOKEN && provided) && require("crypto").timingSafeEqual(sha256(provided), sha256(ADMIN_TOKEN));
   if (!ok) return res.status(404).json({ success: false, error: "Not found" });
   next();
 }
@@ -877,7 +919,8 @@ app.post("/api/streak/repair", async (req, res) => {
     });
     if (payment.busy) return res.status(503).json(PAYMENT_BUSY);
     if (!payment.ok) {
-      return res.status(402).json({ success: false, error: payment.error });
+      // busy: temporary (verification slots, quote unavailable); the app keeps the payment and retries
+      return res.status(payment.busy ? 503 : 402).json({ success: false, busy: Boolean(payment.busy), error: payment.error });
     }
     const result = repairStreak(wallet, txSignature);
     if (!result.success) {
@@ -899,6 +942,10 @@ app.use((err, req, res, next) => {
 });
 
 // Only Caddy on the same machine talks to the API; set HOST=0.0.0.0 for a setup without a proxy
+if (process.env.ARKANA_REQUIRE_SESSION === "off") {
+  console.warn("[session] ARKANA_REQUIRE_SESSION=off: any request can spend any wallet's quota. Never use this in production.");
+}
+
 const server = app.listen(PORT, HOST, () => {
   console.log(`🔮 Arkana Oracle Server is running on http://${HOST}:${PORT}`);
   startLookupTableKeeper();
@@ -906,9 +953,9 @@ const server = app.listen(PORT, HOST, () => {
   startSkrPriceRefresher();
 });
 
-// Port 80 directly (for setups without a reverse proxy). In production Caddy owns 80/443
-// and proxies to PORT; set ARKANA_BIND_80=off there.
-if (process.env.ARKANA_BIND_80 !== "off") try {
+// Port 80 directly, only on request (ARKANA_BIND_80=on) for setups without a reverse proxy.
+// In production Caddy owns 80/443 and proxies to PORT, so nothing is ever served over plain HTTP.
+if (process.env.ARKANA_BIND_80 === "on") try {
   const http = require("http");
   http
     .createServer(app)

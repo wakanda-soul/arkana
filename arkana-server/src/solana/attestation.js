@@ -5,6 +5,12 @@
  * Provides offline Master Authority signing for Arkana's Treasury Address.
  * Ensures that even if the backend server is compromised, an attacker cannot
  * change the treasury destination wallet without the Founder's Offline Master Private Key.
+ *
+ * Offline tool only: the server never loads it. Run it on an offline machine; the private key is
+ * read from stdin, never from the command line (it would end up in shell history and `ps`).
+ *   node attestation.js generate-keys
+ *   node attestation.js sign <treasuryAddress>          (paste the master private key, then Ctrl-D)
+ *   node attestation.js verify <treasuryAddress> <signatureBase58> <masterPublicKeyBase58>
  */
 
 const path = require('path');
@@ -49,8 +55,8 @@ function generateKeys() {
 }
 
 function signTreasury(treasuryAddress, masterPrivB58) {
-  if (!treasuryAddress) {
-    console.error('Usage: node treasury-attestation.js sign <treasuryAddress> <masterPrivateKeyBase58>');
+  if (!treasuryAddress || !masterPrivB58) {
+    console.error('Usage: node attestation.js sign <treasuryAddress>  (master private key on stdin)');
     process.exit(1);
   }
   const privBytes = bs58.decode(masterPrivB58);
@@ -102,21 +108,25 @@ function verifyTreasury(treasuryAddress, sigB58, masterPubB58) {
   }
 }
 
-const args = process.argv.slice(2);
-const cmd = args[0];
+// Runs only when started directly, never when required
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const cmd = args[0];
 
-if (cmd === 'generate-keys') {
-  generateKeys();
-} else if (cmd === 'sign') {
-  signTreasury(args[1], args[2]);
-} else if (cmd === 'verify') {
-  verifyTreasury(args[1], args[2], args[3]);
-} else {
-  console.log('Arkana Treasury Attestation Tool');
-  console.log('Commands:');
-  console.log('  node treasury-attestation.js generate-keys');
-  console.log('  node treasury-attestation.js sign <treasuryAddress> <masterPrivateKeyBase58>');
-  console.log('  node treasury-attestation.js verify <treasuryAddress> <signatureBase58> <masterPublicKeyBase58>');
+  if (cmd === 'generate-keys') {
+    generateKeys();
+  } else if (cmd === 'sign') {
+    const key = require('fs').readFileSync(0, 'utf-8').trim();
+    signTreasury(args[1], key);
+  } else if (cmd === 'verify') {
+    verifyTreasury(args[1], args[2], args[3]);
+  } else {
+    console.log('Arkana Treasury Attestation Tool');
+    console.log('Commands:');
+    console.log('  node attestation.js generate-keys');
+    console.log('  node attestation.js sign <treasuryAddress>   (master private key on stdin)');
+    console.log('  node attestation.js verify <treasuryAddress> <signatureBase58> <masterPublicKeyBase58>');
+  }
 }
 
 module.exports = {
