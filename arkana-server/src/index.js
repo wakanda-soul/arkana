@@ -701,9 +701,12 @@ app.post("/api/chat", async (req, res) => {
     const chatResult = await generateOracleChatReply(message.trim(), history, language);
     const reply = typeof chatResult === "string" ? chatResult : chatResult.reply;
     const safety = (chatResult && chatResult.safety) || {};
-    // A refusal never costs a question: the used free or paid question comes back as a banked one
+    // Only a PAID question that Arkana refused comes back, as one banked free question. Both must
+    // hold: the payment was verified on chain for this request (and is now marked used, so one
+    // payment can be given back at most once) AND the model or the output check refused.
+    const paidQuestion = Boolean(quotaResult && quotaResult.allowed && quotaResult.isFree === false && quotaResult.txSignature);
     let refunded = false;
-    if (safety.refused || safety.blocked) {
+    if (paidQuestion && (safety.refused || safety.blocked)) {
       quotaResult = { ...quotaResult, streakBonusSpreads: creditBonusSpreads(wallet, 1) };
       refunded = true;
     }
