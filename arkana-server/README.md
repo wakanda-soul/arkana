@@ -22,15 +22,15 @@ Node.js API behind the Arkana app: card draws, readings, the LLM proxy for Ask A
 | `GET` | `/api/spreads` | Spread layouts |
 | `GET` | `/api/clock-in/:wallet` | Clock-In status, streak, remaining free spreads |
 | `POST` | `/api/clock-in` | Daily draw, streak update, quota refill |
-| `POST` | `/api/spread/consume` | Use a free spread or record a paid one |
 | `POST` | `/api/reading` | Draw cards and write the reading |
 | `POST` | `/api/chat` | Ask Arkana |
 | `GET` | `/api/treasury` | Treasury address and attestation |
 | `GET` | `/api/lookup-table` | Arkana lookup table address |
 | `POST` | `/api/offering`, `/api/subscription/activate`, `/api/streak/repair` | Record paid actions |
+| `POST` | `/api/payment/credit` | Credit a signed payment whose request never arrived (action read from the on-chain memo) |
 | `POST` | `/api/seeker/status` | Seeker Genesis holder status |
 | `POST` | `/api/solana-rpc` | Read-only RPC proxy (a few methods) for the vault admin pages |
-| `POST` | `/api/auth/nonce`, `/api/auth/verify` | Wallet sign-in: sign a message, get a 30-day session |
+| `POST` | `/api/auth/nonce`, `/api/auth/verify` | Wallet sign-in (Sign In With Solana, in the same wallet visit as connecting): 30-day session, at most 5 per wallet |
 | `GET` | `/api/admin/ore-stats` | ORE usage report: tranches, staked ORE, claimed yield, payments. Requires `ARKANA_ADMIN_TOKEN` |
 | `*` | `/api/admin/*` | Economy config and dialogue logs, requires `ARKANA_ADMIN_TOKEN` |
 
@@ -42,20 +42,20 @@ Copy [.env.example](.env.example) to `.env` (never committed). All variables are
 | :--- | :--- | :--- |
 | `PORT` | `3001` | API port |
 | `HOST` | `127.0.0.1` | Listen address. Use `0.0.0.0` without a reverse proxy |
-| `ARKANA_BIND_80` | on | `off` skips the extra HTTP listener on port 80 (set it off locally and behind Caddy) |
+| `ARKANA_BIND_80` | off | `on` also serves plain HTTP on port 80 (only without a reverse proxy) |
 | `SOLANA_RPC_URL` | public RPC | RPC for payment checks, Seeker Genesis checks, Clock-In recovery, the lookup table keeper and the RPC proxy |
 | `SOLANA_STATUS_RPC_URL` | public mainnet RPC | Second RPC for transaction status checks |
 | `STATS_RPC_URL` | public mainnet RPC | RPC for `/api/admin/ore-stats` (uses `getProgramAccounts`) |
-| `ARKANA_ADMIN_TOKEN` | unset | Token for `/api/admin/*` (header `x-admin-token` or `Authorization: Bearer`). Admin endpoints return 404 without it |
+| `ARKANA_ADMIN_TOKEN` | unset | Token for `/api/admin/*` (header `x-admin-token` or `Authorization: Bearer`), at least 32 characters. Admin endpoints return 404 without it |
 | `ARKANA_ALT_KEEPER` | on | `off` disables the lookup table keeper |
 | `ARKANA_SYNC_KEEPER` | off | `on` sends a SyncStake every `ARKANA_SYNC_INTERVAL_HOURS` (default 24) so ORE Stake yield reaches the tranches; paid by the ALT keypair |
 | `ARKANA_ALT_KEYPAIR` | `~/.config/solana/id.json` | Keypair that pays rent for the lookup table. The keeper stays off if the file is missing |
 | `AGY_BIN` | `/usr/local/bin/arkana-agy` | Sandboxed LLM wrapper. Without it the built-in engine answers |
-| `ARKANA_REQUIRE_SESSION` | on | `off` accepts requests without a signed wallet session (local testing only) |
+| `ARKANA_REQUIRE_SESSION` | on | `off` accepts requests without a signed wallet session (local testing only; the server logs a warning) |
 
 ## AI sandbox
 
-User text reaches the AI model, so the model must not be able to read anything on the server. The model CLI runs through `deploy/arkana-agy` (installed as `/usr/local/bin/arkana-agy`), a bubblewrap sandbox that sees only system libraries, an empty `/tmp` and its own home `/var/lib/arkana-ai/home` holding just the CLI auth token. Setup: `apt install bubblewrap`, copy the script, create that home with the auth token.
+User text reaches the AI model, so the model must not be able to read anything on the server. The model CLI runs through [deploy/arkana-agy](deploy/arkana-agy) (installed as `/usr/local/bin/arkana-agy`, CLI binary at `/opt/agy/agy`): a bubblewrap sandbox that sees only system libraries, an empty `/tmp` and a throwaway home copied for each call from `/var/lib/arkana-ai/home` (CLI config and OAuth token only). A refreshed token is copied back; conversation summaries and logs the CLI writes are deleted. Tools stay off: in print mode the CLI auto-denies every tool permission. Setup: `apt install bubblewrap`, install the script, create that home with the auth token, owned by the service user.
 
 ## Running
 
@@ -66,4 +66,4 @@ npm start
 curl localhost:3001/api/health
 ```
 
-In production it runs as the systemd unit `arkana.service` behind Caddy ([deploy/Caddyfile](deploy/Caddyfile)). New APK builds are copied to the server by a cron script that is not part of this repo.
+In production it runs as the unprivileged `arkana` user from `/srv/arkana`, with the systemd unit [deploy/arkana.service](deploy/arkana.service) (read-only system and code, writable `data/` and AI home only, no capabilities) behind Caddy ([deploy/Caddyfile](deploy/Caddyfile), admin API on a unix socket). Before start, [deploy/arkana-net-guard.sh](deploy/arkana-net-guard.sh) blocks new connections from that user to loopback, private and link-local networks. New APK builds are copied to the server by a cron script that is not part of this repo; it checks each APK's SHA-256 from CI before installing it.

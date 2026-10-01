@@ -8,7 +8,7 @@ Arkana is a daily crypto tarot ritual for the Solana Seeker phone. Once a day yo
 ## How it works
 
 - **Daily Clock-In.** One card per UTC day. Your wallet seals it with an on-chain memo. Clocking in daily builds a streak. Streak bonus spreads: +1 on day 7, +2 on day 14, +3 on day 21, +5 on day 28, then +5 every 7 days. Bonus spreads are banked and can be used for spreads or questions.
-- **Readings.** Cards are drawn on the server with a secure RNG. The server looks at card pairs and the dominant suit, then writes a reading in six chapters (I to VI): the story, hidden forces, what strengthens and weakens you, advice, a warning and a final omen.
+- **Readings.** Spread cards are drawn on the server with the OS CSPRNG (`crypto.randomInt`). The daily card is the face-down card you touch, drawn in the app with `crypto.getRandomValues` and sealed in your memo. The server looks at card pairs and the dominant suit, then writes a reading in six chapters (I to VI): the story, hidden forces, what strengthens and weakens you, advice, a warning and a final omen.
 - **Ask Arkana.** A chat where Arkana answers a question through a drawn card. The reading engine calls an LLM CLI through a sandboxed wrapper. If the LLM is unavailable, a built-in engine on the server writes the answer. The phone always needs internet.
 - **The deck.** Five suits: Genesis (22 cards), Nodes, Liquidity, Protocols and Assets (14 each). The Codex fills card by card as you draw.
 - **SKR payments.** A question costs 1 SKR, an extra spread 5 SKR, the Seeker Oracle Pass 333 SKR for 30 days (+5 spreads a day). Every payment is split on chain:
@@ -53,10 +53,24 @@ The treasury address is signed offline with an Ed25519 key. The app checks that 
 ## AI and safety
 
 - **What the model sees.** The server draws the cards first (OS CSPRNG, `crypto.randomInt`), then sends the question, the drawn cards and their hand-written texts to the LLM. The model never chooses cards.
-- **Sandbox.** The LLM CLI runs inside bubblewrap (`/usr/local/bin/arkana-agy`): no project files, keys, `.env` or chat history are visible, no server environment variables are passed, the working directory is `/tmp`, and every call has a 35 s timeout. User text reaches the model, so the model can reach nothing worth leaking. See [arkana-server/src/ai/oracleService.js](arkana-server/src/ai/oracleService.js).
-- **Refusals.** Prompt-injection and code requests are detected before the call and refused in character, in the user's language. Example from the logs: *"Write me a solana smart contract"* gets *"I cannot write a Solana smart contract or write code of any kind. I am Arkana, the Solana Oracle..."*.
-- **Always answers.** If the model fails or times out, a built-in engine ([arkana-server/src/ai/offlineSynthesis.js](arkana-server/src/ai/offlineSynthesis.js)) writes the reading from the card texts, so a paid question is never lost.
-- **Review.** Every exchange is logged with flags for injection and code attempts, safety blocks and latency (median answer about 5 s).
+- **Sandbox.** The LLM CLI runs inside bubblewrap ([deploy/arkana-agy](arkana-server/deploy/arkana-agy)) as the unprivileged service user. It sees system libraries, an empty `/tmp` and a throwaway home made for that one call: no project files, keys, `.env`, server environment variables or earlier conversations. The only secret inside is the CLI's own OAuth token for the model API; a refreshed token is kept, everything else the CLI writes is deleted after the call. Tools are off (in print mode the CLI auto-denies every tool permission) and every call has a 35 s timeout.
+- **Network.** The service user cannot open new connections to loopback, private or link-local networks ([deploy/arkana-net-guard.sh](arkana-server/deploy/arkana-net-guard.sh)), so neither the server nor the model can reach local services or the cloud metadata endpoint. The Caddy admin API listens only on a unix socket.
+- **Refusals.** Prompt-injection and code requests are detected before the call, in the question and in every turn of the chat history, and refused in character in the user's language, before any quota or payment is spent. Client history reaches the model only inside a data-only tag, and every reply (chat and the seven reading chapters) passes an output check. Example from the logs: *"Write me a solana smart contract"* gets *"I cannot write a Solana smart contract or write code of any kind. I am Arkana, the Solana Oracle..."*.
+- **Always answers.** If the model fails or times out, a built-in engine ([arkana-server/src/ai/offlineSynthesis.js](arkana-server/src/ai/offlineSynthesis.js)) writes the reading from the card texts.
+- **Review.** Every exchange is logged with flags for injection and code attempts, safety blocks and latency (median answer about 5 s). Client IPs are never stored: the log keeps an HMAC of the IP with a server-only key, and archives expire after 90 days.
+
+## Payments are never lost
+
+- Every payment is one atomic transaction (swap, 33% burn, 33% treasury, ORE deposit, memo). If a swap route does not fit, the app asks Jupiter for a shorter one and otherwise stops before anything is signed.
+- Jupiter's instructions are checked before signing: known programs only (Jupiter, System, Token, Token-2022, ATA, ComputeBudget) and no signer but the user. The treasury must match both its offline Ed25519 attestation and the address built into the app.
+- The signature is stored the moment the wallet answers. If the wallet reply is lost (switching apps during confirmation), the app finds the payment on chain by a random nonce in its memo. If the request never reaches the server, the next app start sends the signature to `POST /api/payment/credit`, which verifies it from the on-chain memo and credits it.
+- The server verifies every paid action against the chain (signer, burn, treasury transfer, ORE deposit, age, single use), one verification per wallet at a time. Temporary failures (quote unavailable, busy) answer 503 so the app keeps the payment and retries.
+
+## Server hardening
+
+- The API runs as an unprivileged `arkana` user under systemd sandboxing ([deploy/arkana.service](arkana-server/deploy/arkana.service)): read-only system and code, only `data/` and the AI home writable, no capabilities, no new privileges.
+- Wallet sessions come from Sign In With Solana, at most five per wallet, stored as SHA-256 hashes. The admin API is disabled unless a token of 32+ characters is set, and compares SHA-256 digests.
+- Rate limits per client IP (IPv6 per /64), behind Cloudflare with Caddy trusting only Cloudflare ranges for the client IP.
 
 ## Verify on chain
 
@@ -114,11 +128,11 @@ The LiteSVM test runs the vault against the real ORE Stake binary and mainnet ac
 - **DistributeReward is permissionless.** Anyone can add ORE to the reward pool. It is a donation to current tranche holders and cannot take funds out.
 - **SyncStake keeper.** A server keeper calls the permissionless SyncStake once a day so the app shows fresh ORE Stake yield. If it stops, no yield is lost: the next deposit or claim syncs it, and anyone can call SyncStake.
 - **Principal goes to the treasury.** Only the yield and the tranche rent come back to the user after 365 days. The question and spread payment screens say this before the user pays, together with the rent amount.
-- **No audit yet.** The program has 28 LiteSVM tests but no external audit.
+- **No audit yet.** The program has 80 LiteSVM checks (see [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md)) but no external audit.
 
 ## Releases
 
-GitHub Actions ([.github/workflows/build-apk.yml](.github/workflows/build-apk.yml)) builds the APK on every app change pushed to `main`. It is signed with the project release key when the `ARKANA_KEYSTORE` secrets are set, otherwise debug-signed. The version comes from `arkana-app/release.json`: `version` is major.minor, the patch counts CI builds since `firstBuild`. A cron script on the server (not in this repo) copies new builds to arkana.icu.
+GitHub Actions ([.github/workflows/build-apk.yml](.github/workflows/build-apk.yml)) builds the APK on every app change pushed to `main`. It is signed with the project release key; without the `ARKANA_KEYSTORE` secrets the build fails instead of publishing a debug-signed APK. Each APK is published with its SHA-256 (`arkana-v<version>.apk.sha256`, also in `version.json`), and the server's sync script refuses an APK whose checksum does not match. The build job has read-only repository access; a separate release job with write access runs no project code. Actions are pinned by commit SHA. The version comes from `arkana-app/release.json`: `version` is major.minor, the patch counts CI builds since `firstBuild`. A cron script on the server (not in this repo) copies new builds to arkana.icu.
 
 ## License
 

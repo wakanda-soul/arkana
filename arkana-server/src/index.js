@@ -421,21 +421,6 @@ app.get("/api/clock-in/:wallet", async (req, res) => {
 });
 
 // Consume one free / streak spread (paid spreads go through /api/reading with a verified payment)
-app.post("/api/spread/consume", (req, res) => {
-  try {
-    const { wallet } = req.body;
-    if (!wallet) return res.status(401).json({ success: false, error: "Connect your wallet first." });
-    if (!hasWalletSession(req, wallet)) return res.status(401).json(SESSION_REQUIRED);
-    const result = consumeSpread(wallet, {});
-    if (!result.allowed) {
-      return res.status(402).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    serverError(res, err, "spread/consume");
-  }
-});
-
 // Update or verify Seeker Genesis SBT status
 app.post("/api/seeker/status", async (req, res) => {
   try {
