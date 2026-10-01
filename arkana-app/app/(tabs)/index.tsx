@@ -67,6 +67,10 @@ export default function AltarScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [zoomedCard, setZoomedCard] = useState<ZoomCardData | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
+  // A connection error left open (here or on another tab) closes once the wallet is connected
+  useEffect(() => {
+    if (isAuthenticated) setSystemState((s) => (s === "wallet_declined" || s === "wallet_not_found" ? null : s));
+  }, [isAuthenticated]);
 
   // Wallet-scoped daily seal and quota synchronization
   useEffect(() => {

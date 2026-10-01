@@ -45,6 +45,10 @@ export default function WalletScreen() {
   const address = account?.publicKey?.toString() || "";
   const [isConnecting, setIsConnecting] = useState(false);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
+  // A connection error left open (here or on another tab) closes once the wallet is connected
+  useEffect(() => {
+    if (isAuthenticated) setSystemState((s) => (s === "wallet_declined" || s === "wallet_not_found" ? null : s));
+  }, [isAuthenticated]);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [realSolBalance, setRealSolBalance] = useState<number | null>(null);
   const [realSkrBalance, setRealSkrBalance] = useState<number | null>(null);
@@ -687,7 +691,10 @@ export default function WalletScreen() {
         type={systemState}
         visible={!!systemState}
         onClose={() => setSystemState(null)}
-        onActionPrimary={handleConnect}
+        onActionPrimary={() => {
+          setSystemState(null);
+          handleConnect();
+        }}
         onActionSecondary={() => setSystemState(null)}
       />
 
