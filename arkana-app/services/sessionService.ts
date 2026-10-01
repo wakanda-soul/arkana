@@ -8,7 +8,9 @@ import { netFetch } from './netFetch';
  * and the server returns a token proving the wallet belongs to this user. Requests that
  * spend the wallet's quota send it as `Authorization: Bearer <token>`.
  */
-const SESSION_KEY = 'arkana_wallet_session_v1';
+/** One session per wallet: switching wallets (e.g. to check a Genesis token) must not sign the other out. */
+const SESSIONS_KEY = 'arkana_wallet_sessions_v2';
+const LEGACY_SESSION_KEY = 'arkana_wallet_session_v1';
 /** Renew a few days before the server-side 30-day expiry. */
 const RENEW_BEFORE_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -18,19 +20,39 @@ interface StoredSession {
   expiresAt: number;
 }
 
-async function readSession(): Promise<StoredSession | null> {
+async function readSessions(): Promise<Record<string, StoredSession>> {
   try {
-    const raw = await AsyncStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as StoredSession) : null;
+    const raw = await AsyncStorage.getItem(SESSIONS_KEY);
+    if (raw) return JSON.parse(raw) as Record<string, StoredSession>;
+    // Sessions stored by 1.1.16 and earlier: a single slot
+    const legacy = await AsyncStorage.getItem(LEGACY_SESSION_KEY);
+    if (!legacy) return {};
+    const session = JSON.parse(legacy) as StoredSession;
+    return session?.wallet ? { [session.wallet]: session } : {};
   } catch {
-    return null;
+    return {};
   }
 }
 
+async function writeSessions(sessions: Record<string, StoredSession>): Promise<void> {
+  // Expired sessions are dropped on every write
+  const live = Object.fromEntries(Object.entries(sessions).filter(([, v]) => v.expiresAt > Date.now()));
+  await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(live));
+  await AsyncStorage.removeItem(LEGACY_SESSION_KEY).catch(() => {});
+}
+
+async function readSession(wallet: string | null | undefined): Promise<StoredSession | null> {
+  if (!wallet) return null;
+  return (await readSessions())[wallet] ?? null;
+}
+
 export async function hasValidSession(wallet: string): Promise<boolean> {
-  const session = await readSession();
+  const session = await readSession(wallet);
   return Boolean(session && session.wallet === wallet && session.expiresAt - RENEW_BEFORE_MS > Date.now());
 }
+
+/** The wallet did not sign the sign-in message (closed, declined or failed to open). */
+export class SignInDeclinedError extends Error {}
 
 let pendingSignIn: Promise<void> | null = null;
 
@@ -54,7 +76,12 @@ export async function ensureWalletSession(
     const { message } = await nonceRes.json();
     if (!message) throw new Error('Sign-in is unavailable right now.');
 
-    const signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
+    let signed: Uint8Array;
+    try {
+      signed = await signMessage(new Uint8Array(Buffer.from(message, 'utf-8')));
+    } catch (err: any) {
+      throw new SignInDeclinedError(err?.message || String(err));
+    }
     const verifyRes = await netFetch(`${API_BASE_URL}/api/auth/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,7 +91,7 @@ export async function ensureWalletSession(
     if (!data.success || !data.token) throw new Error(data.error || 'Wallet sign-in failed.');
 
     const session: StoredSession = { wallet, token: data.token, expiresAt: data.expiresAt };
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    await writeSessions({ ...(await readSessions()), [wallet]: session });
   })();
 
   try {
@@ -74,9 +101,13 @@ export async function ensureWalletSession(
   }
 }
 
-export async function clearWalletSession(): Promise<void> {
+/** Forgets the session of `wallet` (the connected one by default). */
+export async function clearWalletSession(wallet: string | null = sessionSigner?.wallet ?? null): Promise<void> {
+  if (!wallet) return;
   try {
-    await AsyncStorage.removeItem(SESSION_KEY);
+    const sessions = await readSessions();
+    delete sessions[wallet];
+    await writeSessions(sessions);
   } catch {}
 }
 
@@ -94,7 +125,7 @@ export function setSessionSigner(wallet: string | null, sign?: (message: Uint8Ar
 export async function renewWalletSession(): Promise<boolean> {
   if (!sessionSigner) return false;
   const { wallet, sign } = sessionSigner;
-  await clearWalletSession();
+  await clearWalletSession(wallet);
   try {
     await ensureWalletSession(wallet, sign);
     return true;
@@ -123,7 +154,7 @@ export async function authedFetch(input: string, init: RequestInit = {}): Promis
 /** JSON headers plus the session token when one is stored. */
 export async function apiHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const session = await readSession();
+  const session = await readSession(sessionSigner?.wallet);
   if (session && session.expiresAt > Date.now()) {
     headers.Authorization = `Bearer ${session.token}`;
   }

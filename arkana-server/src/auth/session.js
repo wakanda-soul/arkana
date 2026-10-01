@@ -145,7 +145,19 @@ function endSession(req) {
  */
 function hasWalletSession(req, wallet) {
   if (process.env.ARKANA_REQUIRE_SESSION === "off") return true;
-  return Boolean(wallet) && sessionWallet(req) === wallet;
+  if (Boolean(wallet) && sessionWallet(req) === wallet) return true;
+  if (wallet && req.method !== "GET") console.warn(`[session] ${req.method} ${req.path} rejected: ${sessionMissReason(req, wallet)}`);
+  return false;
+}
+
+/** Why a request has no valid session, for the log (never the token itself). */
+function sessionMissReason(req, wallet) {
+  const token = bearerToken(req);
+  if (!token) return "no token sent";
+  const session = loadSessions()[hashToken(token)];
+  if (!session) return "unknown token";
+  if (session.wallet !== wallet) return "token of another wallet";
+  return `token expired ${new Date(session.expiresAt).toISOString()}`;
 }
 
 module.exports = { createNonce, verifySignIn, hasWalletSession, endSession };
