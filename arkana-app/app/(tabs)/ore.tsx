@@ -480,7 +480,7 @@ export default function OreVaultScreen() {
           <Text style={styles.ruleDesc}>
             {t(
               'ore_loop_desc',
-              'On every transaction in Arkana, 33% of $SKR is burned forever, 33% is allocated to the Arkana Treasury, and 34% is directed into the $ORE Sacred Vault 365-day staking yield stream.'
+              'On every transaction in Arkana, 33% of $SKR is burned forever, 33% is allocated to the Arkana Treasury, and 34% is directed into the $ORE Sacred Vault 365-day staking yield stream. After 365 days the ORE principal goes to the treasury, and the yield and the tranche rent come back to you.'
             )}
           </Text>
 

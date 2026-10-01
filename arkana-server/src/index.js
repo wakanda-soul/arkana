@@ -8,7 +8,8 @@ const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
 const {
   generateReadingProse,
   generateOracleChatReply,
-  evaluateSafetyFilter
+  evaluateSafetyFilter,
+  refundNote
 } = require("./ai/oracleService");
 const {
   logDialogue,
@@ -706,13 +707,14 @@ app.post("/api/chat", async (req, res) => {
       quotaResult = { ...quotaResult, streakBonusSpreads: creditBonusSpreads(wallet, 1) };
       refunded = true;
     }
+    const finalReply = refunded ? `${reply}\n\n${refundNote(message, language)}` : reply;
 
     // Audit log dialogue interaction
     logDialogue({
       type: "chat",
       wallet,
       user_message: message.trim(),
-      oracle_reply: reply,
+      oracle_reply: finalReply,
       is_injection_attempt: Boolean(safety.is_injection_attempt),
       is_code_attempt: Boolean(safety.is_code_attempt),
       blocked_by_safety: Boolean(safety.blocked || safety.refused),
@@ -723,7 +725,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     res.json({
-      reply,
+      reply: finalReply,
       card: refunded ? null : chatResult.card || null,
       refunded,
       quota: quotaResult,

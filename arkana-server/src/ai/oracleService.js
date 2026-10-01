@@ -210,6 +210,24 @@ function cleanDeckTerms(text) {
   return String(text || "").replace(/\bMajor Arcana\b/gi, "Genesis").replace(/\bMinor Arcana\b/gi, "Arkana deck");
 }
 
+/** Appended to a refusal: the question was given back as a banked free one. */
+const REFUND_NOTES = {
+  en: "This question goes back to you: one free question is already waiting on your balance. Use it wisely.",
+  ru: "Этот вопрос я тебе возвращаю: один бесплатный вопрос уже ждёт тебя на балансе. Используй его с умом.",
+  zh: "这个问题我还给你：一次免费提问已经存入你的余额。请明智地使用它。",
+  hi: "यह सवाल मैं तुम्हें लौटा रही हूँ: एक मुफ़्त सवाल तुम्हारे बैलेंस में इंतज़ार कर रहा है। इसे समझदारी से इस्तेमाल करना।",
+  es: "Te devuelvo esta pregunta: ya tienes una pregunta gratis esperando en tu saldo. Úsala con sabiduría.",
+  ar: "أعيد إليك هذا السؤال: سؤال مجاني ينتظرك الآن في رصيدك. استخدمه بحكمة.",
+  fr: "Je te rends cette question : une question gratuite t'attend déjà sur ton solde. Utilise-la avec sagesse.",
+  bn: "এই প্রশ্নটা আমি তোমাকে ফিরিয়ে দিচ্ছি: একটি বিনামূল্যের প্রশ্ন তোমার ব্যালেন্সে অপেক্ষা করছে। বুদ্ধি করে ব্যবহার করো।",
+  pt: "Te devolvo esta pergunta: uma pergunta grátis já está esperando no seu saldo. Use com sabedoria.",
+  id: "Pertanyaan ini kukembalikan padamu: satu pertanyaan gratis sudah menunggu di saldomu. Gunakan dengan bijak.",
+};
+
+function refundNote(message, requestedLang = null) {
+  return REFUND_NOTES[resolveLang(message, requestedLang)] || REFUND_NOTES.en;
+}
+
 const REFUSAL_MARKER = /\[\[REFUSAL\]\]\s*/g;
 
 function validateModelOutput(reply, originalMessage, requestedLang = null) {
@@ -697,6 +715,7 @@ const generateOracleChatReplyClean = async (...args) => stripDashes(await genera
 const generateReadingProseClean = async (...args) => stripDashes(await generateReadingProse(...args));
 
 module.exports = {
+  refundNote,
   SYSTEM_PROMPT,
   generateReadingProse: generateReadingProseClean,
   generateOfflineSynthesis,
