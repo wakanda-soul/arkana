@@ -38,8 +38,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      # The Android SDK comes preinstalled on ubuntu-latest (ANDROID_HOME is set by the runner image)
+      - name: Check Android SDK
+        run: test -d "$ANDROID_HOME/build-tools" && ls "$ANDROID_HOME/build-tools" | tail -n 1
 
       - name: Install App Dependencies
         working-directory: ./arkana-app
