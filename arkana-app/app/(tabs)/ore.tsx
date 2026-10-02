@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/services/oracleApi';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
@@ -217,12 +218,10 @@ export default function OreVaultScreen() {
     let valueLamports: number | null = null;
     try {
       if (claimableUnits > 0) {
-        const res = await netFetch(
-          `https://arkana.icu/api/jup/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`,
-          undefined,
-          { timeoutMs: 8000 }
-        );
-        if (res.ok) valueLamports = Number((await res.json()).outAmount) || 0;
+        // Display estimate from the server's ORE price (Jupiter Price API), no swap quote needed
+        const res = await netFetch(`${API_BASE_URL}/api/prices`, undefined, { timeoutMs: 8000 });
+        const oreToSol = res.ok ? Number((await res.json()).oreToSolRate) : 0;
+        if (oreToSol > 0) valueLamports = Math.floor((claimableUnits / 1e11) * oreToSol * 1e9);
       } else {
         valueLamports = 0;
       }

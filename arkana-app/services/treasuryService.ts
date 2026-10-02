@@ -192,7 +192,8 @@ async function fetchJupiterQuote({
   swapMode?: 'ExactIn' | 'ExactOut';
   slippageBps?: number;
 }): Promise<any> {
-  const base = `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}`;
+  // Liquid intermediate tokens only: fewer failed routes (Jupiter's recommendation)
+  const base = `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}&restrictIntermediateTokens=true`;
   const capped = `${base}&maxAccounts=${jupiterMaxAccounts}`;
   const touchesSkr = inputMint.equals(SKR_MINT) || outputMint.equals(SKR_MINT);
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);

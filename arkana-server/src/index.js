@@ -33,7 +33,7 @@ const {
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { startSyncKeeper } = require("./solana/syncKeeper");
-const { startSkrPriceRefresher, getSkrToSolRate } = require("./solana/skrPrice");
+const { startSkrPriceRefresher, getSkrToSolRate, getOreToSolRate } = require("./solana/skrPrice");
 const { jupFetch, quoteQuery, isArkanaQuote } = require("./solana/jupiter");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel } = require("./solana/paymentVerifier");
 const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
@@ -783,7 +783,8 @@ app.post("/api/jup/swap-instructions", async (req, res) => {
     const upstream = await jupFetch("/swap-instructions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quoteResponse, userPublicKey, wrapAndUnwrapSol: true, useSharedAccounts: true }),
+      // useSharedAccounts is left to Jupiter's router: forcing it can fail on low-liquidity AMMs
+      body: JSON.stringify({ quoteResponse, userPublicKey, wrapAndUnwrapSol: true }),
     });
     res.status(upstream.status).type("application/json").send(await upstream.text());
   } catch {
@@ -796,7 +797,7 @@ app.post("/api/jup/swap-instructions", async (req, res) => {
 app.get("/api/prices", (req, res) => {
   const config = loadEconomyConfig();
   res.set("Cache-Control", "public, max-age=60");
-  res.json({ success: true, skrToSolRate: getSkrToSolRate(config.skrToSolRate || 0.0002) });
+  res.json({ success: true, skrToSolRate: getSkrToSolRate(config.skrToSolRate || 0.0002), oreToSolRate: getOreToSolRate() });
 });
 
 // Arkana Address Lookup Table used by the app to fit payments into one transaction
