@@ -1,10 +1,11 @@
+import { getSkrSolEstimate } from '@/services/oracleApi'
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PublicKey, Connection } from '@solana/web3.js';
 import { ObsidianTokens } from '@/constants/theme';
 import { useLanguage, localizeErrorText } from '@/services/i18n';
-import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from '@/services/treasuryService';
+import { getVerifiedTreasury, executePaymentOrSwap } from '@/services/treasuryService';
 import { fetchRealSkrBalance } from '@/services/solanaService';
 import { soundService } from '@/services/soundService';
 import { submitAltarOfferingApi, API_BASE_URL, ERR_PAYMENT_PENDING } from '@/services/oracleApi';
@@ -57,15 +58,9 @@ export function AltarOfferingCard({
   useEffect(() => {
     let isMounted = true;
     setSolEstimate('\u2026');
-    getLiveSolQuoteForSkr(selectedAmount).then((quote) => {
-      if (isMounted) {
-        setSolEstimate(
-          quote.quoteResponse
-            ? `~${quote.solAmount} SOL`
-            : t('price_estimate', '~{amount} SOL (estimate)', { amount: quote.solAmount })
-        );
-      }
-    }).catch(() => {});
+    getSkrSolEstimate(selectedAmount).then((sol) => {
+      if (isMounted && sol !== null) setSolEstimate(`~${sol} SOL`);
+    });
     return () => {
       isMounted = false;
     };

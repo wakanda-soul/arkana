@@ -1,3 +1,4 @@
+import { getSkrSolEstimate } from "@/services/oracleApi";
 import React, { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -26,7 +27,7 @@ import { soundService } from "@/services/soundService";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, fetchRealSolBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { LinearGradient } from "expo-linear-gradient";
-import { getVerifiedTreasury, executePaymentOrSwap, getLiveSolQuoteForSkr } from "@/services/treasuryService";
+import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
 import {
   fetchClockInStatus,
   setRemoteSeekerStatus,
@@ -194,13 +195,9 @@ export default function WalletScreen() {
   };
 
   useEffect(() => {
-    getLiveSolQuoteForSkr(333).then(q => {
-      setSubSolEstimate(
-        q.quoteResponse
-          ? `~${q.solAmount} SOL`
-          : t('price_estimate', '~{amount} SOL (estimate)', { amount: q.solAmount })
-      );
-    }).catch(() => {});
+    getSkrSolEstimate(333).then((sol) => {
+      if (sol !== null) setSubSolEstimate(`~${sol} SOL`);
+    });
   }, [t]);
 
   const handlePurchaseSubscription = async () => {

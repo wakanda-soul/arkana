@@ -115,6 +115,26 @@ export async function resubmitPendingPayments(wallet: string): Promise<void> {
   }
 }
 
+let priceCache: { rate: number; at: number } | null = null;
+
+/**
+ * SOL estimate of an SKR price for display, from the server's live rate (refreshed from Jupiter every
+ * 5 minutes). Display prices never use the phone's own Jupiter quota, which the payment needs.
+ */
+export async function getSkrSolEstimate(amountSkr: number): Promise<number | null> {
+  try {
+    if (!priceCache || Date.now() - priceCache.at > 60_000) {
+      const res = await netFetch(`${API_BASE_URL}/api/prices`);
+      const data = await res.json();
+      if (!(data?.skrToSolRate > 0)) return null;
+      priceCache = { rate: data.skrToSolRate, at: Date.now() };
+    }
+    return Number((amountSkr * priceCache.rate).toFixed(6));
+  } catch {
+    return null;
+  }
+}
+
 export interface ClockInResult {
   /** true when the server could not be reached and these are placeholder values */
   offline?: boolean;

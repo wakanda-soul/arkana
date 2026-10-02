@@ -241,9 +241,13 @@ export async function executeSolanaTransaction({
       }
     } catch (err: any) {
       // The wallet may have sent the payment and lost only its reply: never report a cancel or sign
-      // a second time before checking the chain
+      // a second time before checking the chain. An explicit cancel in the wallet gets one quick
+      // look; any other error is watched for up to 20 s.
+      const looksCancelled =
+        err?.code === -32003 ||
+        /reject|denied|declined|cancel/i.test(String(err?.message || ''));
       const landed = recoverMemo
-        ? await findLandedPayment(payerKey.toBase58(), recoverMemo, transactions.length, signingStartedSec, 20_000)
+        ? await findLandedPayment(payerKey.toBase58(), recoverMemo, transactions.length, signingStartedSec, looksCancelled ? 0 : 20_000)
         : null;
       if (landed) {
         signatures = landed;

@@ -33,7 +33,7 @@ const {
 } = require("./solana/skrService");
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { startSyncKeeper } = require("./solana/syncKeeper");
-const { startSkrPriceRefresher } = require("./solana/skrPrice");
+const { startSkrPriceRefresher, getSkrToSolRate } = require("./solana/skrPrice");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel } = require("./solana/paymentVerifier");
 const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
@@ -757,6 +757,14 @@ app.post("/api/chat", async (req, res) => {
     });
     serverError(res, err, "chat");
   }
+});
+
+// Live SKR price for display ("~0.05 SOL"), refreshed from Jupiter every 5 minutes by the server, so
+// phones keep their own small Jupiter quota for the payment itself
+app.get("/api/prices", (req, res) => {
+  const config = loadEconomyConfig();
+  res.set("Cache-Control", "public, max-age=60");
+  res.json({ success: true, skrToSolRate: getSkrToSolRate(config.skrToSolRate || 0.0002) });
 });
 
 // Arkana Address Lookup Table used by the app to fit payments into one transaction
