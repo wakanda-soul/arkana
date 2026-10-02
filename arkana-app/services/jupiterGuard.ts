@@ -191,6 +191,16 @@ function parseRouteAmounts(data: Buffer, layout: RouteLayout): RouteAmounts {
   };
 }
 
+/**
+ * Hex of the first `n` bytes. Written out by hand: on Hermes (the app's JS engine) subarray() returns a
+ * plain Uint8Array, whose toString ignores 'hex', so every route looked unknown.
+ */
+function hexPrefix(bytes: ArrayLike<number>, n: number): string {
+  let out = '';
+  for (let i = 0; i < n && i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, '0');
+  return out;
+}
+
 const ata = (owner: PublicKey, mint: PublicKey) => getAssociatedTokenAddressSync(mint, owner, true).toBase58();
 
 /** The quote must be for exactly this swap, with no platform fee and no extra slippage. */
@@ -244,7 +254,7 @@ export function checkJupiterSwapInstructions(swapData: any, quote: any, exp: Swa
   const sk = keysOf(swapIx);
   if (swapIx.programId !== JUP) fail('swap is not a Jupiter v6 route');
   const data = Buffer.from(swapIx.data, 'base64');
-  const kind = ROUTE_DISCRIMINATORS[data.subarray(0, 8).toString('hex')];
+  const kind = ROUTE_DISCRIMINATORS[hexPrefix(data, 8)];
   if (!kind) fail('swap is not a route instruction');
   const L = LAYOUTS[kind];
   if (L.exactOut !== (exp.swapMode === 'ExactOut')) fail('route has the wrong swap mode');
