@@ -71,9 +71,11 @@ function paymentSignatureError(body, required) {
  * payment signature that verifies on-chain for this wallet, action and price.
  */
 async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatures }) {
-  const free = consumeSpread(wallet, { type });
-  if (free.allowed || !txSignature) return free;
+  // No payment attached: free quota, streak bonus or pass
+  if (!txSignature) return consumeSpread(wallet, { type });
 
+  // The user explicitly paid (the app's quota view can be stale): use the payment and keep the free
+  // quota and bonuses for later. Only a payment that cannot be used falls back to the free quota.
   const config = loadEconomyConfig();
   const amountSkr = type === "chat" ? (config.askCostSkr || 1) : (config.extraSpreadCostSkr || 5);
   const payment = await verifyPayment({
@@ -83,10 +85,15 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
     amountSkr,
     actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
   });
-  // The payment's own error is what the client sees: "not found on-chain yet" tells the app to keep
-  // the payment and retry, a quota message would make it drop a real payment
-  if (!payment.ok) return { ...free, allowed: false, busy: Boolean(payment.busy), reason: payment.error, error: payment.error };
-  return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
+  if (payment.ok) return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
+  // Temporary failures (not visible yet, busy): the app keeps the payment and retries, nothing spent
+  if (payment.busy || /not found on-chain yet/i.test(payment.error || "")) {
+    return { allowed: false, busy: Boolean(payment.busy), reason: payment.error, error: payment.error };
+  }
+  // A payment that can never count (already used, wrong amount...): free quota if any, else its error
+  const free = consumeSpread(wallet, { type });
+  if (free.allowed) return free;
+  return { ...free, allowed: false, reason: payment.error, error: payment.error };
 }
 
 const app = express();

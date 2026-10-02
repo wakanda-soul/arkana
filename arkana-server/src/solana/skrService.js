@@ -405,7 +405,10 @@ function consumeSpread(walletAddress, options = {}) {
   const subscriptionBonus = isSubscribed ? 5 : 0;
   const maxFree = seekerBase + subscriptionBonus;
 
-  if (maxFree > 0 && dailySpreadsUsed < maxFree) {
+  // A verified payment is used as such: free allowance and banked bonuses stay for later
+  const paid = Boolean(options.paymentVerified && txSignature);
+
+  if (!paid && maxFree > 0 && dailySpreadsUsed < maxFree) {
     // 1. Within free daily allowance (Seeker Genesis SBT or Active Subscription)
     dailySpreadsUsed += 1;
     user.dailySpreadsUsed = dailySpreadsUsed;
@@ -432,7 +435,7 @@ function consumeSpread(walletAddress, options = {}) {
   // 2. Streak Milestone Bonus Spreads (Stored on account, consumed only after daily quota is used)
   const streakBonus = user.streakBonusSpreads || 0;
   // Banked streak bonus spreads cover questions too, like the daily Seeker allowance they back up
-  if ((itemType === "spread" || itemType === "chat") && streakBonus > 0) {
+  if (!paid && (itemType === "spread" || itemType === "chat") && streakBonus > 0) {
     user.streakBonusSpreads = streakBonus - 1;
     user.totalReadings = (user.totalReadings || 0) + 1;
     users[walletAddress] = user;
@@ -454,10 +457,8 @@ function consumeSpread(walletAddress, options = {}) {
   }
 
   // 3. Beyond free & streak quota: only a payment the server verified on-chain (see paymentVerifier)
-  if (options.paymentVerified && txSignature) {
-    dailySpreadsUsed += 1;
-    user.dailySpreadsUsed = dailySpreadsUsed;
-    user.lastSpreadDate = todayKey;
+  if (paid) {
+    // Paid uses do not count against the free daily allowance
     user.totalReadings = (user.totalReadings || 0) + 1;
     user.txHistory = user.txHistory || [];
     user.txHistory.push({
