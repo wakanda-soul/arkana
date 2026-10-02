@@ -35,4 +35,6 @@ function isArkanaQuote(quote) {
   return Boolean(quote && ALLOWED_MINTS.has(quote.inputMint) && ALLOWED_MINTS.has(quote.outputMint));
 }
 
+console.log(`[jupiter] API key ${process.env.JUPITER_API_KEY ? "set" : "not set (free tier limits)"}`);
+
 module.exports = { jupFetch, quoteQuery, isArkanaQuote };
