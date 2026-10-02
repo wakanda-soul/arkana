@@ -101,6 +101,31 @@ function cleanOldArchives() {
   } catch {}
 }
 
+/** Drops live-log entries older than RETENTION_DAYS (archives expire by file age). */
+function pruneLiveLog() {
+  try {
+    if (!fs.existsSync(LOG_FILE)) return;
+    const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const lines = fs.readFileSync(LOG_FILE, "utf-8").split("\n").filter(Boolean);
+    const kept = lines.filter((line) => {
+      try {
+        return Date.parse(JSON.parse(line).timestamp) >= cutoff;
+      } catch {
+        return false;
+      }
+    });
+    if (kept.length === lines.length) return;
+    const tmp = `${LOG_FILE}.tmp`;
+    fs.writeFileSync(tmp, kept.length ? kept.join("\n") + "\n" : "");
+    fs.renameSync(tmp, LOG_FILE);
+  } catch (err) {
+    console.error("[Logger] Retention prune failed:", err.message);
+  }
+}
+pruneLiveLog();
+setInterval(pruneLiveLog, 24 * 60 * 60 * 1000).unref();
+setInterval(cleanOldArchives, 24 * 60 * 60 * 1000).unref();
+
 /**
  * Append a dialogue log entry to dialogues.jsonl
  * @param {Object} entry - Log payload

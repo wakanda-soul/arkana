@@ -13,11 +13,19 @@ set -eu
 
 PERSIST=/var/lib/arkana-ai/home
 CLI_DIR=.gemini/antigravity-cli
+TOKEN="$CLI_DIR/antigravity-oauth-token"
+
+# Homes left by calls that were killed before their trap ran
+find /tmp -maxdepth 1 \( -name 'arkana-ai.*' -o -name 'arkana-ai-token.*' \) -mmin +10 -exec rm -rf {} + 2>/dev/null || true
+
 WORK=$(mktemp -d /tmp/arkana-ai.XXXXXX)
-trap 'rm -rf "$WORK"' EXIT INT TERM
+SNAP=$(mktemp /tmp/arkana-ai-token.XXXXXX)
+trap 'rm -rf "$WORK" "$SNAP"' EXIT INT TERM
 
 cp -a "$PERSIST/." "$WORK/"
 rm -f "$WORK/$CLI_DIR/conversation_summaries.db" "$WORK/$CLI_DIR/jetbox_summaries_proto.pb"
+# The token this call started with: only a token the CLI itself refreshed is written back
+cp -P "$WORK/$TOKEN" "$SNAP" 2>/dev/null || true
 
 status=0
 bwrap \
@@ -30,9 +38,11 @@ bwrap \
   --clearenv --setenv HOME "$PERSIST" --setenv PATH /usr/bin:/bin --chdir /tmp \
   /opt/agy/agy --sandbox "$@" || status=$?
 
-# Keep a refreshed OAuth token, nothing else
-TOKEN="$CLI_DIR/antigravity-oauth-token"
-if [ -f "$WORK/$TOKEN" ] && ! cmp -s "$WORK/$TOKEN" "$PERSIST/$TOKEN"; then
-  cp "$WORK/$TOKEN" "$PERSIST/$TOKEN.new" && mv "$PERSIST/$TOKEN.new" "$PERSIST/$TOKEN"
+# Keep a token the CLI refreshed during this call, nothing else. Compared with this call's own
+# snapshot (not the current file, which a parallel call may have refreshed already); a symlink is
+# never followed, so the sandbox cannot make the wrapper copy another file out.
+if [ -f "$WORK/$TOKEN" ] && [ ! -L "$WORK/$TOKEN" ] && ! cmp -s "$WORK/$TOKEN" "$SNAP"; then
+  NEW=$(mktemp "$PERSIST/$CLI_DIR/.token.XXXXXX")
+  cp -P "$WORK/$TOKEN" "$NEW" && chmod 600 "$NEW" && mv "$NEW" "$PERSIST/$TOKEN"
 fi
 exit "$status"

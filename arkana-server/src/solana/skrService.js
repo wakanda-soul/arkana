@@ -44,12 +44,12 @@ function loadEconomyConfig() {
 }
 
 // Admin-editable numbers and their allowed ranges. Anything else (the treasury attestation included)
-// is changed only by editing the file on the server.
+// is changed only by editing the file on the server. The Oracle Pass price is fixed at 333 SKR in the
+// payment check, so it is not editable here.
 const EDITABLE_CONFIG = {
   streakRepairCostSkr: [0.01, 1000],
   extraSpreadCostSkr: [0.01, 1000],
   askCostSkr: [0.01, 1000],
-  subscriptionCostSkr: [1, 100000],
   skrToSolRate: [1e-9, 1],
   freeDailyAllowanceBase: [0, 100],
   streakTier2Threshold: [1, 365],
@@ -166,7 +166,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
   const askCost = config.askCostSkr || 1;
   const extraSpreadCost = config.extraSpreadCostSkr || 5;
   const skrToSolRate = getSkrToSolRate(config.skrToSolRate || 0.0002);
-  const subscriptionCostSkr = config.subscriptionCostSkr || 333;
+  const subscriptionCostSkr = 333; // fixed: the payment check charges exactly this
 
   if (!walletAddress) {
     return {
@@ -180,6 +180,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
       freeSpreadsRemaining: 0,
       freeSpreadsMax: 0,
       streakBonusSpreads: 0,
+      bonusQuestions: 0,
       extraSpreadCostSkr: extraSpreadCost,
       askCostSkr: askCost,
       skrToSolRate,
@@ -256,6 +257,7 @@ function getClockInStatus(walletAddress, clientHint = undefined) {
     freeSpreadsRemaining: remainingFree,
     freeSpreadsMax: maxFree,
     streakBonusSpreads: user.streakBonusSpreads || 0,
+    bonusQuestions: user.bonusQuestions || 0,
     extraSpreadCostSkr: extraSpreadCost,
     askCostSkr: askCost,
     skrToSolRate,
@@ -355,6 +357,7 @@ function recordClockIn(walletAddress, drawnCard, txSignature = null, slot = null
     freeSpreadsMax: maxFree,
     streakBonusAwarded,
     streakBonusSpreads: user.streakBonusSpreads || 0,
+    bonusQuestions: user.bonusQuestions || 0,
     txSignature,
     slot,
     skrBalance: 0,
@@ -426,6 +429,31 @@ function consumeSpread(walletAddress, options = {}) {
       paidWith: "free",
       remainingFree: maxFree - dailySpreadsUsed,
       streakBonusSpreads: user.streakBonusSpreads || 0,
+    bonusQuestions: user.bonusQuestions || 0,
+      balance: 0,
+      isSeekerHolder,
+      isSubscribed
+    };
+  }
+
+  // 2a. Bonus questions (credited for paid questions Arkana refused): questions only, spent first
+  const bonusQuestions = user.bonusQuestions || 0;
+  if (!paid && itemType === "chat" && bonusQuestions > 0) {
+    user.bonusQuestions = bonusQuestions - 1;
+    user.totalReadings = (user.totalReadings || 0) + 1;
+    users[walletAddress] = user;
+    saveUsers(users);
+    return {
+      allowed: true,
+      isFree: true,
+      cost: 0,
+      costSkr: 0,
+      costSol: 0,
+      paidWith: "bonus_question",
+      remainingFree: 0,
+      streakBonusSpreads: user.streakBonusSpreads || 0,
+    bonusQuestions: user.bonusQuestions || 0,
+      bonusQuestions: user.bonusQuestions,
       balance: 0,
       isSeekerHolder,
       isSubscribed
@@ -613,7 +641,17 @@ function isClockInSignatureUsed(walletAddress, signature) {
   return Boolean(user && (user.history || []).some((h) => h.txSignature === signature));
 }
 
-/** Banked bonus spreads or questions, e.g. for a verified payment whose request never reached the server. */
+/** One banked bonus question (questions only): for a paid question Arkana refused or could not answer. */
+function creditBonusQuestions(walletAddress, count = 1) {
+  const users = loadUsers();
+  const user = users[walletAddress] || {};
+  user.bonusQuestions = (user.bonusQuestions || 0) + count;
+  users[walletAddress] = user;
+  saveUsers(users);
+  return user.bonusQuestions;
+}
+
+/** Banked bonus spreads (usable for spreads or questions), e.g. for a paid spread that was refused. */
 function creditBonusSpreads(walletAddress, count = 1) {
   const users = loadUsers();
   const user = users[walletAddress] || {};
@@ -624,6 +662,7 @@ function creditBonusSpreads(walletAddress, count = 1) {
 }
 
 module.exports = {
+  creditBonusQuestions,
   creditBonusSpreads,
   getClockInStatus,
   isClockInSignatureUsed,

@@ -32,9 +32,19 @@ function hashToken(token) {
   return crypto.createHash("sha256").update(String(token)).digest("hex");
 }
 
+const MAX_SESSIONS = 20000;
+// Parsed sessions, reused until the file changes (every authenticated request reads them)
+let sessionCache = null;
+
 /** Sessions keyed by token hash. Entries still keyed by the plain token (older files) are hashed once. */
 function loadSessions() {
+  let mtime = 0;
+  try {
+    mtime = require("fs").statSync(SESSIONS_FILE).mtimeMs;
+  } catch {}
+  if (sessionCache && sessionCache.mtime === mtime) return { ...sessionCache.sessions };
   const sessions = readJson(SESSIONS_FILE);
+  sessionCache = { mtime, sessions: { ...sessions } };
   const plain = Object.keys(sessions).filter((k) => !HASH_RE.test(k));
   if (plain.length) {
     for (const token of plain) {
@@ -49,7 +59,16 @@ function loadSessions() {
 function saveSessions(sessions) {
   const now = Date.now();
   for (const [key, s] of Object.entries(sessions)) if (s.expiresAt < now) delete sessions[key];
+  // Hard cap across all wallets: the oldest sessions go first
+  const keys = Object.keys(sessions);
+  if (keys.length > MAX_SESSIONS) {
+    keys
+      .sort((a, b) => sessions[a].expiresAt - sessions[b].expiresAt)
+      .slice(0, keys.length - MAX_SESSIONS)
+      .forEach((k) => delete sessions[k]);
+  }
   writeJsonAtomic(SESSIONS_FILE, sessions);
+  sessionCache = null;
 }
 
 function isWallet(wallet) {
@@ -217,4 +236,4 @@ function sessionMissReason(req, wallet) {
   return `token expired ${new Date(session.expiresAt).toISOString()}`;
 }
 
-module.exports = { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession };
+module.exports = { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession, sessionWallet };

@@ -28,6 +28,7 @@ const {
   recordOffering,
   recordSubscription,
   creditBonusSpreads,
+  creditBonusQuestions,
   loadEconomyConfig,
   updateEconomyConfig
 } = require("./solana/skrService");
@@ -36,7 +37,7 @@ const { startSyncKeeper } = require("./solana/syncKeeper");
 const { startSkrPriceRefresher, getSkrToSolRate, getOreToSolRate } = require("./solana/skrPrice");
 const { jupFetch, quoteQuery, isArkanaQuote } = require("./solana/jupiter");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel } = require("./solana/paymentVerifier");
-const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
+const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession, sessionWallet } = require("./auth/session");
 
 const SESSION_REQUIRED = { success: false, sessionRequired: true, error: "Please sign in with your wallet again." };
 const PAYMENT_BUSY = { success: false, busy: true, error: "The server is busy verifying payments. Please retry in a moment." };
@@ -90,10 +91,9 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
   if (payment.busy || /not found on-chain yet/i.test(payment.error || "")) {
     return { allowed: false, busy: Boolean(payment.busy), reason: payment.error, error: payment.error };
   }
-  // A payment that can never count (already used, wrong amount...): free quota if any, else its error
-  const free = consumeSpread(wallet, { type });
-  if (free.allowed) return free;
-  return { ...free, allowed: false, reason: payment.error, error: payment.error };
+  // A payment that can never count (already used, wrong amount...) spends nothing: the free quota is
+  // kept for a request without a payment
+  return { allowed: false, reason: payment.error, error: payment.error };
 }
 
 /**
@@ -107,7 +107,10 @@ async function settleRefusedPayment(wallet, type, body) {
   const quota = await consumeWithVerifiedPayment(wallet, { type, txSignature: body.txSignature, txSignatures: body.txSignatures });
   if (!quota.allowed && (quota.busy || /not found on-chain yet/i.test(quota.error || ""))) return { retry: quota };
   if (quota.allowed && quota.isFree === false) {
-    return { credited: true, quota: { ...quota, streakBonusSpreads: creditBonusSpreads(wallet, 1) } };
+    // A paid question comes back as a question, a paid spread as a spread
+    return type === "chat"
+      ? { credited: true, quota: { ...quota, bonusQuestions: creditBonusQuestions(wallet, 1) } }
+      : { credited: true, quota: { ...quota, streakBonusSpreads: creditBonusSpreads(wallet, 1) } };
   }
   return { credited: false, quota };
 }
@@ -177,16 +180,17 @@ function pruneRateBuckets(now) {
   for (const [key, b] of rateBuckets) if (now - b.start > b.windowMs) rateBuckets.delete(key);
 }
 // IPv6 clients get a whole /64 from their provider: count them per /64, not per address
-function rateKeyIp(ip) {
+// Sign-in routes count IPv6 per /48 (a whole site allocation), so one block cannot flood sessions
+function rateKeyIp(ip, v6Groups = 4) {
   const v6 = String(ip).replace(/^::ffff:/, "");
   if (!v6.includes(":")) return v6;
   const [head] = v6.split("::");
   const groups = v6.includes("::") ? head.split(":") : v6.split(":");
-  return `${groups.slice(0, 4).join(":")}::/64`;
+  return `${groups.slice(0, v6Groups).join(":")}::/${v6Groups * 16}`;
 }
-function rateLimit(name, max, windowMs) {
+function rateLimit(name, max, windowMs, v6Groups = 4) {
   return (req, res, next) => {
-    const key = `${name}|${rateKeyIp(clientIp(req))}`;
+    const key = `${name}|${rateKeyIp(clientIp(req), v6Groups)}`;
     const now = Date.now();
     pruneRateBuckets(now);
     const bucket = rateBuckets.get(key);
@@ -205,8 +209,8 @@ app.use("/api/chat", rateLimit("chat", 20, MINUTE));
 app.use("/api/reading", rateLimit("reading", 20, MINUTE));
 app.post("/api/clock-in", rateLimit("clock-in", 10, MINUTE));
 app.get("/api/clock-in/:wallet", rateLimit("clock-in-status", 30, MINUTE));
-app.use("/api/auth/nonce", rateLimit("auth-nonce", 20, MINUTE));
-app.use("/api/auth/verify", rateLimit("auth-verify", 20, MINUTE));
+app.use("/api/auth/nonce", rateLimit("auth-nonce", 20, MINUTE, 3));
+app.use("/api/auth/verify", rateLimit("auth-verify", 20, MINUTE, 3));
 app.use("/api/auth/logout", rateLimit("auth-logout", 20, MINUTE));
 app.use("/api/seeker/status", rateLimit("seeker-status", 30, MINUTE));
 app.use("/api/solana-rpc", rateLimit("solana-rpc", 60, MINUTE));
@@ -746,7 +750,7 @@ app.post("/api/chat", async (req, res) => {
     const engineAnswer = safety.reason === "fallback";
     let refunded = false;
     if (paidQuestion && (refusal || engineAnswer)) {
-      quotaResult = { ...quotaResult, streakBonusSpreads: creditBonusSpreads(wallet, 1) };
+      quotaResult = { ...quotaResult, bonusQuestions: creditBonusQuestions(wallet, 1) };
       refunded = true;
     }
     const note = !refunded ? "" : refusal ? refundNote(message, language) : fallbackRefundNote(message, language);
@@ -796,7 +800,29 @@ app.post("/api/chat", async (req, res) => {
 
 // Jupiter proxy for the app: the server adds JUPITER_API_KEY, so phones are not held to the free
 // tier's per-IP limit. Only SOL/SKR/ORE swaps pass; the app still checks every returned instruction.
-app.get("/api/jup/quote", async (req, res) => {
+// Proxy traffic may use at most this many Jupiter requests per 10 s, so payment verification and the
+// price refresher always keep part of the key's limit (Free key: about 10 per 10 s per organisation)
+const PROXY_BUDGET = Number(process.env.ARKANA_JUP_PROXY_BUDGET) || 8;
+const proxyCalls = [];
+function proxyBudgetLeft() {
+  const now = Date.now();
+  while (proxyCalls.length && now - proxyCalls[0] > 10000) proxyCalls.shift();
+  if (proxyCalls.length >= PROXY_BUDGET) return false;
+  proxyCalls.push(now);
+  return true;
+}
+
+// Only signed-in wallets use the project's Jupiter key
+function requireJupSession(req, res, next) {
+  const wallet = sessionWallet(req);
+  // ARKANA_JUP_REQUIRE_SESSION=off only while app builds without the session header are still in use
+  if (!wallet && process.env.ARKANA_JUP_REQUIRE_SESSION !== "off") return res.status(401).json(SESSION_REQUIRED);
+  if (!proxyBudgetLeft()) return res.status(429).json({ error: "Too many requests. Please retry in a moment." });
+  req.sessionWallet = wallet;
+  next();
+}
+
+app.get("/api/jup/quote", requireJupSession, async (req, res) => {
   const query = quoteQuery(req.query);
   if (!query) return res.status(400).json({ error: "Only Arkana swaps (SOL, SKR, ORE) are supported." });
   try {
@@ -807,9 +833,10 @@ app.get("/api/jup/quote", async (req, res) => {
   }
 });
 
-app.post("/api/jup/swap-instructions", async (req, res) => {
+app.post("/api/jup/swap-instructions", requireJupSession, async (req, res) => {
   const { quoteResponse, userPublicKey } = req.body || {};
-  if (!isArkanaQuote(quoteResponse) || typeof userPublicKey !== "string" || userPublicKey.length > 64) {
+  // Instructions only for the signed-in wallet's own swap
+  if (!isArkanaQuote(quoteResponse) || typeof userPublicKey !== "string" || (req.sessionWallet && userPublicKey !== req.sessionWallet)) {
     return res.status(400).json({ error: "Only Arkana swaps (SOL, SKR, ORE) are supported." });
   }
   try {
@@ -1003,7 +1030,9 @@ app.post("/api/streak/repair", async (req, res) => {
     }
     const result = repairStreak(wallet, txSignature);
     if (!result.success) {
-      return res.status(400).json(result);
+      // Paid, but the streak could no longer be repaired (e.g. a Clock-In landed meanwhile): the payment
+      // is used, so it comes back as a bonus question instead of being lost
+      return res.json({ ...result, success: false, credited: "bonus_question", bonusQuestions: creditBonusQuestions(wallet, 1) });
     }
     res.json(result);
   } catch (err) {
@@ -1043,7 +1072,7 @@ app.post("/api/payment/credit", async (req, res) => {
     let payment = null;
     let amountSkr = 0;
     for (const amount of amounts) {
-      payment = await verifyPayment({ wallet, signature: txSignature, amountSkr: amount, actionLabel: found.label });
+      payment = await verifyPayment({ wallet, signature: txSignature, extraSignatures: req.body.txSignatures, amountSkr: amount, actionLabel: found.label });
       amountSkr = amount;
       if (payment.ok || payment.busy) break;
     }
@@ -1057,8 +1086,10 @@ app.post("/api/payment/credit", async (req, res) => {
       const repaired = repairStreak(wallet, txSignature);
       if (repaired.success) return res.json({ credited: "streak_repair", ...repaired });
     }
-    // Questions, spreads, and a repair whose streak can no longer be repaired: a banked bonus use
-    res.json({ success: true, credited: "bonus", streakBonusSpreads: creditBonusSpreads(wallet, 1) });
+    // A paid spread comes back as a bonus spread; a question or a repair whose streak can no longer
+    // be repaired (both 1 SKR) as a bonus question
+    if (found.label === "EXTRA_SPREAD") return res.json({ success: true, credited: "bonus_spread", streakBonusSpreads: creditBonusSpreads(wallet, 1) });
+    res.json({ success: true, credited: "bonus_question", bonusQuestions: creditBonusQuestions(wallet, 1) });
   } catch (err) {
     serverError(res, err, "payment/credit");
   }

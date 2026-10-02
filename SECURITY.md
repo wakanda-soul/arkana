@@ -8,7 +8,7 @@ In scope: the ORE vault program (`programs/arkana-ore-vault`, mainnet `B49g3obWU
 
 ## How the system is protected
 
-The README describes the controls in place: [AI and safety](README.md#ai-and-safety), [Payments are never lost](README.md#payments-are-never-lost), [Server hardening](README.md#server-hardening), [Trust and risks](README.md#trust-and-risks) and [Releases](README.md#releases). The vault program and its 80 LiteSVM checks are described in [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md).
+The README describes the controls in place: [AI and safety](README.md#ai-and-safety), [How payments are protected](README.md#how-payments-are-protected), [Server hardening](README.md#server-hardening), [Trust and risks](README.md#trust-and-risks) and [Releases](README.md#releases). The vault program and its 80 LiteSVM checks are described in [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md).
 
 ## Known and accepted
 

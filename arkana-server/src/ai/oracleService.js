@@ -173,6 +173,9 @@ function isCyrillic(text) {
 function sanitizeUserInput(input) {
   if (!input || typeof input !== "string") return "";
   return input
+    // Control characters (NUL breaks process arguments) and the model's own refusal marker
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/\[\[\s*REFUSAL\s*\]\]/gi, "")
     .replace(/<\/?querent_input>/gi, "")
     .replace(/<\/?dialogue_history>/gi, "")
     .replace(/<\/?system>/gi, "")
@@ -469,10 +472,23 @@ function runModel(prompt, callback) {
       console.warn(`[Oracle AI] all ${MAX_MODEL_CALLS} model slots busy, answering with the built-in engine`);
       return callback(null, "", "busy: no model slot");
     }
-    runModelInSlot(prompt, started, (err, stdout, stderr) => {
-      releaseModelSlot();
-      callback(err, stdout, stderr);
-    });
+    let released = false;
+    const release = () => {
+      if (!released) {
+        released = true;
+        releaseModelSlot();
+      }
+    };
+    try {
+      runModelInSlot(prompt, started, (err, stdout, stderr) => {
+        release();
+        callback(err, stdout, stderr);
+      });
+    } catch (err) {
+      // Any synchronous failure still frees the slot and answers (the built-in engine takes over)
+      release();
+      callback(err, "", "");
+    }
   });
 }
 
@@ -482,11 +498,17 @@ function runModel(prompt, callback) {
  * the CLI wants. Calls back like execFile: (err, stdout, stderr), err.killed on timeout.
  */
 function runAgyOnce(prompt, timeout, done) {
-  const child = spawn(
-    AGY_BIN,
-    ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", prompt],
-    { env: AGY_OPTIONS.env, cwd: AGY_OPTIONS.cwd, detached: true, stdio: ["ignore", "pipe", "pipe"] }
-  );
+  let child;
+  try {
+    child = spawn(
+      AGY_BIN,
+      // Never pass control characters into an argument (spawn throws on NUL)
+      ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", String(prompt).replace(/\u0000/g, "")],
+      { env: AGY_OPTIONS.env, cwd: AGY_OPTIONS.cwd, detached: true, stdio: ["ignore", "pipe", "pipe"] }
+    );
+  } catch (err) {
+    return done(err, "", "");
+  }
   let stdout = "";
   let stderr = "";
   let killed = false;
@@ -494,9 +516,11 @@ function runAgyOnce(prompt, timeout, done) {
   const cap = AGY_OPTIONS.maxBuffer;
   child.stdout.on("data", (d) => { if (stdout.length < cap) stdout += d; });
   child.stderr.on("data", (d) => { if (stderr.length < cap) stderr += d; });
+  // SIGTERM first so the wrapper's trap removes its temporary home, SIGKILL a second later
   const timer = setTimeout(() => {
     killed = true;
-    try { process.kill(-child.pid, "SIGKILL"); } catch {}
+    try { process.kill(-child.pid, "SIGTERM"); } catch {}
+    setTimeout(() => { try { process.kill(-child.pid, "SIGKILL"); } catch {} }, 1000).unref();
   }, timeout);
   const finish = (err) => {
     if (finished) return;
@@ -689,7 +713,8 @@ Arkana, speak:`;
         reply = reply.replace(/\s*\(?\s*(\u043A\u043B\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043A\u0438\u0439\s+\u044D\u043A\u0432\u0438\u0432\u0430\u043B\u0435\u043D\u0442|\u044D\u043A\u0432\u0438\u0432\u0430\u043B\u0435\u043D\u0442|classic\s+equivalent)[^)\n.]*\)?/gi, "").trim();
 
         // The model marks its own refusals; the marker never reaches the user
-        const modelRefused = reply.includes("[[REFUSAL]]");
+        // Only a reply that STARTS with the marker is a refusal (users cannot plant it: input is cleaned)
+        const modelRefused = /^\s*\[\[REFUSAL\]\]/.test(reply);
         reply = cleanDeckTerms(reply.replace(REFUSAL_MARKER, "").trim());
 
         // Layer 3: Post-inference output validation

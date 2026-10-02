@@ -134,8 +134,12 @@ async function verifyPayment({ wallet, signature, extraSignatures = [], amountSk
   const all = [signature, ...extras];
   // Reserve the signatures synchronously: parallel requests with one payment must not all pass
   const used = loadUsed();
-  if (all.some((s) => used[s] || inFlight.has(s))) {
+  if (all.some((s) => used[s])) {
     return { ok: false, error: "This payment was already used." };
+  }
+  // Being verified by another request right now: temporary, the app retries
+  if (all.some((s) => inFlight.has(s))) {
+    return { ok: false, busy: true, error: "This payment is being verified. Please retry in a moment." };
   }
   // One verification per wallet at a time, so one wallet cannot hold every slot
   if (walletsInFlight.has(wallet)) {
@@ -186,7 +190,18 @@ function oreDeposited(tx, wallet) {
 }
 
 /** ORE the 34% share of `amountSkr` buys at market right now (Jupiter quote), or null. */
+// Reference quotes per price, reused for a minute: verification does not spend Jupiter quota per payment
+const oreQuoteCache = new Map();
+
 async function oreForSkrShare(amountSkr) {
+  const cached = oreQuoteCache.get(amountSkr);
+  if (cached && Date.now() - cached.at < 60 * 1000) return cached.value;
+  const value = await liveOreForSkrShare(amountSkr);
+  if (value !== null) oreQuoteCache.set(amountSkr, { value, at: Date.now() });
+  return value ?? (cached ? cached.value : null);
+}
+
+async function liveOreForSkrShare(amountSkr) {
   try {
     const shareRaw = toRaw(amountSkr) - 2n * ((toRaw(amountSkr) * 33n) / 100n);
     const res = await jupFetch(
@@ -251,7 +266,11 @@ async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabe
     // Temporary (Jupiter unreachable): "busy" makes the app keep the payment and send it again later
     return { ok: false, busy: true, error: "Could not verify the ORE share right now. Please retry in a minute." };
   }
-  if (deposited * 100n < expected * ORE_SHARE_TOLERANCE_PCT) {
+  // Compared with the price now: an older payment (resubmitted or credited hours later) may have met a
+  // different market, so the tolerance widens with age (fresh: 85%, after 30 min: 50%)
+  const ageSec = Date.now() / 1000 - (tx.blockTime || 0);
+  const tolerancePct = ageSec > 30 * 60 ? 50n : ORE_SHARE_TOLERANCE_PCT;
+  if (deposited * 100n < expected * tolerancePct) {
     return { ok: false, error: "Payment deposited too little ORE." };
   }
 
@@ -303,6 +322,8 @@ async function isSeekerHolderOnChain(wallet) {
  */
 async function paymentActionLabel(signature) {
   if (!isValidTxSignature(signature)) return { error: "Invalid payment signature." };
+  // One cheap status call first: an unknown signature never costs the full fetch loop
+  if (!(await signatureExists(signature))) return { pending: true };
   const tx = await fetchTransaction(signature);
   if (!tx) return { pending: true };
   const match = (tx.meta?.logMessages || []).join("\n").match(/ARKANA:([A-Z_]+):/);
