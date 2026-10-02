@@ -843,8 +843,10 @@ app.post("/api/jup/swap-instructions", requireJupSession, async (req, res) => {
     const upstream = await jupFetch("/swap-instructions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // useSharedAccounts is left to Jupiter's router: forcing it can fail on low-liquidity AMMs
-      body: JSON.stringify({ quoteResponse, userPublicKey, wrapAndUnwrapSol: true }),
+      // Shared accounts: a multi-hop route then needs no intermediate token account of the user. Left
+      // to the router, a SOL->USDC->SKR route sometimes comes back non-shared and creates the user a
+      // USDC account (rent the user would pay), which the app's swap check rightly refuses.
+      body: JSON.stringify({ quoteResponse, userPublicKey, wrapAndUnwrapSol: true, useSharedAccounts: true }),
     });
     res.status(upstream.status).type("application/json").send(await upstream.text());
   } catch {
