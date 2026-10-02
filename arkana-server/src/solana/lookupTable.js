@@ -13,6 +13,7 @@
  * It never touches user funds.
  */
 const fs = require("fs");
+const { jupFetch } = require("./jupiter");
 const os = require("os");
 const path = require("path");
 const {
@@ -82,7 +83,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function jupiterGet(url) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(url);
+    const res = await jupFetch(url.replace(JUPITER_API, ""));
     if (res.ok) return res.json();
     if (res.status !== 429) throw new Error(`Jupiter ${res.status} for ${url}`);
     await sleep(3000 * (attempt + 1));
@@ -106,7 +107,7 @@ async function swapAccounts({ inputMint, outputMint, amount, swapMode, user }) {
   let res;
   for (let attempt = 0; attempt < 4; attempt++) {
     await sleep(1500);
-    res = await fetch(`${JUPITER_API}/swap-instructions`, {
+    res = await jupFetch(`/swap-instructions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

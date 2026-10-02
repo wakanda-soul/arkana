@@ -8,6 +8,7 @@
  * signature was never used before.
  */
 const path = require("path");
+const { jupFetch } = require("./jupiter");
 const { Connection, PublicKey } = require("@solana/web3.js");
 const { readJson, writeJsonAtomic } = require("../storage/jsonStore");
 
@@ -188,8 +189,8 @@ function oreDeposited(tx, wallet) {
 async function oreForSkrShare(amountSkr) {
   try {
     const shareRaw = toRaw(amountSkr) - 2n * ((toRaw(amountSkr) * 33n) / 100n);
-    const res = await fetch(
-      `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT}&outputMint=${ORE_MINT}&amount=${shareRaw}&slippageBps=300&maxAccounts=24`,
+    const res = await jupFetch(
+      `/quote?inputMint=${SKR_MINT}&outputMint=${ORE_MINT}&amount=${shareRaw}&slippageBps=300&maxAccounts=24`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return null;

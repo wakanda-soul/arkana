@@ -218,7 +218,7 @@ export default function OreVaultScreen() {
     try {
       if (claimableUnits > 0) {
         const res = await netFetch(
-          `https://api.jup.ag/swap/v1/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`,
+          `https://arkana.icu/api/jup/quote?inputMint=${ORE_MINT_ADDRESS.toBase58()}&outputMint=So11111111111111111111111111111111111111112&amount=${Math.floor(claimableUnits)}&slippageBps=300`,
           undefined,
           { timeoutMs: 8000 }
         );

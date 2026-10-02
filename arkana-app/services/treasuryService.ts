@@ -132,6 +132,13 @@ async function jupiterFetch(url: string, init?: RequestInit): Promise<Response> 
 
 const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
+/**
+ * Jupiter through the Arkana server, which adds the project's Jupiter API key (it never ships in the
+ * app). The server passes only SOL/SKR/ORE swaps, and every instruction it returns is still checked
+ * here before signing (ALLOWED_SWAP_PROGRAMS, signer check).
+ */
+const JUPITER_API = 'https://arkana.icu/api/jup';
+
 /** Compute units reserved for Arkana's own instructions (ATA, transfer, burn, vault deposit + ORE Stake CPI ~260k, memo). */
 const ARKANA_BASE_COMPUTE_UNITS = 350_000;
 const MAX_COMPUTE_UNITS = 1_400_000;
@@ -185,7 +192,7 @@ async function fetchJupiterQuote({
   swapMode?: 'ExactIn' | 'ExactOut';
   slippageBps?: number;
 }): Promise<any> {
-  const base = `https://api.jup.ag/swap/v1/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}`;
+  const base = `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}`;
   const capped = `${base}&maxAccounts=${jupiterMaxAccounts}`;
   const touchesSkr = inputMint.equals(SKR_MINT) || outputMint.equals(SKR_MINT);
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
@@ -223,7 +230,7 @@ export async function fetchJupiterSwapInstructions({
     throw new Error('DEX returned no route for swap.');
   }
 
-  const swapRes = await jupiterFetch('https://api.jup.ag/swap/v1/swap-instructions', {
+  const swapRes = await jupiterFetch(`${JUPITER_API}/swap-instructions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

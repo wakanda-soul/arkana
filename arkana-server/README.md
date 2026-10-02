@@ -26,6 +26,8 @@ Node.js API behind the Arkana app: card draws, readings, the LLM proxy for Ask A
 | `POST` | `/api/chat` | Ask Arkana |
 | `GET` | `/api/treasury` | Treasury address and attestation |
 | `GET` | `/api/lookup-table` | Arkana lookup table address |
+| `GET`, `POST` | `/api/jup/quote`, `/api/jup/swap-instructions` | Jupiter proxy with the server's API key; SOL, SKR and ORE swaps only |
+| `GET` | `/api/prices` | Live SKR→SOL rate for display prices |
 | `POST` | `/api/offering`, `/api/subscription/activate`, `/api/streak/repair` | Record paid actions |
 | `POST` | `/api/payment/credit` | Credit a signed payment whose request never arrived (action read from the on-chain memo) |
 | `POST` | `/api/seeker/status` | Seeker Genesis holder status |
@@ -43,6 +45,7 @@ Copy [.env.example](.env.example) to `.env` (never committed). All variables are
 | `PORT` | `3001` | API port |
 | `HOST` | `127.0.0.1` | Listen address. Use `0.0.0.0` without a reverse proxy |
 | `ARKANA_BIND_80` | off | `on` also serves plain HTTP on port 80 (only without a reverse proxy) |
+| `JUPITER_API_KEY` | unset | Jupiter API key (portal.jup.ag). Added to every Jupiter call, including the app's through `/api/jup/*`; without it the free tier's per-IP limit applies |
 | `SOLANA_RPC_URL` | public RPC | RPC for payment checks, Seeker Genesis checks, Clock-In recovery, the lookup table keeper and the RPC proxy |
 | `SOLANA_STATUS_RPC_URL` | public mainnet RPC | Second RPC for transaction status checks |
 | `STATS_RPC_URL` | public mainnet RPC | RPC for `/api/admin/ore-stats` (uses `getProgramAccounts`) |

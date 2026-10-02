@@ -34,6 +34,7 @@ const {
 const { startLookupTableKeeper, getLookupTableAddress } = require("./solana/lookupTable");
 const { startSyncKeeper } = require("./solana/syncKeeper");
 const { startSkrPriceRefresher, getSkrToSolRate } = require("./solana/skrPrice");
+const { jupFetch, quoteQuery, isArkanaQuote } = require("./solana/jupiter");
 const { verifyPayment, isSeekerHolderOnChain, isValidTxSignature, paymentActionLabel } = require("./solana/paymentVerifier");
 const { createNonce, createSiwsNonce, verifySignIn, hasWalletSession, endSession } = require("./auth/session");
 
@@ -190,6 +191,7 @@ app.use("/api/offering", rateLimit("offering", 10, MINUTE));
 app.use("/api/subscription/activate", rateLimit("subscription", 10, MINUTE));
 app.use("/api/streak/repair", rateLimit("streak-repair", 10, MINUTE));
 app.use("/api/payment/credit", rateLimit("payment-credit", 10, MINUTE));
+app.use("/api/jup", rateLimit("jupiter", 40, MINUTE));
 
 // Serve static files (card images, logos, APKs)
 // Only public assets are served. Card art, design files, admin pages and program binaries stay
@@ -756,6 +758,36 @@ app.post("/api/chat", async (req, res) => {
       client_ip: ip
     });
     serverError(res, err, "chat");
+  }
+});
+
+// Jupiter proxy for the app: the server adds JUPITER_API_KEY, so phones are not held to the free
+// tier's per-IP limit. Only SOL/SKR/ORE swaps pass; the app still checks every returned instruction.
+app.get("/api/jup/quote", async (req, res) => {
+  const query = quoteQuery(req.query);
+  if (!query) return res.status(400).json({ error: "Only Arkana swaps (SOL, SKR, ORE) are supported." });
+  try {
+    const upstream = await jupFetch(`/quote?${query}`);
+    res.status(upstream.status).type("application/json").send(await upstream.text());
+  } catch {
+    res.status(502).json({ error: "Jupiter unavailable" });
+  }
+});
+
+app.post("/api/jup/swap-instructions", async (req, res) => {
+  const { quoteResponse, userPublicKey } = req.body || {};
+  if (!isArkanaQuote(quoteResponse) || typeof userPublicKey !== "string" || userPublicKey.length > 64) {
+    return res.status(400).json({ error: "Only Arkana swaps (SOL, SKR, ORE) are supported." });
+  }
+  try {
+    const upstream = await jupFetch("/swap-instructions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quoteResponse, userPublicKey, wrapAndUnwrapSol: true, useSharedAccounts: true }),
+    });
+    res.status(upstream.status).type("application/json").send(await upstream.text());
+  } catch {
+    res.status(502).json({ error: "Jupiter unavailable" });
   }
 });
 

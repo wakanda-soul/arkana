@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arkana ORE Vault: program upgrade</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b0e14;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #141b26;
+      border: 1px solid #2d3748;
+      border-radius: 16px;
+      max-width: 620px;
+      width: 100%;
+      padding: 32px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .badge-mainnet { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .badge-status { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .info-box {
+      background: #0d121c;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-label { color: #64748b; font-weight: 600; min-width: 110px; }
+    .info-val { color: #cbd5e1; font-family: monospace; }
+    .btn {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-connect {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+    }
+    .btn-connect:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+    }
+    .btn-init {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .btn-init:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+      line-height: 1.4;
+    }
+    .alert-error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+    .alert-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; }
+    .alert-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid #3b82f6; }
+    a { color: #60a5fa; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge badge-mainnet">Solana Mainnet</span>
+    <h1>Arkana ORE Vault upgrade</h1>
+    <p class="subtitle">
+      Upgrades program B49g3obW... to the version with ORE Stake staking, daily tranches and the new harvest
+      (principal to the treasury, yield and rent to the user). Only the upgrade authority can sign.
+      After the upgrade the temporary buffer is closed and its SOL returns to the treasury.
+    </p>
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">Program:</span><span class="info-val" id="vProgram"></span></div>
+      <div class="info-row"><span class="info-label">Buffer:</span><span class="info-val" id="vBuffer"></span></div>
+      <div class="info-row"><span class="info-label">Buffer size:</span><span class="info-val" id="vSize">...</span></div>
+      <div class="info-row"><span class="info-label">Buffer authority:</span><span class="info-val" id="vBufAuth">...</span></div>
+      <div class="info-row"><span class="info-label">Binary SHA-256:</span><span class="info-val" id="vSha">__SHA__</span></div>
+      <div class="info-row"><span class="info-label">Source commit:</span><span class="info-val">__COMMIT__</span></div>
+    </div>
+    <div id="actionArea">
+      <button class="btn btn-connect" id="btnConnect" onclick="connectWallet()">Connect Phantom / Solflare</button>
+    </div>
+    <div id="alertMsg" class="alert"></div>
+  </div>
+
+  <script>
+    const W3 = solanaWeb3;
+    const PROGRAM_ID = new W3.PublicKey("B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C");
+    const PROGRAM_DATA = new W3.PublicKey("C3Ez2bJG47odLV6fmUxLzk5pnNJthbdxBGP8f4ZKcb1Q");
+    const BUFFER = new W3.PublicKey("__BUFFER__");
+    const AUTHORITY = new W3.PublicKey("4v3d1itZVjLtDQEqGLFLtfr1riffAEcqnNtumEumJgny");
+    const LOADER = new W3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
+    const connection = new W3.Connection(window.location.origin + "/api/solana-rpc", "confirmed");
+
+    document.getElementById("vProgram").textContent = PROGRAM_ID.toBase58();
+    document.getElementById("vBuffer").textContent = BUFFER.toBase58();
+
+    function showAlert(text, type = "info") {
+      const el = document.getElementById("alertMsg");
+      el.className = `alert alert-${type}`;
+      el.innerHTML = text;
+      el.style.display = "block";
+    }
+
+    async function checkBuffer() {
+      const acc = await connection.getAccountInfo(BUFFER);
+      if (!acc) { showAlert("Buffer not found. It was already used or not written yet.", "error"); return false; }
+      // Buffer layout: u32 state (1 = Buffer), u8 option, 32 bytes authority, then program bytes
+      const d = acc.data;
+      const auth = d[4] === 1 ? new W3.PublicKey(d.slice(5, 37)).toBase58() : "none";
+      document.getElementById("vSize").textContent = (d.length - 37) + " bytes";
+      document.getElementById("vBufAuth").textContent = auth;
+      if (auth !== AUTHORITY.toBase58()) { showAlert("Buffer authority is not the treasury yet.", "error"); return false; }
+      return true;
+    }
+
+    async function connectWallet() {
+      try {
+        const provider = window.phantom?.solana || window.solana;
+        if (!provider) { showAlert("No Solana wallet extension found in this browser.", "error"); return; }
+        const resp = await provider.connect();
+        if (resp.publicKey.toBase58() !== AUTHORITY.toBase58()) {
+          showAlert(`Connected ${resp.publicKey.toBase58()}. Only the upgrade authority ${AUTHORITY.toBase58()} can sign.`, "error");
+          return;
+        }
+        if (!(await checkBuffer())) return;
+        showAlert("Upgrade authority connected.", "info");
+        document.getElementById("actionArea").innerHTML =
+          '<button class="btn btn-init" id="btnUpgrade" onclick="upgrade()">Sign program upgrade</button>';
+      } catch (err) {
+        showAlert("Wallet connection rejected: " + err.message, "error");
+      }
+    }
+
+    async function upgrade() {
+      const btn = document.getElementById("btnUpgrade");
+      btn.disabled = true;
+      try {
+        const provider = window.phantom?.solana || window.solana;
+        const upgradeIx = new W3.TransactionInstruction({
+          programId: LOADER,
+          keys: [
+            { pubkey: PROGRAM_DATA, isSigner: false, isWritable: true },
+            { pubkey: PROGRAM_ID, isSigner: false, isWritable: true },
+            { pubkey: BUFFER, isSigner: false, isWritable: true },
+            { pubkey: AUTHORITY, isSigner: false, isWritable: true }, // spill: buffer SOL returns here
+            { pubkey: W3.SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+            { pubkey: W3.SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
+            { pubkey: AUTHORITY, isSigner: true, isWritable: false },
+          ],
+          data: new Uint8Array([3, 0, 0, 0]), // UpgradeableLoaderInstruction::Upgrade
+        });
+        const bh = await connection.getLatestBlockhash("confirmed");
+        const tx = new W3.Transaction({ feePayer: AUTHORITY, recentBlockhash: bh.blockhash }).add(upgradeIx);
+        showAlert("Approve the transaction in your wallet...", "info");
+        let signature;
+        if (provider.signAndSendTransaction) {
+          signature = (await provider.signAndSendTransaction(tx)).signature;
+        } else {
+          const signed = await provider.signTransaction(tx);
+          signature = await connection.sendRawTransaction(signed.serialize());
+        }
+        showAlert(`Sent: <a href="https://solscan.io/tx/${signature}" target="_blank">${signature.slice(0, 20)}...</a> Confirming...`, "info");
+        await connection.confirmTransaction({ signature, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight }, "confirmed");
+        showAlert(`<b>Program upgraded.</b> <a href="https://solscan.io/tx/${signature}" target="_blank">View on Solscan</a>`, "success");
+        btn.textContent = "Upgraded";
+      } catch (err) {
+        console.error(err);
+        showAlert("Upgrade failed: " + (err.message || err), "error");
+        btn.disabled = false;
+      }
+    }
+
+    checkBuffer().catch(() => {});
+  </script>
+</body>
+</html>

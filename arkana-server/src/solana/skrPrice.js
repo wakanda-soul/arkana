@@ -5,6 +5,8 @@
  * "pay X SOL" amounts, which used a fixed config value before. Refreshed every 5 minutes; when
  * Jupiter is unreachable the last known rate (or the config fallback) stays in place.
  */
+const { jupFetch } = require("./jupiter");
+
 const SKR_MINT = "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3";
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const ONE_SKR = 1_000_000; // SKR has 6 decimals
@@ -14,8 +16,9 @@ let liveRate = null;
 
 async function refreshSkrPrice() {
   try {
-    const url = `https://api.jup.ag/swap/v1/quote?inputMint=${SKR_MINT}&outputMint=${SOL_MINT}&amount=${ONE_SKR}&slippageBps=50`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const res = await jupFetch(`/quote?inputMint=${SKR_MINT}&outputMint=${SOL_MINT}&amount=${ONE_SKR}&slippageBps=50`, {
+      signal: AbortSignal.timeout(8000),
+    });
     const quote = await res.json();
     const rate = Number(quote.outAmount) / 1e9;
     if (rate > 0) liveRate = rate;
