@@ -85,7 +85,7 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
     amountSkr,
     actionLabel: type === "chat" ? "ORACLE_ASK" : "EXTRA_SPREAD",
   });
-  if (payment.ok) return consumeSpread(wallet, { type, txSignature, paymentVerified: true });
+  if (payment.ok) return consumeSpread(wallet, { type, txSignature, paymentVerified: true, payWithSol: payment.paidWith === "sol" });
   // Temporary failures (not visible yet, busy): the app keeps the payment and retries, nothing spent
   if (payment.busy || /not found on-chain yet/i.test(payment.error || "")) {
     return { allowed: false, busy: Boolean(payment.busy), reason: payment.error, error: payment.error };

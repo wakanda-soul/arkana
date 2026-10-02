@@ -258,8 +258,10 @@ async function verifyReserved({ wallet, signature, extras, amountSkr, actionLabe
   for (const extra of extras) {
     markUsed(extra, { wallet, actionLabel, amountSkr, partOf: signature, verifiedAt: new Date().toISOString() });
   }
-  markUsed(signature, { wallet, actionLabel, amountSkr, blockTime: tx.blockTime, verifiedAt: new Date().toISOString() });
-  return { ok: true };
+  // The memo says how the user paid: "ARKANA:<LABEL>:SOL:..." for a SOL swap, otherwise SKR
+  const paidWith = logs.includes(`ARKANA:${actionLabel}:SOL:`) ? "sol" : "skr";
+  markUsed(signature, { wallet, actionLabel, amountSkr, paidWith, blockTime: tx.blockTime, verifiedAt: new Date().toISOString() });
+  return { ok: true, paidWith };
 }
 
 const seekerCache = new Map();
