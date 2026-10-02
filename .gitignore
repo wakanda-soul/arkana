@@ -112,3 +112,5 @@ arkana-server/data/.log_ip_key
 arkana-server/data/sync_keeper.json
 arkana-server/data/*.tmp
 arkana-server/private/
+# One-off vault upgrade page, used from the server only
+arkana-server/public/upgrade_vault*.html
