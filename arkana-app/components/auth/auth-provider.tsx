@@ -26,8 +26,15 @@ export function useAuth() {
   return value
 }
 
-/** Set while a connect is in flight, so the launch check does not mistake it for a lost session. */
-let connectInFlight: Promise<unknown> | null = null
+/** Connects in flight, so the launch check does not mistake one for a lost session. */
+const connectsInFlight = new Set<Promise<unknown>>()
+
+/** Resolves once no connect is in flight, including connects started while waiting. */
+async function connectsSettled(): Promise<void> {
+  while (connectsInFlight.size > 0) {
+    await Promise.allSettled([...connectsInFlight])
+  }
+}
 
 /**
  * Connect and sign in with one wallet visit (Sign In With Solana): the wallet shows the connection
@@ -52,11 +59,12 @@ function useConnectMutation() {
         }
         return result.account
       })()
-      connectInFlight = run
+      // Overlapping connects each stay tracked until they settle
+      connectsInFlight.add(run)
       try {
         return await run
       } finally {
-        connectInFlight = null
+        connectsInFlight.delete(run)
       }
     },
   })
@@ -73,10 +81,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!walletAddress) return
     let cancelled = false
     ;(async () => {
-      await connectInFlight?.catch(() => {})
+      await connectsSettled()
       if (cancelled) return
       if (await hasValidSession(walletAddress)) {
-        // Passes and offerings paid while the server was unreachable are sent again
+        // Passes and offerings paid while the server was unreachable are sent again (once per launch)
         resubmitPendingPayments(walletAddress).catch(() => {})
       } else {
         // The 30-day session ran out: show the wallet as disconnected instead of popping up a

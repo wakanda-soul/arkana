@@ -45,7 +45,8 @@ export interface ExecuteTransactionParams {
   payerKey: PublicKey;
   instructions?: TransactionInstruction[];
   addressLookupTableAccounts?: AddressLookupTableAccount[];
-  /** Builds several transactions from the fresh blockhash; all are approved in ONE wallet prompt. */
+  /** Builds the transaction(s) from the fresh blockhash, approved in one wallet prompt. Payments are
+   *  always one transaction; only batched yield claims build several. */
   buildTransactions?: (blockhash: string) => VersionedTransaction[];
   signAndSendTransactions?: (transaction: any, minContextSlot: any) => Promise<any>;
   /** Memo prefix of the payment. If the wallet sends the transactions but its reply never reaches
@@ -57,6 +58,10 @@ export interface ExecuteTransactionParams {
 }
 
 const RECOVERY_START_MS = 15_000;
+/** Recent wallet transactions searched for the payment memo (other activity may land in between). */
+const RECOVERY_SIGNATURE_LIMIT = 25;
+/** How long to look for a payment on chain after a wallet error that is not an explicit decline. */
+const RECOVERY_AFTER_ERROR_MS = 8_000;
 const RECOVERY_POLL_MS = 4_000;
 const RECOVERY_TIMEOUT_MS = 180_000;
 
@@ -90,7 +95,7 @@ async function findLandedPayment(
   const deadline = Date.now() + waitMs;
   while (true) {
     try {
-      const fresh = (await fetchRecentSignatures(wallet, count + 4)).filter(
+      const fresh = (await fetchRecentSignatures(wallet, RECOVERY_SIGNATURE_LIMIT)).filter(
         (s) => !s.err && (s.blockTime ?? 0) >= sinceSec
       );
       const memoTx = fresh.find((s) => typeof s.memo === 'string' && s.memo.includes(memo));
@@ -124,7 +129,7 @@ function watchForLandedPayment(
         return;
       }
       try {
-        const fresh = (await fetchRecentSignatures(wallet, count + 4)).filter(
+        const fresh = (await fetchRecentSignatures(wallet, RECOVERY_SIGNATURE_LIMIT)).filter(
           (s) => !s.err && (s.blockTime ?? 0) >= sinceSec
         );
         const memoTx = fresh.find((s) => typeof s.memo === 'string' && s.memo.includes(memo));
@@ -241,13 +246,21 @@ export async function executeSolanaTransaction({
       }
     } catch (err: any) {
       // The wallet may have sent the payment and lost only its reply: never report a cancel or sign
-      // a second time before checking the chain. An explicit cancel in the wallet gets one quick
-      // look; any other error is watched for up to 20 s.
-      const looksCancelled =
+      // a second time before checking the chain. Only an explicit decline in the wallet (MWA
+      // ERROR_NOT_SIGNED / -32003, "declined", "rejected") gets one quick look; any other error,
+      // including a generic "cancel" from a dropped session, waits ~8 s for the payment to appear.
+      const explicitlyDeclined =
         err?.code === -32003 ||
-        /reject|denied|declined|cancel/i.test(String(err?.message || ''));
+        err?.code === -3 ||
+        /declined|rejected/i.test(String(err?.message || ''));
       const landed = recoverMemo
-        ? await findLandedPayment(payerKey.toBase58(), recoverMemo, transactions.length, signingStartedSec, looksCancelled ? 0 : 20_000)
+        ? await findLandedPayment(
+            payerKey.toBase58(),
+            recoverMemo,
+            transactions.length,
+            signingStartedSec,
+            explicitlyDeclined ? 0 : RECOVERY_AFTER_ERROR_MS
+          )
         : null;
       if (landed) {
         signatures = landed;
@@ -311,8 +324,8 @@ export async function executeSolanaTransaction({
   const status = await waitForConfirmation(connection, signatures);
   const slot: number | undefined = status.slot ?? minContextSlot;
 
-  // The last transaction carries the proof memo
-  return { signature: signatures[signatures.length - 1], signatures, slot, confirmed: status.confirmed };
+  // Payments and proofs are one transaction; only batched yield claims send several
+  return { signature: signatures[0], signatures, slot, confirmed: status.confirmed };
 }
 
 export interface SubmitProofParams {

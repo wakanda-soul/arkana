@@ -29,6 +29,9 @@ import {
 } from './solanaService';
 import { getNetworkConfig, isDevnet } from '@/constants/networkConfig';
 import { netFetch } from './netFetch';
+import { authedFetch } from './sessionService';
+import { getSkrSolEstimate } from './oracleApi';
+import { WSOL_MINT, checkJupiterQuote, checkJupiterSwapInstructions, readComputeBudget } from './jupiterGuard';
 import {
   ORE_MINT_ADDRESS,
   createDepositTrancheInstruction,
@@ -117,25 +120,35 @@ export const MAX_PAYMENT_SKR = 333;
 
 
 /**
- * fetch() for the Jupiter API. The free API rate-limits bursts (HTTP 429), and one payment makes several
- * calls in a row, so retry a few times with a growing pause.
+ * Highest SOL a payment may spend on its swaps, whatever the quotes say: 0.5 SOL. 333 SKR (the most
+ * the app pays, MAX_PAYMENT_SKR) cost about 0.05 SOL at October 2026 prices, so this leaves ~10x
+ * room for SKR to rise while a broken or hostile quote can never take more.
+ */
+export const MAX_PAYMENT_LAMPORTS = 500_000_000n;
+/** A SOL payment may cost at most this much more than the price shown to the user. */
+const SOL_ESTIMATE_TOLERANCE = 1.3;
+/** Priority fee ceiling for a whole payment (compute unit price x limit): 0.002 SOL. */
+const MAX_PRIORITY_FEE_LAMPORTS = 2_000_000n;
+
+/**
+ * fetch() for the Jupiter proxy, with the wallet session (the proxy serves signed-in wallets only).
+ * Bursts are rate-limited (HTTP 429), and one payment makes several calls in a row, so retry a few
+ * times with a growing pause.
  */
 async function jupiterFetch(url: string, init?: RequestInit): Promise<Response> {
-  let res = await netFetch(url, init);
-  // Jupiter's free tier allows about 5 requests per ~10 s per IP: wait 1, 2, 4 s on a 429
+  let res = await authedFetch(url, init);
+  // Wait 1, 2, 4 s on a 429
   for (let attempt = 1; res.status === 429 && attempt <= 3; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
-    res = await netFetch(url, init);
+    res = await authedFetch(url, init);
   }
   return res;
 }
 
-const WSOL_MINT = new PublicKey('So11111111111111111111111111111111111111112');
-
 /**
  * Jupiter through the Arkana server, which adds the project's Jupiter API key (it never ships in the
  * app). The server passes only SOL/SKR/ORE swaps, and every instruction it returns is still checked
- * here before signing (ALLOWED_SWAP_PROGRAMS, signer check).
+ * here before signing (jupiterGuard).
  */
 const JUPITER_API = 'https://arkana.icu/api/jup';
 
@@ -152,32 +165,20 @@ interface JupiterSwapResult {
   outAmount: bigint;
   /** Guaranteed minimum output: ExactIn = otherAmountThreshold, ExactOut = exact outAmount. */
   minOutAmount: bigint;
+  /** Most input the swap can take (ExactOut: quoted input + slippage). */
+  maxInAmount: bigint;
   computeUnitLimit: number;
   computeUnitPrice: bigint;
 }
 
-/**
- * Query Jupiter API for swap instructions from inputMint to outputMint.
- * Returns setup, swap, and cleanup instructions as web3.js TransactionInstructions.
- * Jupiter's compute budget instructions are NOT included: they are returned as numbers,
- * so several swaps can share one ComputeBudget pair in a single transaction.
- */
-/** Account cap for Jupiter routes; lowered while rebuilding a payment that did not fit one transaction. */
-let jupiterMaxAccounts = 24;
-
-// Programs a Jupiter swap may use. Anything else returned by the API is refused before signing.
-const ALLOWED_SWAP_PROGRAMS = new Set([
-  'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4', // Jupiter v6
-  'ComputeBudget111111111111111111111111111111',
-  '11111111111111111111111111111111', // System
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', // SPL Token
-  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb', // Token-2022
-  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL', // Associated Token Account
-]);
+/** Account cap for Jupiter routes, and the lower one used to rebuild a payment that did not fit one transaction. */
+const DEFAULT_MAX_ACCOUNTS = 24;
+const REDUCED_MAX_ACCOUNTS = 18; // 14 finds no SKR route at all; 18 still trims most of a long route
 
 /**
  * One Jupiter quote. SOL <-> ORE first tries a direct pool (short route, fits one transaction);
- * SKR routes have no direct SOL pool, so they go straight to a capped multi-hop route.
+ * SKR routes have no direct SOL pool, so they go straight to a capped multi-hop route. A rebuild with
+ * a lowered account cap skips the direct try and caps every leg.
  */
 async function fetchJupiterQuote({
   inputMint,
@@ -185,20 +186,23 @@ async function fetchJupiterQuote({
   amountRaw,
   swapMode = 'ExactIn',
   slippageBps = 300,
+  maxAccounts = DEFAULT_MAX_ACCOUNTS,
 }: {
   inputMint: PublicKey;
   outputMint: PublicKey;
   amountRaw: bigint;
   swapMode?: 'ExactIn' | 'ExactOut';
   slippageBps?: number;
+  maxAccounts?: number;
 }): Promise<any> {
   // Liquid intermediate tokens only: fewer failed routes (Jupiter's recommendation)
   const base = `${JUPITER_API}/quote?inputMint=${inputMint.toBase58()}&outputMint=${outputMint.toBase58()}&amount=${amountRaw.toString()}&swapMode=${swapMode}&slippageBps=${slippageBps}&restrictIntermediateTokens=true`;
-  const capped = `${base}&maxAccounts=${jupiterMaxAccounts}`;
+  const capped = `${base}&maxAccounts=${maxAccounts}`;
   const touchesSkr = inputMint.equals(SKR_MINT) || outputMint.equals(SKR_MINT);
   const isSolLeg = inputMint.equals(WSOL_MINT) || outputMint.equals(WSOL_MINT);
-  let res = await jupiterFetch(isSolLeg && !touchesSkr ? `${base}&onlyDirectRoutes=true` : capped);
-  if (!res.ok && isSolLeg && !touchesSkr) res = await jupiterFetch(capped);
+  const tryDirect = isSolLeg && !touchesSkr && maxAccounts >= DEFAULT_MAX_ACCOUNTS;
+  let res = await jupiterFetch(tryDirect ? `${base}&onlyDirectRoutes=true` : capped);
+  if (!res.ok && tryDirect) res = await jupiterFetch(capped);
   if (!res.ok) {
     throw new Error(`DEX swap quote unavailable for ${inputMint.toBase58()} -> ${outputMint.toBase58()} (${res.status})`);
   }
@@ -214,6 +218,7 @@ export async function fetchJupiterSwapInstructions({
   swapMode = 'ExactIn',
   slippageBps = 300,
   quote: readyQuote,
+  maxAccounts = DEFAULT_MAX_ACCOUNTS,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -224,12 +229,15 @@ export async function fetchJupiterSwapInstructions({
   slippageBps?: number;
   /** A quote already fetched for this exact swap: saves a Jupiter request */
   quote?: any;
+  maxAccounts?: number;
 }): Promise<JupiterSwapResult> {
   // SOL legs use direct pools and other legs cap accounts, to keep the whole payment in one transaction
-  const quote = readyQuote ?? (await fetchJupiterQuote({ inputMint, outputMint, amountRaw, swapMode, slippageBps }));
+  const quote = readyQuote ?? (await fetchJupiterQuote({ inputMint, outputMint, amountRaw, swapMode, slippageBps, maxAccounts }));
   if (!quote || !quote.outAmount || !quote.inAmount || !quote.otherAmountThreshold) {
     throw new Error('DEX returned no route for swap.');
   }
+  const expectation = { user: userPublicKey, inputMint, outputMint, amountRaw, swapMode, slippageBps };
+  checkJupiterQuote(quote, expectation);
 
   const swapRes = await jupiterFetch(`${JUPITER_API}/swap-instructions`, {
     method: 'POST',
@@ -238,7 +246,6 @@ export async function fetchJupiterSwapInstructions({
       quoteResponse: quote,
       userPublicKey: userPublicKey.toBase58(),
       wrapAndUnwrapSol: true,
-      useSharedAccounts: true,
     }),
   });
 
@@ -247,36 +254,26 @@ export async function fetchJupiterSwapInstructions({
   }
 
   const swapData = await swapRes.json();
-  const instructions: TransactionInstruction[] = [];
-
-  // The swap API's answer goes into the user's transaction, so it is checked first: only known
-  // programs, and no signer other than the user
-  const deserialize = (ix: any) => {
-    if (!ALLOWED_SWAP_PROGRAMS.has(String(ix?.programId))) {
-      throw new Error(`DEX route uses an unexpected program (${ix?.programId}). Payment cancelled before signing.`);
-    }
-    const keys = (ix.accounts || []).map((acc: any) => ({
-      pubkey: new PublicKey(acc.pubkey),
-      isSigner: Boolean(acc.isSigner),
-      isWritable: Boolean(acc.isWritable),
-    }));
-    if (keys.some((k: { pubkey: PublicKey; isSigner: boolean }) => k.isSigner && !k.pubkey.equals(userPublicKey))) {
-      throw new Error('DEX route asks for an unexpected signer. Payment cancelled before signing.');
-    }
-    return new TransactionInstruction({ programId: new PublicKey(ix.programId), keys, data: Buffer.from(ix.data, 'base64') });
-  };
-  if (!swapData.swapInstruction) {
+  if (!swapData?.swapInstruction) {
     throw new Error('DEX returned no swap instruction.');
   }
+  // The swap API's answer goes into the user's transaction: every instruction must be exactly the
+  // requested swap for the user (accounts, amount, fee, slippage), or the payment stops here
+  const { maxInputRaw } = checkJupiterSwapInstructions(swapData, quote, expectation);
+  // Only Jupiter's numbers are used; the transaction gets the app's own ComputeBudget pair
+  const { units: computeUnitLimit, microLamports: computeUnitPrice } = readComputeBudget(swapData.computeBudgetInstructions);
 
-  // ComputeBudget: [2, u32 LE] = SetComputeUnitLimit, [3, u64 LE] = SetComputeUnitPrice
-  let computeUnitLimit = 0;
-  let computeUnitPrice = 0n;
-  for (const ix of swapData.computeBudgetInstructions || []) {
-    const data = Buffer.from(ix.data, 'base64');
-    if (data[0] === 2 && data.length >= 5) computeUnitLimit = data.readUInt32LE(1);
-    if (data[0] === 3 && data.length >= 9) computeUnitPrice = data.readBigUInt64LE(1);
-  }
+  const instructions: TransactionInstruction[] = [];
+  const deserialize = (ix: any) =>
+    new TransactionInstruction({
+      programId: new PublicKey(ix.programId),
+      keys: ix.accounts.map((acc: any) => ({
+        pubkey: new PublicKey(acc.pubkey),
+        isSigner: Boolean(acc.isSigner),
+        isWritable: Boolean(acc.isWritable),
+      })),
+      data: Buffer.from(ix.data, 'base64'),
+    });
 
   if (swapData.setupInstructions) {
     for (const ix of swapData.setupInstructions) {
@@ -307,6 +304,7 @@ export async function fetchJupiterSwapInstructions({
     inAmount: BigInt(quote.inAmount),
     outAmount,
     minOutAmount: swapMode === 'ExactIn' ? BigInt(quote.otherAmountThreshold) : outAmount,
+    maxInAmount: maxInputRaw,
     computeUnitLimit,
     computeUnitPrice,
   };
@@ -320,7 +318,10 @@ function buildComputeBudgetInstructions(swaps: JupiterSwapResult[]): Transaction
     MAX_COMPUTE_UNITS,
     ARKANA_BASE_COMPUTE_UNITS + swaps.reduce((sum, s) => sum + (s.computeUnitLimit || 300_000), 0)
   );
-  const microLamports = swaps.reduce((max, s) => (s.computeUnitPrice > max ? s.computeUnitPrice : max), 0n);
+  // Jupiter suggests the unit price; it is capped so the priority fee stays under MAX_PRIORITY_FEE_LAMPORTS
+  const suggested = swaps.reduce((max, s) => (s.computeUnitPrice > max ? s.computeUnitPrice : max), 0n);
+  const ceiling = (MAX_PRIORITY_FEE_LAMPORTS * 1_000_000n) / BigInt(units);
+  const microLamports = suggested > ceiling ? ceiling : suggested;
 
   const ixs = [ComputeBudgetProgram.setComputeUnitLimit({ units })];
   if (microLamports > 0n) {
@@ -399,11 +400,13 @@ async function buildOreTrancheInstructions({
   payer,
   inputMint,
   amountInRaw,
+  maxAccounts,
 }: {
   connection: Connection;
   payer: PublicKey;
   inputMint: PublicKey;
   amountInRaw: bigint;
+  maxAccounts: number;
 }): Promise<{
   instructions: TransactionInstruction[];
   addressLookupTableAccounts: AddressLookupTableAccount[];
@@ -445,6 +448,7 @@ async function buildOreTrancheInstructions({
     inputMint,
     outputMint: ORE_MINT_ADDRESS,
     amountRaw: amountInRaw,
+    maxAccounts,
   });
   instructions.push(...swapData.instructions);
 
@@ -467,18 +471,17 @@ function buildMemoInstruction(payer: PublicKey, memoText: string): TransactionIn
   });
 }
 
-/** One independent half of a payment: its instructions and the swaps inside it. */
+/** One part of a payment: its instructions and the swaps inside it. */
 interface PaymentGroup {
   instructions: TransactionInstruction[];
   swaps: JupiterSwapResult[];
 }
 
 /**
- * A payment is two independent groups that never depend on each other's output:
+ * A payment is two groups that never depend on each other's output, always compiled into ONE
+ * atomic transaction (compilePaymentTransactions):
  * - skrGroup: 33% SKR burn + 33% SKR to the treasury (preceded by SOL -> SKR for SOL payments) + proof memo
  * - oreGroup: 34% -> ORE swap + daily tranche deposit (staked in ORE Stake)
- * They are sent as one transaction when it fits, otherwise as two transactions
- * approved together in a single wallet prompt.
  */
 export interface PaymentPlan {
   skrGroup: PaymentGroup;
@@ -518,6 +521,7 @@ export async function buildSkrPaymentPlan({
   amountSkr,
   actionLabel = 'PAYMENT',
   memoNonce,
+  maxAccounts = DEFAULT_MAX_ACCOUNTS,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -526,6 +530,8 @@ export async function buildSkrPaymentPlan({
   actionLabel?: string;
   /** Random per payment: lets the app find exactly this payment on chain if the wallet reply is lost */
   memoNonce: string;
+  /** Jupiter account cap for every swap leg (lowered when a rebuilt payment must be smaller) */
+  maxAccounts?: number;
 }): Promise<PaymentPlan> {
   const payer = new PublicKey(userPublicKey.toString());
   const treasury = new PublicKey(treasuryPublicKey.toString());
@@ -537,7 +543,7 @@ export async function buildSkrPaymentPlan({
   // Independent network work runs in parallel: the wallet opens sooner
   const [burnAndTreasury, oreLeg, arkanaTable] = await Promise.all([
     buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw }),
-    buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw }),
+    buildOreTrancheInstructions({ connection, payer, inputMint: SKR_MINT, amountInRaw: oreShareRaw, maxAccounts }),
     getArkanaLookupTable(connection),
   ]);
 
@@ -567,6 +573,7 @@ export async function buildSolPaymentPlan({
   amountSkr,
   actionLabel = 'PAYMENT',
   memoNonce,
+  maxAccounts = DEFAULT_MAX_ACCOUNTS,
 }: {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -575,6 +582,8 @@ export async function buildSolPaymentPlan({
   actionLabel?: string;
   /** Random per payment: lets the app find exactly this payment on chain if the wallet reply is lost */
   memoNonce: string;
+  /** Jupiter account cap for every swap leg (lowered when a rebuilt payment must be smaller) */
+  maxAccounts?: number;
 }): Promise<PaymentPlan> {
   if (isDevnet()) {
     throw new Error('SOL payments need a live Jupiter route and are available on mainnet only. Use tSKR on devnet.');
@@ -593,13 +602,14 @@ export async function buildSolPaymentPlan({
     amountRaw: burnRaw + treasuryRaw,
     swapMode: 'ExactOut',
     slippageBps: 100,
+    maxAccounts,
   });
   if (!skrQuote?.inAmount) throw new Error('DEX swap quote unavailable for SOL -> SKR. Please try again in a moment.');
   // SOL for the 34% share at the same rate: inAmount buys 66% of the price
   const oreShareLamports = (BigInt(skrQuote.inAmount) * oreShareRaw) / (burnRaw + treasuryRaw);
 
   // Both swap legs, the treasury check and the lookup table load in parallel: the wallet opens sooner
-  const [solToSkr, burnAndTreasury, oreLeg, arkanaTable] = await Promise.all([
+  const [solToSkr, burnAndTreasury, oreLeg, arkanaTable, shownSol] = await Promise.all([
     // 1. SOL -> exactly burnRaw + treasuryRaw SKR (Jupiter setup creates the user's SKR ATA if needed)
     fetchJupiterSwapInstructions({
       connection,
@@ -610,12 +620,25 @@ export async function buildSolPaymentPlan({
       swapMode: 'ExactOut',
       slippageBps: 100,
       quote: skrQuote,
+      maxAccounts,
     }),
     buildBurnAndTreasuryInstructions({ connection, payer, treasury, burnRaw, treasuryRaw }),
     // 2. SOL -> ORE for the 34% share, deposited into today's tranche
-    buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports }),
+    buildOreTrancheInstructions({ connection, payer, inputMint: WSOL_MINT, amountInRaw: oreShareLamports, maxAccounts }),
     getArkanaLookupTable(connection),
+    // The SOL price the user was shown (server's live rate), or null when unavailable
+    getSkrSolEstimate(amountSkr),
   ]);
+
+  // Hard ceiling on the SOL this payment can spend: the SKR leg at its slippage limit plus the ORE leg
+  const solSpend = solToSkr.maxInAmount + oreLeg.swaps.reduce((sum, s) => sum + s.maxInAmount, 0n);
+  if (solSpend > MAX_PAYMENT_LAMPORTS) {
+    throw new Error(`Refusing a SOL payment of ${Number(solSpend) / 1e9} SOL: above the app's limit.`);
+  }
+  // Also never far above the price the user was shown, when it is known
+  if (shownSol && Number(solSpend) / 1e9 > shownSol * SOL_ESTIMATE_TOLERANCE) {
+    throw new Error(`DEX price ${Number(solSpend) / 1e9} SOL is far above the shown ~${shownSol} SOL. Please try again in a moment.`);
+  }
 
   return {
     skrGroup: {
@@ -693,18 +716,6 @@ function planFits(payer: PublicKey, plan: PaymentPlan): boolean {
   }
 }
 
-const extraPaymentSignatures = new Map<string, string[]>();
-
-/** Restores the extra signatures of a stored payment, so a re-submit after an app restart sends them too. */
-export function rememberExtraPaymentSignatures(signature: string, extras: string[] | undefined): void {
-  if (signature && Array.isArray(extras) && extras.length > 0) extraPaymentSignatures.set(signature, extras);
-}
-
-/** Other transactions of a payment that was split in two (empty for single-transaction payments). */
-export function getExtraPaymentSignatures(signature?: string | null): string[] {
-  return (signature && extraPaymentSignatures.get(signature)) || [];
-}
-
 export interface ExecutePaymentOrSwapParams {
   connection: Connection;
   userPublicKey: PublicKey;
@@ -755,12 +766,7 @@ export async function executePaymentOrSwap({
   let plan = await buildPlan(planArgs);
   if (!planFits(payer, plan)) {
     // Ask Jupiter for shorter routes once; if it still does not fit, stop before anything is signed
-    jupiterMaxAccounts = 14;
-    try {
-      plan = await buildPlan(planArgs);
-    } finally {
-      jupiterMaxAccounts = 24;
-    }
+    plan = await buildPlan({ ...planArgs, maxAccounts: REDUCED_MAX_ACCOUNTS });
     if (!planFits(payer, plan)) throw new Error(ROUTE_TOO_LARGE);
   }
 
@@ -782,8 +788,6 @@ export async function executePaymentOrSwap({
       }),
   });
 
-  // The first transaction holds the burn, the treasury transfer and the memo; a split payment
-  // has the ORE tranche deposit in a second one. The server verifies both.
-  extraPaymentSignatures.set(signatures[0], signatures.slice(1));
+  // One transaction: burn, treasury transfer, ORE tranche deposit and memo. The server verifies it.
   return { signature: signatures[0], paidWith, costSkr: amountSkr };
 }

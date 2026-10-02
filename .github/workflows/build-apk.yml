@@ -18,6 +18,11 @@ concurrency:
 permissions:
   contents: read
 
+# bash -eo pipefail for every run step: a failing command inside a pipe (e.g. gradle | tee) fails the step
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build Solana Mobile APK
@@ -173,7 +178,17 @@ jobs:
             --out "$APK_FILE.signed" "$APK_FILE"
           mv "$APK_FILE.signed" "$APK_FILE"
           rm -f "$RUNNER_TEMP/release.jks"
-          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK_FILE" | head -n 2
+          # The APK must carry the Arkana release certificate: a wrong keystore secret would publish an
+          # APK that phones refuse to install as an update
+          EXPECTED_CERT_SHA256="CD:87:82:2E:6A:0D:7C:A6:51:7C:BA:E8:2C:3B:DA:A8:6C:5A:7E:82:14:FE:0B:5D:CE:48:24:8F:05:DF:30:7E"
+          CERTS=$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK_FILE")
+          head -n 2 <<< "$CERTS"
+          ACTUAL_CERT_SHA256=$(grep -m1 'certificate SHA-256 digest:' <<< "$CERTS" | sed 's/.*digest: *//' | tr -d ': \r' | tr 'a-f' 'A-F' || true)
+          if [ "$ACTUAL_CERT_SHA256" != "$(echo "$EXPECTED_CERT_SHA256" | tr -d ':')" ]; then
+            echo "::error::APK signer certificate SHA-256 is '$ACTUAL_CERT_SHA256', expected $EXPECTED_CERT_SHA256."
+            exit 1
+          fi
+          echo "Signer certificate verified: $EXPECTED_CERT_SHA256"
 
       - name: Prepare APKs for Release
         run: |
@@ -211,6 +226,8 @@ jobs:
   release:
     name: Publish to the GitHub release
     needs: build
+    # Only builds of main are published (a workflow_dispatch on another branch only builds)
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # The only job that can write to the repository; it runs no project code
     permissions:

@@ -18,6 +18,7 @@ import {
   fetchReading,
   fetchClockInStatus,
   setRemoteSeekerStatus,
+  getSkrSolEstimate,
   ClockInResult,
   ReadingResponse,
   API_BASE_URL,
@@ -38,7 +39,7 @@ import { useLanguage, localizeErrorText } from "@/services/i18n";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { fetchRealSkrBalance, checkSeekerGenesisHolderOnChain } from "@/services/solanaService";
 import { AltarOfferingCard } from "@/components/tarot/AltarOfferingCard";
-import { getVerifiedTreasury, executePaymentOrSwap, rememberExtraPaymentSignatures } from "@/services/treasuryService";
+import { getVerifiedTreasury, executePaymentOrSwap } from "@/services/treasuryService";
 import { soundService } from "@/services/soundService";
 
 export default function SpreadScreen() {
@@ -61,6 +62,8 @@ export default function SpreadScreen() {
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [systemState, setSystemState] = useState<SystemStateType>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
+  // Live SOL estimate of an extra spread when the server's status has no SOL price
+  const [extraSolEstimate, setExtraSolEstimate] = useState<number | null>(null);
   const { connection, signAndSendTransactions } = useMobileWallet();
   // Set before any payment starts, so a second tap can never pay twice
   const drawBusyRef = useRef(false);
@@ -104,6 +107,17 @@ export default function SpreadScreen() {
       });
     }
   }, [walletAddress, account?.publicKey, connection]);
+
+  useEffect(() => {
+    if (quotaInfo?.extraSpreadCostSol) return;
+    let live = true;
+    getSkrSolEstimate(quotaInfo?.extraSpreadCostSkr || 5).then((sol) => {
+      if (live) setExtraSolEstimate(sol);
+    });
+    return () => {
+      live = false;
+    };
+  }, [quotaInfo?.extraSpreadCostSol, quotaInfo?.extraSpreadCostSkr]);
 
   const handleDraw = async () => {
     if (drawBusyRef.current) return;
@@ -157,7 +171,6 @@ export default function SpreadScreen() {
     const pendingPayment = await findPendingPayment(walletAddress, "reading");
     if (pendingPayment) {
       txSignature = pendingPayment.signature;
-      rememberExtraPaymentSignatures(pendingPayment.signature, pendingPayment.body?.txSignatures);
     } else if (!hasFree) {
       if (!signAndSendTransactions) {
         setQuotaError(t("err_wallet_signing_unavailable", "Wallet signing is unavailable. Please reconnect your wallet."));
@@ -317,7 +330,8 @@ export default function SpreadScreen() {
   const streakBonus = quotaInfo?.streakBonusSpreads ?? 0;
   const hasFreeRemaining = (dailyFree + streakBonus) > 0;
   const extraCost = quotaInfo?.extraSpreadCostSkr || 5;
-  const extraCostSol = quotaInfo?.extraSpreadCostSol || 0.001;
+  // Never a made-up SOL price: the server's, else the live estimate, else "…"
+  const extraCostSol: number | string = quotaInfo?.extraSpreadCostSol || extraSolEstimate || "…";
   // Unknown balance (RPC unreachable) is shown as "…", never as 0
   const knownBalance = onChainSkr !== null ? onChainSkr : quotaInfo && !quotaInfo.offline ? quotaInfo.skrBalance : null;
   const balance = knownBalance ?? 0;
@@ -391,12 +405,12 @@ export default function SpreadScreen() {
                 <Text style={styles.warningText}>
                   {balance >= extraCost
                     ? t('exhausted_skr_desc', 'Your daily free allowance is exhausted. This casting will deduct {cost} SKR + {fee} from your balance.', { cost: extraCost, fee: t('network_fee_short', 'network fee') })
-                    : t('exhausted_sol_desc', 'Your daily free allowance is exhausted and SKR balance is 0. Paying {cost} SOL + {fee}.', { cost: extraCostSol, fee: t('network_fee_short', 'network fee') })}
+                    : t('exhausted_sol_desc', 'Your daily free allowance is exhausted and you do not have enough SKR. Paying {cost} SOL + {fee}.', { cost: extraCostSol, fee: t('network_fee_short', 'network fee') })}
                 </Text>
               )}
               {walletAddress && !hasFreeRemaining && (
                 <Text style={styles.warningText}>
-                  {t('payment_stake_note', '34% becomes ORE staked for you for 365 days. The yield is yours.')}
+                  {t('payment_stake_note', '34% becomes ORE staked for you for 365 days. The yield is yours; the principal then goes to the treasury.')}
                 </Text>
               )}
             </View>

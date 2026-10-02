@@ -62,7 +62,12 @@ The treasury address is signed offline with an Ed25519 key. The app checks that 
 ## How payments are protected
 
 - Every payment is one atomic transaction (swap, 33% burn, 33% treasury, ORE deposit, memo). If a swap route does not fit, the app asks Jupiter for a shorter one and otherwise stops before anything is signed.
-- Jupiter's instructions are checked before signing: known programs only (Jupiter, System, Token, Token-2022, ATA, ComputeBudget) and no signer but the user. The treasury must match both its offline Ed25519 attestation and the address built into the app.
+- Every instruction Jupiter returns is checked before signing ([arkana-app/services/jupiterGuard.ts](arkana-app/services/jupiterGuard.ts)), so even a compromised server or proxy cannot redirect funds:
+  - only Jupiter's route instructions (discriminators from its on-chain IDL), whose source and destination are the user's own token accounts for the expected mints, with the requested amount, no more than the requested slippage and no platform fee; the route data must end exactly where the IDL says;
+  - setup may only create the user's own token accounts and wrap at most the swap's input as SOL; cleanup may only close the user's wSOL account back to the user;
+  - no signer but the user; the compute price is capped (at most 0.002 SOL in fees);
+  - the total SOL spent must stay under 1.3x the server's price estimate and under a hard 0.5 SOL cap.
+- The treasury must match both its offline Ed25519 attestation and the address built into the app.
 - The signature is stored the moment the wallet answers. If the wallet reply is lost (switching apps during confirmation), the app finds the payment on chain by a random nonce in its memo. If the request never reaches the server, the next app start sends the signature to `POST /api/payment/credit`, which verifies it from the on-chain memo and credits it.
 - The server verifies every paid action against the chain (signer, burn, treasury transfer, ORE deposit, age, single use), one verification per wallet at a time. Temporary failures (quote unavailable, busy) answer 503 so the app keeps the payment and retries.
 

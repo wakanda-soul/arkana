@@ -25,6 +25,7 @@ import {
   setRemoteSeekerStatus,
   ClockInResult,
   sendOracleChatMessage,
+  getSkrSolEstimate,
   API_BASE_URL,
   ERR_QUOTA_REQUIRED,
   ERR_PAYMENT_PENDING,
@@ -42,7 +43,7 @@ import { useLanguage, localizeErrorText, localizeSuit } from "@/services/i18n";
 import { localizeZoomCard, localizeCard } from "@/services/cardLocalization";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { checkSeekerGenesisHolderOnChain, fetchRealSkrBalance } from "@/services/solanaService";
-import { executePaymentOrSwap, getVerifiedTreasury, rememberExtraPaymentSignatures } from "@/services/treasuryService";
+import { executePaymentOrSwap, getVerifiedTreasury } from "@/services/treasuryService";
 import { soundService } from "@/services/soundService";
 
 interface ChatMessage {
@@ -106,6 +107,8 @@ export default function OracleScreen() {
 
   const [quotaInfo, setQuotaInfo] = useState<ClockInResult | null>(null);
   const [onChainSkr, setOnChainSkr] = useState<number | null>(null);
+  // Live SOL estimate of a question when the server's status has no SOL price
+  const [askSolEstimate, setAskSolEstimate] = useState<number | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -213,7 +216,6 @@ export default function OracleScreen() {
     // A question that was paid for but not answered yet reuses its payment: never charge twice
     const pendingPayment = await findPendingPayment(walletAddress, "chat");
     if (pendingPayment) {
-      rememberExtraPaymentSignatures(pendingPayment.signature, pendingPayment.body?.txSignatures);
       executeSendMessage(query, pendingPayment.signature);
       return;
     }
@@ -238,8 +240,12 @@ export default function OracleScreen() {
       }
     }
     const isSeeker = Boolean(quota?.isSeekerHolder);
-    // Banked streak bonus spreads are free too; the server spends them after the Seeker allowance
-    const hasFree = (isSeeker && (quota?.freeSpreadsRemaining ?? 0) > 0) || (quota?.streakBonusSpreads ?? 0) > 0;
+    // Banked streak bonus spreads are free too; the server spends them after the Seeker allowance.
+    // Bonus questions (credited for refused or fallback answers) count for questions only.
+    const hasFree =
+      (isSeeker && (quota?.freeSpreadsRemaining ?? 0) > 0) ||
+      (quota?.streakBonusSpreads ?? 0) > 0 ||
+      (quota?.bonusQuestions ?? 0) > 0;
 
     // If 3 free daily attempts are exhausted or user is not a Seeker SBT holder: ALWAYS prompt user with mystical warning popup!
     if (!hasFree) {
@@ -349,6 +355,7 @@ export default function OracleScreen() {
                 ...prev,
                 freeSpreadsRemaining: data.quota!.remainingFree,
                 streakBonusSpreads: data.quota!.streakBonusSpreads ?? prev.streakBonusSpreads,
+                bonusQuestions: data.quota!.bonusQuestions ?? prev.bonusQuestions,
                 skrBalance: data.quota!.balance,
               }
             : null
@@ -447,12 +454,24 @@ export default function OracleScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (quotaInfo?.askCostSol) return;
+    let live = true;
+    getSkrSolEstimate(quotaInfo?.askCostSkr || 1).then((sol) => {
+      if (live) setAskSolEstimate(sol);
+    });
+    return () => {
+      live = false;
+    };
+  }, [quotaInfo?.askCostSol, quotaInfo?.askCostSkr]);
+
   const isSeekerHolder = Boolean(quotaInfo?.isSeekerHolder);
-  const bonusRemaining = quotaInfo?.streakBonusSpreads ?? 0;
+  const bonusRemaining = (quotaInfo?.streakBonusSpreads ?? 0) + (quotaInfo?.bonusQuestions ?? 0);
   const freeRemaining = (isSeekerHolder ? (quotaInfo?.freeSpreadsRemaining ?? 0) : 0) + bonusRemaining;
   const hasFreeRemaining = freeRemaining > 0;
   const askCostSkr = quotaInfo?.askCostSkr || 1;
-  const askCostSol = quotaInfo?.askCostSol || 0.0002;
+  // Never a made-up SOL price: the server's, else the live estimate, else "…"
+  const askCostSol: number | string = quotaInfo?.askCostSol || askSolEstimate || "…";
   const skrBalance = onChainSkr !== null ? onChainSkr : (quotaInfo?.skrBalance ?? 0);
 
   const filteredPrompts = selectedCategory === "ALL"
@@ -670,7 +689,7 @@ export default function OracleScreen() {
                 ? t('free_inquiries_remaining', '{n} free daily inquiries remaining (shared with spreads)', { n: freeRemaining })
                 : skrBalance >= askCostSkr
                 ? t('skr_per_inquiry', '{cost} SKR per inquiry \u00B7 Balance: {balance} SKR', { cost: askCostSkr, balance: skrBalance })
-                : t('sol_per_inquiry', '{cost} SOL per inquiry (SKR balance: 0)', { cost: askCostSol })}
+                : t('sol_per_inquiry', '{cost} SOL per inquiry (not enough SKR)', { cost: askCostSol })}
             </Text>
           </View>
         </View>
@@ -860,10 +879,10 @@ export default function OracleScreen() {
               <Text style={styles.modalPriceSub}>
                 {skrBalance >= askCostSkr
                   ? t('offering_skr_sub', 'Wallet balance: {balance} SKR \u00B7 Inscribed on-chain \u00B7 + {fee}', { balance: skrBalance, fee: t('network_fee_short', 'network fee') })
-                  : t('offering_sol_sub', 'Zero SKR on wallet \u00B7 Paid in SOL via Solana consensus ({cost} SOL + {fee})', { cost: askCostSol, fee: t('network_fee_short', 'network fee') })}
+                  : t('offering_sol_sub', 'Not enough SKR on wallet \u00B7 Paid in SOL via Solana consensus ({cost} SOL + {fee})', { cost: askCostSol, fee: t('network_fee_short', 'network fee') })}
               </Text>
               <Text style={styles.modalPriceSub}>
-                {t('payment_stake_note', '34% becomes ORE staked for you for 365 days. The yield is yours.')}
+                {t('payment_stake_note', '34% becomes ORE staked for you for 365 days. The yield is yours; the principal then goes to the treasury.')}
               </Text>
             </View>
 

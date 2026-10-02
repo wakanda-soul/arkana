@@ -1,5 +1,4 @@
 import { secureRandomInt } from '@/utils/secureRandom';
-import { getExtraPaymentSignatures } from './treasuryService';
 import { authedFetch } from './sessionService';
 import { netFetch } from './netFetch';
 import { ALL_CARDS, SPREADS } from '@/data/cardsData';
@@ -26,6 +25,12 @@ function apiError(message: string, code: string, extra?: Record<string, any>): E
 
 const PAID_REQUEST_ATTEMPTS = 3;
 
+// Every payment is one transaction: the API's `txSignatures` (extra transactions of a split
+// payment, from older app versions) is always sent empty.
+
+/** Payment signatures this app instance is submitting right now (postPaidRequest). */
+const paymentsInFlight = new Set<string>();
+
 /** A 402 that only means "not visible on chain yet" or "busy": the same payment may succeed later. */
 function isRetryablePaymentStatus(status: number, error: string): boolean {
   if (status >= 500 || status === 401 || status === 408 || status === 429) return true;
@@ -46,26 +51,32 @@ async function postPaidRequest(
 ): Promise<{ res: Response; data: any }> {
   const signature = String(body.txSignature);
   await savePendingPayment(wallet, { kind, signature, body, createdAt: Date.now() });
-  for (let attempt = 1; attempt <= PAID_REQUEST_ATTEMPTS; attempt++) {
-    try {
-      const res = await authedFetch(`${API_BASE_URL}${path}`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
-        await removePendingPayment(wallet, signature);
-        return { res, data };
+  // Marked so a background re-submit of the same payment neither sends it nor drops its record
+  paymentsInFlight.add(signature);
+  try {
+    for (let attempt = 1; attempt <= PAID_REQUEST_ATTEMPTS; attempt++) {
+      try {
+        const res = await authedFetch(`${API_BASE_URL}${path}`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
+          await removePendingPayment(wallet, signature);
+          return { res, data };
+        }
+        console.warn(`Paid request ${path} answered ${res.status}, attempt ${attempt}`);
+      } catch (e) {
+        console.warn(`Paid request ${path} failed, attempt ${attempt}:`, e);
       }
-      console.warn(`Paid request ${path} answered ${res.status}, attempt ${attempt}`);
-    } catch (e) {
-      console.warn(`Paid request ${path} failed, attempt ${attempt}:`, e);
+      if (attempt < PAID_REQUEST_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 1500 * 2 ** (attempt - 1)));
+      }
     }
-    if (attempt < PAID_REQUEST_ATTEMPTS) {
-      await new Promise((r) => setTimeout(r, 1500 * 2 ** (attempt - 1)));
-    }
+    throw apiError(PAYMENT_PENDING_MESSAGE, ERR_PAYMENT_PENDING, { signature });
+  } finally {
+    paymentsInFlight.delete(signature);
   }
-  throw apiError(PAYMENT_PENDING_MESSAGE, ERR_PAYMENT_PENDING, { signature });
 }
 
 const PAID_PATHS: Record<PendingPaymentKind, string> = {
@@ -82,13 +93,21 @@ const STALE_PENDING_MS = 10 * 60 * 1000;
 /** An 'unsubmitted' payment younger than this may still be on its way to the server. */
 const UNSUBMITTED_GRACE_MS = 2 * 60 * 1000;
 
+/** Wallets whose stored payments were already re-sent during this app launch. */
+const resubmittedWallets = new Set<string>();
+
 /**
- * Sends stored passes and offerings again (called once a wallet session exists, e.g. on app start).
- * Readings and questions are not re-sent here: the next reading or question reuses their payment.
+ * Sends stored passes and offerings again (called once a wallet session exists, e.g. on app start),
+ * at most once per wallet per app launch. Readings and questions are not re-sent here: the next
+ * reading or question reuses their payment.
  */
 export async function resubmitPendingPayments(wallet: string): Promise<void> {
+  if (!wallet || resubmittedWallets.has(wallet)) return;
+  resubmittedWallets.add(wallet);
   const now = Date.now();
   for (const payment of await getPendingPayments(wallet)) {
+    // The screen that made this payment is submitting it right now
+    if (paymentsInFlight.has(payment.signature)) continue;
     const age = now - payment.createdAt;
     let path: string | null = null;
     let body: Record<string, any> = payment.body;
@@ -106,6 +125,9 @@ export async function resubmitPendingPayments(wallet: string): Promise<void> {
     try {
       const res = await authedFetch(`${API_BASE_URL}${path}`, { method: 'POST', body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
+      // If a screen started submitting the same payment meanwhile, its answer decides: an "already
+      // used" here may only mean that request was credited first, and its record is still needed
+      if (paymentsInFlight.has(payment.signature)) continue;
       if (!isRetryablePaymentStatus(res.status, String(data?.error || ''))) {
         await removePendingPayment(wallet, payment.signature);
       }
@@ -155,6 +177,8 @@ export interface ClockInResult {
   freeSpreadsMax?: number;
   streakBonusSpreads?: number;
   streakBonusAwarded?: number;
+  /** Free questions credited for paid questions Arkana refused or answered offline; questions only, never spreads. */
+  bonusQuestions?: number;
   extraSpreadCostSkr?: number;
   askCostSkr?: number;
   skrToSolRate?: number;
@@ -175,6 +199,8 @@ export interface QuotaConsumeResult {
   paidWith?: 'free' | 'streak_reward' | 'skr' | 'sol';
   remainingFree: number;
   streakBonusSpreads?: number;
+  /** Free questions left (questions only, never spreads). */
+  bonusQuestions?: number;
   balance: number;
   canPayWithSol?: boolean;
   isSeekerHolder?: boolean;
@@ -443,7 +469,7 @@ export async function fetchReading(
   isSeeker?: boolean,
   txSignature?: string | null
 ): Promise<ReadingResponse> {
-  const payload: any = { spread, question, wallet, payWithSol, language, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) };
+  const payload: any = { spread, question, wallet, payWithSol, language, txSignature, txSignatures: [] };
   if (isSeeker !== undefined) {
     payload.isSeeker = isSeeker;
   }
@@ -483,7 +509,7 @@ export async function repairStreak(wallet: string, txSignature: string): Promise
     const { data } = await postPaidRequest(
       'streak_repair',
       '/api/streak/repair',
-      { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature) },
+      { wallet, txSignature, txSignatures: [] },
       wallet
     );
     return data;
@@ -513,7 +539,7 @@ export async function sendOracleChatMessage({
   quota?: QuotaConsumeResult;
   timestamp: string;
 }> {
-  const body = { message, wallet, history, payWithSol, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), language };
+  const body = { message, wallet, history, payWithSol, txSignature, txSignatures: [], language };
 
   // A paid question keeps its payment until the server answers
   if (txSignature && wallet) {
@@ -549,7 +575,7 @@ export async function submitAltarOfferingApi({
   message?: string;
 }): Promise<{ success: boolean; totalOfferedSkr: number; error?: string; code?: string }> {
   try {
-    const body = { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), amountSkr, message };
+    const body = { wallet, txSignature, txSignatures: [], amountSkr, message };
     const { res, data } = await postPaidRequest('offering', '/api/offering', body, wallet);
     if (res.ok) return data;
     return { success: false, totalOfferedSkr: 0, error: data?.error || `Offering failed (${res.status}).` };
@@ -568,7 +594,7 @@ export async function activateSubscriptionApi({
   durationDays?: number;
 }): Promise<{ success: boolean; subscription?: any; error?: string; code?: string }> {
   try {
-    const body = { wallet, txSignature, txSignatures: getExtraPaymentSignatures(txSignature), durationDays };
+    const body = { wallet, txSignature, txSignatures: [], durationDays };
     const { res, data } = await postPaidRequest('subscription', '/api/subscription/activate', body, wallet);
     if (res.ok) return data;
     return { success: false, error: data?.error || `Pass activation failed (${res.status}).` };
