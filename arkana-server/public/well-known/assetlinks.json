@@ -1,0 +1,13 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "icu.arkana.app",
+      "sha256_cert_fingerprints": ["CD:87:82:2E:6A:0D:7C:A6:51:7C:BA:E8:2C:3B:DA:A8:6C:5A:7E:82:14:FE:0B:5D:CE:48:24:8F:05:DF:30:7E"]
+    }
+  }
+]

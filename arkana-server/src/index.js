@@ -197,6 +197,10 @@ app.use("/api/jup", rateLimit("jupiter", 40, MINUTE));
 // Only public assets are served. Card art, design files, admin pages and program binaries stay
 // on the server (the app ships its own card images).
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
+// Digital Asset Links: ties arkana.icu (the app identity wallets see) to the release-signed app
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.type("application/json").sendFile(path.join(PUBLIC_DIR, "well-known", "assetlinks.json"));
+});
 app.use("/landing", express.static(path.join(PUBLIC_DIR, "landing")));
 app.use("/images", express.static(path.join(PUBLIC_DIR, "images")));
 // /arkana.apk always points at the current build: it redirects (never cached) to the versioned file,
