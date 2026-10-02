@@ -27,7 +27,7 @@ const { generateOfflineSynthesis, localizedCard } = require("./offlineSynthesis"
 
 const fs = require("fs");
 const crypto = require("crypto");
-const { execFile } = require("child_process");
+const { spawn } = require("child_process");
 
 // The model CLI runs in a bubblewrap sandbox (/usr/local/bin/arkana-agy): it cannot see project files,
 // keys, .env or chat history, and gets no server environment variables. User text reaches the model,
@@ -160,7 +160,9 @@ const INJECTION_PATTERNS = [
 ];
 
 const CODING_PATTERNS = [
-  /(write|generate|create|build|debug|fix|implement|program)\s+(some\s+|a\s+|the\s+)?(code|script|program|app|application|function|exploit|payload|game|snake|bot|smart\s*contract|solidity|rust|python|javascript|typescript|c\+\+|java)/i,
+  /(write|generate|create|build|debug|fix|implement|program|code|develop|make)\s+(me\s+)?(some\s+|a\s+|an\s+|the\s+|my\s+)?(code|script|program|app|application|apk|android\s+app|website|web\s*site|landing\s+page|function|exploit|payload|game|snake|bot|smart\s*contract|contract|token|memecoin|meme\s*coin|dapp|api|backend|frontend|solidity|rust|python|javascript|typescript|c\+\+|java|html|css|sql)/i,
+  // Russian: an imperative to make or fix a technical artifact (APK, site, contract, token, bot...)
+  /(\u043D\u0430\u043F\u0438\u0448\u0438|\u0441\u043E\u0437\u0434\u0430\u0439|\u0441\u0434\u0435\u043B\u0430\u0439|\u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0430\u0439|\u0441\u043E\u0431\u0435\u0440\u0438|\u0441\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439|\u0441\u043A\u043E\u0434\u0438\u0440\u0443\u0439|\u0438\u0441\u043F\u0440\u0430\u0432\u044C|\u043F\u043E\u0447\u0438\u043D\u0438)[^.?!]*(apk|\u0430\u043F\u043A|\u0441\u0430\u0439\u0442|\u043B\u0435\u043D\u0434\u0438\u043D\u0433|\u0441\u043C\u0430\u0440\u0442|\u043A\u043E\u043D\u0442\u0440\u0430\u043A\u0442|\u0442\u043E\u043A\u0435\u043D|\u043C\u0435\u043C\u043A\u043E\u0438\u043D|\u0441\u0435\u0440\u0432\u0435\u0440|\u0431\u0430\u0437\u0443 \u0434\u0430\u043D\u043D\u044B\u0445|html|api|android|\u0430\u043D\u0434\u0440\u043E\u0438\u0434)/i,
   /(\u043D\u0430\u043F\u0438\u0448\u0438|\u0441\u043E\u0437\u0434\u0430\u0439|\u0441\u0434\u0435\u043B\u0430\u0439|\u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0430\u0439|\u0441\u043A\u043E\u0434\u0438\u0440\u0443\u0439|\u0438\u0441\u043F\u0440\u0430\u0432\u044C).*(code|\u043A\u043E\u0434|\u0441\u043A\u0440\u0438\u043F\u0442|\u043F\u0440\u043E\u0433\u0440\u0430\u043C|\u0438\u0433\u0440|\u0437\u043C\u0435\u0439\u043A|\u0444\u0443\u043D\u043A\u0446\u0438|\u0431\u043E\u0442|\u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438)/i
 ];
 
@@ -474,14 +476,44 @@ function runModel(prompt, callback) {
   });
 }
 
+/**
+ * Runs the model CLI in its own process group and kills the WHOLE group on timeout: killing only the
+ * wrapper (what execFile does) leaves bwrap and the CLI running, and the call then lasts as long as
+ * the CLI wants. Calls back like execFile: (err, stdout, stderr), err.killed on timeout.
+ */
+function runAgyOnce(prompt, timeout, done) {
+  const child = spawn(
+    AGY_BIN,
+    ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", prompt],
+    { env: AGY_OPTIONS.env, cwd: AGY_OPTIONS.cwd, detached: true, stdio: ["ignore", "pipe", "pipe"] }
+  );
+  let stdout = "";
+  let stderr = "";
+  let killed = false;
+  let finished = false;
+  const cap = AGY_OPTIONS.maxBuffer;
+  child.stdout.on("data", (d) => { if (stdout.length < cap) stdout += d; });
+  child.stderr.on("data", (d) => { if (stderr.length < cap) stderr += d; });
+  const timer = setTimeout(() => {
+    killed = true;
+    try { process.kill(-child.pid, "SIGKILL"); } catch {}
+  }, timeout);
+  const finish = (err) => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timer);
+    done(err, stdout, stderr);
+  };
+  child.on("error", (err) => finish(err));
+  child.on("close", (code, signal) => {
+    if (killed) return finish(Object.assign(new Error("model call timed out"), { killed: true, signal }));
+    if (code !== 0) return finish(Object.assign(new Error(`model CLI exited ${code}`), { code, signal }));
+    finish(null);
+  });
+}
+
 function runModelInSlot(prompt, started, callback) {
-  const once = (timeout, done) =>
-    execFile(
-      AGY_BIN,
-      ["--disable-slash-commands", "--model", "gemini-3.8-flash-low", "--effort", "low", "-p", prompt],
-      { ...AGY_OPTIONS, timeout },
-      done
-    );
+  const once = (timeout, done) => runAgyOnce(prompt, timeout, done);
   // One 30 s budget from the start of the request, queue wait included (at least 8 s for the call)
   once(Math.max(8000, AGY_OPTIONS.timeout - (Date.now() - started)), (err, stdout, stderr) => {
     const left = AGY_OPTIONS.timeout - (Date.now() - started);

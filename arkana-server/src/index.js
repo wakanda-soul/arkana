@@ -96,6 +96,22 @@ async function consumeWithVerifiedPayment(wallet, { type, txSignature, txSignatu
   return { ...free, allowed: false, reason: payment.error, error: payment.error };
 }
 
+/**
+ * The safety filter refused a request that came with a payment: the payment is still consumed (it is
+ * the user's, and leaving it unused would lose it) and one free question is credited, like any paid
+ * question Arkana refuses. Returns { credited, quota } or { retry: response body } when the payment
+ * is not verifiable yet (the app keeps it and retries).
+ */
+async function settleRefusedPayment(wallet, type, body) {
+  if (!body.txSignature) return { credited: false };
+  const quota = await consumeWithVerifiedPayment(wallet, { type, txSignature: body.txSignature, txSignatures: body.txSignatures });
+  if (!quota.allowed && (quota.busy || /not found on-chain yet/i.test(quota.error || ""))) return { retry: quota };
+  if (quota.allowed && quota.isFree === false) {
+    return { credited: true, quota: { ...quota, streakBonusSpreads: creditBonusSpreads(wallet, 1) } };
+  }
+  return { credited: false, quota };
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || "127.0.0.1";
@@ -568,20 +584,23 @@ app.post("/api/reading", async (req, res) => {
     // Same pre-generation safety check as chat, before any quota or payment is spent
     const questionSafety = question ? evaluateSafetyFilter(question, language) : { blocked: false };
     if (questionSafety.blocked) {
+      const settled = await settleRefusedPayment(wallet, "spread", req.body);
+      if (settled.retry) return res.status(settled.retry.busy ? 503 : 402).json({ success: false, ...settled.retry });
+      const blockedReply = settled.credited ? `${questionSafety.reply}\n\n${refundNote(question, language)}` : questionSafety.reply;
       logDialogue({
         type: "reading",
         wallet,
         user_message: question,
-        oracle_reply: questionSafety.reply,
+        oracle_reply: blockedReply,
         is_injection_attempt: questionSafety.reason === "injection",
         is_code_attempt: questionSafety.reason === "coding",
         blocked_by_safety: true,
         safety_reason: questionSafety.reason,
-        status: "blocked",
+        status: settled.credited ? "refunded" : "blocked",
         latency_ms: 0,
         client_ip: clientIp(req)
       });
-      return res.status(400).json({ success: false, blocked: true, reason: questionSafety.reason, error: questionSafety.reply });
+      return res.status(400).json({ success: false, blocked: true, reason: questionSafety.reason, refunded: settled.credited, error: blockedReply });
     }
     {
       quotaResult = await consumeWithVerifiedPayment(wallet, {
@@ -680,20 +699,23 @@ app.post("/api/chat", async (req, res) => {
       .map((text) => evaluateSafetyFilter(text, language))
       .find((check) => check.blocked);
     if (blockedBy) {
+      const settled = await settleRefusedPayment(wallet, "chat", req.body);
+      if (settled.retry) return res.status(settled.retry.busy ? 503 : 402).json({ success: false, ...settled.retry });
+      const blockedReply = settled.credited ? `${blockedBy.reply}\n\n${refundNote(message, language)}` : blockedBy.reply;
       logDialogue({
         type: "chat",
         wallet,
         user_message: message.trim(),
-        oracle_reply: blockedBy.reply,
+        oracle_reply: blockedReply,
         is_injection_attempt: blockedBy.reason === "injection",
         is_code_attempt: blockedBy.reason === "coding",
         blocked_by_safety: true,
         safety_reason: blockedBy.reason,
-        status: "blocked",
+        status: settled.credited ? "refunded" : "blocked",
         latency_ms: 0,
         client_ip: ip
       });
-      return res.json({ reply: blockedBy.reply, card: null, blocked: true, reason: blockedBy.reason, quota: null, timestamp: new Date().toISOString() });
+      return res.json({ reply: blockedReply, card: null, blocked: true, reason: blockedBy.reason, refunded: settled.credited, quota: settled.quota || null, timestamp: new Date().toISOString() });
     }
 
     quotaResult = await consumeWithVerifiedPayment(wallet, { type: "chat", txSignature, txSignatures: req.body.txSignatures });
