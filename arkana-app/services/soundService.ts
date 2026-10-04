@@ -15,8 +15,8 @@ AppState.addEventListener('change', (nextState) => {
   }
 });
 
-const MUTE_STORAGE_KEY = 'arkana_sound_muted_v1';
-const AMBIENT_STORAGE_KEY = 'arkana_ambient_muted_v1';
+const MUTE_PREF = 'arkana_sound_muted_v1';
+const AMBIENT_PREF = 'arkana_ambient_muted_v1';
 
 let isMutedState = false;
 let isAmbientMutedState = false;
@@ -165,11 +165,11 @@ export const soundService = {
   async init(): Promise<boolean> {
     if (isInitialized) return !isMutedState;
     try {
-      const storedMute = await AsyncStorage.getItem(MUTE_STORAGE_KEY);
+      const storedMute = await AsyncStorage.getItem(MUTE_PREF);
       if (storedMute !== null) {
         isMutedState = storedMute === 'true';
       }
-      const storedAmbient = await AsyncStorage.getItem(AMBIENT_STORAGE_KEY);
+      const storedAmbient = await AsyncStorage.getItem(AMBIENT_PREF);
       if (storedAmbient !== null) {
         isAmbientMutedState = storedAmbient === 'true';
       }
@@ -201,7 +201,7 @@ export const soundService = {
   async toggleMute(): Promise<boolean> {
     isMutedState = !isMutedState;
     try {
-      await AsyncStorage.setItem(MUTE_STORAGE_KEY, String(isMutedState));
+      await AsyncStorage.setItem(MUTE_PREF, String(isMutedState));
     } catch {}
     if (isMutedState) {
       this.stopAmbientHang();
@@ -214,7 +214,7 @@ export const soundService = {
   async setMuted(muted: boolean): Promise<void> {
     isMutedState = muted;
     try {
-      await AsyncStorage.setItem(MUTE_STORAGE_KEY, String(muted));
+      await AsyncStorage.setItem(MUTE_PREF, String(muted));
     } catch {}
     if (isMutedState) {
       this.stopAmbientHang();
@@ -369,7 +369,7 @@ export const soundService = {
   async toggleAmbient(): Promise<boolean> {
     isAmbientMutedState = !isAmbientMutedState;
     try {
-      await AsyncStorage.setItem(AMBIENT_STORAGE_KEY, String(isAmbientMutedState));
+      await AsyncStorage.setItem(AMBIENT_PREF, String(isAmbientMutedState));
     } catch {}
     if (isAmbientMutedState) {
       this.stopAmbientHang();

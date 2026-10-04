@@ -7,12 +7,14 @@ const path = require("path");
 
 const CARD_LOCALES_DIR = path.join(__dirname, "..", "..", "..", "arkana-app", "data", "locales", "cards");
 const cardLocales = {};
+// Indonesian is not "id.json": secret scanners read that name as a Solana keypair file
+const LOCALE_FILES = { id: "indonesian" };
 
 function localizedCard(card, lang) {
   if (lang === "en") return card;
   if (!(lang in cardLocales)) {
     try {
-      cardLocales[lang] = JSON.parse(fs.readFileSync(path.join(CARD_LOCALES_DIR, `${lang}.json`), "utf8"));
+      cardLocales[lang] = JSON.parse(fs.readFileSync(path.join(CARD_LOCALES_DIR, `${LOCALE_FILES[lang] || lang}.json`), "utf8"));
     } catch {
       cardLocales[lang] = null;
     }

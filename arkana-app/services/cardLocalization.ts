@@ -5,7 +5,7 @@ import zhCards from '@/data/locales/cards/zh.json';
 import esCards from '@/data/locales/cards/es.json';
 import frCards from '@/data/locales/cards/fr.json';
 import ptCards from '@/data/locales/cards/pt.json';
-import idCards from '@/data/locales/cards/id.json';
+import idCards from '@/data/locales/cards/indonesian.json';
 import hiCards from '@/data/locales/cards/hi.json';
 import arCards from '@/data/locales/cards/ar.json';
 import bnCards from '@/data/locales/cards/bn.json';

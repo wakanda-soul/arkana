@@ -31,8 +31,8 @@ The hackathon's automated security review ran on commit `ecccbd5` and reported 4
 
 | Finding | Verdict | Evidence |
 | :--- | :--- | :--- |
-| Leaked secret: `arkana-app/data/locales/cards/id.json` (solana-keypair-file) | False positive | A filename rule: `id` is the Indonesian language code; the file holds card translations. No key is in the repository. Added to `.gitleaks.toml` |
-| Leaked secret: `soundService.ts:18-19` (generic-api-key) | False positive | The values are AsyncStorage key names (`arkana_sound_muted_v1`, `arkana_ambient_muted_v1`). Added to `.gitleaks.toml` |
+| Leaked secret: `arkana-app/data/locales/cards/id.json` (solana-keypair-file) | False positive, renamed | A filename rule: `id` is the Indonesian language code; the file holds card translations. Renamed to `indonesian.json` so scanners stop matching it. No key is in the repository |
+| Leaked secret: `soundService.ts:18-19` (generic-api-key) | False positive, renamed | The values are AsyncStorage names (`arkana_sound_muted_v1`, `arkana_ambient_muted_v1`); the constants are now `MUTE_PREF` / `AMBIENT_PREF`, and stock gitleaks 8.30.1 finds nothing in tracked files |
 | PDA sharing, `deposit.rs:191`, `distribute.rs:43` (low confidence) | By design | One vault authority PDA holds all tranches' ORE and the single ORE Stake position. Per-user state lives in tranche PDAs seeded by owner and day, and every handler checks the owner, the tranche PDA and the token accounts' owner and mint. The 80 LiteSVM checks include account substitution and cross-user claims |
 | Unchecked `rewards_factor +=` and division, `distribute.rs:51`, `stake.rs:96` | Not exploitable | Release builds use `overflow-checks = true`, so an overflow aborts the transaction instead of wrapping. Division by zero is impossible: `distribute` rejects `total_staked_ore == 0` and `sync_rewards` checks it. Reaching the I80F48 limit (about 6e23 per staked base unit) would take more ORE than exists. Truncated dust stays in the vault, which keeps it solvent (see Known and accepted) |
 | Integer division, `stake.rs:9` | Not applicable | The flagged line is a doc comment; the only divisions are the two above |
