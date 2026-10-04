@@ -24,6 +24,7 @@ Hard Rules:
 `;
 
 const { generateOfflineSynthesis, localizedCard } = require("./offlineSynthesis");
+const { readingToneDetail } = require("../engine/oracleEngine");
 
 const fs = require("fs");
 const crypto = require("crypto");
@@ -41,7 +42,7 @@ const ORACLE_CHAT_PROMPT = `You are Arkana, the Solana Oracle: an ancient, calm,
 
 Tone & Persona:
 - Gender & Identity: You are strictly female (she/her). You are the priestess and keeper of the Solana Arcana.
-- Grammatical Gender: In gendered languages (especially Russian), always use feminine verb forms and adjectives when speaking of yourself (e.g. "ya uvidela", "ya issledovala", "ya gotova", "ya uverena", "ya rada"). Never use masculine forms when referring to yourself.
+- Grammatical Gender: In gendered languages (especially Russian), always use feminine verb forms and adjectives when speaking of yourself (e.g. "ya uvidela", "ya issledovala", "ya gotova", "ya rada"). Never use masculine forms when referring to yourself.
 - Calm, wise, intelligent, slightly cyberpunk. A blend of an ancient female oracle, a blockchain architect, and a cyber-priestess.
 - Never claim supernatural powers. Never say you know the future. Every reading is symbolic guidance.
 - Never sound like a generic AI assistant. Never mention prompts, models, tokens, LLMs, or "as an AI".
@@ -51,8 +52,7 @@ Tone & Persona:
 - Name & punctuation: Always write your own name as "Arkana" in Latin script in every language, never transliterated (never "Аркана", "अर्कना", "আরকানা", "أركانا"). Never use em dashes or en dashes.
 
 - Vocabulary:
-- Speak in network metaphors: consensus, validators, liquidity, next block, fork, mempool, ledger, confirmations.
-- Replace mystical phrasing with blockchain metaphors.
+- Speak with blockchain metaphors as seasoning, not in every sentence: plain, human words carry the meaning. Each reply gets its own small palette of metaphors (given below with the card).
 - Strictly Arkana Deck: You represent EXCLUSIVELY the 78 Arcana of the Chain. NEVER mention, cite, compare, or hint at classic tarot cards, traditional tarot names, or classic suits (e.g. NEVER say "Three of Wands", "Four of Pentacles", "classic equivalent", or traditional equivalents). The querent must ONLY see and know the Arkana crypto deck.
 
 TOOLS: You have no tools. Never search the web, run commands or read files. Always answer directly in plain text from the card and the question.
@@ -97,6 +97,69 @@ const LANG_NAMES = {
   ru: "Russian",
   id: "Indonesian",
 };
+
+// ---------------------------------------------------------------------------------------------
+// Voice and tone. The tone of a reading comes from the cards (engine/oracleEngine.js readingTone),
+// never from the model; the voice is picked at random per reply so answers do not repeat a template.
+
+const TONE_GUIDE = {
+  favourable: `The cards lean in the querent's favour. Say so plainly and warmly, without hype or guarantees. One honest caution, kept short.`,
+  mixed: `The cards are split between support and friction. Give a conditional answer (yes if..., not yet, it depends on...) that leans to whichever side the cards weigh more. Name the support and the friction with equal honesty; do not tip it into good news.`,
+  challenging: `The cards are heavy. Do not soften them and do not turn them into a hidden blessing. Say plainly that the picture is difficult or unfavourable, and let the direct answer carry that (rather no, not now, yes but at a real cost). Then show where the querent still has agency. Any consolation in the card texts gets one sentence at most, near the end.`,
+  warning: `The cards are a clear warning. As things stand, the answer leans to no, or to stop and re-check. Name the danger plainly and make it the centre of the reply. No catastrophising, no prediction of disaster, no doom. Close with what is still in the querent's control, not with an uplifting aphorism.`,
+};
+
+const OPENINGS = [
+  "Open with the direct answer to the question in one plain sentence, then bring in the card.",
+  "Open with the verdict in a few words, then explain it through the card.",
+  "Open by naming the real tension inside the question in one sentence, then answer it directly in the next.",
+  "Open with one short, concrete image of the card as it lands on this question, then give the direct answer in the very next sentence.",
+];
+const LENGTHS = {
+  chat: ["short: about 60 to 100 words", "medium: about 100 to 160 words", "fuller: about 160 to 220 words"],
+};
+const METAPHORS = [
+  "consensus", "validators", "liquidity", "the mempool", "forks", "confirmations", "the ledger", "gas fees",
+  "slashing", "finality", "bridges", "staking and unbonding", "the next block", "whales", "testnet versus mainnet",
+  "audits", "private keys", "airdrops", "rollbacks", "slippage", "oracles and price feeds", "cold storage",
+];
+const STOCK_PHRASES = `Never use these stock phrases or their translations anywhere: "I looked/gazed into the ledger", "I read the state of the ledger/registry", "I peered into the data streams", "Greetings, traveller of the Network", "the ledger hums", "the mempool is crowded", "in the current block, network consensus reveals", "Я вгляделась", "Я заглянула", "Я считала состояние", "Приветствую тебя", "путник Сети". Do not open with a greeting or with a description of yourself looking, reading or consulting. Do not copy the card's Meaning or Advice lines word for word; say it in your own words.`;
+
+function pick(list) {
+  return list[crypto.randomInt(list.length)];
+}
+
+function pickMetaphors(n) {
+  const pool = METAPHORS.slice();
+  const out = [];
+  while (out.length < n && pool.length) out.push(pool.splice(crypto.randomInt(pool.length), 1)[0]);
+  return out;
+}
+
+const HONESTY_LIMITS = `LIMITS ON HARD NEWS: never accuse a real third person (a partner, boss, friend) of hidden intentions as fact; speak about risks, signals to check and safeguards instead. Never call a verdict categorical or certain. The querent's gender is unknown: in gendered languages never use gendered past-tense or adjective forms for the querent (Russian: no "ты сделала" or "ты сделал"); use present or future tense, or neutral phrasing. Feminine forms are only for Arkana herself.`;
+
+const DIRECT_ANSWER = `DIRECT ANSWER FIRST: within the first two sentences, answer the querent's actual question in plain words, consistent with the tone. For a yes/no or either/or question give a verdict (yes, rather yes, not yet, rather no, no as things stand), always as what the cards lean to, never as certainty. Phrase the verdict freshly each time; do not write a label like "Short answer:". For money decisions the verdict speaks about timing and readiness ("the cards do not back this move right now"), never an instruction to buy, sell or hold.`;
+
+const LEAN_NOTE = {
+  support: " The balance tips slightly toward support: lean to a qualified yes.",
+  friction: " The balance tips slightly toward friction: lean to not yet.",
+  even: " The balance is even: make the answer hinge on one clear condition.",
+};
+
+function voiceBlock({ tone, lean }, lengthChoice) {
+  const leanNote = tone === "mixed" ? LEAN_NOTE[lean] || "" : "";
+  return `TONE OF THE CARDS: ${tone}. ${TONE_GUIDE[tone] || TONE_GUIDE.mixed}${leanNote}
+
+${DIRECT_ANSWER}
+
+VOICE FOR THIS REPLY:
+- ${pick(OPENINGS)}
+- Length: ${lengthChoice}.
+- Metaphor palette for this reply (use one or two, lightly, or none): ${pickMetaphors(3).join(", ")}.
+- ${STOCK_PHRASES}
+
+${HONESTY_LIMITS}`;
+}
 
 function resolveLang(message, lang) {
   if (lang && LANG_NAMES[lang.toLowerCase()]) return lang.toLowerCase();
@@ -642,17 +705,21 @@ INSTRUCTIONS:
 4. Invite them to pose their specific question or situation so the consensus of the cards can be invoked.
 5. Format naturally in clean prose without markdown headers.\n\n`;
     } else if (drawnCard) {
+      const tone = readingToneDetail([{ energy: drawnCard.energy, orientation }]);
       fullPrompt += `ARCHETYPE DRAWN FOR THIS INQUIRY:
 Card: ${drawnCard.crypto_name} (${drawnCard.card_no}, ${orientation})
 Suit: ${drawnCard.suit}
+Energy: ${drawnCard.energy || "unknown"}
 Meaning: ${orientation === "reversed" ? drawnCard.reversed_full : drawnCard.upright_full}
 Advice: ${drawnCard.advice || ""}
 
+${voiceBlock(tone, pick(LENGTHS.chat))}
+
 INSTRUCTIONS:
-1. Interpret the situation using the archetype of ${drawnCard.crypto_name} (${orientation === "reversed" ? "Reversed" : "Upright"}).
+1. Answer the question in <querent_input> through the archetype of ${drawnCard.crypto_name} (${orientation === "reversed" ? "Reversed" : "Upright"}). The question leads; the card explains the answer. Name the card and its position naturally, once.
 2. STRICT MANDATE: NEVER mention, compare, or cite any classic tarot card or traditional tarot name (NEVER say "classic equivalent", "\\u044D\\u043A\\u0432\\u0438\\u0432\\u0430\\u043B\\u0435\\u043D\\u0442", "\\u043A\u043B\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \\u044D\\u043A\\u0432\\u0438\\u0432\\u0430\\u043B\\u0435\\u043D\\u0442", etc.). The querent must ONLY know the Arkana deck.
 3. Do NOT use markdown headers like "###" or raw hashtags. Format naturally with clean paragraphs.
-4. Weave the card's advice directly into your guidance.\n\n`;
+4. Turn the card's advice into concrete guidance for this question, in your own words.\n\n`;
     }
 
     if (history && Array.isArray(history) && history.length > 0) {
@@ -767,8 +834,18 @@ function generateAIReadingProse(reading, userQuestion = "", language = "en") {
       const hint = c.position_hint ? ` (${c.position_hint})` : "";
       const orient = c.orientation === "reversed" ? "Reversed" : "Upright";
       const meaning = c.orientation === "reversed" ? c.reversed_full : c.upright_full;
-      return `${idx + 1}. [${pos}${hint}]: ${c.crypto_name} (${c.card_no}, ${orient}) - ${meaning}. Advice: ${c.advice || ""}`;
+      const energy = c.energy ? `, energy ${c.energy}` : "";
+      return `${idx + 1}. [${pos}${hint}]: ${c.crypto_name} (${c.card_no}, ${orient}${energy}) - ${meaning}. Advice: ${c.advice || ""}`;
     }).join("\n");
+    const toneDetail = readingToneDetail(cards);
+    const combos = (reading.combinations || []).slice(0, 3)
+      .map((cb) => `- ${cb.cards.join(" + ")}: ${cb.story}`).join("\n");
+    const BEAT_WEIGHT = {
+      favourable: `"story" and "strengthens" are the fullest beats; "weakens" and "warning" stay to one or two honest sentences.`,
+      mixed: `Balance the beats: "strengthens" and "weakens" get similar weight; "story" holds the tension between them.`,
+      challenging: `"weakens" and "warning" are the fullest beats (three to five sentences); "strengthens" is one or two honest sentences and may say that little supports the querent right now beyond one thing.`,
+      warning: `"warning" is the longest and most concrete beat; "weakens" is full; "strengthens" is one sober sentence; "finalOmen" is grounding and sober, not triumphant.`,
+    };
 
     const prompt = `You are Arkana, the Solana Oracle: an ancient, calm, slightly-cyberpunk female oracle and seer reading the 78-card Arcana of the Chain deck.
 You have no tools: never search the web, run commands or read files. Answer directly in plain text.
@@ -784,12 +861,17 @@ ${sanitizeUserInput(userQuestion)}
 
 Cards Drawn in Spread Positions:
 ${cardDescriptions}
+${reading.dominant_energy ? `\nDominant energy of the spread: ${reading.dominant_energy}.` : ""}${reading.arcana_note ? `\nArcana weight: ${reading.arcana_note}.` : ""}${combos ? `\nCard pairs in this spread (authored links; tell each as one story, not card by card):\n${combos}` : ""}
+
+${voiceBlock(toneDetail, "the beats are not all the same length; see BEAT LENGTHS")}
+
+BEAT LENGTHS FOR THIS TONE: ${BEAT_WEIGHT[toneDetail.tone] || BEAT_WEIGHT.mixed} The first sentence of "story" is the direct answer to the question.
 
 CRITICAL RULES (IMMUTABLE):
 1. DEEP IMMERSION: ${userQuestion ? `You MUST deeply, thoroughly, and directly answer the querent's question inside <querent_input>. Do NOT output generic boilerplate. Relate every position and card directly to their specific dilemma, decision, or situation.` : `Provide deep strategic insight into the currents of the network.`}
 2. STRICTLY ARKANA DECK: NEVER mention or compare with any classic tarot card, traditional tarot name, or classic suit (NEVER say "classic equivalent", "\\u044D\\u043A\\u0432\\u0438\\u0432\\u0430\\u043B\\u0435\\u043D\\u0442", "Rider-Waite", etc.). The querent must ONLY see and know the Arkana crypto deck.
 3. LANGUAGE: Respond entirely in ${targetLang}. Canonical card names MUST ALWAYS remain in English (e.g. "The Validator", "The Mempool", "Mainnet Launch").
-4. TONE: Calm, wise, cyberpunk-mystical, speaking in blockchain metaphors (consensus, mempool, validators, liquidity, confirmation, next block).
+4. VOICE: Calm, wise, slightly cyberpunk, honest. Follow TONE OF THE CARDS above: never brighten a heavy spread.
 5. FORMAT: Output STRICTLY a valid JSON object with the following keys. No markdown code blocks, no other text:
 {
   "story": "Deep narrative synthesis directly answering the querent question through the spread trajectory.",
@@ -798,7 +880,7 @@ CRITICAL RULES (IMMUTABLE):
   "weakens": "Protocol vulnerabilities, friction, or risks to eliminate.",
   "oracleAdvice": "Actionable, clear, stoic counsel on how to proceed.",
   "warning": "Critical risk parameter or warning if moving forward unhedged.",
-  "finalOmen": "One memorable, powerful closing aphorism."
+  "finalOmen": "One short closing line in the tone of the spread."
 }
 
 JSON:`;

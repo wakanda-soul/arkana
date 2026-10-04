@@ -30,6 +30,7 @@ function localizedCard(card, lang) {
 
 const TEMPLATES = {
   en: {
+    tone: { favourable: "The spread leans in your favour.", mixed: "The spread is split: real support and real friction.", challenging: "This is a hard spread: the cards show pressure, not a green light.", warning: "The spread is a warning: as things stand, the cards lean to no." },
     upright: "upright", reversed: "reversed",
     introQuestion: 'The Network has confirmed your question "{q}".', intro: "The Network has confirmed your question.",
     drawn: "Drawn into consensus: {list}.",
@@ -41,6 +42,7 @@ const TEMPLATES = {
     omen: "Every block is irreversible: build with conviction, the ledger remembers everything.",
   },
   ru: {
+    tone: { favourable: "Расклад складывается в твою пользу.", mixed: "Расклад неоднозначный: есть и опора, и трение.", challenging: "Расклад тяжёлый: карты показывают давление, а не зелёный свет.", warning: "Расклад предупреждает: как всё сейчас устроено, карты склоняются к «нет»." },
     upright: "прямая", reversed: "перевёрнутая",
     introQuestion: "Сеть приняла твой вопрос «{q}».", intro: "Сеть приняла твой вопрос.",
     drawn: "В консенсус вошли: {list}.",
@@ -52,6 +54,7 @@ const TEMPLATES = {
     omen: "Каждый блок необратим: строй уверенно, реестр помнит всё.",
   },
   zh: {
+    tone: { favourable: "这次牌阵对你有利。", mixed: "牌阵喜忧参半：有支撑，也有阻力。", challenging: "这是一次艰难的牌阵：卡牌显示的是压力，而不是绿灯。", warning: "牌阵发出警告：按目前的情况，卡牌倾向于「不」。" },
     upright: "正位", reversed: "逆位",
     introQuestion: "网络已确认你的问题：「{q}」。", intro: "网络已确认你的问题。",
     drawn: "进入共识的卡牌：{list}。",
@@ -63,6 +66,7 @@ const TEMPLATES = {
     omen: "每个区块都不可逆：带着信念去构建，账本会记住一切。",
   },
   hi: {
+    tone: { favourable: "यह स्प्रेड तुम्हारे पक्ष में झुकता है।", mixed: "स्प्रेड बँटा हुआ है: सहारा भी है और रुकावट भी।", challenging: "यह कठिन स्प्रेड है: कार्ड दबाव दिखाते हैं, हरी झंडी नहीं।", warning: "यह स्प्रेड चेतावनी है: अभी की स्थिति में कार्ड \"नहीं\" की ओर झुकते हैं।" },
     upright: "सीधा", reversed: "उल्टा",
     introQuestion: "नेटवर्क ने तुम्हारा प्रश्न स्वीकार किया है: \"{q}\"।", intro: "नेटवर्क ने तुम्हारा प्रश्न स्वीकार किया है।",
     drawn: "कंसेंसस में आए कार्ड: {list}।",
@@ -74,6 +78,7 @@ const TEMPLATES = {
     omen: "हर ब्लॉक अपरिवर्तनीय है: विश्वास के साथ बनाओ, लेजर सब याद रखता है।",
   },
   es: {
+    tone: { favourable: "La tirada se inclina a tu favor.", mixed: "La tirada está dividida: hay apoyo real y fricción real.", challenging: "Es una tirada dura: las cartas muestran presión, no luz verde.", warning: "La tirada es una advertencia: tal como están las cosas, las cartas se inclinan al no." },
     upright: "al derecho", reversed: "invertida",
     introQuestion: "La Red ha confirmado tu pregunta: «{q}».", intro: "La Red ha confirmado tu pregunta.",
     drawn: "Entran en consenso: {list}.",
@@ -85,6 +90,7 @@ const TEMPLATES = {
     omen: "Cada bloque es irreversible: construye con convicción, el ledger lo recuerda todo.",
   },
   ar: {
+    tone: { favourable: "تميل هذه القراءة لصالحك.", mixed: "القراءة منقسمة: هناك دعم حقيقي واحتكاك حقيقي.", challenging: "هذه قراءة صعبة: الأوراق تُظهر ضغطًا، لا ضوءًا أخضر.", warning: "هذه القراءة تحذير: بالوضع الحالي، تميل الأوراق إلى «لا»." },
     upright: "معتدلة", reversed: "مقلوبة",
     introQuestion: "أكّدت الشبكة سؤالك: «{q}».", intro: "أكّدت الشبكة سؤالك.",
     drawn: "دخلت في الإجماع: {list}.",
@@ -96,6 +102,7 @@ const TEMPLATES = {
     omen: "كل كتلة لا رجعة فيها: ابنِ بثقة، فالسجل يتذكّر كل شيء.",
   },
   fr: {
+    tone: { favourable: "Le tirage penche en ta faveur.", mixed: "Le tirage est partagé : un vrai soutien et une vraie friction.", challenging: "C'est un tirage difficile : les cartes montrent une pression, pas un feu vert.", warning: "Le tirage est un avertissement : en l'état, les cartes penchent vers le non." },
     upright: "à l'endroit", reversed: "renversée",
     introQuestion: "Le Réseau a confirmé ta question : « {q} ».", intro: "Le Réseau a confirmé ta question.",
     drawn: "Entrent dans le consensus : {list}.",
@@ -107,6 +114,7 @@ const TEMPLATES = {
     omen: "Chaque bloc est irréversible : construis avec conviction, le registre se souvient de tout.",
   },
   bn: {
+    tone: { favourable: "এই স্প্রেড তোমার পক্ষে ঝুঁকে আছে।", mixed: "স্প্রেডটি দ্বিধাবিভক্ত: সত্যিকারের সমর্থনও আছে, বাধাও আছে।", challenging: "এটি কঠিন স্প্রেড: কার্ডগুলো চাপ দেখাচ্ছে, সবুজ সংকেত নয়।", warning: "এই স্প্রেড একটি সতর্কবার্তা: এখনকার অবস্থায় কার্ডগুলো \"না\"-এর দিকে ঝুঁকছে।" },
     upright: "সোজা", reversed: "উল্টো",
     introQuestion: "নেটওয়ার্ক তোমার প্রশ্ন গ্রহণ করেছে: \"{q}\"।", intro: "নেটওয়ার্ক তোমার প্রশ্ন গ্রহণ করেছে।",
     drawn: "কনসেনসাসে এসেছে: {list}।",
@@ -118,6 +126,7 @@ const TEMPLATES = {
     omen: "প্রতিটি ব্লক অপরিবর্তনীয়: দৃঢ় বিশ্বাসে গড়ো, লেজার সব মনে রাখে।",
   },
   pt: {
+    tone: { favourable: "A tiragem pende a seu favor.", mixed: "A tiragem está dividida: há apoio real e atrito real.", challenging: "É uma tiragem difícil: as cartas mostram pressão, não sinal verde.", warning: "A tiragem é um alerta: do jeito que as coisas estão, as cartas pendem para o não." },
     upright: "em pé", reversed: "invertida",
     introQuestion: "A Rede confirmou sua pergunta: \"{q}\".", intro: "A Rede confirmou sua pergunta.",
     drawn: "Entram no consenso: {list}.",
@@ -129,6 +138,7 @@ const TEMPLATES = {
     omen: "Todo bloco é irreversível: construa com convicção, o ledger lembra de tudo.",
   },
   id: {
+    tone: { favourable: "Bacaan ini condong berpihak padamu.", mixed: "Bacaan ini terbelah: ada dukungan nyata dan gesekan nyata.", challenging: "Ini bacaan yang berat: kartu menunjukkan tekanan, bukan lampu hijau.", warning: "Bacaan ini adalah peringatan: dengan keadaan sekarang, kartu condong ke \"tidak\"." },
     upright: "tegak", reversed: "terbalik",
     introQuestion: "Jaringan telah mengonfirmasi pertanyaanmu: \"{q}\".", intro: "Jaringan telah mengonfirmasi pertanyaanmu.",
     drawn: "Masuk ke konsensus: {list}.",
@@ -154,6 +164,7 @@ function generateOfflineSynthesis(reading, userQuestion = "", language = "en") {
   const story = [
     userQuestion ? fill(T.introQuestion, { q: userQuestion }) : T.intro,
     fill(T.drawn, { list }),
+    T.tone[reading.tone] || "",
     fill(T.lead, { card: lead.crypto_name, text: lead.oriented_meaning }),
     cards.length > 1 ? fill(T.tail, { card: tail.crypto_name, text: tail.oriented_meaning }) : "",
   ].filter(Boolean).join(" ");

@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 
-const { SPREADS, getDeck, getReading } = require("./engine/oracleEngine");
+const { SPREADS, getDeck, getReading, readingTone } = require("./engine/oracleEngine");
 const {
   generateReadingProse,
   generateOracleChatReply,
@@ -527,8 +527,9 @@ app.post("/api/clock-in", async (req, res) => {
       structural: true,
       arcana_note: match.arcana === "major" ? "Genesis card" : "Suit card",
       dominant_suit: match.suit,
-      dominant_energy: null
+      dominant_energy: match.energy || null,
     };
+    reading.tone = readingTone(reading.cards);
 
     const slot = proof.slot || null;
     // Record before generating prose, so a slow model never delays or loses the Clock-In
