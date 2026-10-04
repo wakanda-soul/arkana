@@ -194,6 +194,11 @@ function readingToneDetail(cards) {
   if (heavyOutcome && (tone === "favourable" || tone === "mixed")) tone = "challenging";
   // Two or more Trial cards upright on a negative balance: the spread is a warning
   if (trialsUpright >= 2 && avg < 0) tone = "warning";
+  // One card alone is never a warning (that needs several cards pointing the same way), and only a
+  // Trial card makes it challenging; a reversed light card alone is a delay: mixed, leaning to friction
+  if (cards.length === 1 && (tone === "warning" || tone === "challenging")) {
+    tone = cards[0].energy === "Trial" ? "challenging" : "mixed";
+  }
   const lean = avg > 0.15 ? "support" : avg < -0.15 ? "friction" : "even";
   return { tone, lean };
 }

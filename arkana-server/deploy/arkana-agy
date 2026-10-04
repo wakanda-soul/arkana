@@ -23,6 +23,9 @@ SNAP=$(mktemp /tmp/arkana-ai-token.XXXXXX)
 trap 'rm -rf "$WORK" "$SNAP"' EXIT INT TERM
 
 cp -a "$PERSIST/." "$WORK/"
+# cp -a copies the old mtime of $PERSIST onto $WORK; reset it, or a parallel call's cleanup above
+# takes this fresh home for a stale one and deletes it mid-run
+touch "$WORK"
 rm -f "$WORK/$CLI_DIR/conversation_summaries.db" "$WORK/$CLI_DIR/jetbox_summaries_proto.pb"
 # The token this call started with: only a token the CLI itself refreshed is written back
 cp -P "$WORK/$TOKEN" "$SNAP" 2>/dev/null || true
