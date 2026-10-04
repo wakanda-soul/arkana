@@ -1,0 +1,10 @@
+# Secret scanning config. The defaults stay on; these are reviewed false positives only.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed false positives (see SECURITY.md, Security audit 2026-10-04)"
+# Indonesian card translations: "id" is the language code, not a Solana keypair file
+paths = ['''arkana-app/data/locales/cards/id\.json''']
+# AsyncStorage key names for the sound settings, not credentials
+regexes = ['''arkana_(sound|ambient)_muted_v1''']
