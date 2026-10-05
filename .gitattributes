@@ -1,5 +1,4 @@
-# Data, translations and lock files: not hand-written logic. GitHub and code analysers that follow
-# linguist attributes skip them, so reviews focus on the app, server and vault program code.
+# Data, translations and lock files (GitHub language statistics)
 *.lock linguist-generated=true
 **/package-lock.json linguist-generated=true
 arkana-app/data/locales/** linguist-generated=true

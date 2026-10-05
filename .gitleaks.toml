@@ -1,8 +1,0 @@
-# Secret scanning config. The defaults stay on; these are reviewed false positives only.
-[extend]
-useDefault = true
-
-[allowlist]
-description = "Reviewed false positives (see SECURITY.md, Security audit 2026-10-04)"
-# AsyncStorage names of the sound settings, not credentials
-regexes = ['''arkana_(sound|ambient)_muted_v1''']
