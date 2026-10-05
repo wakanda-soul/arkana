@@ -203,7 +203,6 @@ jobs:
             printf '{\n  "version": "%s",\n  "buildNumber": %s,\n  "commitSha": "%s",\n  "sha256": "%s",\n  "updatedAt": "%s"\n}\n' \
               "$VERSION_NAME" "$BUILD_NUM" "$SHORT_SHA" "$SHA256" "$(date -u '+%Y-%m-%d %H:%M UTC')" > version.json
             cp "$APK_FILE" arkana-latest.apk
-            cp "$APK_FILE" arkana-v1.0.0-beta.apk
             ls -lh arkana-*.apk
           else
             echo "No APK found in release output directory!"
@@ -220,7 +219,6 @@ jobs:
             arkana-v${{ env.VERSION_NAME }}.apk.sha256
             version.json
             arkana-latest.apk
-            arkana-v1.0.0-beta.apk
           retention-days: 30
 
   release:
@@ -245,3 +243,38 @@ jobs:
         run: |
           ls -l
           gh release upload v1.0.0-beta -R "$REPO" --clobber arkana-v*.apk arkana-v*.apk.sha256 arkana-latest.apk version.json
+
+      - name: Update release title, notes and tag, drop older APKs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(jq -r .version version.json)
+          SHA256=$(jq -r .sha256 version.json)
+          cat > notes.md <<NOTES
+          ## Arkana: the crypto oracle for Seeker
+
+          **Version:** ${VERSION} · signed with the Arkana release key
+          **Download:** https://arkana.icu/arkana.apk (same file as \`arkana-latest.apk\` below)
+          **sha256:** \`${SHA256}\`
+
+          ### What's inside
+          - Ask Arkana anything: readings and chat in 10 languages, cards drawn on the server with a secure RNG
+          - Daily Consensus: one card per UTC day, sealed on Solana with a memo signed by your wallet
+          - Mobile Wallet Adapter with Seed Vault, Sign In With Solana, Seeker Genesis perks verified on-chain
+          - One-signature payments: 33% of the SKR burned, 33% to the treasury, 34% swapped to ORE and staked in your own vault tranche
+          - Our ORE vault program on mainnet: \`B49g3obWUCPQzP9kdcRiCPJDurufWhJhszpQsK5eeV8C\`
+
+          Build steps, tests and the security notes are in the repository (README, SECURITY.md).
+          NOTES
+          sed -i 's/^          //' notes.md
+          # The tag follows the commit this APK was built from
+          gh api -X PATCH "repos/$REPO/git/refs/tags/v1.0.0-beta" -f sha="$GITHUB_SHA" -F force=true > /dev/null
+          gh release edit v1.0.0-beta -R "$REPO" --title "Arkana v${VERSION}" --notes-file notes.md
+          # Keep only this version's APK, its checksum, arkana-latest.apk and version.json
+          gh release view v1.0.0-beta -R "$REPO" --json assets -q '.assets[].name' | while read -r NAME; do
+            case "$NAME" in
+              "arkana-v${VERSION}.apk"|"arkana-v${VERSION}.apk.sha256"|arkana-latest.apk|version.json) ;;
+              *) gh release delete-asset v1.0.0-beta "$NAME" -R "$REPO" --yes ;;
+            esac
+          done
