@@ -8,7 +8,7 @@ In scope: the ORE vault program (`programs/arkana-ore-vault`, mainnet `B49g3obWU
 
 ## How the system is protected
 
-The README describes the controls in place: [AI and safety](README.md#ai-and-safety), [How payments are protected](README.md#how-payments-are-protected), [Server hardening](README.md#server-hardening), [Trust and risks](README.md#trust-and-risks) and [Releases](README.md#releases). The vault program and its 80 LiteSVM checks are described in [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md).
+The README describes the controls in place: [AI and safety](README.md#ai-and-safety), [How payments are protected](README.md#how-payments-are-protected), [Server hardening](README.md#server-hardening), [Trust and risks](README.md#trust-and-risks) and [Releases](README.md#releases). The vault program and its 84 LiteSVM checks are described in [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md).
 
 ## Known and accepted
 
@@ -33,7 +33,7 @@ The hackathon's automated security review ran on commit `ecccbd5` and reported 4
 | :--- | :--- | :--- |
 | Leaked secret: `arkana-app/data/locales/cards/id.json` (solana-keypair-file) | False positive, renamed | A filename rule: `id` is the Indonesian language code; the file holds card translations. Renamed to `indonesian.json` so scanners stop matching it. No key is in the repository |
 | Leaked secret: `soundService.ts:18-19` (generic-api-key) | False positive, renamed | The values are AsyncStorage names (`arkana_sound_muted_v1`, `arkana_ambient_muted_v1`); the constants are now `MUTE_PREF` / `AMBIENT_PREF`, and stock gitleaks 8.30.1 finds nothing in tracked files |
-| PDA sharing, `deposit.rs:191`, `distribute.rs:43` (low confidence) | By design | One vault authority PDA holds all tranches' ORE and the single ORE Stake position. Per-user state lives in tranche PDAs seeded by owner and day, and every handler checks the owner, the tranche PDA and the token accounts' owner and mint. The 80 LiteSVM checks include account substitution and cross-user claims |
+| PDA sharing, `deposit.rs:191`, `distribute.rs:43` (low confidence) | By design | One vault authority PDA holds all tranches' ORE and the single ORE Stake position. Per-user state lives in tranche PDAs seeded by owner and day, and every handler checks the owner, the tranche PDA and the token accounts' owner and mint. The LiteSVM checks include account substitution and cross-user claims |
 | Unchecked `rewards_factor +=` and division, `distribute.rs:51`, `stake.rs:96` | Not exploitable | Release builds use `overflow-checks = true`, so an overflow aborts the transaction instead of wrapping. Division by zero is impossible: `distribute` rejects `total_staked_ore == 0` and `sync_rewards` checks it. Reaching the I80F48 limit (about 6e23 per staked base unit) would take more ORE than exists. Truncated dust stays in the vault, which keeps it solvent (see Known and accepted) |
 | Integer division, `stake.rs:9` | Not applicable | The flagged line is a doc comment; the only divisions are the two above |
 | Preflight off, `lookupTable.js:228`, `syncKeeper.js:79/81` | By design | The first send of the lookup-table transaction runs preflight; only the re-broadcasts of the same signed bytes skip it. The keeper simulates the transaction itself and stops on any error before sending. Both are server-paid admin transactions, never user payments |
@@ -46,3 +46,11 @@ The hackathon's automated security review ran on commit `ecccbd5` and reported 4
 | Duplicate crate versions (info) | Accepted | Normal for the Solana SDK dependency tree |
 
 The review ran out of time before every check finished ("budget-exhausted"), so it gave no score. The deployed program matches `cargo build-sbf` from this repository byte for byte.
+
+### Re-run 2026-10-05 (commit `47f4319`)
+
+37 items (3 high, 13 medium, 20 low, 1 info). The leaked-secret false positives are gone after the renames, and the esbuild advisory after the upgrade. The remaining items are the ones triaged above, plus one new lead:
+
+| Finding | Verdict | Evidence |
+| :--- | :--- | :--- |
+| Rent / create-account DoS, `deposit.rs:66`: prefunding the deterministic UserVault or Tranche PDA could brick the first deposit (medium confidence) | Not exploitable | Accounts are created with steel's `create_program_account`, which checks the balance first: a prefunded PDA gets only the missing rent, then `allocate` and `assign`, instead of a `create_account` that would fail. New LiteSVM check: an attacker funds both PDAs of a fresh wallet, the first deposit still succeeds, the tranche belongs to the program and the vault stays solvent (84 checks pass) |

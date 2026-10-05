@@ -133,7 +133,7 @@ The LiteSVM test runs the vault against the real ORE Stake binary and mainnet ac
 - **DistributeReward is permissionless.** Anyone can add ORE to the reward pool. It is a donation to current tranche holders and cannot take funds out.
 - **SyncStake keeper.** A server keeper calls the permissionless SyncStake once a day so the app shows fresh ORE Stake yield. If it stops, no yield is lost: the next deposit or claim syncs it, and anyone can call SyncStake.
 - **Principal goes to the treasury.** Only the yield and the tranche rent come back to the user after 365 days. Before paying, the app shows that 34% is staked for the user for 365 days and the yield is theirs; the ORE tab explains that the principal then goes to the treasury while the yield and the tranche rent come back.
-- **No audit yet.** The program has 80 LiteSVM checks (see [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md)) but no external audit.
+- **No audit yet.** The program has 84 LiteSVM checks (see [programs/arkana-ore-vault/README.md](programs/arkana-ore-vault/README.md)) but no external audit.
 
 ## Releases
 

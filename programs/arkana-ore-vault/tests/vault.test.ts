@@ -544,6 +544,27 @@ function checkSolvent(label: string) {
     checkSolvent('keeper harvest');
   }
 
+  // Prefunding attack: lamports sent to a user's not-yet-created UserVault and Tranche PDAs must not
+  // block the first deposit (steel tops the rent up and allocates instead of create_account)
+  {
+    const victim = newWallet(2_000_000_000n);
+    const vPda = getUserVaultPda(victim.kp.publicKey)[0];
+    const tPda = getTranchePda(victim.kp.publicKey, 1)[0];
+    r = send([
+      SystemProgram.transfer({ fromPubkey: attacker.publicKey, toPubkey: vPda, lamports: 1_000_000 }),
+      SystemProgram.transfer({ fromPubkey: attacker.publicKey, toPubkey: tPda, lamports: 1_000_000 }),
+    ], [attacker]);
+    check('prefund: attacker funded both PDAs before the first deposit', r.ok && lamports(vPda) === 1_000_000n && lamports(tPda) === 1_000_000n);
+    const stake0 = stakeBalance();
+    r = send([await createDepositTrancheInstruction(victim.kp.publicKey, 1, 1_000_000_000n)], [victim.kp]);
+    check('prefund: first deposit still succeeds', r.ok, r.ok ? '' : r.logs.slice(-3).join(' | '));
+    const t = tranche(victim.kp.publicKey, 1);
+    check('prefund: tranche owned by the vault program with the right principal',
+      !!t && svm.getAccount(tPda)!.owner.equals(ARKANA_VAULT_PROGRAM_ID) && t.deposited === 1_000_000_000n && stakeBalance() - stake0 === 1_000_000_000n);
+    if (r.ok) openTranches.push([victim.kp.publicKey, 1]);
+    checkSolvent('prefunded first deposit');
+  }
+
   check('final: stake balance == open principal', stakeBalance() === cfg().staked, `stake=${stakeBalance()} principal=${cfg().staked}`);
 
 
