@@ -4,7 +4,7 @@ Node.js API behind the Arkana app: card draws, readings, the LLM proxy for Ask A
 
 ## What it does
 
-- **Deck and readings.** Definitions of all 78 cards in five suits (Genesis, Nodes, Liquidity, Protocols, Assets). Cards are drawn on the server with a secure RNG; card lists or seeds sent by the client are ignored. Rules look at card pairs and the dominant suit. A reading has six chapters (I to VI).
+- **Deck and readings.** Definitions of all 78 cards in five suits (Genesis, Nodes, Liquidity, Protocols, Assets). Cards are drawn on the server with a secure RNG; card lists or seeds sent by the client are ignored. The engine reads authored card pairs, the dominant suit and each card's energy, and computes the tone of the spread (favourable, mixed, challenging, warning) that the model must follow. A reading has six chapters (I to VI).
 - **Ask Arkana.** `src/ai/oracleService.js` calls an LLM CLI through a sandboxed wrapper (`AGY_BIN`). Input is checked for prompt injection and requests for code before it reaches the model, and the answer is checked again on the way out. If `AGY_BIN` is not set up, or the model fails or times out, the built-in engine answers from the drawn card in the user's language (10 languages). This engine runs on the server; the app still needs internet.
 - **Dialogue log.** Every conversation is written to `data/*.jsonl` for review of injection attempts and errors. Logs never go to git.
 - **Quotas and streaks.** 3 free spreads or questions per UTC day for Seeker Genesis Token holders (one shared quota, checked on chain), the Seeker Oracle Pass (333 SKR for 30 days, +5 spreads a day), streak bonuses (+1/+2/+3/+5 on days 7/14/21/28, then +5 every 7 days, banked for spreads and questions) and streak repair.
@@ -27,7 +27,7 @@ Node.js API behind the Arkana app: card draws, readings, the LLM proxy for Ask A
 | `GET` | `/api/treasury` | Treasury address and attestation |
 | `GET` | `/api/lookup-table` | Arkana lookup table address |
 | `GET`, `POST` | `/api/jup/quote`, `/api/jup/swap-instructions` | Jupiter proxy with the server's API key; SOL, SKR and ORE swaps only |
-| `GET` | `/api/prices` | Live SKR→SOL rate for display prices |
+| `GET` | `/api/prices` | Live SKR→SOL and ORE→SOL rates for display prices |
 | `POST` | `/api/offering`, `/api/subscription/activate`, `/api/streak/repair` | Record paid actions |
 | `POST` | `/api/payment/credit` | Credit a signed payment whose request never arrived (action read from the on-chain memo) |
 | `POST` | `/api/seeker/status` | Seeker Genesis holder status |
