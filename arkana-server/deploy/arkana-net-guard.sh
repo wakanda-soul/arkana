@@ -11,6 +11,10 @@ add4() { iptables -C OUTPUT "$@" 2>/dev/null || iptables -I OUTPUT 1 "$@"; }
 add6() { ip6tables -C OUTPUT "$@" 2>/dev/null || ip6tables -I OUTPUT 1 "$@"; }
 
 add4 -o lo -m owner --uid-owner "$USER_NAME" -m conntrack --ctstate NEW -j REJECT
+# DNS goes through the systemd-resolved stub on loopback; inserted after the REJECT so it lands above it.
+for proto in udp tcp; do
+  add4 -o lo -d 127.0.0.53 -p "$proto" --dport 53 -m owner --uid-owner "$USER_NAME" -j ACCEPT
+done
 for net in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10; do
   add4 -d "$net" -m owner --uid-owner "$USER_NAME" -m conntrack --ctstate NEW -j REJECT
 done
